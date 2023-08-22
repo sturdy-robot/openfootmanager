@@ -77,9 +77,9 @@ class Formation:
             else:
                 raise FormationError("Unable to get best players!")
 
-            player = self.get_best_players_per_position(players.copy(), pos)[0]
-
-            if player:
+            if player := self.get_best_players_per_position(players.copy(), pos)[
+                0
+            ]:
                 self.add_player(position, player)
                 players.remove(player)
 
