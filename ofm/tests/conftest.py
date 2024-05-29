@@ -125,8 +125,6 @@ def squads_def() -> list[dict]:
     return [
         {
             "name": "Munchen",
-            "stadium": "Munchen National Stadium",
-            "stadium_capacity": 40100,
             "country": "GER",
             "location": "Munich",
             "default_formation": "4-4-2",
@@ -134,17 +132,23 @@ def squads_def() -> list[dict]:
                 "mu": 80,
                 "sigma": 20,
             },
+            "stadium": {
+                "name": "Munchen National Stadium",
+                "capacity": 40100,
+            },
         },
         {
             "name": "Barcelona",
-            "stadium": "Barcelona National Stadium",
-            "stadium_capacity": 50000,
             "country": "ESP",
             "location": "Barcelona",
             "default_formation": "4-3-3",
             "squads_def": {
                 "mu": 80,
                 "sigma": 20,
+            },
+            "stadium": {
+                "name": "Barcelona National Stadium",
+                "capacity": 50000,
             },
         },
     ]
@@ -160,8 +164,11 @@ def mock_file() -> list[dict]:
             "location": "Munich",
             "default_formation": "4-4-2",
             "squad": [],
-            "stadium": "Munchen National Stadium",
-            "stadium_capacity": 40100,
+            "stadium": {
+                "id": 3,
+                "name": "Munchen National Stadium",
+                "capacity": 40100,
+            },
         },
         {
             "id": 2,
@@ -170,8 +177,11 @@ def mock_file() -> list[dict]:
             "location": "Barcelona",
             "default_formation": "4-3-3",
             "squad": [],
-            "stadium": "Barcelona National Stadium",
-            "stadium_capacity": 50000,
+            "stadium": {
+                "id": 4,
+                "name": "Barcelona National Stadium",
+                "capacity": 50000,
+            },
         },
     ]
 

@@ -18,9 +18,14 @@ import uuid
 
 from ..core.db.generators import TeamGenerator
 from ..core.football.club import Club, PlayerTeam
+from ..core.football.stadium import Stadium
 
 
 def test_get_club_from_mock_file(mock_file):
+    expected_stadiums = [
+        Stadium(uuid.UUID(int=3), "Munchen National Stadium", 40100),
+        Stadium(uuid.UUID(int=4), "Barcelona National Stadium", 50000),
+    ]
     expected_teams = [
         Club(
             uuid.UUID(int=1),
@@ -29,8 +34,7 @@ def test_get_club_from_mock_file(mock_file):
             "Munich",
             "4-4-2",
             [],
-            "Munchen National Stadium",
-            40100,
+            expected_stadiums[0],
         ),
         Club(
             uuid.UUID(int=2),
@@ -39,11 +43,13 @@ def test_get_club_from_mock_file(mock_file):
             "Barcelona",
             "4-3-3",
             [],
-            "Barcelona National Stadium",
-            50000,
+            expected_stadiums[1],
         ),
     ]
-    clubs = [Club.get_from_dict(club, []) for club in mock_file]
+    clubs = [
+        Club.get_from_dict(club, stadium, [])
+        for club, stadium in zip(mock_file, expected_stadiums)
+    ]
     assert clubs == expected_teams
 
 
