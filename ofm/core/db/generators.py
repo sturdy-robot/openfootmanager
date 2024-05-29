@@ -31,6 +31,7 @@ from ofm.core.football.player_attributes import (
     PlayerAttributes,
 )
 from ofm.core.football.playercontract import PlayerContract
+from ofm.core.football.stadium import Stadium
 from ofm.defaults import NAMES_FILE
 
 
@@ -509,6 +510,10 @@ class TeamGenerator(Generator):
             for i, _ in enumerate(needed_positions)
         ]
 
+    def generate_stadium(self, dictionary: dict[str, str | int]) -> Stadium:
+        stadium_id = uuid.uuid4()
+        return Stadium(stadium_id, dictionary["name"], dictionary["capacity"])
+
     def extract_confederation(
         self, country: str, confederation: list[dict]
     ) -> Tuple[str, list]:
@@ -535,7 +540,8 @@ class TeamGenerator(Generator):
             squad = self.generate_squad(
                 club_id, club["country"], club["squads_def"], countries_list
             )
-            club_obj = Club.get_from_dict(club, squad)
+            stadium = self.generate_stadium(club["stadium"])
+            club_obj = Club.get_from_dict(club, stadium, squad)
             clubs.append(club_obj)
 
         return clubs

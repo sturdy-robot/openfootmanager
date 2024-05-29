@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from .player import PlayerTeam
+from .stadium import Stadium
 
 
 class PlayerSubstitutionError(Exception):
@@ -30,13 +31,11 @@ class Club:
     country: str
     location: str
     default_formation: str
-    # TODO: Implement a serializable stadium object
     squad: list[PlayerTeam]
-    stadium: str
-    stadium_capacity: int
+    stadium: Stadium
 
     @classmethod
-    def get_from_dict(cls, club: dict, players: list[PlayerTeam]):
+    def get_from_dict(cls, club: dict, stadium: Stadium, players: list[PlayerTeam]):
         club_id = UUID(int=club["id"])
         return cls(
             club_id,
@@ -45,8 +44,7 @@ class Club:
             club["location"],
             club["default_formation"],
             players,
-            club["stadium"],
-            club["stadium_capacity"],
+            stadium,
         )
 
     def serialize(self) -> dict:
@@ -57,8 +55,7 @@ class Club:
             "location": self.location,
             "default_formation": self.default_formation,
             "squad": [player.details.player_id.int for player in self.squad],
-            "stadium": self.stadium,
-            "stadium_capacity": self.stadium_capacity,
+            "stadium": self.stadium.serialize(),
         }
 
     def __repr__(self):

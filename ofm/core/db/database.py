@@ -22,6 +22,7 @@ from typing import Optional
 
 from ofm.core.football.club import Club
 from ofm.core.football.player import Player, PlayerTeam, Positions
+from ofm.core.football.stadium import Stadium
 from ofm.core.settings import Settings
 
 from .generators import PlayerGenerator, TeamGenerator
@@ -101,7 +102,8 @@ class DB:
             squad = self.get_player_team_from_dicts(
                 self.load_club_squads(club["id"]), players_
             )
-            _clubs.append(Club.get_from_dict(club, squad))
+            stadium = Stadium.get_from_dict(club["stadium"])
+            _clubs.append(Club.get_from_dict(club, stadium, squad))
 
         if not _clubs:
             raise DatabaseLoadError("Could not load clubs from definition")
