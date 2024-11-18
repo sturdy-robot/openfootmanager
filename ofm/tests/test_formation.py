@@ -122,7 +122,7 @@ def test_move_player_from_fw_to_mf(simulation_teams):
 
     player = formation.fw[0]
     player_out = formation.mf[0]
-    formation.move_player(player, player_out, False)
+    formation.move_player(player, player_out)
 
     assert original_formation != formation
     assert player in formation.mf
@@ -140,7 +140,7 @@ def test_move_player_fw_to_gk(simulation_teams):
 
     player = formation.fw[0]
     player_out = formation.gk
-    formation.move_player(player, player_out, False)
+    formation.move_player(player, player_out)
 
     assert original_formation != formation
     assert player == formation.gk

@@ -148,7 +148,7 @@ class Formation:
             self.add_player(pos, player)
 
     def substitute_player(
-        self, player_out: PlayerSimulation, player_in: PlayerSimulation, temporary: bool
+        self, player_out: PlayerSimulation, player_in: PlayerSimulation
     ):
         if player_in not in self.all_players or player_out not in self.all_players:
             raise FormationError("Invalid player!")
@@ -157,14 +157,8 @@ class Formation:
 
         self._assign_player_to_position(player_in, player_out, current_position)
 
-        if temporary:
-            player_out.temporary_subbed = not player_out.temporary_subbed
-            player_out.temporary_subbed_in = False
-            player_in.temporary_subbed_in = not player_in.temporary_subbed_in
-            player_in.temporary_subbed = False
-        else:
-            player_out.subbed = True
-            player_in.subbed_in = True
+        player_out.subbed = True
+        player_in.subbed_in = True
 
         self.bench.remove(player_in)
         self.bench.append(player_out)
@@ -199,14 +193,12 @@ class Formation:
         self._assign_player_to_position(player_in, player_out, new_pos)
         self._assign_player_to_position(player_out, player_in, pos)
 
-    def move_player(
-        self, player_in: PlayerSimulation, player_out: PlayerSimulation, temporary: bool
-    ):
+    def move_player(self, player_in: PlayerSimulation, player_out: PlayerSimulation):
         if player_in not in self.all_players:
             raise FormationError("Invalid player!")
 
         if player_in in self.bench:
-            self.substitute_player(player_in, player_out, temporary)
+            self.substitute_player(player_in, player_out)
         else:
             self.rearrange_players(player_in, player_out)
 
