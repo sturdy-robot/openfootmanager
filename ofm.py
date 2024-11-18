@@ -26,4 +26,4 @@ thread.start()
 webview.create_window(
     "Openfoot Manager", f"http://127.0.0.1:{port}/", width=800, height=600
 )
-webview.start()
+webview.start(gui="qt")

@@ -18,7 +18,8 @@ sqlmodel = "^0.0.22"
 uvicorn = "^0.32.0"
 pywebview = "^5.3.2"
 qtpy = "^2.4.2"
-pyside2 = "^5.15.2.1"
+pgi = "^0.0.11.2"
+pyside6 = "^6.8.0.2"
 
 
 [tool.poetry.group.dev.dependencies]
