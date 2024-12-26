@@ -3,7 +3,6 @@ import threading
 
 import uvicorn
 import webview
-
 from ofm_ui.app import app
 
 
@@ -24,6 +23,9 @@ thread = threading.Thread(
 thread.start()
 
 webview.create_window(
-    "Openfoot Manager", f"http://127.0.0.1:{port}/", width=800, height=600
+    "Openfoot Manager",
+    f"http://127.0.0.1:{port}/",
+    width=800,
+    height=600,
 )
 webview.start(gui="qt")
