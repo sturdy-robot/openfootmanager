@@ -23,8 +23,8 @@ from ..core.football.stadium import Stadium
 
 def test_get_club_from_mock_file(mock_file):
     expected_stadiums = [
-        Stadium(uuid.UUID(int=3), "Munchen National Stadium", 40100),
-        Stadium(uuid.UUID(int=4), "Barcelona National Stadium", 50000),
+        Stadium(uuid.UUID(int=3).int, "Munchen National Stadium", 40100),
+        Stadium(uuid.UUID(int=4).int, "Barcelona National Stadium", 50000),
     ]
     expected_teams = [
         Club(
