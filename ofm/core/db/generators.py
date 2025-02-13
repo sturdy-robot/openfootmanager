@@ -16,7 +16,6 @@
 import json
 import random
 import uuid
-from abc import ABC, abstractmethod
 from datetime import date, datetime, timedelta
 from typing import List, Optional, Tuple, Union
 
@@ -42,17 +41,11 @@ def generate_skill_values(mu: int, sigma: int) -> int:
     return int(value)
 
 
-class Generator(ABC):
-    @abstractmethod
-    def generate(self, *args):
-        pass
-
-
 class GeneratePlayerError(Exception):
     pass
 
 
-class PlayerAttributeGenerator(Generator):
+class PlayerAttributeGenerator:
     def __init__(self, max_skill_lvl):
         self.max_skill_lvl = max_skill_lvl
 
@@ -162,7 +155,7 @@ class PlayerAttributeGenerator(Generator):
         return attributes
 
 
-class PlayerGenerator(Generator):
+class PlayerGenerator:
     def __init__(
         self,
         today: Union[datetime, date] = date.today(),
@@ -385,7 +378,7 @@ class GenerateSquadError(Exception):
     pass
 
 
-class TeamGenerator(Generator):
+class TeamGenerator:
     """
     Teams are defined in a definition file.
 
