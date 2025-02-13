@@ -2,10 +2,27 @@
   class="text-black border-b border-b-gray-300 dark:border-b-gray-700 dark:text-white bg-gray-100 dark:bg-slate-700 justify-between transition-all flex flex-items-center px-4 shadow-sm h-[90px] top-0"
   :class="{ 'ml-64': expanded, 'ml-16': !expanded }">
   <div class="flex flex-row font-bold text-3xl text-center px-4 self-center">
+    <img class="w-14" src="{{ url_for('static', path='img/FC_Barcelona.svg') }}" />
     <div class="ml-4 place-self-center">FC Barcelona</div>
   </div>
 
-  <div class="flex items-center space-x-4">
+
+  <form class="flex flex-col grow place-self-center m-6">
+    <div class="flex">
+      <div class="relative w-full">
+        <input type="search" id="search-dropdown"
+          class="block p-2.5 w-full z-20 text-sm text-gray-900 bg-gray-50 rounded-e-lg rounded-s-gray-100 rounded-s-2 border border-gray-300 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:border-green-500"
+          placeholder="Search" required />
+        <button type="submit"
+          class="absolute top-0 end-0 p-2.5 h-full text-sm font-medium text-white border bg-gradient-to-br from-green-800 to-green-500 border-green-700 hover:from-green-500 hover:to-green-300 focus:ring-4 focus:outline-none focus:green-300 dark:focus:ring-green-800"><svg
+            class="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
+          </svg></button>
+      </div>
+    </div>
+  </form>
+  <div class="flex items-center space-x-3">
     <div class="flex flex-col place-self-center">
       <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
         width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
@@ -34,7 +51,8 @@
       </span>
     </button>
 
-    <button class="flex px-5 py-5 bg-green-500 hover:bg-green-400 text-white font-bold uppercase">
+    <button
+      class="flex px-5 py-5 bg-gradient-to-br from-green-800 to-green-500 hover:from-green-500 hover:to-green-300 text-white font-bold uppercase">
       Continue
       <span class="ml-4">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
