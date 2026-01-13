@@ -1,112 +1,53 @@
-**NOTE:** *THIS PROJECT IS STILL UNDER DEVELOPMENT, AND IS NOT READY FOR GAMEPLAY YET. AS SOON AS GAMEPLAY FEATURES ARE IMPLEMENTED, THIS NOTE WILL BE REMOVED AND NEW INFO WILL BE ADDED TO THIS REPOSITORY.*
-
 ![Openfoot logo](images/openfoot.png)
 
-# OPENFOOT MANAGER PROJECT
+# OPENFOOT MANAGER
 
-**OpenFoot Manager** (temporary name) is a free and open source football/soccer manager game, licensed under the [GPLv3](LICENSE.md), inspired by the famous franchise Football Manager&trade;, and based on the source code of [Bygfoot](https://bygfoot.sourceforge.io/new/), an abandoned manager game.
+**OpenFoot Manager** is a free and open source football/soccer manager game written in Rust. It is licensed under the [GPLv3](LICENSE.md), inspired by the famous franchise Football Manager&trade;, and also draws some ideas from the source code of [Bygfoot](https://bygfoot.sourceforge.io/new/), an open source football manager game written in C.
 
-The purpose of this project is to provide an interesting and fun game for simulating a manager's life in a simple way: managing a team, dealing with players, finances and many other features. Resembling the gameplay of Football Manager, FIFA Manager, Championship Manager, Elifoot, Bygfoot, Brasfoot etc. this game aims to become a complete alternative for these games.
+The purpose of this project is to provide an interesting and fun game for simulating a manager's life in a simple way: managing a team, dealing with players, finances and many other features. Inspired by the core mechanics of Football Manager, FIFA Manager, Championship Manager, Elifoot, Bygfoot, Brasfoot etc. this game aims to become a complete alternative to these games.
+
+## Running
+
+### Rust workspace
+
+Run tests for the core crates:
+
+```bash
+cargo test
+```
+
+### Desktop app (Tauri v2 + Leptos + Trunk + Tailwind)
+
+The desktop app lives under `app/`:
+
+- `app/ui`: Leptos (CSR) frontend built with Trunk.
+- `app/src-tauri`: Tauri v2 backend.
+
+Prerequisites:
+
+- Rust target for WASM:
+
+```bash
+rustup target add wasm32-unknown-unknown
+```
+
+- Trunk:
+
+```bash
+cargo install trunk
+```
+
+Then run the Tauri dev workflow from `app/src-tauri`:
+
+```bash
+cargo tauri dev
+```
+
+The UI includes a `Seed demo database` button that calls the `seed_demo_db` command end-to-end.
 
 ## INSTALLATION
 
 The game is still under development and it is not even close to ready for gameplay action. However, we already have a debug version of the game for testing purposes.
-
-To run the debug build, ensure that you have Python 3.10 or higher.
-
-Clone the repository using:
-
-```
-git clone https://github.com/openfootmanager/openfootmanager.git
-```
-
-We don't use external git repositories, so there's no need for a `--recursive` clone.
-
-This project uses [Pipenv](https://pipenv.pypa.io/en/latest/) or [Poetry](https://python-poetry.org/) to manage virtual environments and dependencies.
-
-### Pipenv
-
-To install Pipenv and install the project's dependencies, run the following commands:
-
-```
-pip install pipenv
-```
-
-After cloning the repository, install the virtualenv and its dependencies using:
-
-```
-pipenv install
-```
-
-For contributors, you might also need development dependencies (black, isort, flake8, pytest, pre-commit):
-
-```
-pipenv install --dev
-```
-
-If you want to commit to the repo, install pre-commit:
-
-```
-pipenv run python -m pre-commit install
-```
-
-To run the tests:
-
-```
-pipenv run pytest
-```
-
-To run the debug version of the project, use the `run.py` file at the root of this project folder:
-
-```
-pipenv run python run.py
-```
-
-### Poetry
-
-Poetry is a standard in most Python projects. It uses the `pyproject.toml`, introduced in [PEP 518](https://peps.python.org/pep-0518/), to manage
-the project's dependencies and virtualenvs. It's a little more convenient than Pipenv, so you can use it to run the project as well.
-
-To install Poetry:
-
-```
-pip install poetry
-```
-
-Then you can just install the dependencies with:
-
-```
-poetry install
-```
-
-This will also install the development dependencies. If you only wish to run the project and do not want to contribute,
-install it using the following command:
-
-```
-poetry install --without dev
-```
-
-Similar to Pipenv, you can run things inside poetry's virtualenv with the `poetry run` command. If you wish to contribute,
-you must install the `pre-commit` package to allow pre-commit hooks:
-
-```
-poetry run pre-commit install
-```
-
-We use them to ensure code standards and formatting used throughout the project, so we don't need to nitpick on little
-issues with formatting and following PEP8.
-
-To run the tests, use `pytest`:
-
-```
-poetry run pytest
-```
-
-And to run the current version of the project, run:
-
-```
-poetry run python run.py
-```
 
 ## CONTRIBUTING
 

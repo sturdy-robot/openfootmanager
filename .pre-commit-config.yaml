@@ -1,15 +1,23 @@
 repos:
-  - repo: https://github.com/psf/black
-    rev: 24.1.1
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0 # Use the latest stable version
     hooks:
-      - id: black
-        language_version: python3
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-added-large-files
+      - id: no-commit-to-branch # Example: prevent committing directly to main/master
+        args: [--branch, main, --branch, master]
+
+  - repo: https://github.com/rust-lang/rustfmt
+    rev: master # Or a specific commit hash for stability
     hooks:
-      - id: flake8
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
+      - id: rustfmt
+
+  - repo: https://github.com/cargo-precommit/cargo-precommit
+    rev: v0.2.2 # Use the latest stable version
     hooks:
-      - id: isort
-        args: [ "--profile", "black" ]
+      - id: cargo-check
+      - id: cargo-fmt
+      - id: cargo-clippy
