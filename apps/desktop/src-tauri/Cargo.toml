@@ -1,0 +1,23 @@
+[package]
+name = "openfoot-desktop"
+version = "0.1.0"
+edition = "2024"
+description = "Openfoot Manager desktop app (Tauri + Leptos)"
+
+[lib]
+name = "openfoot_desktop"
+path = "src/lib.rs"
+
+[[bin]]
+name = "openfoot-desktop"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2" }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+tauri = { version = "2" }
+
+openfoot-save = { path = "../../../crates/save" }
+openfoot-sim = { path = "../../../crates/sim" }

@@ -1,0 +1,35 @@
+{
+  "productName": "Openfoot Manager",
+  "version": "0.1.0",
+  "identifier": "com.openfootmanager.app",
+  "build": {
+    "beforeBuildCommand": {
+      "cwd": "../ui",
+      "script": "trunk build",
+      "wait": true
+    },
+    "beforeDevCommand": {
+      "cwd": "../ui",
+      "script": "trunk serve --port 1420",
+      "wait": false
+    },
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../ui/dist"
+  },
+  "app": {
+    "security": {
+      "csp": null
+    },
+    "windows": [
+      {
+        "title": "Openfoot Manager",
+        "width": 1000,
+        "height": 700,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ]
+  },
+  "bundle": {},
+  "plugins": {}
+}
