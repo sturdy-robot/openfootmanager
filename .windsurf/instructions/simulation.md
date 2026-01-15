@@ -27,10 +27,14 @@ Examples:
 - Tackle
 - Foul
 
+(THESE ARE ONLY DEMONSTRATIVE EXAMPLES, YOU MUST DEFINE THE EVENTS AS YOU SEE FIT)
+
+REMEMBER THE RULES IN SOCCER, SUCH AS PENALTY, OFFSIDE, GOAL, YELLOW CARD, RED CARD, ETC.
+
 Each event:
 - Consumes stamina
 - Affects morale
-- Has probabilistic outcomes
+- Has probabilistic outcomes (Miss, Intercept, Success, etc.)
 
 ## Influences
 Event outcomes depend on:
