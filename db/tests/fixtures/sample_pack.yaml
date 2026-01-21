@@ -1,0 +1,34 @@
+name: Sample Pack
+version: "0.1.0"
+description: Sample data pack for tests
+clubs:
+  - id: "00000000-0000-0000-0000-000000000001"
+    name: Atlas FC
+    short_name: ATL
+    date_of_foundation: "1900-01-01"
+    nationality: Testland
+    stadium: null
+    manager: null
+    players: []
+  - id: "00000000-0000-0000-0000-000000000002"
+    name: Harbor Town
+    short_name: HBT
+    date_of_foundation: "1920-05-10"
+    nationality: Testland
+    stadium: null
+    manager: null
+    players: []
+stadiums: []
+leagues:
+  - id: "00000000-0000-0000-0000-000000000010"
+    name: Test League
+    short_name: TL
+    country: Testland
+    club_ids:
+      - "00000000-0000-0000-0000-000000000001"
+      - "00000000-0000-0000-0000-000000000002"
+seasons:
+  - id: "00000000-0000-0000-0000-000000000020"
+    name: 2026 Season
+    league_id: "00000000-0000-0000-0000-000000000010"
+    year: 2026

@@ -1,12 +1,6 @@
 [workspace]
 resolver = "3"
-members = [
-  "crates/core",
-  "crates/sim",
-  "crates/data",
-  "crates/save",
-  "apps/desktop/src-tauri",
-]
+members = ["core", "db", "app/ui", "app/src-tauri"]
 exclude = []
 
 [profile.release]

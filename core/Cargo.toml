@@ -1,0 +1,13 @@
+[package]
+name = "openfootmanager_core"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+uuid = { version = "1.2.2", features = ["serde", "v4"] }
+anyhow = "1.0"
+thiserror = "2.0"
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rand = "0.8"

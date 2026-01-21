@@ -1,0 +1,25 @@
+{
+  "productName": "OpenFoot Manager",
+  "version": "0.1.0",
+  "identifier": "com.openfootmanager.app",
+  "build": {
+    "beforeDevCommand": "trunk serve --config ./ui/Trunk.toml --port 1420 --dist dist",
+    "beforeBuildCommand": "trunk build --config ./ui/Trunk.toml --dist dist",
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../ui/dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "OpenFoot Manager",
+        "width": 1280,
+        "height": 800,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  }
+}

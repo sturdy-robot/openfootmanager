@@ -16,6 +16,35 @@ Run tests for the core crates:
 cargo test
 ```
 
+### Core + DB quickstart
+
+Use the `openfootmanager_db` crate to load a data pack and persist season state:
+
+```rust
+use openfootmanager_core::simulation::engine::MatchConfig;
+use openfootmanager_core::simulation::season::SeasonState;
+use openfootmanager_db::Db;
+use uuid::Uuid;
+
+# async fn example() -> Result<(), Box<dyn std::error::Error>> {
+let db = Db::in_memory().await?;
+let _summary = db
+    .import_data_pack_from_path("db/tests/fixtures/sample_pack.json")
+    .await?;
+
+let clubs = db.clubs().await?;
+let home = clubs.get(0).expect("club");
+let away = clubs.get(1).expect("club");
+
+let mut state = SeasonState::new(Uuid::new_v4(), &[home.id, away.id]);
+let fixture = state.schedule.rounds[0].fixtures[0].clone();
+
+state.simulate_fixture(fixture.id, home, away, MatchConfig::new(42))?;
+db.save_season_state(&state).await?;
+# Ok(())
+# }
+```
+
 ### Desktop app (Tauri v2 + Leptos + Trunk + Tailwind)
 
 The desktop app lives under `app/`:
