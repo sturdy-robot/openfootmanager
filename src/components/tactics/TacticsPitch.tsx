@@ -1,6 +1,6 @@
 import type { JSX, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import { Star } from "lucide-react";
+import { Move, Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { getPlayerOvr } from "../../lib/helpers";
@@ -232,8 +232,6 @@ export default function TacticsPitch({
       null
     : null;
 
-  // These refs are intentionally omitted from the dependency array because the
-  // pointer listeners need stable mutable bookkeeping across the drag lifecycle.
   useEffect(() => {
     function handlePointerMove(event: PointerEvent): void {
       if (dragState) {
@@ -605,7 +603,7 @@ export default function TacticsPitch({
                         handleShapeHandlePointerDown(event, slot)
                       }
                     >
-                      +
+                      <Move className="h-3 w-3" />
                     </button>
                   ) : null}
                 </div>
