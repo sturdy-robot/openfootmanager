@@ -1,30 +1,32 @@
-import type { DragEvent, JSX } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import type { JSX } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { useTranslation } from "react-i18next";
+
 import type {
   GameStateData,
   PlayerData,
   PlayerSelectionOptions,
 } from "../../store/gameStore";
-import { useTranslation } from "react-i18next";
 import {
   applyLineupDrop,
   applyLineupSwap,
   buildActivePositionMap,
   buildPitchRows,
   buildPitchSlotRows,
-  type DragState,
-  type PitchSlotRow,
   type SquadSection,
 } from "../squad/SquadTab.helpers";
 import TacticsFilters from "./TacticsFilters";
 import {
+  buildTacticsPitchSlots,
   buildTacticsRoster,
+  clampSlotAdjustment,
   countOutOfPositionPlayers,
   filterAndSortTacticsPlayers,
   getSelectedAndComparePlayers,
   resolveStartingXiIds,
   type SortKey,
+  type TacticsSlotAdjustments,
 } from "./TacticsTab.helpers";
 import TacticsPitch from "./TacticsPitch";
 import TacticsPlayerFocusPanel from "./TacticsPlayerFocusPanel";
@@ -51,8 +53,6 @@ export default function TacticsTab({
   const [positionFilter, setPositionFilter] = useState("All");
   const [sortKey, setSortKey] = useState<SortKey>("pos");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const [dragState, setDragState] = useState<DragState | null>(null);
-  const [hoveredSlot, setHoveredSlot] = useState<number | null>(null);
   const [pendingStartingXiIds, setPendingStartingXiIds] = useState<
     string[] | null
   >(null);
@@ -63,9 +63,10 @@ export default function TacticsTab({
   const [comparePlayerSection, setComparePlayerSection] =
     useState<SquadSection | null>(null);
   const [activeTab, setActiveTab] = useState<"lineup" | "roles">("lineup");
-  const dragStateRef = useRef<DragState | null>(null);
-  const hoveredSlotRef = useRef<number | null>(null);
-  const dragPreviewRef = useRef<HTMLDivElement | null>(null);
+  const [slotAdjustments, setSlotAdjustments] = useState<TacticsSlotAdjustments>(
+    {},
+  );
+  const [isShapeEditorEnabled, setIsShapeEditorEnabled] = useState(false);
 
   if (!myTeam) {
     return (
@@ -74,7 +75,6 @@ export default function TacticsTab({
   }
 
   const roster = buildTacticsRoster(gameState.players, myTeam.id);
-
   const formation = myTeam.formation || "4-4-2";
   const activePlayStyle = myTeam.play_style || "Balanced";
   const savedStartingXiKey = (myTeam.starting_xi_ids || []).join(",");
@@ -118,9 +118,18 @@ export default function TacticsTab({
     }
   }, [pendingStartingXiIds, savedStartingXiKey]);
 
-  const pitchSlotRows = useMemo<PitchSlotRow[]>(
+  useEffect(() => {
+    setSlotAdjustments({});
+    setIsShapeEditorEnabled(false);
+  }, [formation]);
+
+  const pitchSlotRows = useMemo(
     () => buildPitchSlotRows(pitchRows, startingXiIds, playersById),
     [pitchRows, playersById, startingXiIds],
+  );
+  const pitchSlots = useMemo(
+    () => buildTacticsPitchSlots(pitchSlotRows, slotAdjustments),
+    [pitchSlotRows, slotAdjustments],
   );
 
   const xiIds = new Set(startingXiIds);
@@ -161,16 +170,6 @@ export default function TacticsTab({
     selectedPlayerSection,
     startingXiIds,
   ]);
-
-  function toggleSort(key: SortKey): void {
-    if (sortKey === key) {
-      setSortDir((current) => (current === "asc" ? "desc" : "asc"));
-      return;
-    }
-
-    setSortKey(key);
-    setSortDir(key === "ovr" ? "desc" : "asc");
-  }
 
   const filteredStartingXI = useMemo(
     () =>
@@ -222,6 +221,19 @@ export default function TacticsTab({
     startingXI,
     xiActivePosition,
   );
+  const hasCustomShape = Object.values(slotAdjustments).some(
+    (adjustment) => adjustment.dx !== 0 || adjustment.dy !== 0,
+  );
+
+  function toggleSort(key: SortKey): void {
+    if (sortKey === key) {
+      setSortDir((current) => (current === "asc" ? "desc" : "asc"));
+      return;
+    }
+
+    setSortKey(key);
+    setSortDir(key === "ovr" ? "desc" : "asc");
+  }
 
   async function persistStartingXI(playerIds: string[]): Promise<void> {
     setPendingStartingXiIds(playerIds);
@@ -265,98 +277,27 @@ export default function TacticsTab({
     setComparePlayerSection(null);
   }
 
-  function setHoveredSlotValue(slotIndex: number | null): void {
-    if (hoveredSlotRef.current === slotIndex) {
-      return;
-    }
-
-    hoveredSlotRef.current = slotIndex;
-    setHoveredSlot(slotIndex);
-  }
-
-  function resetDragState(): void {
-    dragStateRef.current = null;
-    setDragState(null);
-    setHoveredSlotValue(null);
-  }
-
-  function applyLightweightDragPreview(event: DragEvent<HTMLElement>): void {
-    if (!dragPreviewRef.current) {
-      return;
-    }
-
-    if (typeof event.dataTransfer.setDragImage !== "function") {
-      return;
-    }
-
-    event.dataTransfer.setDragImage(dragPreviewRef.current, 16, 16);
-  }
-
-  function handleDragStart(
-    event: DragEvent<HTMLElement>,
+  async function handlePitchDrop(
+    dragState: {
+      from: SquadSection;
+      playerId: string;
+      slotIndex: number | null;
+    },
     playerId: string,
-    from: SquadSection,
-    slotIndex: number | null = null,
-  ): void {
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", playerId);
-    applyLightweightDragPreview(event);
-    const nextDragState = { playerId, from, slotIndex };
-    dragStateRef.current = nextDragState;
-    setDragState(nextDragState);
-  }
-
-  function handleSlotDragOver(
-    event: DragEvent<HTMLElement>,
-    slotIndex: number,
-  ): void {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-    setHoveredSlotValue(slotIndex);
-  }
-
-  function handleSlotDragLeave(slotIndex: number): void {
-    if (hoveredSlotRef.current !== slotIndex) {
-      return;
-    }
-
-    setHoveredSlotValue(null);
-  }
-
-  async function handleSlotDrop(
-    event: DragEvent<HTMLElement>,
     slotIndex: number,
   ): Promise<void> {
-    event.preventDefault();
-    const draggedPlayerId = event.dataTransfer.getData("text/plain");
-    const currentDragState = dragStateRef.current ?? dragState;
-    const resolvedDragState =
-      currentDragState ??
-      (draggedPlayerId
-        ? {
-            playerId: draggedPlayerId,
-            from: xiIds.has(draggedPlayerId) ? "xi" : "bench",
-            slotIndex: xiIds.has(draggedPlayerId)
-              ? startingXiIds.indexOf(draggedPlayerId)
-              : null,
-          }
-        : null);
-
-    if (!resolvedDragState) return;
-
     const nextXiIds = applyLineupDrop(
       startingXiIds,
-      resolvedDragState,
+      { ...dragState, playerId },
       slotIndex,
     );
+
     if (nextXiIds.join(",") === startingXiIds.join(",")) {
-      resetDragState();
       return;
     }
 
     await persistStartingXI(nextXiIds);
     clearLineupSelection();
-    resetDragState();
   }
 
   async function handleLineupPlayerClick(
@@ -422,13 +363,28 @@ export default function TacticsTab({
     setPositionFilter("All");
   }
 
+  function handleSlotAdjustmentChange(
+    slotIndex: number,
+    adjustment: { dx: number; dy: number },
+  ): void {
+    const slot = pitchSlots.find((candidate) => candidate.index === slotIndex);
+    if (!slot) {
+      return;
+    }
+
+    setSlotAdjustments((current) => ({
+      ...current,
+      [slotIndex]: clampSlotAdjustment(slot.baseX, slot.baseY, adjustment),
+    }));
+  }
+
+  function handleResetShape(): void {
+    setSlotAdjustments({});
+    setIsShapeEditorEnabled(false);
+  }
+
   return (
     <div className="max-w-6xl mx-auto flex flex-col gap-4">
-      <div
-        ref={dragPreviewRef}
-        aria-hidden="true"
-        className="pointer-events-none fixed -left-20 top-0 h-8 w-8 rounded-full border border-white/15 bg-navy-900/90 shadow-lg"
-      />
       <div className="flex gap-1 self-start rounded-lg bg-gray-100 p-1 dark:bg-navy-800">
         <button
           type="button"
@@ -459,23 +415,24 @@ export default function TacticsTab({
           <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.95fr)] gap-4 items-start">
             <TacticsPitch
               benchPlayers={bench}
-              dragState={dragState}
               formation={formation}
               comparePlayerId={comparePlayerId}
-              hoveredSlot={hoveredSlot}
+              hasCustomShape={hasCustomShape}
+              isShapeEditorEnabled={isShapeEditorEnabled}
               onClearSelection={clearLineupSelection}
-              onDragEnd={resetDragState}
-              onDragStart={handleDragStart}
               onLineupPlayerClick={(playerId, section) => {
                 void handleLineupPlayerClick(playerId, section);
               }}
-              onSlotDragLeave={handleSlotDragLeave}
-              onSlotDragOver={handleSlotDragOver}
-              onSlotDrop={(event, slotIndex) => {
-                void handleSlotDrop(event, slotIndex);
+              onPlayerDrop={(dragState, playerId, slotIndex) => {
+                void handlePitchDrop(dragState, playerId, slotIndex);
               }}
+              onResetShape={handleResetShape}
+              onSlotAdjustmentChange={handleSlotAdjustmentChange}
+              onToggleShapeEditor={() =>
+                setIsShapeEditorEnabled((current) => !current)
+              }
               outOfPositionCount={outOfPositionCount}
-              pitchSlotRows={pitchSlotRows}
+              pitchSlots={pitchSlots}
               selectedPlayer={selectedPlayer}
               selectedPlayerId={selectedPlayerId}
             />
@@ -492,12 +449,18 @@ export default function TacticsTab({
               <TacticsSetupPanel
                 activePlayStyle={activePlayStyle}
                 formation={formation}
+                hasCustomShape={hasCustomShape}
+                isShapeEditorEnabled={isShapeEditorEnabled}
                 onFormationChange={(nextFormation) => {
                   void handleFormationChange(nextFormation);
                 }}
                 onPlayStyleChange={(playStyle) => {
                   void handlePlayStyleChange(playStyle);
                 }}
+                onResetShape={handleResetShape}
+                onToggleShapeEditor={() =>
+                  setIsShapeEditorEnabled((current) => !current)
+                }
               />
             </div>
           </div>

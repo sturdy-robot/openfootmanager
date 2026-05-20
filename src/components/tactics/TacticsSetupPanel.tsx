@@ -16,8 +16,12 @@ interface PlayStyleOption {
 interface TacticsSetupPanelProps {
   activePlayStyle: string;
   formation: string;
+  hasCustomShape: boolean;
+  isShapeEditorEnabled: boolean;
   onFormationChange: (formation: string) => void;
   onPlayStyleChange: (playStyle: string) => void;
+  onResetShape: () => void;
+  onToggleShapeEditor: () => void;
 }
 
 const PLAY_STYLES: PlayStyleOption[] = [
@@ -44,8 +48,12 @@ function getPlayStyleDescription(activePlayStyle: string): string {
 export default function TacticsSetupPanel({
   activePlayStyle,
   formation,
+  hasCustomShape,
+  isShapeEditorEnabled,
   onFormationChange,
   onPlayStyleChange,
+  onResetShape,
+  onToggleShapeEditor,
 }: TacticsSetupPanelProps): JSX.Element {
   const { t } = useTranslation();
 
@@ -101,6 +109,53 @@ export default function TacticsSetupPanel({
                 getPlayStyleDescription(activePlayStyle),
               )}
             </p>
+          </div>
+        </div>
+      </Card>
+
+      <Card>
+        <div className="p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-heading font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                {t("tactics.shapeEditorTitle", "Shape editor")}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+                {isShapeEditorEnabled
+                  ? t(
+                    "tactics.shapeEditorActiveHint",
+                    "Drag slot markers on the pitch to move your shape. Changes stay on the frontend for this session only.",
+                  )
+                  : t(
+                    "tactics.shapeEditorHint",
+                    "Fine-tune slot positions on top of preset formations without changing backend formation persistence.",
+                  )}
+              </p>
+            </div>
+            {hasCustomShape ? (
+              <span className="rounded-full bg-accent-500/15 px-2.5 py-1 text-[10px] font-heading font-bold uppercase tracking-widest text-accent-600 dark:text-accent-300">
+                {t("tactics.customShapeBadge", "Custom shape")}
+              </span>
+            ) : null}
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={onToggleShapeEditor}
+              className={getOptionButtonClassName(isShapeEditorEnabled)}
+            >
+              {isShapeEditorEnabled
+                ? t("common.done", "Done")
+                : t("tactics.editShape", "Edit shape")}
+            </button>
+            <button
+              type="button"
+              onClick={onResetShape}
+              disabled={!hasCustomShape}
+              className="rounded-lg bg-gray-100 px-3 py-2 text-sm font-heading font-bold text-gray-500 transition-all hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-navy-700 dark:text-gray-400 dark:hover:bg-navy-600"
+            >
+              {t("common.reset", "Reset")}
+            </button>
           </div>
         </div>
       </Card>

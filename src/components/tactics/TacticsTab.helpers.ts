@@ -9,6 +9,7 @@ import {
   isPlayerOutOfPosition,
   normalisePosition,
   positionCode,
+  type PitchSlotRow,
   type SquadSection,
 } from "../squad/SquadTab.helpers";
 
@@ -40,6 +41,23 @@ export const PLAY_STYLE_DESCRIPTION_FALLBACKS: Record<string, string> = {
 
 export type SortDirection = "asc" | "desc";
 export type SortKey = "pos" | "name" | "age" | "condition" | "morale" | "ovr";
+export interface TacticsSlotAdjustment {
+  dx: number;
+  dy: number;
+}
+
+export type TacticsSlotAdjustments = Record<number, TacticsSlotAdjustment>;
+
+export interface TacticsPitchSlot {
+  baseX: number;
+  baseY: number;
+  index: number;
+  player: PlayerData | null;
+  position: string;
+  rowLabel: string;
+  x: number;
+  y: number;
+}
 
 const POSITION_ORDER: Record<string, number> = {
   Goalkeeper: 1,
@@ -47,6 +65,13 @@ const POSITION_ORDER: Record<string, number> = {
   Midfielder: 3,
   Forward: 4,
 };
+
+const MIN_PITCH_X = 8;
+const MAX_PITCH_X = 92;
+const MIN_PITCH_Y = 10;
+const MAX_PITCH_Y = 90;
+const MAX_SLOT_DX = 18;
+const MAX_SLOT_DY = 12;
 
 interface TacticsPlayerSortContext {
   section: SquadSection;
@@ -270,6 +295,65 @@ export function getSelectedAndComparePlayers(
     comparePlayer,
     selectedPlayer,
   };
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function getSlotXCoordinates(slotCount: number): number[] {
+  return Array.from({ length: slotCount }, (_, index) =>
+    Math.round(((index + 1) / (slotCount + 1)) * 1000) / 10,
+  );
+}
+
+function parsePercent(value: string): number {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 50;
+}
+
+export function clampSlotAdjustment(
+  baseX: number,
+  baseY: number,
+  adjustment: TacticsSlotAdjustment,
+): TacticsSlotAdjustment {
+  const nextDx = clamp(adjustment.dx, -MAX_SLOT_DX, MAX_SLOT_DX);
+  const nextDy = clamp(adjustment.dy, -MAX_SLOT_DY, MAX_SLOT_DY);
+
+  return {
+    dx: clamp(baseX + nextDx, MIN_PITCH_X, MAX_PITCH_X) - baseX,
+    dy: clamp(baseY + nextDy, MIN_PITCH_Y, MAX_PITCH_Y) - baseY,
+  };
+}
+
+export function buildTacticsPitchSlots(
+  rows: PitchSlotRow[],
+  slotAdjustments: TacticsSlotAdjustments = {},
+): TacticsPitchSlot[] {
+  return rows.flatMap((row) => {
+    const rowY = parsePercent(row.y);
+    const rowXCoordinates = getSlotXCoordinates(row.slots.length);
+
+    return row.slots.map((slot, slotIndex) => {
+      const baseX = rowXCoordinates[slotIndex] ?? 50;
+      const adjustment = clampSlotAdjustment(
+        baseX,
+        rowY,
+        slotAdjustments[slot.index] ?? { dx: 0, dy: 0 },
+      );
+
+      return {
+        baseX,
+        baseY: rowY,
+        index: slot.index,
+        player: slot.player,
+        position: slot.position,
+        rowLabel: row.label,
+        x: baseX + adjustment.dx,
+        y: rowY + adjustment.dy,
+      };
+    });
+  });
 }
 
 export function getOverallRatingClassName(overallRating: number): string {

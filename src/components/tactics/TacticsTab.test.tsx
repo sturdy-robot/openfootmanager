@@ -225,18 +225,6 @@ const makeGameState = (): GameStateData => {
   };
 };
 
-const createDataTransfer = () => {
-  const data = new Map<string, string>();
-  return {
-    effectAllowed: "move",
-    dropEffect: "move",
-    setData: (type: string, value: string) => {
-      data.set(type, value);
-    },
-    getData: (type: string) => data.get(type) ?? "",
-  };
-};
-
 describe("TacticsTab", () => {
   beforeEach(() => {
     mockedInvoke.mockReset();
@@ -296,10 +284,10 @@ describe("TacticsTab", () => {
 
     const benchPlayer = screen.getByTestId("pitch-bench-player-d5");
     const pitchSlot = screen.getByTestId("pitch-slot-1");
-    const dataTransfer = createDataTransfer();
 
-    fireEvent.dragStart(benchPlayer, { dataTransfer });
-    fireEvent.drop(pitchSlot, { dataTransfer });
+    fireEvent.pointerDown(benchPlayer, { clientX: 40, clientY: 40 });
+    fireEvent.pointerEnter(pitchSlot);
+    fireEvent.pointerUp(pitchSlot, { clientX: 120, clientY: 120 });
 
     await waitFor(() => {
       expect(mockedInvoke).toHaveBeenCalledWith("set_starting_xi", {
@@ -335,10 +323,51 @@ describe("TacticsTab", () => {
     expect(
       screen.queryByTestId("xi-player-drag-handle-d1"),
     ).not.toBeInTheDocument();
-    expect(screen.getByTestId("pitch-bench-player-d5")).toHaveAttribute(
+    expect(screen.getByTestId("pitch-bench-player-d5")).not.toHaveAttribute(
       "draggable",
-      "true",
     );
+  });
+
+  it("supports frontend-only shape editing with reset controls", async () => {
+    const originalRect = HTMLElement.prototype.getBoundingClientRect;
+    HTMLElement.prototype.getBoundingClientRect = vi.fn(() => ({
+      bottom: 400,
+      height: 400,
+      left: 0,
+      right: 300,
+      top: 0,
+      width: 300,
+      x: 0,
+      y: 0,
+      toJSON: () => "",
+    })) as typeof HTMLElement.prototype.getBoundingClientRect;
+
+    try {
+      render(
+        <TacticsTab
+          gameState={makeGameState()}
+          onSelectPlayer={vi.fn()}
+          onGameUpdate={vi.fn()}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "Edit shape" }));
+
+      const handles = screen.getAllByRole("button", { name: "Move slot" });
+      fireEvent.pointerDown(handles[0], { clientX: 100, clientY: 100 });
+      fireEvent.pointerMove(window, { clientX: 130, clientY: 88 });
+      fireEvent.pointerUp(window, { clientX: 130, clientY: 88 });
+
+      expect(screen.getAllByText("Custom shape").length).toBeGreaterThan(0);
+
+      fireEvent.click(screen.getAllByRole("button", { name: "Reset" })[0]);
+
+      await waitFor(() => {
+        expect(screen.queryByText("Custom shape")).not.toBeInTheDocument();
+      });
+    } finally {
+      HTMLElement.prototype.getBoundingClientRect = originalRect;
+    }
   });
 
   it("shows a bench player's natural position on the pitch bench cards when it differs from position", () => {

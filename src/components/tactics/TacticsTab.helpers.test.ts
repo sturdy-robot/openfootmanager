@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { PlayerData } from "../../store/gameStore";
-import { resolveStartingXiIds } from "./TacticsTab.helpers";
+import { buildPitchSlotRows, buildPitchRows } from "../squad/SquadTab.helpers";
+import {
+  buildTacticsPitchSlots,
+  clampSlotAdjustment,
+  resolveStartingXiIds,
+} from "./TacticsTab.helpers";
 
 const makePlayer = (
     id: string,
@@ -135,5 +140,58 @@ describe("resolveStartingXiIds", () => {
         });
 
         expect(ids[1]).toBe("lb");
+    });
+});
+
+describe("buildTacticsPitchSlots", () => {
+    it("builds normalized slot coordinates and applies bounded overrides", () => {
+        const players = [
+            makePlayer("gk", "Goalkeeper"),
+            makePlayer("lb", "Left Back"),
+            makePlayer("cb1", "Center Back"),
+            makePlayer("cb2", "Center Back"),
+            makePlayer("rb", "Right Back"),
+            makePlayer("m1", "Midfielder"),
+            makePlayer("m2", "Midfielder"),
+            makePlayer("m3", "Midfielder"),
+            makePlayer("m4", "Midfielder"),
+            makePlayer("f1", "Forward"),
+            makePlayer("f2", "Forward"),
+        ];
+        const playersById = new Map(players.map((player) => [player.id, player]));
+        const rows = buildPitchSlotRows(
+            buildPitchRows("4-4-2"),
+            players.map((player) => player.id),
+            playersById,
+        );
+
+        const slots = buildTacticsPitchSlots(rows, {
+            1: { dx: -100, dy: -100 },
+        });
+
+        expect(slots[0]).toMatchObject({
+            index: 0,
+            position: "Goalkeeper",
+            x: 50,
+            y: 88,
+        });
+        expect(slots[1]).toMatchObject({
+            index: 1,
+            x: 8,
+            y: 58,
+        });
+    });
+});
+
+describe("clampSlotAdjustment", () => {
+    it("keeps slot adjustments within the allowed pitch edit bounds", () => {
+        expect(clampSlotAdjustment(50, 70, { dx: 99, dy: -99 })).toEqual({
+            dx: 18,
+            dy: -12,
+        });
+        expect(clampSlotAdjustment(12, 88, { dx: -10, dy: 10 })).toEqual({
+            dx: -4,
+            dy: 2,
+        });
     });
 });

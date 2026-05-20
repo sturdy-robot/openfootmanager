@@ -1,4 +1,5 @@
-import type { DragEvent, JSX } from "react";
+import type { JSX, PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -6,103 +7,127 @@ import { getPlayerOvr } from "../../lib/helpers";
 import type { PlayerData } from "../../store/gameStore";
 import { Badge, Card } from "../ui";
 import {
-  getPitchRowWidth,
-  getPitchSlotWidth,
+  isPlayerExactForSlot,
   isPlayerOutOfPosition,
   translatePositionAbbreviation,
   type DragState,
-  type PitchSlotRow,
   type SquadSection,
 } from "../squad/SquadTab.helpers";
+import type {
+  TacticsPitchSlot,
+  TacticsSlotAdjustment,
+} from "./TacticsTab.helpers";
 
 interface TacticsPitchProps {
   benchPlayers: PlayerData[];
-  dragState: DragState | null;
-  formation: string;
   comparePlayerId: string | null;
-  hoveredSlot: number | null;
+  formation: string;
+  hasCustomShape: boolean;
+  isShapeEditorEnabled: boolean;
   onClearSelection: () => void;
-  onDragStart: (
-    event: DragEvent<HTMLElement>,
-    playerId: string,
-    from: SquadSection,
-    slotIndex: number | null,
-  ) => void;
-  onDragEnd: () => void;
   onLineupPlayerClick: (playerId: string, section: SquadSection) => void;
-  onSlotDragOver: (event: DragEvent<HTMLElement>, slotIndex: number) => void;
-  onSlotDragLeave: (slotIndex: number) => void;
-  onSlotDrop: (event: DragEvent<HTMLElement>, slotIndex: number) => void;
+  onPlayerDrop: (
+    dragState: DragState,
+    playerId: string,
+    slotIndex: number,
+  ) => void;
+  onResetShape: () => void;
+  onSlotAdjustmentChange: (
+    slotIndex: number,
+    adjustment: TacticsSlotAdjustment,
+  ) => void;
+  onToggleShapeEditor: () => void;
   outOfPositionCount: number;
-  pitchSlotRows: PitchSlotRow[];
+  pitchSlots: TacticsPitchSlot[];
   selectedPlayer: PlayerData | null;
   selectedPlayerId: string | null;
 }
 
-function getPitchPlayerButtonClassName(options: {
-  dragState: DragState | null;
+interface ActiveShapeDrag {
+  initialAdjustment: TacticsSlotAdjustment;
+  originClientX: number;
+  originClientY: number;
+  slotIndex: number;
+}
+
+const DRAG_THRESHOLD = 6;
+
+function getFitTone(player: PlayerData | null, slotPosition: string): "exact" | "adapted" | "out" | "empty" {
+  if (!player) {
+    return "empty";
+  }
+
+  if (isPlayerExactForSlot(player, slotPosition)) {
+    return "exact";
+  }
+
+  if (isPlayerOutOfPosition(player, slotPosition)) {
+    return "out";
+  }
+
+  return "adapted";
+}
+
+function getPitchMarkerClassName(options: {
   comparePlayerId: string | null;
   hoveredSlot: number | null;
+  isDragging: boolean;
   player: PlayerData;
   selectedPlayerId: string | null;
-  slotIndex: number;
-  wrongPos: boolean;
+  slot: TacticsPitchSlot;
 }): string {
-  const {
-    dragState,
-    comparePlayerId,
-    hoveredSlot,
-    player,
-    selectedPlayerId,
-    slotIndex,
-    wrongPos,
-  } = options;
-  const isComparing = player.id === comparePlayerId;
-  const isHovered = hoveredSlot === slotIndex;
+  const { comparePlayerId, hoveredSlot, isDragging, player, selectedPlayerId, slot } =
+    options;
+  const fitTone = getFitTone(player, slot.position);
   const isSelected = player.id === selectedPlayerId;
+  const isComparing = player.id === comparePlayerId;
+  const isHovered = hoveredSlot === slot.index;
   let className =
-    "w-full min-w-0 max-w-20.5 cursor-grab rounded-xl border px-1.5 py-1.5 shadow-sm transition-all active:cursor-grabbing sm:px-2 sm:py-2";
+    "absolute z-20 flex w-24 -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col items-center rounded-2xl border px-2 py-2 text-center shadow-lg transition-all sm:w-[6.5rem]";
 
-  if (dragState?.playerId === player.id) {
-    className = `${className} opacity-70 ring-2 ring-white/20`;
+  if (isDragging) {
+    className = `${className} opacity-35`;
   } else {
-    className = `${className} hover:-translate-y-0.5 hover:shadow-md`;
+    className = `${className} hover:-translate-y-[52%]`;
   }
 
   if (isSelected) {
-    return `${className} border-accent-300 bg-accent-500/15 ring-2 ring-accent-300/40`;
+    return `${className} border-accent-300 bg-accent-500/20 ring-2 ring-accent-300/40`;
   }
 
   if (isComparing) {
-    return `${className} border-primary-300 bg-primary-500/12 ring-2 ring-primary-300/30`;
+    return `${className} border-primary-300 bg-primary-500/15 ring-2 ring-primary-300/35`;
   }
 
   if (isHovered) {
-    return `${className} border-primary-300 bg-primary-500/10`;
+    return `${className} border-primary-300 bg-primary-500/12`;
   }
 
-  if (wrongPos) {
-    return `${className} border-red-300/70 bg-red-500/60`;
+  if (fitTone === "exact") {
+    return `${className} border-success-300/80 bg-success-500/18`;
   }
 
-  return `${className} border-white/10 bg-black/15`;
+  if (fitTone === "adapted") {
+    return `${className} border-accent-300/80 bg-accent-500/18`;
+  }
+
+  return `${className} border-red-300/80 bg-red-500/20`;
 }
 
 function getBenchPlayerButtonClassName(options: {
-  dragState: DragState | null;
   comparePlayerId: string | null;
+  isDragging: boolean;
   player: PlayerData;
   selectedPlayerId: string | null;
 }): string {
-  const { dragState, comparePlayerId, player, selectedPlayerId } = options;
-  const isDragging = dragState?.playerId === player.id;
+  const { comparePlayerId, isDragging, player, selectedPlayerId } = options;
   const isComparing = comparePlayerId === player.id;
   const isSelected = selectedPlayerId === player.id;
   let className =
-    "flex min-h-20 min-w-0 cursor-grab flex-col rounded-xl border px-3 py-2 text-left shadow-sm transition-all active:cursor-grabbing";
+    "flex min-h-20 min-w-0 cursor-pointer flex-col rounded-xl border px-3 py-2 text-left shadow-sm transition-all";
 
   if (isDragging) {
-    className = `${className} opacity-70 ring-2 ring-white/20`;
+    className = `${className} opacity-50`;
   } else {
     className = `${className} hover:-translate-y-0.5 hover:shadow-md`;
   }
@@ -118,54 +143,202 @@ function getBenchPlayerButtonClassName(options: {
   return `${className} border-white/10 bg-gray-500/70 dark:bg-navy-800`;
 }
 
-function getPitchRatingClassName(
-  player: PlayerData,
-  wrongPos: boolean,
-): string {
-  const baseClassName =
-    "mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-full border-2 font-heading text-[11px] font-bold sm:h-9 sm:w-9 sm:text-xs";
+function getSlotTargetClassName(options: {
+  hasPlayer: boolean;
+  hoveredSlot: number | null;
+  isShapeEditorEnabled: boolean;
+  slot: TacticsPitchSlot;
+}): string {
+  const { hasPlayer, hoveredSlot, isShapeEditorEnabled, slot } = options;
+  const isHovered = hoveredSlot === slot.index;
 
-  if (wrongPos) {
-    return `${baseClassName} border-amber-200 bg-amber-500/85 text-white`;
+  if (isShapeEditorEnabled) {
+    return "absolute z-10 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-white/30 bg-white/5";
   }
-
-  if (player.condition >= 50) {
-    return `${baseClassName} border-primary-200 bg-primary-500/80 text-white`;
-  }
-
-  return `${baseClassName} border-red-200 bg-red-500/80 text-white`;
-}
-
-function getEmptySlotClassName(isHovered: boolean): string {
-  const baseClassName =
-    "w-full min-w-0 rounded-xl border border-dashed px-1.5 py-3.5 text-center sm:px-2 sm:py-4";
 
   if (isHovered) {
-    return `${baseClassName} border-primary-300 bg-primary-500/10`;
+    return "absolute z-10 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary-300 bg-primary-500/12";
   }
 
-  return `${baseClassName} border-white/20 bg-black/10`;
+  if (hasPlayer) {
+    return "absolute z-10 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10 bg-transparent";
+  }
+
+  return "absolute z-10 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-white/25 bg-black/10";
+}
+
+function PointerGhost({
+  player,
+  pointerPosition,
+}: {
+  player: PlayerData | null;
+  pointerPosition: { x: number; y: number } | null;
+}): JSX.Element | null {
+  if (!player || !pointerPosition) {
+    return null;
+  }
+
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none fixed z-50 w-20 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-white/15 bg-navy-900/95 px-2 py-2 text-center shadow-xl"
+      style={{ left: pointerPosition.x, top: pointerPosition.y }}
+    >
+      <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full border border-primary-200 bg-primary-500/80 text-xs font-heading font-bold text-white">
+        {getPlayerOvr(player)}
+      </div>
+      <div className="mt-1 truncate text-[10px] font-heading font-bold uppercase tracking-wider text-white/85">
+        {player.match_name}
+      </div>
+    </div>
+  );
 }
 
 export default function TacticsPitch({
   benchPlayers,
-  dragState,
-  formation,
   comparePlayerId,
-  hoveredSlot,
+  formation,
+  hasCustomShape,
+  isShapeEditorEnabled,
   onClearSelection,
-  onDragEnd,
-  onDragStart,
   onLineupPlayerClick,
-  onSlotDragLeave,
-  onSlotDragOver,
-  onSlotDrop,
+  onPlayerDrop,
+  onResetShape,
+  onSlotAdjustmentChange,
+  onToggleShapeEditor,
   outOfPositionCount,
-  pitchSlotRows,
+  pitchSlots,
   selectedPlayer,
   selectedPlayerId,
 }: TacticsPitchProps): JSX.Element {
   const { t } = useTranslation();
+  const pitchRef = useRef<HTMLDivElement | null>(null);
+  const suppressClickRef = useRef<string | null>(null);
+  const dragMovedRef = useRef(false);
+  const [dragState, setDragState] = useState<DragState | null>(null);
+  const [shapeDragState, setShapeDragState] = useState<ActiveShapeDrag | null>(
+    null,
+  );
+  const [hoveredSlot, setHoveredSlot] = useState<number | null>(null);
+  const [pointerPosition, setPointerPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+
+  const draggedPlayer = dragState
+    ? pitchSlots.find((slot) => slot.player?.id === dragState.playerId)?.player ??
+      benchPlayers.find((player) => player.id === dragState.playerId) ??
+      null
+    : null;
+
+  useEffect(() => {
+    function handlePointerMove(event: PointerEvent): void {
+      if (dragState) {
+        setPointerPosition({ x: event.clientX, y: event.clientY });
+        if (
+          pointerPosition &&
+          Math.hypot(
+            event.clientX - pointerPosition.x,
+            event.clientY - pointerPosition.y,
+          ) > DRAG_THRESHOLD
+        ) {
+          dragMovedRef.current = true;
+        }
+      }
+
+      if (!shapeDragState || !pitchRef.current) {
+        return;
+      }
+
+      const rect = pitchRef.current.getBoundingClientRect();
+      if (!rect.width || !rect.height) {
+        return;
+      }
+
+      const deltaX = ((event.clientX - shapeDragState.originClientX) / rect.width) * 100;
+      const deltaY =
+        ((event.clientY - shapeDragState.originClientY) / rect.height) * 100;
+
+      onSlotAdjustmentChange(shapeDragState.slotIndex, {
+        dx: shapeDragState.initialAdjustment.dx + deltaX,
+        dy: shapeDragState.initialAdjustment.dy + deltaY,
+      });
+    }
+
+    function handlePointerUp(): void {
+      if (dragState && dragMovedRef.current) {
+        suppressClickRef.current = dragState.playerId;
+      }
+
+      setDragState(null);
+      setHoveredSlot(null);
+      setPointerPosition(null);
+      setShapeDragState(null);
+    }
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [benchPlayers, dragState, onSlotAdjustmentChange, pitchSlots, pointerPosition, shapeDragState]);
+
+  function handlePlayerPointerDown(
+    event: ReactPointerEvent<HTMLElement>,
+    playerId: string,
+    from: SquadSection,
+    slotIndex: number | null,
+  ): void {
+    if (isShapeEditorEnabled) {
+      return;
+    }
+
+    dragMovedRef.current = false;
+    setPointerPosition({ x: event.clientX, y: event.clientY });
+    setDragState({ playerId, from, slotIndex });
+  }
+
+  function handlePlayerClick(playerId: string, section: SquadSection): void {
+    if (suppressClickRef.current === playerId) {
+      suppressClickRef.current = null;
+      return;
+    }
+
+    onLineupPlayerClick(playerId, section);
+  }
+
+  function handleSlotPointerUp(slotIndex: number): void {
+    if (!dragState) {
+      return;
+    }
+
+    onPlayerDrop(dragState, dragState.playerId, slotIndex);
+    setDragState(null);
+    setHoveredSlot(null);
+    setPointerPosition(null);
+  }
+
+  function handleShapeHandlePointerDown(
+    event: ReactPointerEvent<HTMLButtonElement>,
+    slot: TacticsPitchSlot,
+  ): void {
+    if (!isShapeEditorEnabled) {
+      return;
+    }
+
+    event.preventDefault();
+    setShapeDragState({
+      initialAdjustment: {
+        dx: slot.x - slot.baseX,
+        dy: slot.y - slot.baseY,
+      },
+      originClientX: event.clientX,
+      originClientY: event.clientY,
+      slotIndex: slot.index,
+    });
+  }
 
   return (
     <Card className="overflow-hidden">
@@ -176,16 +349,33 @@ export default function TacticsPitch({
             {t("preMatch.startingXI")} — {formation}
           </h3>
           <p className="mt-0.5 text-xs text-gray-400">
-            {t("tactics.pitchInteractionHint")}
+            {isShapeEditorEnabled
+              ? t(
+                "tactics.shapeEditorActiveHint",
+                "Drag slot markers on the pitch to reshape your formation for this session.",
+              )
+              : t(
+                "tactics.pitchInteractionHint",
+                "Drag players between the pitch and bench, click one player to inspect them, click a second player to compare them, then confirm the swap in the compare panel.",
+              )}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <Badge
             variant={outOfPositionCount > 0 ? "danger" : "success"}
             size="sm"
           >
             {outOfPositionCount} {t("squad.outOfPosition")}
           </Badge>
+          <span className="rounded-full bg-success-500/15 px-2.5 py-1 text-[10px] font-heading font-bold uppercase tracking-widest text-success-300">
+            {t("tactics.naturalFit", "Natural")}
+          </span>
+          <span className="rounded-full bg-accent-500/15 px-2.5 py-1 text-[10px] font-heading font-bold uppercase tracking-widest text-accent-300">
+            {t("tactics.adaptedFit", "Adapted")}
+          </span>
+          <span className="rounded-full bg-red-500/15 px-2.5 py-1 text-[10px] font-heading font-bold uppercase tracking-widest text-red-300">
+            {t("squad.outOfPosition")}
+          </span>
           {selectedPlayer ? (
             <button
               type="button"
@@ -198,95 +388,252 @@ export default function TacticsPitch({
         </div>
       </div>
       <div className="p-4 sm:p-6">
-        <div className="relative min-h-115 overflow-visible rounded-xl border border-primary-500/20 bg-linear-to-b from-primary-500 to-primary-600 p-4 dark:from-primary-700 dark:to-primary-800 sm:min-h-130 sm:p-5">
-          <div className="absolute inset-x-6 top-1/2 border-t border-white/50" />
-          <div className="absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/50" />
-          <div className="absolute inset-x-[18%] bottom-4 h-[18%] rounded-t-4xl border border-white/50 border-b-0" />
-          <div className="absolute inset-x-[32%] bottom-4 h-[8%] rounded-t-2xl border border-white/50 border-b-0" />
-          {pitchSlotRows.map((row) => (
-            <div
-              key={row.label}
-              className="absolute left-1/2 grid items-start"
-              style={{
-                top: row.y,
-                width:
-                  row.slots.length === 1
-                    ? `${getPitchSlotWidth(row.slots.length)}px`
-                    : getPitchRowWidth(row.slots.length),
-                transform: "translate(-50%, -50%)",
-                gridTemplateColumns: `repeat(${row.slots.length}, minmax(0, ${getPitchSlotWidth(row.slots.length)}px))`,
-                justifyContent:
-                  row.slots.length === 1 ? "center" : "space-between",
-              }}
+        <div
+          ref={pitchRef}
+          className="relative overflow-hidden rounded-xl border border-primary-500/20 bg-linear-to-b from-primary-500 to-primary-700 shadow-inner"
+        >
+          <div className="aspect-[7/10] min-h-[29.5rem] w-full">
+            <svg
+              viewBox="0 0 100 140"
+              preserveAspectRatio="none"
+              className="absolute inset-0 h-full w-full"
+              aria-hidden="true"
             >
-              {row.slots.map((slot) => {
-                const isHovered = hoveredSlot === slot.index;
-                const player = slot.player;
-                const wrongPos = player
-                  ? isPlayerOutOfPosition(player, slot.position)
-                  : false;
-                const slotRating = player ? getPlayerOvr(player) : null;
+              <defs>
+                <linearGradient id="pitch-surface" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stopColor="rgba(68, 176, 99, 0.92)" />
+                  <stop offset="100%" stopColor="rgba(33, 111, 61, 0.96)" />
+                </linearGradient>
+                <pattern
+                  id="pitch-stripes"
+                  width="100"
+                  height="20"
+                  patternUnits="userSpaceOnUse"
+                >
+                  <rect width="100" height="10" fill="rgba(255,255,255,0.04)" />
+                </pattern>
+              </defs>
+              <rect x="0" y="0" width="100" height="140" fill="url(#pitch-surface)" />
+              <rect x="0" y="0" width="100" height="140" fill="url(#pitch-stripes)" />
+              <rect
+                x="4"
+                y="4"
+                width="92"
+                height="132"
+                fill="none"
+                stroke="rgba(255,255,255,0.55)"
+                strokeWidth="0.6"
+              />
+              <line
+                x1="4"
+                y1="70"
+                x2="96"
+                y2="70"
+                stroke="rgba(255,255,255,0.55)"
+                strokeWidth="0.6"
+              />
+              <circle
+                cx="50"
+                cy="70"
+                r="11"
+                fill="none"
+                stroke="rgba(255,255,255,0.55)"
+                strokeWidth="0.6"
+              />
+              <circle cx="50" cy="70" r="0.8" fill="rgba(255,255,255,0.75)" />
+              <rect
+                x="18"
+                y="4"
+                width="64"
+                height="18"
+                fill="none"
+                stroke="rgba(255,255,255,0.55)"
+                strokeWidth="0.6"
+              />
+              <rect
+                x="31"
+                y="4"
+                width="38"
+                height="8"
+                fill="none"
+                stroke="rgba(255,255,255,0.55)"
+                strokeWidth="0.6"
+              />
+              <rect
+                x="18"
+                y="118"
+                width="64"
+                height="18"
+                fill="none"
+                stroke="rgba(255,255,255,0.55)"
+                strokeWidth="0.6"
+              />
+              <rect
+                x="31"
+                y="128"
+                width="38"
+                height="8"
+                fill="none"
+                stroke="rgba(255,255,255,0.55)"
+                strokeWidth="0.6"
+              />
+              <path
+                d="M 38 22 A 12 12 0 0 0 62 22"
+                fill="none"
+                stroke="rgba(255,255,255,0.55)"
+                strokeWidth="0.6"
+              />
+              <path
+                d="M 38 118 A 12 12 0 0 1 62 118"
+                fill="none"
+                stroke="rgba(255,255,255,0.55)"
+                strokeWidth="0.6"
+              />
+            </svg>
 
-                return (
-                  <div
-                    key={`${row.label}-${slot.index}`}
+            {pitchSlots.map((slot) => {
+              const player = slot.player;
+              const fitTone = getFitTone(player, slot.position);
+              const isDragging = dragState?.playerId === player?.id;
+
+              return (
+                <div
+                  key={slot.index}
+                  className="absolute"
+                  style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
+                >
+                  <button
+                    type="button"
                     data-testid={`pitch-slot-${slot.index}`}
-                    className="flex w-full justify-center"
-                    onDragOver={(event) => onSlotDragOver(event, slot.index)}
-                    onDragLeave={() => onSlotDragLeave(slot.index)}
-                    onDrop={(event) => onSlotDrop(event, slot.index)}
-                  >
-                    {player ? (
-                      <button
-                        type="button"
-                        draggable
-                        data-testid={`pitch-player-${player.id}`}
-                        onClick={() => onLineupPlayerClick(player.id, "xi")}
-                        onDragStart={(event) =>
-                          onDragStart(event, player.id, "xi", slot.index)
-                        }
-                        onDragEnd={onDragEnd}
-                        className={getPitchPlayerButtonClassName({
-                          dragState,
-                          comparePlayerId,
-                          hoveredSlot,
-                          player,
-                          selectedPlayerId,
-                          slotIndex: slot.index,
-                          wrongPos,
-                        })}
-                      >
-                        <div
-                          className={getPitchRatingClassName(player, wrongPos)}
-                        >
-                          {slotRating}
-                        </div>
-                        <div className="text-[9px] font-heading font-bold uppercase tracking-wider leading-none text-white/70">
-                          {translatePositionAbbreviation(t, slot.position)}
-                        </div>
-                        <div className="mt-1 truncate text-[10px] font-semibold leading-tight text-white sm:text-[11px]">
-                          {player.match_name}
-                        </div>
-                        <div className="mt-0.5 truncate text-[9px] leading-none text-white/60">
-                          {player.condition}%
-                        </div>
-                      </button>
-                    ) : (
-                      <div className={getEmptySlotClassName(isHovered)}>
-                        <div className="text-[9px] font-heading font-bold uppercase tracking-wider leading-none text-white/70">
-                          {translatePositionAbbreviation(t, slot.position)}
-                        </div>
-                        <div className="mt-1 text-[9px] leading-tight text-white/50">
-                          {t("squad.dropPlayerHere")}
-                        </div>
+                    aria-label={`${t("squad.dropPlayerHere")} ${translatePositionAbbreviation(t, slot.position)}`}
+                    className={getSlotTargetClassName({
+                      hasPlayer: !!player,
+                      hoveredSlot,
+                      isShapeEditorEnabled,
+                      slot,
+                    })}
+                    onPointerEnter={() => {
+                      if (dragState && !isShapeEditorEnabled) {
+                        setHoveredSlot(slot.index);
+                      }
+                    }}
+                    onPointerLeave={() => {
+                      if (hoveredSlot === slot.index) {
+                        setHoveredSlot(null);
+                      }
+                    }}
+                    onPointerUp={() => handleSlotPointerUp(slot.index)}
+                  />
+
+                  {player ? (
+                    <button
+                      type="button"
+                      data-testid={`pitch-player-${player.id}`}
+                      className={getPitchMarkerClassName({
+                        comparePlayerId,
+                        hoveredSlot,
+                        isDragging: Boolean(isDragging),
+                        player,
+                        selectedPlayerId,
+                        slot,
+                      })}
+                      style={{ left: 0, top: 0 }}
+                      onClick={() => handlePlayerClick(player.id, "xi")}
+                      onPointerDown={(event) =>
+                        handlePlayerPointerDown(event, player.id, "xi", slot.index)
+                      }
+                    >
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-navy-900/70 text-xs font-heading font-bold text-white">
+                        {getPlayerOvr(player)}
                       </div>
+                      <div className="mt-1 text-[9px] font-heading font-bold uppercase tracking-[0.18em] text-white/70">
+                        {translatePositionAbbreviation(t, slot.position)}
+                      </div>
+                      <div className="mt-1 truncate text-[11px] font-semibold leading-none text-white">
+                        {player.match_name}
+                      </div>
+                      <div className="mt-1 text-[10px] text-white/70">
+                        {player.condition}%
+                      </div>
+                      <div
+                        className={`mt-1 rounded-full px-2 py-0.5 text-[9px] font-heading font-bold uppercase tracking-widest ${
+                          fitTone === "exact"
+                            ? "bg-success-500/20 text-success-200"
+                            : fitTone === "adapted"
+                              ? "bg-accent-500/20 text-accent-200"
+                              : "bg-red-500/20 text-red-200"
+                        }`}
+                      >
+                        {fitTone === "exact"
+                          ? t("tactics.naturalFit", "Natural")
+                          : fitTone === "adapted"
+                            ? t("tactics.adaptedFit", "Adapted")
+                            : t("squad.outOfPosition")}
+                      </div>
+                    </button>
+                  ) : (
+                    <div
+                      className="absolute z-20 flex w-[5.5rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center rounded-2xl border border-dashed border-white/25 bg-black/10 px-2 py-2 text-center"
+                      style={{ left: 0, top: 0 }}
+                    >
+                      <div className="text-[9px] font-heading font-bold uppercase tracking-[0.18em] text-white/70">
+                        {translatePositionAbbreviation(t, slot.position)}
+                      </div>
+                      <div className="mt-1 text-[9px] leading-tight text-white/55">
+                        {t("squad.dropPlayerHere")}
+                      </div>
+                    </div>
+                  )}
+
+                  {isShapeEditorEnabled ? (
+                    <button
+                      type="button"
+                      aria-label={t("tactics.editShapeHandle", "Move slot")}
+                      className="absolute z-30 flex h-6 w-6 -translate-x-1/2 translate-y-8 items-center justify-center rounded-full border border-white/30 bg-navy-900/75 text-[10px] font-heading font-bold text-white shadow"
+                      style={{ left: 0, top: 0 }}
+                      onPointerDown={(event) =>
+                        handleShapeHandlePointerDown(event, slot)
+                      }
+                    >
+                      +
+                    </button>
+                  ) : null}
+                </div>
+              );
+            })}
+
+            {isShapeEditorEnabled ? (
+              <div className="absolute inset-x-4 bottom-4 z-30 rounded-xl border border-white/12 bg-navy-900/72 px-4 py-3 text-xs text-white/75 backdrop-blur">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p>
+                    {t(
+                      "tactics.shapeEditorActiveHint",
+                      "Drag the small slot handles to make the shape narrower, wider, higher, or deeper for this session.",
                     )}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={onToggleShapeEditor}
+                      className="rounded-lg bg-white/8 px-3 py-2 text-[11px] font-heading font-bold uppercase tracking-wider text-white transition-colors hover:bg-white/12"
+                    >
+                      {t("common.done", "Done")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onResetShape}
+                      disabled={!hasCustomShape}
+                      className="rounded-lg bg-white/8 px-3 py-2 text-[11px] font-heading font-bold uppercase tracking-wider text-white transition-colors hover:bg-white/12 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {t("common.reset", "Reset")}
+                    </button>
                   </div>
-                );
-              })}
-            </div>
-          ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
+
         <div className="mt-4 border-t border-white/10 pt-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
@@ -302,23 +649,20 @@ export default function TacticsPitch({
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {benchPlayers.map((player) => {
                 const benchRating = getPlayerOvr(player);
+                const isDragging = dragState?.playerId === player.id;
 
                 return (
                   <button
                     key={player.id}
                     type="button"
-                    draggable={!player.injury}
                     data-testid={`pitch-bench-player-${player.id}`}
-                    onClick={() => onLineupPlayerClick(player.id, "bench")}
-                    onDragStart={(event) => {
-                      if (!player.injury) {
-                        onDragStart(event, player.id, "bench", null);
-                      }
-                    }}
-                    onDragEnd={onDragEnd}
+                    onClick={() => handlePlayerClick(player.id, "bench")}
+                    onPointerDown={(event) =>
+                      handlePlayerPointerDown(event, player.id, "bench", null)
+                    }
                     className={getBenchPlayerButtonClassName({
-                      dragState,
                       comparePlayerId,
+                      isDragging: Boolean(isDragging),
                       player,
                       selectedPlayerId,
                     })}
@@ -354,6 +698,7 @@ export default function TacticsPitch({
           )}
         </div>
       </div>
+      <PointerGhost player={draggedPlayer} pointerPosition={pointerPosition} />
     </Card>
   );
 }
