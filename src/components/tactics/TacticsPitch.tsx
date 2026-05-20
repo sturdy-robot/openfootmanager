@@ -213,6 +213,7 @@ export default function TacticsPitch({
 }: TacticsPitchProps): JSX.Element {
   const { t } = useTranslation();
   const pitchRef = useRef<HTMLDivElement | null>(null);
+  const dragOriginRef = useRef<{ x: number; y: number } | null>(null);
   const suppressClickRef = useRef<string | null>(null);
   const dragMovedRef = useRef(false);
   const [dragState, setDragState] = useState<DragState | null>(null);
@@ -231,17 +232,17 @@ export default function TacticsPitch({
       null
     : null;
 
-  // These refs intentionally stay outside the dependency array because the effect
-  // needs stable mutable click/drag bookkeeping across pointer events.
+  // These refs are intentionally omitted from the dependency array because the
+  // pointer listeners need stable mutable bookkeeping across the drag lifecycle.
   useEffect(() => {
     function handlePointerMove(event: PointerEvent): void {
       if (dragState) {
         setPointerPosition({ x: event.clientX, y: event.clientY });
         if (
-          pointerPosition &&
+          dragOriginRef.current &&
           Math.hypot(
-            event.clientX - pointerPosition.x,
-            event.clientY - pointerPosition.y,
+            event.clientX - dragOriginRef.current.x,
+            event.clientY - dragOriginRef.current.y,
           ) > DRAG_THRESHOLD
         ) {
           dragMovedRef.current = true;
@@ -276,6 +277,7 @@ export default function TacticsPitch({
       setHoveredSlot(null);
       setPointerPosition(null);
       setShapeDragState(null);
+      dragOriginRef.current = null;
     }
 
     window.addEventListener("pointermove", handlePointerMove);
@@ -285,7 +287,7 @@ export default function TacticsPitch({
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };
-  }, [benchPlayers, dragState, onSlotAdjustmentChange, pitchSlots, pointerPosition, shapeDragState]);
+  }, [dragState, onSlotAdjustmentChange, shapeDragState]);
 
   function handlePlayerPointerDown(
     event: ReactPointerEvent<HTMLElement>,
@@ -298,6 +300,7 @@ export default function TacticsPitch({
     }
 
     dragMovedRef.current = false;
+    dragOriginRef.current = { x: event.clientX, y: event.clientY };
     setPointerPosition({ x: event.clientX, y: event.clientY });
     setDragState({ playerId, from, slotIndex });
   }
@@ -320,6 +323,7 @@ export default function TacticsPitch({
     setDragState(null);
     setHoveredSlot(null);
     setPointerPosition(null);
+    dragOriginRef.current = null;
   }
 
   function handleShapeHandlePointerDown(
