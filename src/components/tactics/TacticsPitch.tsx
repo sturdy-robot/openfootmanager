@@ -231,6 +231,8 @@ export default function TacticsPitch({
       null
     : null;
 
+  // These refs intentionally stay outside the dependency array because the effect
+  // needs stable mutable click/drag bookkeeping across pointer events.
   useEffect(() => {
     function handlePointerMove(event: PointerEvent): void {
       if (dragState) {
@@ -529,6 +531,10 @@ export default function TacticsPitch({
                     <button
                       type="button"
                       data-testid={`pitch-player-${player.id}`}
+                      aria-label={t(
+                        "tactics.pitchPlayerButton",
+                        `Select or move ${player.match_name}`,
+                      )}
                       className={getPitchMarkerClassName({
                         comparePlayerId,
                         hoveredSlot,
@@ -656,6 +662,10 @@ export default function TacticsPitch({
                     key={player.id}
                     type="button"
                     data-testid={`pitch-bench-player-${player.id}`}
+                    aria-label={t(
+                      "tactics.benchPlayerButton",
+                      `Select or move bench player ${player.match_name}`,
+                    )}
                     onClick={() => handlePlayerClick(player.id, "bench")}
                     onPointerDown={(event) =>
                       handlePlayerPointerDown(event, player.id, "bench", null)

@@ -307,7 +307,7 @@ function getSlotXCoordinates(slotCount: number): number[] {
   );
 }
 
-function parsePercent(value: string): number {
+function parseCoordinateValue(value: string): number {
   const parsed = Number.parseFloat(value);
   return Number.isFinite(parsed) ? parsed : 50;
 }
@@ -331,7 +331,7 @@ export function buildTacticsPitchSlots(
   slotAdjustments: TacticsSlotAdjustments = {},
 ): TacticsPitchSlot[] {
   return rows.flatMap((row) => {
-    const rowY = parsePercent(row.y);
+    const rowY = parseCoordinateValue(row.y);
     const rowXCoordinates = getSlotXCoordinates(row.slots.length);
 
     return row.slots.map((slot, slotIndex) => {
