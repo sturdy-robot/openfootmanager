@@ -190,7 +190,30 @@ function generateQuestions(
     ],
   });
 
-  // 4. Fan/atmosphere question (contextual)
+  // 4. Opponent question
+  questions.push({
+    id: "opponent",
+    journalist: "Liam Carter",
+    outlet: "League Chronicle",
+    question: isWin
+      ? t("match.press.opponent.questions.win", { oppName })
+      : isLoss
+        ? t("match.press.opponent.questions.loss", { oppName })
+        : t("match.press.opponent.questions.draw", { oppName }),
+    responses: [
+      response(t, "respect", "match.press.opponent.responses.respect", {
+        oppName,
+      }),
+      response(t, "warning", "match.press.opponent.responses.warning", {
+        oppName,
+      }),
+      response(t, "deflect", "match.press.opponent.responses.deflect", {
+        oppName,
+      }),
+    ],
+  });
+
+  // 5. Fan/atmosphere question (contextual)
   const fanQuestions: PlayerFocusQuestion[] = [
     {
       id: "fans",
@@ -238,7 +261,7 @@ function generateQuestions(
   ];
   questions.push(fanQuestions[0]);
 
-  // 5. Looking ahead
+  // 6. Looking ahead
   questions.push({
     id: "ahead",
     journalist: "Mark Williams",

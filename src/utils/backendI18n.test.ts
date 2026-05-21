@@ -806,6 +806,52 @@ describe("resolveNewsArticle", () => {
     }
   });
 
+  it("localizes opponent-focused press conference framing from stored quote metadata", async () => {
+    const previousLanguage = i18n.language;
+    await i18n.changeLanguage("pt-BR");
+
+    try {
+      const article = makeNewsArticle({
+        headline: '',
+        headline_key: 'be.news.pressConference.headlineOpponentRespect',
+        body: '',
+        body_key: 'be.news.pressConference.bodyOpponentFocus',
+        source: '',
+        source_key: 'be.source.sportsDaily',
+        i18n_params: {
+          team: 'Madrid Real',
+          result: 'Madrid Real 2 - 1 Rome Gladiators',
+          opponent: 'Rome Gladiators',
+          quotesData: JSON.stringify([
+            {
+              key: 'match.press.opponent.responses.respect.text',
+              fallback: 'Rome Gladiators are a serious side. They made us work for every moment out there.',
+              params: { oppName: 'Rome Gladiators' },
+            },
+          ]),
+        },
+      });
+
+      const result = resolveNewsArticle(article);
+
+      expect(result.headline).toBe(
+        'Técnico do Madrid Real mostra respeito ao Rome Gladiators após Madrid Real 2 - 1 Rome Gladiators',
+      );
+      expect(result.body).toContain(
+        'Boa parte da entrevista pós-jogo acabou virando um julgamento sobre o Rome Gladiators, com o técnico do Madrid Real avaliando publicamente o outro lado.',
+      );
+      expect(result.body).toContain(
+        '"Rome Gladiators é um time sério. Nos fez trabalhar por cada lance do jogo."',
+      );
+      expect(result.body).toContain(
+        'Isso deu à matéria uma tensão construída em cima de rivalidade, respeito ou recado, e não apenas em cima do placar de Madrid Real 2 - 1 Rome Gladiators.',
+      );
+      expect(result.source).toBe('Diário Esportivo');
+    } finally {
+      await i18n.changeLanguage(previousLanguage);
+    }
+  });
+
   it("localizes standings entries through backend keys", async () => {
     const previousLanguage = i18n.language;
     await i18n.changeLanguage("pt-BR");

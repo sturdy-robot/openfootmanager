@@ -44,6 +44,7 @@ struct PressConferenceFraming {
     headline_key: &'static str,
     body_key: &'static str,
     player_name: Option<String>,
+    opponent_name: Option<String>,
 }
 
 fn fallback_press_conference_framing(quote_count: usize) -> PressConferenceFraming {
@@ -52,16 +53,19 @@ fn fallback_press_conference_framing(quote_count: usize) -> PressConferenceFrami
             headline_key: "be.news.pressConference.headlinePostMatch",
             body_key: "be.news.pressConference.bodyNone",
             player_name: None,
+            opponent_name: None,
         },
         1 => PressConferenceFraming {
             headline_key: "be.news.pressConference.headlineManagerQuote",
             body_key: "be.news.pressConference.bodySingle",
             player_name: None,
+            opponent_name: None,
         },
         _ => PressConferenceFraming {
             headline_key: "be.news.pressConference.headlinePressConf",
             body_key: "be.news.pressConference.bodyMultiple",
             player_name: None,
+            opponent_name: None,
         },
     }
 }
@@ -86,6 +90,10 @@ fn resolve_press_conference_player_name(
         })
 }
 
+fn resolve_press_conference_opponent_name(answer: &PressConferenceAnswer) -> Option<String> {
+    answer.response_text_params.get("oppName").cloned()
+}
+
 fn select_press_conference_framing(
     game: &Game,
     answers: &[PressConferenceAnswer],
@@ -104,6 +112,7 @@ fn select_press_conference_framing(
                 headline_key: "be.news.pressConference.headlinePlayerPraise",
                 body_key: "be.news.pressConference.bodyPlayerFocus",
                 player_name: Some(player_name),
+                opponent_name: None,
             };
         }
     }
@@ -117,6 +126,35 @@ fn select_press_conference_framing(
                 headline_key: "be.news.pressConference.headlinePlayerDemand",
                 body_key: "be.news.pressConference.bodyPlayerFocus",
                 player_name: Some(player_name),
+                opponent_name: None,
+            };
+        }
+    }
+
+    if let Some(answer) = answers
+        .iter()
+        .find(|answer| answer.question_id == "opponent" && answer.response_id == "respect")
+    {
+        if let Some(opponent_name) = resolve_press_conference_opponent_name(answer) {
+            return PressConferenceFraming {
+                headline_key: "be.news.pressConference.headlineOpponentRespect",
+                body_key: "be.news.pressConference.bodyOpponentFocus",
+                player_name: None,
+                opponent_name: Some(opponent_name),
+            };
+        }
+    }
+
+    if let Some(answer) = answers
+        .iter()
+        .find(|answer| answer.question_id == "opponent" && answer.response_id == "warning")
+    {
+        if let Some(opponent_name) = resolve_press_conference_opponent_name(answer) {
+            return PressConferenceFraming {
+                headline_key: "be.news.pressConference.headlineOpponentWarning",
+                body_key: "be.news.pressConference.bodyOpponentFocus",
+                player_name: None,
+                opponent_name: Some(opponent_name),
             };
         }
     }
@@ -128,6 +166,7 @@ fn select_press_conference_framing(
                     headline_key: "be.news.pressConference.headlineResultDefiant",
                     body_key: "be.news.pressConference.bodyResultReaction",
                     player_name: None,
+                    opponent_name: None,
                 };
             }
             "humble" | "confident" | "accept" | "fair" | "positive" => {
@@ -135,6 +174,7 @@ fn select_press_conference_framing(
                     headline_key: "be.news.pressConference.headlineResultVerdict",
                     body_key: "be.news.pressConference.bodyResultReaction",
                     player_name: None,
+                    opponent_name: None,
                 };
             }
             _ => {}
@@ -154,6 +194,7 @@ fn select_press_conference_framing(
             headline_key: "be.news.pressConference.headlineLookingAhead",
             body_key: "be.news.pressConference.bodyLookingAhead",
             player_name: None,
+            opponent_name: None,
         };
     }
 
@@ -345,6 +386,9 @@ pub fn submit_press_conference(
     i18n_params.insert("result".to_string(), result_str.clone());
     if let Some(player_name) = framing.player_name {
         i18n_params.insert("player".to_string(), player_name);
+    }
+    if let Some(opponent_name) = framing.opponent_name {
+        i18n_params.insert("opponent".to_string(), opponent_name);
     }
     if !localized_quotes.is_empty() {
         if let Ok(serialized_quotes) = serde_json::to_string(&localized_quotes) {
@@ -623,6 +667,31 @@ mod tests {
             framing.body_key,
             "be.news.pressConference.bodyResultReaction"
         );
+        assert!(framing.player_name.is_none());
+    }
+
+    #[test]
+    fn press_conference_framing_prefers_opponent_storyline_when_present() {
+        let game = make_game_with_round();
+        let answers = vec![
+            press_answer("result", "humble", "The players worked hard.", "", &[]),
+            press_answer(
+                "opponent",
+                "respect",
+                "Away FC are a serious side.",
+                "",
+                &[("oppName", "Away FC")],
+            ),
+        ];
+
+        let framing = select_press_conference_framing(&game, &answers, 2);
+
+        assert_eq!(
+            framing.headline_key,
+            "be.news.pressConference.headlineOpponentRespect"
+        );
+        assert_eq!(framing.body_key, "be.news.pressConference.bodyOpponentFocus");
+        assert_eq!(framing.opponent_name.as_deref(), Some("Away FC"));
         assert!(framing.player_name.is_none());
     }
 

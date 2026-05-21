@@ -1635,6 +1635,27 @@
           }
         }
       },
+      "opponent": {
+        "questions": {
+          "win": "How much credit does {{oppName}} deserve for the way they pushed you today?",
+          "loss": "What did you make of {{oppName}} and the problems they caused you today?",
+          "draw": "How do you assess {{oppName}} after today's draw?"
+        },
+        "responses": {
+          "respect": {
+            "tone": "Respectful",
+            "text": "{{oppName}} are a serious side. They made us work for every moment out there."
+          },
+          "warning": {
+            "tone": "Sharp",
+            "text": "{{oppName}} have quality, but they know they were in a real game with us today."
+          },
+          "deflect": {
+            "tone": "Deflect",
+            "text": "I prefer to speak about my own team. Others can judge {{oppName}} if they want."
+          }
+        }
+      },
       "ahead": {
         "question": "What's your focus going into the next match?",
         "responses": {
@@ -2555,12 +2576,15 @@
         "headlineResultDefiant": "{{team}} strike defiant note after {{result}}",
         "headlinePlayerPraise": "{{player}} gets strong backing from {{team}} boss",
         "headlinePlayerDemand": "{{team}} boss demands more from {{player}}",
+        "headlineOpponentRespect": "{{team}} boss shows respect to {{opponent}} after {{result}}",
+        "headlineOpponentWarning": "{{team}} boss sends pointed message to {{opponent}} after {{result}}",
         "headlineLookingAhead": "{{team}} already looking ahead after {{result}}",
         "bodyMultiple": "Speaking after the {{result}} result, the {{team}} manager addressed the press.\n\n{{quotes}}\n\nThe conference covered the result, tactical approach, and what lies ahead for the team.",
         "bodySingle": "The {{team}} manager spoke briefly after the {{result}} result.\n\n\"{{quote}}\"",
         "bodyNone": "The {{team}} manager declined to speak at length after the {{result}} result.",
         "bodyResultReaction": "The press conference after {{result}} quickly became a broader verdict on the performance from the {{team}} manager.{{quotesSection}}\n\nThe answers put the spotlight on standards, execution and how the dressing room viewed the afternoon.",
         "bodyPlayerFocus": "Questions soon centred on {{player}}, with the {{team}} manager using the post-match briefing to frame that performance in public.{{quotesSection}}\n\nThe exchange gave the story a sharper personal angle than a routine recap of {{result}}.",
+        "bodyOpponentFocus": "Much of the post-match briefing turned into a verdict on {{opponent}}, as the {{team}} manager weighed up the other side in public.{{quotesSection}}\n\nIt gave the story an edge built around rivalry, respect or a warning shot rather than a plain recap of {{result}}.",
         "bodyLookingAhead": "Even with {{result}} still fresh, the {{team}} manager used the briefing to push the conversation toward what comes next.{{quotesSection}}\n\nMuch of the tone was about recovery, momentum and how {{team}} intend to carry this result forward."
       }
     }

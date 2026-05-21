@@ -1665,6 +1665,27 @@
           }
         }
       },
+      "opponent": {
+        "questions": {
+          "win": "¿Cuánto mérito tiene {{oppName}} por la forma en que te exigió hoy?",
+          "loss": "¿Qué te pareció {{oppName}} y los problemas que te causó hoy?",
+          "draw": "¿Cómo valoras a {{oppName}} después del empate de hoy?"
+        },
+        "responses": {
+          "respect": {
+            "tone": "Respetuoso",
+            "text": "{{oppName}} es un equipo serio. Nos obligó a trabajar cada jugada del partido."
+          },
+          "warning": {
+            "tone": "Filoso",
+            "text": "{{oppName}} tiene calidad, pero se fue sabiendo que hoy tuvo un partido de verdad contra nosotros."
+          },
+          "deflect": {
+            "tone": "Evasivo",
+            "text": "Prefiero hablar de mi propio equipo. Si quieren, que otros juzguen al {{oppName}}."
+          }
+        }
+      },
       "ahead": {
         "question": "¿Cuál es tu enfoque de cara al próximo partido?",
         "responses": {
@@ -2589,12 +2610,15 @@
         "headlineResultDefiant": "{{team}} adopta un tono desafiante tras {{result}}",
         "headlinePlayerPraise": "{{player}} recibe el respaldo público del técnico de {{team}}",
         "headlinePlayerDemand": "El técnico de {{team}} le exige más a {{player}}",
+        "headlineOpponentRespect": "El técnico de {{team}} muestra respeto al {{opponent}} tras {{result}}",
+        "headlineOpponentWarning": "El técnico de {{team}} le manda un mensaje al {{opponent}} tras {{result}}",
         "headlineLookingAhead": "{{team}} ya mira hacia adelante tras {{result}}",
         "bodyMultiple": "Tras el resultado {{result}}, el técnico del {{team}} atendió a la prensa.\n\n{{quotes}}\n\nLa comparecencia abordó el resultado, el planteamiento táctico y lo que viene para el equipo.",
         "bodySingle": "El técnico del {{team}} habló brevemente tras el resultado {{result}}.\n\n\"{{quote}}\"",
         "bodyNone": "El técnico del {{team}} declinó hablar en profundidad tras el resultado {{result}}.",
         "bodyResultReaction": "La rueda de prensa posterior a {{result}} se convirtió rápidamente en un juicio más amplio del técnico de {{team}} sobre la actuación.{{quotesSection}}\n\nLas respuestas pusieron el foco en la exigencia, la ejecución y en cómo el vestuario interpretó la tarde.",
         "bodyPlayerFocus": "Las preguntas pronto giraron alrededor de {{player}}, con el técnico de {{team}} usando la comparecencia para enmarcar públicamente esa actuación.{{quotesSection}}\n\nEl intercambio dio a la historia un ángulo mucho más personal que un simple repaso de {{result}}.",
+        "bodyOpponentFocus": "Buena parte de la comparecencia de después del partido acabó convirtiéndose en una valoración sobre el {{opponent}}, con el técnico de {{team}} midiendo públicamente al otro lado.{{quotesSection}}\n\nEso dio a la pieza una tensión construida sobre rivalidad, respeto o aviso, y no solo sobre el marcador de {{result}}.",
         "bodyLookingAhead": "Aunque {{result}} seguía muy presente, el técnico de {{team}} usó la comparecencia para llevar la conversación hacia lo que viene.{{quotesSection}}\n\nGran parte del tono giró en torno a la recuperación, el impulso y la forma en que {{team}} pretende arrastrar este resultado hacia delante."
       }
     }

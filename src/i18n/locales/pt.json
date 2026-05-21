@@ -1635,6 +1635,27 @@
           }
         }
       },
+      "opponent": {
+        "questions": {
+          "win": "Quanto mérito merece o {{oppName}} pela forma como vos levou ao limite hoje?",
+          "loss": "Que leitura fazes do {{oppName}} e dos problemas que vos criou hoje?",
+          "draw": "Como avalias o {{oppName}} depois do empate de hoje?"
+        },
+        "responses": {
+          "respect": {
+            "tone": "Respeitoso",
+            "text": "O {{oppName}} é uma equipa séria. Obrigou-nos a trabalhar por cada momento do jogo."
+          },
+          "warning": {
+            "tone": "Afiado",
+            "text": "O {{oppName}} tem qualidade, mas saiu a saber que esteve num jogo a sério connosco."
+          },
+          "deflect": {
+            "tone": "Evasivo",
+            "text": "Prefiro falar da minha própria equipa. Se quiserem, outros que julguem o {{oppName}}."
+          }
+        }
+      },
       "ahead": {
         "question": "Qual é o teu foco para o próximo jogo?",
         "responses": {
@@ -2559,12 +2580,15 @@
         "headlineResultDefiant": "{{team}} adota um tom desafiante após {{result}}",
         "headlinePlayerPraise": "{{player}} recebe apoio público do treinador do {{team}}",
         "headlinePlayerDemand": "Treinador do {{team}} exige mais de {{player}}",
+        "headlineOpponentRespect": "Treinador do {{team}} mostra respeito pelo {{opponent}} após {{result}}",
+        "headlineOpponentWarning": "Treinador do {{team}} deixa um recado ao {{opponent}} após {{result}}",
         "headlineLookingAhead": "{{team}} já olha para a frente após {{result}}",
         "bodyMultiple": "Após o resultado {{result}}, o treinador do {{team}} falou com a imprensa.\n\n{{quotes}}\n\nA conferência abordou o resultado, a abordagem tática e o que se segue para a equipa.",
         "bodySingle": "O treinador do {{team}} falou brevemente após o resultado {{result}}.\n\n\"{{quote}}\"",
         "bodyNone": "O treinador do {{team}} recusou falar longamente após o resultado {{result}}.",
         "bodyResultReaction": "A conferência após {{result}} transformou-se rapidamente num veredito mais amplo do treinador do {{team}} sobre a exibição.{{quotesSection}}\n\nAs respostas colocaram o foco no nível de exigência, na execução e na forma como o balneário leu a tarde.",
         "bodyPlayerFocus": "As perguntas rapidamente se centraram em {{player}}, com o treinador do {{team}} a usar a conferência pós-jogo para enquadrar publicamente essa exibição.{{quotesSection}}\n\nA troca deu à peça um ângulo bem mais pessoal do que um simples resumo de {{result}}.",
+        "bodyOpponentFocus": "Boa parte da conferência pós-jogo acabou por se transformar numa leitura sobre o {{opponent}}, com o treinador do {{team}} a avaliar publicamente o outro lado.{{quotesSection}}\n\nIsso deu à peça uma tensão construída em rivalidade, respeito ou aviso, e não apenas no resumo de {{result}}.",
         "bodyLookingAhead": "Mesmo com {{result}} ainda fresco, o treinador do {{team}} usou a conferência para empurrar a conversa para o que vem a seguir.{{quotesSection}}\n\nGrande parte do tom passou pela recuperação, pelo embalo e pela forma como o {{team}} pretende levar este resultado consigo."
       }
     }

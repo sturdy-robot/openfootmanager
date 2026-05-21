@@ -1635,6 +1635,27 @@
           }
         }
       },
+      "opponent": {
+        "questions": {
+          "win": "对于{{oppName}}今天给你们制造的困难，你会给他们多少肯定？",
+          "loss": "你如何评价{{oppName}}以及他们今天给你们制造的问题？",
+          "draw": "在今天这场平局之后，你如何看待{{oppName}}？"
+        },
+        "responses": {
+          "respect": {
+            "tone": "尊重",
+            "text": "{{oppName}}是一支很有分量的球队。他们让我们比赛里的每一个阶段都必须拼出来。"
+          },
+          "warning": {
+            "tone": "强硬",
+            "text": "{{oppName}}有实力，但他们也知道今天碰到的是一场真正的硬仗。"
+          },
+          "deflect": {
+            "tone": "回避",
+            "text": "我更愿意谈自己的球队。如果别人想评价{{oppName}}，那是他们的事。"
+          }
+        }
+      },
       "ahead": {
         "question": "你对下一场比赛的关注重点是什么？",
         "responses": {
@@ -2556,12 +2577,15 @@
         "headlineResultDefiant": "{{team}}在{{result}}后摆出强硬姿态",
         "headlinePlayerPraise": "{{player}}得到{{team}}主帅公开力挺",
         "headlinePlayerDemand": "{{team}}主帅要求{{player}}拿出更多表现",
+        "headlineOpponentRespect": "{{team}}主帅在{{result}}后公开尊重{{opponent}}",
+        "headlineOpponentWarning": "{{team}}主帅在{{result}}后向{{opponent}}发出明确信号",
         "headlineLookingAhead": "{{team}}在{{result}}后已经把目光投向下一战",
         "bodyMultiple": "在{{result}}的比赛之后，{{team}}主帅接受了媒体采访。\n\n{{quotes}}\n\n这场发布会谈到了比赛结果、战术安排以及球队接下来的方向。",
         "bodySingle": "{{team}}主帅在{{result}}的结果后简短发言。\n\n\"{{quote}}\"",
         "bodyNone": "在{{result}}的结果后，{{team}}主帅拒绝长时间发言。",
         "bodyResultReaction": "{{result}}之后的新闻发布会很快变成了{{team}}主帅对整场表现的更全面定调。{{quotesSection}}\n\n这些回答把标准、执行力以及更衣室如何看待这个下午摆到了台前。",
         "bodyPlayerFocus": "提问很快集中到{{player}}身上，{{team}}主帅借这场赛后发布会公开界定了这场表现。{{quotesSection}}\n\n这让整篇报道比单纯复盘{{result}}多出了鲜明的个人角度。",
+        "bodyOpponentFocus": "赛后发布会很大一部分内容都变成了对{{opponent}}的评估，{{team}}主帅公开衡量了对手这一边。{{quotesSection}}\n\n这让整篇报道的张力建立在宿怨、尊重或警告之上，而不只是对{{result}}的平铺直叙。",
         "bodyLookingAhead": "尽管{{result}}的余波还在，{{team}}主帅已经借发布会把话题推向下一步。{{quotesSection}}\n\n整体语气更多围绕恢复、势头以及{{team}}打算如何把这场结果延续下去。"
       }
     }

@@ -1635,6 +1635,27 @@
           }
         }
       },
+      "opponent": {
+        "questions": {
+          "win": "Quel mérite accordez-vous à {{oppName}} pour la manière dont ils vous ont poussé aujourd'hui ?",
+          "loss": "Quel regard portez-vous sur {{oppName}} et sur les problèmes qu'ils vous ont posés aujourd'hui ?",
+          "draw": "Comment évaluez-vous {{oppName}} après le nul d'aujourd'hui ?"
+        },
+        "responses": {
+          "respect": {
+            "tone": "Respectueux",
+            "text": "{{oppName}} est une équipe sérieuse. Ils nous ont obligés à lutter sur chaque séquence du match."
+          },
+          "warning": {
+            "tone": "Tranchant",
+            "text": "{{oppName}} a de la qualité, mais ils savent qu'ils ont eu un vrai match contre nous aujourd'hui."
+          },
+          "deflect": {
+            "tone": "Évasif",
+            "text": "Je préfère parler de mon équipe. Si d'autres veulent juger {{oppName}}, libre à eux."
+          }
+        }
+      },
       "ahead": {
         "question": "Sur quoi portera votre attention avant le prochain match ?",
         "responses": {
@@ -2559,12 +2580,15 @@
         "headlineResultDefiant": "{{team}} affiche un ton défiant après {{result}}",
         "headlinePlayerPraise": "{{player}} reçoit le soutien public du coach de {{team}}",
         "headlinePlayerDemand": "Le coach de {{team}} en demande plus à {{player}}",
+        "headlineOpponentRespect": "Le coach de {{team}} montre du respect pour {{opponent}} après {{result}}",
+        "headlineOpponentWarning": "Le coach de {{team}} envoie un message à {{opponent}} après {{result}}",
         "headlineLookingAhead": "{{team}} regarde déjà vers la suite après {{result}}",
         "bodyMultiple": "Après le résultat {{result}}, l'entraîneur de {{team}} a pris la parole face à la presse.\n\n{{quotes}}\n\nLa conférence a abordé le résultat, l'approche tactique et la suite pour l'équipe.",
         "bodySingle": "L'entraîneur de {{team}} s'est exprimé brièvement après le résultat {{result}}.\n\n\"{{quote}}\"",
         "bodyNone": "L'entraîneur de {{team}} a décliné de s'exprimer longuement après le résultat {{result}}.",
         "bodyResultReaction": "La conférence de presse après {{result}} est vite devenue un jugement plus large du coach de {{team}} sur la prestation.{{quotesSection}}\n\nLes réponses ont mis l'accent sur les standards, l'exécution et la manière dont le vestiaire a vécu l'après-midi.",
         "bodyPlayerFocus": "Les questions se sont rapidement tournées vers {{player}}, le coach de {{team}} utilisant ce passage devant la presse pour cadrer publiquement cette performance.{{quotesSection}}\n\nL'échange a donné à l'article un angle nettement plus personnel qu'un simple récit de {{result}}.",
+        "bodyOpponentFocus": "Une bonne partie de l'entretien d'après-match s'est transformée en lecture de {{opponent}}, le coach de {{team}} évaluant publiquement l'autre camp.{{quotesSection}}\n\nCela a donné au papier une tension construite autour de rivalité, de respect ou d'avertissement, plutôt qu'un simple résumé de {{result}}.",
         "bodyLookingAhead": "Même avec {{result}} encore brûlant, le coach de {{team}} a orienté la conférence vers ce qui vient ensuite.{{quotesSection}}\n\nLe ton a beaucoup porté sur la récupération, la dynamique et la manière dont {{team}} veut prolonger cet élan."
       }
     }
