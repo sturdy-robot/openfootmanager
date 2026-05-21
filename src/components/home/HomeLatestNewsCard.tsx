@@ -8,7 +8,7 @@ import type {
   PlayerData,
   TeamData,
 } from "../../store/gameStore";
-import { Card, CardBody, CardHeader, NewsCover } from "../ui";
+import { Card, CardBody, CardHeader, CompactNewsThumbnail } from "../ui";
 
 interface HomeLatestNewsCardProps {
   articles: NewsArticle[];
@@ -60,12 +60,11 @@ export default function HomeLatestNewsCard({
                 className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-navy-700/50 transition-colors"
               >
                 <div className="flex items-start gap-3">
-                  <NewsCover
+                  <CompactNewsThumbnail
                     article={article}
                     teams={teams}
                     players={players}
                     managers={managers}
-                    compact
                     className="h-24 w-28 shrink-0"
                     testId={`home-latest-news-cover-${article.id}`}
                   />

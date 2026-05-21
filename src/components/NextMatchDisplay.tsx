@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { GameStateData } from "../store/gameStore";
-import { Badge } from "./ui";
+import { Badge, TeamLogo } from "./ui";
 import {
   getTeamName,
   getTeamShort,
@@ -43,6 +43,8 @@ export default function NextMatchDisplay({
   const opponentId = isHome
     ? nextFixture.away_team_id
     : nextFixture.home_team_id;
+  const userTeam = gameState.teams.find((team) => team.id === userTeamId);
+  const opponentTeam = gameState.teams.find((team) => team.id === opponentId);
   const fixtureLabel =
     nextFixture.competition === "League"
       ? t("home.matchdayN", { n: nextFixture.matchday })
@@ -53,9 +55,13 @@ export default function NextMatchDisplay({
   return (
     <div className="flex items-center justify-between py-6 px-4 bg-gray-50 dark:bg-navy-800 rounded-lg border border-gray-100 dark:border-navy-600 transition-colors">
       <div className="text-center flex-1">
-        <div className="w-16 h-16 bg-linear-to-br from-primary-500/20 to-primary-600/20 dark:from-primary-500/10 dark:to-primary-600/10 rounded-full mx-auto mb-2 flex items-center justify-center font-heading font-bold text-primary-600 dark:text-primary-400 text-lg border-2 border-primary-200 dark:border-primary-800 transition-colors">
-          {getTeamShort(gameState.teams, userTeamId)}
-        </div>
+        {userTeam ? (
+          <TeamLogo team={userTeam} className="mx-auto mb-2 h-16 w-16" />
+        ) : (
+          <div className="w-16 h-16 bg-linear-to-br from-primary-500/20 to-primary-600/20 dark:from-primary-500/10 dark:to-primary-600/10 rounded-full mx-auto mb-2 flex items-center justify-center font-heading font-bold text-primary-600 dark:text-primary-400 text-lg border-2 border-primary-200 dark:border-primary-800 transition-colors">
+            {getTeamShort(gameState.teams, userTeamId)}
+          </div>
+        )}
         <p
           className="font-heading font-bold uppercase tracking-wide text-sm text-primary-600 dark:text-primary-400"
         >
@@ -77,9 +83,13 @@ export default function NextMatchDisplay({
       </div>
 
       <div className="text-center flex-1">
-        <div className="w-16 h-16 bg-gray-200 dark:bg-navy-600 rounded-full mx-auto mb-2 flex items-center justify-center font-heading font-bold text-gray-500 dark:text-gray-400 text-lg border-2 border-gray-300 dark:border-navy-600 transition-colors">
-          {getTeamShort(gameState.teams, opponentId)}
-        </div>
+        {opponentTeam ? (
+          <TeamLogo team={opponentTeam} className="mx-auto mb-2 h-16 w-16" />
+        ) : (
+          <div className="w-16 h-16 bg-gray-200 dark:bg-navy-600 rounded-full mx-auto mb-2 flex items-center justify-center font-heading font-bold text-gray-500 dark:text-gray-400 text-lg border-2 border-gray-300 dark:border-navy-600 transition-colors">
+            {getTeamShort(gameState.teams, opponentId)}
+          </div>
+        )}
         <p
           className="font-heading font-bold uppercase tracking-wide text-sm text-gray-500 dark:text-gray-400"
         >

@@ -209,6 +209,8 @@ describe("TeamsListTab", () => {
     expect(headings[0]).toHaveTextContent("Beta FC");
     expect(headings[1]).toHaveTextContent("Alpha FC");
     expect(screen.getByText("Your Team")).toBeInTheDocument();
+    expect(screen.getByLabelText("Alpha FC")).toBeInTheDocument();
+    expect(screen.getByLabelText("Beta FC")).toBeInTheDocument();
   });
 
   it("selects a team when its card is clicked", () => {

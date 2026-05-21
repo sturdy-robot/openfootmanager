@@ -346,22 +346,6 @@ function HeroArticle({
           {article.headline}
         </h2>
 
-        {/* Match score badge */}
-        {article.match_score && (
-          <div className="flex items-center gap-3 mb-3 p-3 bg-gray-50 dark:bg-navy-700/50 rounded-lg">
-            <span className="text-sm font-heading font-bold text-gray-700 dark:text-gray-300">
-              {getTeamName(gameState.teams, article.match_score.home_team_id)}
-            </span>
-            <span className="text-lg font-heading font-bold text-primary-500 bg-primary-500/10 px-3 py-1 rounded-lg">
-              {article.match_score.home_goals} –{" "}
-              {article.match_score.away_goals}
-            </span>
-            <span className="text-sm font-heading font-bold text-gray-700 dark:text-gray-300">
-              {getTeamName(gameState.teams, article.match_score.away_team_id)}
-            </span>
-          </div>
-        )}
-
         <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3 leading-relaxed">
           {article.body}
         </p>
@@ -453,21 +437,6 @@ function ArticleCard({
           {article.headline}
         </h3>
 
-        {article.match_score && (
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-              {getTeamName(gameState.teams, article.match_score.home_team_id)}
-            </span>
-            <span className="text-xs font-heading font-bold text-primary-500 bg-primary-500/10 px-1.5 py-0.5 rounded">
-              {article.match_score.home_goals} –{" "}
-              {article.match_score.away_goals}
-            </span>
-            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-              {getTeamName(gameState.teams, article.match_score.away_team_id)}
-            </span>
-          </div>
-        )}
-
         <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed flex-1">
           {article.body}
         </p>
@@ -550,32 +519,6 @@ function ArticleDetail({
           <h1 className="text-2xl font-heading font-bold text-gray-900 dark:text-white leading-tight mb-4">
             {article.headline}
           </h1>
-
-          {/* Match score */}
-          {article.match_score && (
-            <div className="flex items-center justify-center gap-4 mb-6 p-4 bg-gray-50 dark:bg-navy-700/50 rounded-xl">
-              <div className="text-center">
-                <p className="text-sm font-heading font-bold text-gray-700 dark:text-gray-300">
-                  {getTeamName(
-                    gameState.teams,
-                    article.match_score.home_team_id,
-                  )}
-                </p>
-              </div>
-              <div className="text-2xl font-heading font-bold text-primary-500 bg-primary-500/10 px-4 py-2 rounded-xl">
-                {article.match_score.home_goals} –{" "}
-                {article.match_score.away_goals}
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-heading font-bold text-gray-700 dark:text-gray-300">
-                  {getTeamName(
-                    gameState.teams,
-                    article.match_score.away_team_id,
-                  )}
-                </p>
-              </div>
-            </div>
-          )}
 
           {/* Body */}
           <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">

@@ -123,6 +123,8 @@ describe("NextMatchDisplay", () => {
         expect(screen.getByText("FC Barcelona")).toBeInTheDocument();
         expect(screen.getByText("Munich Bayern")).toBeInTheDocument();
         expect(screen.getAllByText("Munich Bayern")).toHaveLength(1);
+        expect(screen.getByLabelText("FC Barcelona")).toBeInTheDocument();
+        expect(screen.getByLabelText("Munich Bayern")).toBeInTheDocument();
         expect(screen.getByText("home.away")).toBeInTheDocument();
     });
 });

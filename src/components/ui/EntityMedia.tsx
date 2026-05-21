@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { appDataDir, join } from "@tauri-apps/api/path";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import {
@@ -322,16 +323,16 @@ export function PersonPortrait({
   );
 }
 
-const NEWS_CATEGORY_META: Record<string, { icon: typeof FileText; label: string }> = {
-  MatchReport: { icon: Newspaper, label: "MATCHDAY" },
-  LeagueRoundup: { icon: Trophy, label: "ROUNDUP" },
-  StandingsUpdate: { icon: BarChart3, label: "TABLE" },
-  TransferRumour: { icon: TrendingUp, label: "RUMOUR" },
-  TransferRoundup: { icon: ArrowLeftRight, label: "TRANSFERS" },
-  InjuryNews: { icon: FileText, label: "INJURY" },
-  SeasonPreview: { icon: FileText, label: "PREVIEW" },
-  Editorial: { icon: FileText, label: "EDITORIAL" },
-  ManagerialChange: { icon: FileText, label: "MANAGER" },
+const NEWS_CATEGORY_META: Record<string, { icon: typeof FileText }> = {
+  MatchReport: { icon: Newspaper },
+  LeagueRoundup: { icon: Trophy },
+  StandingsUpdate: { icon: BarChart3 },
+  TransferRumour: { icon: TrendingUp },
+  TransferRoundup: { icon: ArrowLeftRight },
+  InjuryNews: { icon: FileText },
+  SeasonPreview: { icon: FileText },
+  Editorial: { icon: FileText },
+  ManagerialChange: { icon: FileText },
 };
 
 export function NewsCover({
@@ -351,13 +352,19 @@ export function NewsCover({
   compact?: boolean;
   testId?: string;
 }) {
+  const { t } = useTranslation();
   const meta = NEWS_CATEGORY_META[article.category] ?? NEWS_CATEGORY_META.Editorial;
-  const primaryTeam = teams.find((team) => article.team_ids.includes(team.id));
-  const secondaryTeam = article.match_score
-    ? teams.find((team) => team.id === article.match_score?.away_team_id)
-    : article.team_ids[1]
-      ? teams.find((team) => team.id === article.team_ids[1])
-      : undefined;
+  const categoryLabel = t(`news.categories.${article.category}`, {
+    defaultValue: article.category,
+  });
+  const primaryTeamId = article.match_score?.home_team_id ?? article.team_ids[0];
+  const secondaryTeamId = article.match_score?.away_team_id ?? article.team_ids[1];
+  const primaryTeam = primaryTeamId
+    ? teams.find((team) => team.id === primaryTeamId)
+    : undefined;
+  const secondaryTeam = secondaryTeamId
+    ? teams.find((team) => team.id === secondaryTeamId)
+    : undefined;
   const featuredPlayer = players.find((player) => article.player_ids.includes(player.id));
   const playerTeam = featuredPlayer?.team_id
     ? teams.find((team) => team.id === featuredPlayer.team_id)
@@ -366,8 +373,42 @@ export function NewsCover({
     ? managers?.find((manager) => manager.id === primaryTeam.manager_id)
     : undefined;
   const Icon = meta.icon;
+  const fallbackCoverTone = article.category === "LeagueRoundup"
+    ? "from-amber-500/25 via-navy-800 to-navy-900"
+    : article.category === "StandingsUpdate"
+      ? "from-sky-500/25 via-navy-800 to-navy-900"
+      : "from-gray-800 via-navy-800 to-gray-700";
+
+  const compactIconChip = (
+    <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/10 text-white/75 shadow-inner shadow-white/5">
+      <Icon className="h-3.5 w-3.5" />
+    </div>
+  );
 
   if (article.match_score && primaryTeam && secondaryTeam) {
+    if (compact) {
+      return (
+        <div
+          className={cx(
+            "flex h-full flex-col justify-between rounded-2xl bg-gradient-to-r from-navy-800 via-navy-700 to-navy-800 p-3 text-white",
+            className,
+          )}
+          data-testid={testId}
+        >
+          {compactIconChip}
+          <div className="grid grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-1.5">
+            <TeamLogo team={primaryTeam} className="h-8 w-8 shrink-0" />
+            <div className="min-w-0 rounded-xl bg-white/10 px-2 py-1 text-center shadow-inner shadow-white/5">
+              <p className="font-heading text-xl font-bold leading-none">
+                {article.match_score.home_goals}–{article.match_score.away_goals}
+              </p>
+            </div>
+            <TeamLogo team={secondaryTeam} className="h-8 w-8 shrink-0" />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
         className={cx(
@@ -386,7 +427,7 @@ export function NewsCover({
         </div>
         <div className="flex flex-col items-center justify-center rounded-xl bg-white/10 px-3 py-2 text-center">
           <span className="text-[10px] font-heading font-bold uppercase tracking-[0.25em] text-white/70">
-            {meta.label}
+            {categoryLabel}
           </span>
           <span className={cx("font-heading font-bold", compact ? "text-xl" : "text-3xl")}>
             {article.match_score.home_goals}–{article.match_score.away_goals}
@@ -405,6 +446,35 @@ export function NewsCover({
   }
 
   if (featuredPlayer) {
+    if (compact) {
+      return (
+        <div
+          className={cx(
+            "flex h-full flex-col justify-between rounded-2xl bg-gradient-to-br from-primary-600 via-navy-800 to-navy-900 p-3 text-white",
+            className,
+          )}
+          data-testid={testId}
+        >
+          {compactIconChip}
+          <div className="flex items-end justify-between gap-2">
+            {playerTeam ? (
+              <TeamLogo team={playerTeam} className="h-10 w-10 shrink-0" />
+            ) : (
+              <div className="h-10 w-10 shrink-0 rounded-xl bg-white/10" />
+            )}
+            <PersonPortrait
+              id={featuredPlayer.id}
+              name={featuredPlayer.full_name}
+              media={featuredPlayer.media}
+              teamColors={playerTeam?.colors}
+              className="h-14 w-14 shrink-0"
+              fallbackLabel={featuredPlayer.match_name.slice(0, 2).toUpperCase()}
+            />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
         className={cx(
@@ -415,7 +485,7 @@ export function NewsCover({
       >
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-heading font-bold uppercase tracking-[0.25em] text-white/70">
-            {meta.label}
+            {categoryLabel}
           </p>
           <p className={cx("mt-1 font-heading font-bold uppercase", compact ? "text-sm" : "text-lg")}>
             {featuredPlayer.full_name}
@@ -442,6 +512,30 @@ export function NewsCover({
   }
 
   if (article.category === "ManagerialChange" && primaryTeam && featuredManager) {
+    if (compact) {
+      return (
+        <div
+          className={cx(
+            "flex h-full flex-col justify-between rounded-2xl bg-gradient-to-br from-orange-500 via-navy-800 to-navy-900 p-3 text-white",
+            className,
+          )}
+          data-testid={testId}
+        >
+          {compactIconChip}
+          <div className="flex items-end justify-between gap-2">
+            <TeamLogo team={primaryTeam} className="h-10 w-10 shrink-0" />
+            <PersonPortrait
+              id={featuredManager.id}
+              name={`${featuredManager.first_name} ${featuredManager.last_name}`}
+              media={featuredManager.media}
+              teamColors={primaryTeam.colors}
+              className="h-14 w-14 shrink-0"
+            />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
         className={cx(
@@ -452,7 +546,7 @@ export function NewsCover({
       >
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-heading font-bold uppercase tracking-[0.25em] text-white/70">
-            {meta.label}
+            {categoryLabel}
           </p>
           <p className={cx("mt-1 font-heading font-bold uppercase", compact ? "text-sm" : "text-lg")}>
             {featuredManager.first_name} {featuredManager.last_name}
@@ -474,6 +568,27 @@ export function NewsCover({
   }
 
   if (primaryTeam) {
+    if (compact) {
+      return (
+        <div
+          className={cx(
+            "flex h-full flex-col justify-between rounded-2xl bg-gradient-to-br from-navy-900 via-navy-800 to-primary-600 p-3 text-white",
+            className,
+          )}
+          data-testid={testId}
+        >
+          {compactIconChip}
+          <div className="flex items-end justify-between gap-2">
+            <div className="space-y-1.5">
+              <div className="h-1.5 w-8 rounded-full bg-white/15" />
+              <div className="h-1.5 w-12 rounded-full bg-white/10" />
+            </div>
+            <TeamLogo team={primaryTeam} className="h-14 w-14 shrink-0" />
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
         className={cx(
@@ -484,7 +599,7 @@ export function NewsCover({
       >
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-heading font-bold uppercase tracking-[0.25em] text-white/70">
-            {meta.label}
+            {categoryLabel}
           </p>
           <p className={cx("mt-1 font-heading font-bold uppercase", compact ? "text-sm" : "text-lg")}>
             {primaryTeam.name}
@@ -495,19 +610,39 @@ export function NewsCover({
     );
   }
 
+  if (compact) {
+    return (
+      <div
+        className={cx(
+          "flex h-full flex-col justify-between rounded-2xl bg-gradient-to-br p-3 text-white",
+          fallbackCoverTone,
+          className,
+        )}
+        data-testid={testId}
+      >
+        {compactIconChip}
+        <div className="space-y-1.5">
+          <div className="h-1.5 w-10 rounded-full bg-white/15" />
+          <div className="h-1.5 w-14 rounded-full bg-white/10" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={cx(
-        "flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-br from-gray-800 via-navy-800 to-gray-700 p-4 text-white",
+        "flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-br p-4 text-white",
+        fallbackCoverTone,
         className,
       )}
       data-testid={testId}
     >
-      <div>
+      <div className="min-w-0">
         <p className="text-[10px] font-heading font-bold uppercase tracking-[0.25em] text-white/70">
-          {meta.label}
+          {categoryLabel}
         </p>
-        <p className={cx("mt-1 font-heading font-bold uppercase", compact ? "text-sm" : "text-lg")}>
+        <p className={cx("mt-1 line-clamp-2 font-heading font-bold uppercase", compact ? "text-sm" : "text-lg")}>
           {article.source}
         </p>
       </div>

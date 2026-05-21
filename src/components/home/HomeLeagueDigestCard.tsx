@@ -7,7 +7,7 @@ import type {
   PlayerData,
   TeamData,
 } from "../../store/gameStore";
-import { Badge, Card, CardBody, CardHeader, NewsCover } from "../ui";
+import { Badge, Card, CardBody, CardHeader, CompactNewsThumbnail } from "../ui";
 
 interface HomeLeagueDigestCardProps {
   articles: NewsArticle[];
@@ -56,12 +56,11 @@ export default function HomeLeagueDigestCard({
                 className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-navy-700/50 transition-colors"
               >
                 <div className="flex items-start gap-3">
-                  <NewsCover
+                  <CompactNewsThumbnail
                     article={article}
                     teams={teams}
                     players={players}
                     managers={managers}
-                    compact
                     className="h-20 w-24 shrink-0"
                     testId={`home-league-digest-cover-${article.id}`}
                   />

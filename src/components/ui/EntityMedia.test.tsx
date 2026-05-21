@@ -1,8 +1,28 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { ManagerData, NewsArticle, PlayerData, TeamData } from "../../store/gameStore";
 import { NewsCover, PersonPortrait, TeamLogo } from "./EntityMedia";
+
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: { defaultValue?: string }) => {
+      const labels: Record<string, string> = {
+        "news.categories.MatchReport": "Relato de Partida",
+        "news.categories.LeagueRoundup": "Resumo da Rodada",
+        "news.categories.StandingsUpdate": "Classificacao",
+        "news.categories.TransferRumour": "Rumor",
+        "news.categories.TransferRoundup": "Transferencias",
+        "news.categories.InjuryNews": "Lesao",
+        "news.categories.SeasonPreview": "Previa",
+        "news.categories.Editorial": "Editorial",
+        "news.categories.ManagerialChange": "Treinador",
+      };
+
+      return labels[key] ?? options?.defaultValue ?? key;
+    },
+  }),
+}));
 
 function makeTeam(overrides: Partial<TeamData> = {}): TeamData {
   return {
@@ -169,7 +189,146 @@ describe("EntityMedia", () => {
     );
 
     expect(screen.getByTestId("news-cover")).toBeInTheDocument();
+    expect(screen.getByText("Relato de Partida")).toBeInTheDocument();
     expect(screen.getByText("2–1")).toBeInTheDocument();
+  });
+
+  it("keeps home and away logos distinct when team arrays are out of order", () => {
+    const article: NewsArticle = {
+      id: "news-1b",
+      headline: "Milan Rossoneri 3-1 Newcastle Town",
+      body: "A dramatic match report.",
+      source: "OFM News",
+      date: "2026-08-15",
+      category: "MatchReport",
+      team_ids: ["team-2", "team-1"],
+      player_ids: [],
+      match_score: {
+        home_team_id: "team-1",
+        away_team_id: "team-2",
+        home_goals: 3,
+        away_goals: 1,
+      },
+      read: false,
+    };
+
+    render(
+      <NewsCover
+        article={article}
+        teams={[
+          makeTeam({ id: "team-2", name: "Newcastle Town", short_name: "NT" }),
+          makeTeam({ id: "team-1", name: "Milan Rossoneri", short_name: "MR" }),
+        ]}
+        players={[]}
+        managers={[]}
+        testId="news-cover"
+      />,
+    );
+
+    expect(screen.getByText("Milan Rossoneri")).toBeInTheDocument();
+    expect(screen.getByText("Newcastle Town")).toBeInTheDocument();
+    expect(screen.getByLabelText("Milan Rossoneri")).toBeInTheDocument();
+    expect(screen.getByLabelText("Newcastle Town")).toBeInTheDocument();
+  });
+
+  it("uses a thumbnail-first compact match cover", () => {
+    const article: NewsArticle = {
+      id: "news-1c",
+      headline: "Lyon Olympique 1-3 Lisbon Sporting",
+      body: "A dramatic match report.",
+      source: "Cronica da Liga",
+      date: "2026-12-11",
+      category: "MatchReport",
+      team_ids: ["team-1", "team-2"],
+      player_ids: [],
+      match_score: {
+        home_team_id: "team-1",
+        away_team_id: "team-2",
+        home_goals: 1,
+        away_goals: 3,
+      },
+      read: false,
+    };
+
+    render(
+      <NewsCover
+        article={article}
+        teams={[
+          makeTeam({ id: "team-1", name: "Lyon Olympique", short_name: "LO" }),
+          makeTeam({ id: "team-2", name: "Lisbon Sporting", short_name: "LS" }),
+        ]}
+        players={[]}
+        managers={[]}
+        compact
+        testId="compact-match-cover"
+      />,
+    );
+
+    expect(screen.getByTestId("compact-match-cover")).toBeInTheDocument();
+    expect(screen.getByText("1–3")).toBeInTheDocument();
+    expect(screen.queryByText("Relato de Partida")).not.toBeInTheDocument();
+    expect(screen.queryByText("Lyon Olympique")).not.toBeInTheDocument();
+    expect(screen.queryByText("Lisbon Sporting")).not.toBeInTheDocument();
+  });
+
+  it("uses an icon-led compact cover for league-wide news", () => {
+    const article: NewsArticle = {
+      id: "news-1d",
+      headline: "Primeira Divisao Rodada 20: Todos os Resultados",
+      body: "League-wide roundup.",
+      source: "O Arauto do Futebol",
+      date: "2026-12-11",
+      category: "LeagueRoundup",
+      team_ids: [],
+      player_ids: [],
+      match_score: null,
+      read: false,
+    };
+
+    render(
+      <NewsCover
+        article={article}
+        teams={[]}
+        players={[]}
+        managers={[]}
+        compact
+        testId="compact-league-cover"
+      />,
+    );
+
+    expect(screen.getByTestId("compact-league-cover")).toBeInTheDocument();
+    expect(screen.queryByText("Resumo da Rodada")).not.toBeInTheDocument();
+    expect(screen.queryByText("O Arauto do Futebol")).not.toBeInTheDocument();
+  });
+
+  it("uses a thumbnail-first compact player cover", () => {
+    const article: NewsArticle = {
+      id: "news-1e",
+      headline: "Javier Alvarez press conference",
+      body: "The players worked well.",
+      source: "Diario Esportivo",
+      date: "2026-12-12",
+      category: "Editorial",
+      team_ids: ["team-1"],
+      player_ids: ["player-1"],
+      match_score: null,
+      read: false,
+    };
+
+    render(
+      <NewsCover
+        article={article}
+        teams={[makeTeam({ name: "Madrid Real", short_name: "MR" })]}
+        players={[makePlayer({ full_name: "Javier Alvarez", match_name: "J. Alvarez" })]}
+        managers={[]}
+        compact
+        testId="compact-player-cover"
+      />,
+    );
+
+    expect(screen.getByTestId("compact-player-cover")).toBeInTheDocument();
+    expect(screen.queryByText("Editorial")).not.toBeInTheDocument();
+    expect(screen.queryByText("Javier Alvarez")).not.toBeInTheDocument();
   });
 
   it("derives a player-led news cover from article player ids", () => {
