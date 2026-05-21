@@ -2354,18 +2354,7 @@
             "description": "Lehne dieses Talent ab und entferne es aus dem Bericht."
           }
         },
-        "humblingDefeat": {
-          "headline": "{{winner}} lässt {{loser}} nach klarem {{winnerGoals}}:{{loserGoals}} benommen zurück",
-          "body": "{{winner}} war gegen {{loser}} klar überlegen und machte aus einem beachteten Duell eine einseitige Angelegenheit. Ein Vorsprung von {{goalDifference}} Toren wird beide Kabinen noch einige Tage begleiten."
-        },
         "effect": {
-          "rivalryPreview": {
-            "headline0": "{{home}} und {{away}} steuern auf ein hitziges Rivalenduell zu",
-            "headline1": "Rivalität im Fokus: {{home}} empfängt {{away}} am {{matchday}}. Spieltag",
-            "headline2": "Alte Spannungen, neue Folgen: {{home}} trifft erneut auf {{away}}",
-            "body": "Rund um den {{matchday}}. Spieltag liegt zusätzliche Schärfe in der Luft, wenn {{home}} auf {{away}} trifft. Dieses Spiel trägt echtes Rivalitätspotenzial, und keine Seite will dem anderen das Recht zum Prahlen überlassen.",
-            "bodyHighIntensity": "Der {{matchday}}. Spieltag bringt eines der schärfsten Duelle des Kalenders, wenn {{home}} auf {{away}} trifft. Die Rivalität hat echtes Gewicht, der Druck rund um das Spiel ist offensichtlich, und das Ergebnis dürfte weit über den Schlusspfiff hinaus nachhallen."
-          },
           "sign": "{{player}} hat einen Jugendvertrag unterschrieben und ist deiner Akademie beigetreten.",
           "shortlist": "{{player}} wurde zu deiner Jugend-Shortlist hinzugefügt.",
           "discard": "{{player}} wurde aus dem Bericht zur Jugendrekrutierung entfernt."
