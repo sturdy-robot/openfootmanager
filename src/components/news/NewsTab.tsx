@@ -19,7 +19,7 @@ import { resolveNewsArticle } from "../../utils/backendI18n";
 import ContextMenu, { type ContextMenuItem } from "../ContextMenu";
 import { buildViewTeamMenuItem } from "../playerActions/playerContextMenuItems";
 import AwardsCeremonyScreen from "../season/AwardsCeremonyScreen";
-import { Select } from "../ui";
+import { NewsCover, Select } from "../ui";
 
 const CAT_ICONS: Record<string, React.ReactNode> = {
   MatchReport: <Newspaper className="w-4 h-4" />,
@@ -320,6 +320,14 @@ function HeroArticle({
       onClick={onSelect}
       className="w-full text-left bg-white dark:bg-navy-800 rounded-xl border border-gray-200 dark:border-navy-700 shadow-sm overflow-hidden hover:shadow-md dark:hover:border-navy-600 transition-all group"
     >
+      <NewsCover
+        article={article}
+        teams={gameState.teams}
+        players={gameState.players}
+        managers={gameState.managers ?? [gameState.manager]}
+        className="h-44 rounded-b-none"
+        testId={`news-hero-cover-${article.id}`}
+      />
       <div className="p-6">
         <div className="flex items-center gap-2 mb-3">
           <span
@@ -422,6 +430,15 @@ function ArticleCard({
       onClick={onSelect}
       className="w-full text-left bg-white dark:bg-navy-800 rounded-xl border border-gray-200 dark:border-navy-700 shadow-sm overflow-hidden hover:shadow-md dark:hover:border-navy-600 transition-all group flex flex-col"
     >
+      <NewsCover
+        article={article}
+        teams={gameState.teams}
+        players={gameState.players}
+        managers={gameState.managers ?? [gameState.manager]}
+        compact
+        className="h-32 rounded-b-none"
+        testId={`news-card-cover-${article.id}`}
+      />
       <div className="p-4 flex-1 flex flex-col">
         <div className="flex items-center gap-2 mb-2">
           <span
@@ -506,6 +523,14 @@ function ArticleDetail({
       </button>
 
       <article className="bg-white dark:bg-navy-800 rounded-xl border border-gray-200 dark:border-navy-700 shadow-sm overflow-hidden">
+        <NewsCover
+          article={article}
+          teams={gameState.teams}
+          players={gameState.players}
+          managers={gameState.managers ?? [gameState.manager]}
+          className="h-56 rounded-none"
+          testId={`news-detail-cover-${article.id}`}
+        />
         <div className="p-8">
           {/* Category + date */}
           <div className="flex items-center gap-3 mb-4">

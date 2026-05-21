@@ -1,0 +1,3 @@
+ALTER TABLE players ADD COLUMN media TEXT;
+ALTER TABLE managers ADD COLUMN media TEXT;
+ALTER TABLE teams ADD COLUMN media TEXT;

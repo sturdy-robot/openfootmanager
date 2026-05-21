@@ -1,6 +1,7 @@
 pub mod identity;
 pub mod league;
 pub mod manager;
+pub mod media;
 pub mod message;
 pub mod negotiation;
 pub mod news;

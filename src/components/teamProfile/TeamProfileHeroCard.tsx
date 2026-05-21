@@ -1,6 +1,6 @@
 import { Calendar, Users } from "lucide-react";
 
-import { Card, TeamLocation } from "../ui";
+import { Card, TeamLocation, TeamLogo } from "../ui";
 import type { TeamProfileTranslate } from "./TeamProfile.types";
 import { QuickStat } from "./TeamProfile.primitives";
 import type { TeamProfileViewModel } from "./TeamProfile.types";
@@ -28,12 +28,11 @@ export default function TeamProfileHeroCard({
         }}
       >
         <div className="flex items-start gap-6">
-          <div
-            className="w-24 h-24 rounded-2xl flex items-center justify-center font-heading font-bold text-3xl text-white border-2 border-white/30"
-            style={{ backgroundColor: team.colors.primary }}
-          >
-            {team.short_name}
-          </div>
+          <TeamLogo
+            team={team}
+            className="h-24 w-24 shrink-0 border-2 border-white/30 shadow-lg"
+            testId="team-profile-logo"
+          />
           <div className="flex-1">
             <h2 className="text-3xl font-heading font-bold text-white uppercase tracking-wide drop-shadow">
               {team.name}

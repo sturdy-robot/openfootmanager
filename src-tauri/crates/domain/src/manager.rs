@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::media::EntityMedia;
+
 fn default_fan_approval() -> u8 {
     50
 }
@@ -31,6 +33,8 @@ pub struct Manager {
 
     // Employment history
     pub career_history: Vec<ManagerCareerEntry>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub media: Option<EntityMedia>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -81,6 +85,7 @@ impl Manager {
             warning_stage: 0,
             career_stats: ManagerCareerStats::default(),
             career_history: Vec::new(),
+            media: None,
         }
     }
 

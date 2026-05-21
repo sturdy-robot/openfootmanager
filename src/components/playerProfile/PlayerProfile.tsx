@@ -135,6 +135,9 @@ export default function PlayerProfile({
       unknown: t("common.unknown"),
     },
   );
+  const playerTeam = player.team_id
+    ? gameState.teams.find((team) => team.id === player.team_id) ?? null
+    : null;
   const contractRiskLevel = getContractRiskLevel(
     player.contract_end,
     gameState.clock.current_date,
@@ -605,6 +608,7 @@ export default function PlayerProfile({
         footednessLabel={footednessLabel}
         weakFootValue={weakFootValue}
         weeklySuffix={weeklySuffix}
+        teamColors={playerTeam?.colors}
         language={i18n.language}
         isOwnClub={isOwnClub || !onGameUpdate}
         scoutAvailability={scoutAvailability}

@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::media::EntityMedia;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Team {
     pub id: String,
@@ -62,6 +64,8 @@ pub struct Team {
 
     // History
     pub history: Vec<TeamSeasonRecord>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub media: Option<EntityMedia>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
@@ -285,6 +289,7 @@ impl Team {
             match_roles: MatchRoles::default(),
             form: Vec::new(),
             history: Vec::new(),
+            media: None,
         }
     }
 

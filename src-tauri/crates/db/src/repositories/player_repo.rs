@@ -1,3 +1,4 @@
+use domain::media::EntityMedia;
 use domain::player::{Footedness, Player, PlayerAttributes, Position, SquadRole};
 use domain::team::TrainingFocus;
 use rusqlite::{Connection, params};
@@ -23,6 +24,11 @@ pub fn upsert_player(conn: &Connection, p: &Player) -> Result<(), String> {
         .map_err(|_| GAME_PERSISTENCE_WRITE_ERROR.to_string())?;
     let morale_core_json = serde_json::to_string(&p.morale_core)
         .map_err(|_| GAME_PERSISTENCE_WRITE_ERROR.to_string())?;
+    let media_json = p
+        .media
+        .as_ref()
+        .map(|media| serde_json::to_string(media).map_err(|_| GAME_PERSISTENCE_WRITE_ERROR.to_string()))
+        .transpose()?;
     let position_str = format!("{:?}", p.position);
     let natural_position_str = format!("{:?}", p.natural_position);
     let alt_positions_json = serde_json::to_string(&p.alternate_positions)
@@ -35,10 +41,10 @@ pub fn upsert_player(conn: &Connection, p: &Player) -> Result<(), String> {
          (id, match_name, full_name, date_of_birth, nationality, football_nation, birth_country, position,
           attributes, condition, morale, injury, team_id, retired, traits,
           contract_end, wage, market_value, stats, career,
-          transfer_listed, loan_listed, transfer_offers, alternate_positions,
-          natural_position, training_focus, morale_core, footedness, weak_foot, fitness, squad_role,
-          ovr, potential)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32, ?33)",
+           transfer_listed, loan_listed, transfer_offers, alternate_positions,
+           natural_position, training_focus, morale_core, footedness, weak_foot, fitness, squad_role,
+           ovr, potential, media)
+          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32, ?33, ?34)",
         params![
             p.id,
             p.match_name,
@@ -73,6 +79,7 @@ pub fn upsert_player(conn: &Connection, p: &Player) -> Result<(), String> {
             format!("{:?}", p.squad_role),
             p.ovr as i64,
             p.potential as i64,
+            media_json,
         ],
     )
     .map_err(|_| GAME_PERSISTENCE_WRITE_ERROR.to_string())?;
@@ -144,10 +151,10 @@ pub fn load_all_players(conn: &Connection) -> Result<Vec<Player>, String> {
             "SELECT id, match_name, full_name, date_of_birth, nationality, football_nation, birth_country, position,
                     attributes, condition, morale, injury, team_id, retired, traits,
                     contract_end, wage, market_value, stats, career,
-                    transfer_listed, loan_listed, transfer_offers, alternate_positions,
-                    natural_position, training_focus, morale_core, footedness, weak_foot, fitness, squad_role,
-                    ovr, potential
-             FROM players",
+                     transfer_listed, loan_listed, transfer_offers, alternate_positions,
+                     natural_position, training_focus, morale_core, footedness, weak_foot, fitness, squad_role,
+                     ovr, potential, media
+              FROM players",
         )
         .map_err(|_| GAME_PERSISTENCE_LOAD_ERROR.to_string())?;
 
@@ -169,10 +176,10 @@ pub fn load_players_by_team(conn: &Connection, team_id: &str) -> Result<Vec<Play
             "SELECT id, match_name, full_name, date_of_birth, nationality, football_nation, birth_country, position,
                     attributes, condition, morale, injury, team_id, retired, traits,
                     contract_end, wage, market_value, stats, career,
-                    transfer_listed, loan_listed, transfer_offers, alternate_positions,
-                    natural_position, training_focus, morale_core, footedness, weak_foot, fitness, squad_role,
-                    ovr, potential
-             FROM players WHERE team_id = ?1",
+                     transfer_listed, loan_listed, transfer_offers, alternate_positions,
+                     natural_position, training_focus, morale_core, footedness, weak_foot, fitness, squad_role,
+                     ovr, potential, media
+              FROM players WHERE team_id = ?1",
         )
         .map_err(|_| GAME_PERSISTENCE_LOAD_ERROR.to_string())?;
 
@@ -206,6 +213,7 @@ fn row_to_player(row: &rusqlite::Row) -> rusqlite::Result<Player> {
     let squad_role_str: String = row.get(30).unwrap_or_else(|_| "Senior".to_string());
     let ovr: u8 = row.get::<_, i64>(31).unwrap_or(0) as u8; // default 0 for saves before V20
     let potential: u8 = row.get::<_, i64>(32).unwrap_or(0) as u8; // default 0 for saves before V20
+    let media_json: Option<String> = row.get(33).unwrap_or(None);
     let transfer_listed_int: i32 = row.get(20)?;
     let loan_listed_int: i32 = row.get(21)?;
     let market_value_i64: i64 = row.get(17)?;
@@ -271,6 +279,7 @@ fn row_to_player(row: &rusqlite::Row) -> rusqlite::Result<Player> {
         loan_listed: loan_listed_int != 0,
         transfer_offers: serde_json::from_str(&offers_json).unwrap_or_default(),
         morale_core: serde_json::from_str(&morale_core_json).unwrap_or_default(),
+        media: media_json.and_then(|json| serde_json::from_str::<EntityMedia>(&json).ok()),
     })
 }
 
@@ -278,6 +287,7 @@ fn row_to_player(row: &rusqlite::Row) -> rusqlite::Result<Player> {
 mod tests {
     use super::*;
     use crate::game_database::GameDatabase;
+    use domain::media::{EntityMedia, MediaAssetRef};
     use domain::player::{Injury, PlayerIssue, PlayerIssueCategory, PlayerMoraleCore};
     use rusqlite::Connection;
 
@@ -382,6 +392,30 @@ mod tests {
 
         assert_eq!(stored.ovr, 78);
         assert_eq!(stored.potential, 85);
+    }
+
+    #[test]
+    fn test_player_media_roundtrip() {
+        let db = test_db();
+        let mut player = sample_player("p-media", Some("team-001"));
+        player.media = Some(EntityMedia {
+            portrait: Some(MediaAssetRef {
+                path: Some("players/p-media.png".to_string()),
+            }),
+            logo: None,
+        });
+
+        upsert_player(db.conn(), &player).unwrap();
+        let loaded = load_all_players(db.conn()).unwrap();
+        let stored = loaded
+            .iter()
+            .find(|candidate| candidate.id == "p-media")
+            .expect("stored player should exist");
+
+        assert_eq!(
+            stored.media.as_ref().and_then(|media| media.portrait.as_ref()).and_then(|asset| asset.path.as_deref()),
+            Some("players/p-media.png")
+        );
     }
 
     #[test]

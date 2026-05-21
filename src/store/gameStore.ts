@@ -57,6 +57,8 @@ function normalizeGameStateNationalities(state: GameStateData): GameStateData {
 
 // Re-export all types so existing imports from gameStore keep working
 export type {
+  MediaAssetRefData,
+  EntityMediaData,
   TeamColors,
   TeamSeasonRecord,
   TeamMatchRolesData,

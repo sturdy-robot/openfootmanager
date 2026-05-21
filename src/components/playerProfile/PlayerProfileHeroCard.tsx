@@ -12,7 +12,8 @@ import type {
 } from "./PlayerProfile.scouting";
 import PlayerProfileScoutAction from "./PlayerProfileScoutAction";
 import { TraitList } from "../TraitBadge";
-import { Badge, Card, CountryFlag } from "../ui";
+import { Badge, Card, CountryFlag, PersonPortrait } from "../ui";
+import type { TeamColors } from "../../store/gameStore";
 
 type TranslateFn = (
     key: string,
@@ -28,6 +29,7 @@ interface PlayerProfileHeroCardProps {
     footednessLabel: string;
     weakFootValue: number;
     weeklySuffix: string;
+    teamColors?: TeamColors | null;
     language: string;
     isOwnClub: boolean;
     scoutAvailability: ScoutAvailability;
@@ -47,6 +49,7 @@ export default function PlayerProfileHeroCard({
     footednessLabel,
     weakFootValue,
     weeklySuffix,
+    teamColors,
     language,
     isOwnClub,
     scoutAvailability,
@@ -64,15 +67,26 @@ export default function PlayerProfileHeroCard({
         <Card accent="primary" className="mb-5">
             <div className="bg-linear-to-r from-navy-700 to-navy-800 p-8 rounded-t-xl">
                 <div className="flex items-start gap-6">
-                    <div
-                        className={`w-24 h-24 rounded-2xl flex items-center justify-center font-heading font-bold text-4xl border-2 ${ovr >= 75
-                            ? "bg-primary-500/20 text-primary-400 border-primary-500/30"
-                            : ovr >= 55
-                                ? "bg-accent-500/20 text-accent-400 border-accent-500/30"
-                                : "bg-gray-500/20 text-gray-400 border-gray-500/30"
-                            }`}
-                    >
-                        {ovr}
+                    <div className="relative shrink-0">
+                        <PersonPortrait
+                            id={player.id}
+                            name={player.full_name}
+                            media={player.media}
+                            teamColors={teamColors}
+                            className="w-24 h-24 border-2 border-white/15 shadow-lg"
+                            fallbackLabel={player.match_name.slice(0, 2).toUpperCase()}
+                            testId="player-profile-portrait"
+                        />
+                        <div
+                            className={`absolute -bottom-2 -right-2 min-w-12 rounded-xl px-3 py-1 text-center font-heading font-bold text-lg border-2 shadow-md ${ovr >= 75
+                                ? "bg-primary-500 text-white border-primary-300/60"
+                                : ovr >= 55
+                                    ? "bg-accent-500 text-navy-900 border-accent-200/70"
+                                    : "bg-gray-500 text-white border-gray-300/50"
+                                }`}
+                        >
+                            {ovr}
+                        </div>
                     </div>
                     <div className="flex-1">
                         <h2 className="text-3xl font-heading font-bold text-white uppercase tracking-wide">

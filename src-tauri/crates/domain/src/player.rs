@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::media::EntityMedia;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Player {
     pub id: String,
@@ -82,6 +84,8 @@ pub struct Player {
     pub transfer_offers: Vec<TransferOffer>,
     #[serde(default)]
     pub morale_core: PlayerMoraleCore,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub media: Option<EntityMedia>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
@@ -562,6 +566,7 @@ impl Player {
             loan_listed: false,
             transfer_offers: Vec::new(),
             morale_core: PlayerMoraleCore::default(),
+            media: None,
         }
     }
 }

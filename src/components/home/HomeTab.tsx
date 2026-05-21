@@ -289,6 +289,9 @@ export default function HomeTab({
 
             <HomeLeagueDigestCard
               articles={leagueDigestArticles}
+              teams={gameState.teams}
+              players={gameState.players}
+              managers={gameState.managers ?? [gameState.manager]}
               lang={lang}
               onNavigate={onNavigate}
             />
@@ -365,6 +368,8 @@ export default function HomeTab({
             <HomeLatestNewsCard
               articles={latestNews}
               teams={gameState.teams}
+              players={gameState.players}
+              managers={gameState.managers ?? [gameState.manager]}
               lang={lang}
               onNavigate={onNavigate}
             />

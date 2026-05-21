@@ -1,3 +1,4 @@
+use domain::media::EntityMedia;
 use domain::team::{
     Facilities, FinancialTransaction, PlayStyle, Sponsorship, Team, TeamColors, TrainingFocus,
     TrainingIntensity, TrainingSchedule,
@@ -31,6 +32,11 @@ pub fn upsert_team(conn: &Connection, t: &Team) -> Result<(), String> {
     let facilities_json =
         serde_json::to_string(&t.facilities)
             .map_err(|_| GAME_PERSISTENCE_WRITE_ERROR.to_string())?;
+    let media_json = t
+        .media
+        .as_ref()
+        .map(|media| serde_json::to_string(media).map_err(|_| GAME_PERSISTENCE_WRITE_ERROR.to_string()))
+        .transpose()?;
     let play_style_str = format!("{:?}", t.play_style);
     let training_focus_str = format!("{:?}", t.training_focus);
     let training_intensity_str = format!("{:?}", t.training_intensity);
@@ -40,11 +46,11 @@ pub fn upsert_team(conn: &Connection, t: &Team) -> Result<(), String> {
         "INSERT OR REPLACE INTO teams
          (id, name, short_name, country, football_nation, city, stadium_name, stadium_capacity,
           finance, manager_id, reputation, wage_budget, transfer_budget,
-         season_income, season_expenses, formation, play_style,
-         training_focus, training_intensity, training_schedule,
-         founded_year, colors_primary, colors_secondary,
-         starting_xi_ids, match_roles, form, history, training_groups, financial_ledger, sponsorship, facilities)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31)",
+          season_income, season_expenses, formation, play_style,
+          training_focus, training_intensity, training_schedule,
+          founded_year, colors_primary, colors_secondary,
+          starting_xi_ids, match_roles, form, history, training_groups, financial_ledger, sponsorship, facilities, media)
+          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32)",
         params![
             t.id,
             t.name,
@@ -77,6 +83,7 @@ pub fn upsert_team(conn: &Connection, t: &Team) -> Result<(), String> {
             financial_ledger_json,
             sponsorship_json,
             facilities_json,
+            media_json,
         ],
     )
     .map_err(|_| GAME_PERSISTENCE_WRITE_ERROR.to_string())?;
@@ -138,6 +145,7 @@ fn row_to_team(row: &rusqlite::Row) -> rusqlite::Result<Team> {
     let financial_ledger_json: String = row.get(28)?;
     let sponsorship_json: String = row.get(29)?;
     let facilities_json: String = row.get(30)?;
+    let media_json: Option<String> = row.get(31).unwrap_or(None);
     let play_style_str: String = row.get(16)?;
     let training_focus_str: String = row.get(17)?;
     let training_intensity_str: String = row.get(18)?;
@@ -179,6 +187,7 @@ fn row_to_team(row: &rusqlite::Row) -> rusqlite::Result<Team> {
         match_roles: serde_json::from_str(&match_roles_json).unwrap_or_default(),
         form: serde_json::from_str(&form_json).unwrap_or_default(),
         history: serde_json::from_str(&history_json).unwrap_or_default(),
+        media: media_json.and_then(|json| serde_json::from_str::<EntityMedia>(&json).ok()),
     })
 }
 
@@ -191,7 +200,7 @@ pub fn load_all_teams(conn: &Connection) -> Result<Vec<Team>, String> {
                     season_income, season_expenses, formation, play_style,
                     training_focus, training_intensity, training_schedule,
                     founded_year, colors_primary, colors_secondary,
-                    starting_xi_ids, match_roles, form, history, training_groups, financial_ledger, sponsorship, facilities
+                    starting_xi_ids, match_roles, form, history, training_groups, financial_ledger, sponsorship, facilities, media
              FROM teams",
         )
         .map_err(|_| GAME_PERSISTENCE_LOAD_ERROR.to_string())?;
@@ -216,7 +225,7 @@ pub fn load_team(conn: &Connection, id: &str) -> Result<Option<Team>, String> {
                     season_income, season_expenses, formation, play_style,
                     training_focus, training_intensity, training_schedule,
                     founded_year, colors_primary, colors_secondary,
-                    starting_xi_ids, match_roles, form, history, training_groups, financial_ledger, sponsorship, facilities
+                    starting_xi_ids, match_roles, form, history, training_groups, financial_ledger, sponsorship, facilities, media
              FROM teams WHERE id = ?1",
         )
         .map_err(|_| GAME_PERSISTENCE_LOAD_ERROR.to_string())?;
@@ -236,6 +245,7 @@ pub fn load_team(conn: &Connection, id: &str) -> Result<Option<Team>, String> {
 mod tests {
     use super::*;
     use crate::game_database::GameDatabase;
+    use domain::media::{EntityMedia, MediaAssetRef};
     use domain::team::{Facilities, Sponsorship, SponsorshipBonusCriterion, TeamSeasonRecord};
     use rusqlite::Connection;
 
@@ -328,6 +338,26 @@ mod tests {
         assert_eq!(loaded.training_focus, TrainingFocus::Attacking);
         assert_eq!(loaded.training_intensity, TrainingIntensity::High);
         assert_eq!(loaded.training_schedule, TrainingSchedule::Intense);
+    }
+
+    #[test]
+    fn test_team_media_roundtrip() {
+        let db = test_db();
+        let mut team = sample_team("team-media", "Media FC");
+        team.media = Some(EntityMedia {
+            portrait: None,
+            logo: Some(MediaAssetRef {
+                path: Some("teams/team-media.svg".to_string()),
+            }),
+        });
+
+        upsert_team(db.conn(), &team).unwrap();
+        let loaded = load_team(db.conn(), "team-media").unwrap().unwrap();
+
+        assert_eq!(
+            loaded.media.as_ref().and_then(|media| media.logo.as_ref()).and_then(|asset| asset.path.as_deref()),
+            Some("teams/team-media.svg")
+        );
     }
 
     #[test]

@@ -1,3 +1,4 @@
+use domain::media::EntityMedia;
 use domain::manager::{Manager, ManagerCareerEntry, ManagerCareerStats};
 use rusqlite::{Connection, params};
 
@@ -10,11 +11,16 @@ pub fn upsert_manager(conn: &Connection, m: &Manager) -> Result<(), String> {
         .map_err(|_| GAME_PERSISTENCE_WRITE_ERROR.to_string())?;
     let career_history_json = serde_json::to_string(&m.career_history)
         .map_err(|_| GAME_PERSISTENCE_WRITE_ERROR.to_string())?;
+    let media_json = m
+        .media
+        .as_ref()
+        .map(|media| serde_json::to_string(media).map_err(|_| GAME_PERSISTENCE_WRITE_ERROR.to_string()))
+        .transpose()?;
 
     conn.execute(
         "INSERT OR REPLACE INTO managers
-         (id, first_name, last_name, date_of_birth, nationality, football_nation, birth_country, reputation, satisfaction, fan_approval, team_id, warning_stage, career_stats, career_history)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+         (id, first_name, last_name, date_of_birth, nationality, football_nation, birth_country, reputation, satisfaction, fan_approval, team_id, warning_stage, career_stats, career_history, media)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
         params![
             m.id,
             m.first_name,
@@ -30,6 +36,7 @@ pub fn upsert_manager(conn: &Connection, m: &Manager) -> Result<(), String> {
             m.warning_stage,
             career_stats_json,
             career_history_json,
+            media_json,
         ],
     )
     .map_err(|_| GAME_PERSISTENCE_WRITE_ERROR.to_string())?;
@@ -40,7 +47,7 @@ pub fn upsert_manager(conn: &Connection, m: &Manager) -> Result<(), String> {
 pub fn load_manager(conn: &Connection, id: &str) -> Result<Option<Manager>, String> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, first_name, last_name, date_of_birth, nationality, football_nation, birth_country, reputation, satisfaction, fan_approval, team_id, warning_stage, career_stats, career_history
+            "SELECT id, first_name, last_name, date_of_birth, nationality, football_nation, birth_country, reputation, satisfaction, fan_approval, team_id, warning_stage, career_stats, career_history, media
              FROM managers WHERE id = ?1",
         )
         .map_err(|_| GAME_PERSISTENCE_LOAD_ERROR.to_string())?;
@@ -64,6 +71,7 @@ pub fn load_manager(conn: &Connection, id: &str) -> Result<Option<Manager>, Stri
                 row.get::<_, u8>(11)?,
                 career_stats_json,
                 career_history_json,
+                row.get::<_, Option<String>>(14)?,
             ))
         })
         .map_err(|_| GAME_PERSISTENCE_LOAD_ERROR.to_string())?;
@@ -84,6 +92,7 @@ pub fn load_manager(conn: &Connection, id: &str) -> Result<Option<Manager>, Stri
             warning_stage,
             stats_json,
             history_json,
+            media_json,
         ))) => {
             let career_stats: ManagerCareerStats = serde_json::from_str(&stats_json)
                 .map_err(|_| GAME_PERSISTENCE_LOAD_ERROR.to_string())?;
@@ -105,6 +114,7 @@ pub fn load_manager(conn: &Connection, id: &str) -> Result<Option<Manager>, Stri
                 warning_stage,
                 career_stats,
                 career_history,
+                media: media_json.and_then(|json| serde_json::from_str::<EntityMedia>(&json).ok()),
             }))
         }
         Some(Err(_)) => Err(GAME_PERSISTENCE_LOAD_ERROR.to_string()),
@@ -116,7 +126,7 @@ pub fn load_manager(conn: &Connection, id: &str) -> Result<Option<Manager>, Stri
 pub fn load_all_managers(conn: &Connection) -> Result<Vec<Manager>, String> {
     let mut stmt = conn
         .prepare(
-            "SELECT id, first_name, last_name, date_of_birth, nationality, football_nation, birth_country, reputation, satisfaction, fan_approval, team_id, warning_stage, career_stats, career_history
+            "SELECT id, first_name, last_name, date_of_birth, nationality, football_nation, birth_country, reputation, satisfaction, fan_approval, team_id, warning_stage, career_stats, career_history, media
              FROM managers",
         )
         .map_err(|_| GAME_PERSISTENCE_LOAD_ERROR.to_string())?;
@@ -138,6 +148,7 @@ pub fn load_all_managers(conn: &Connection) -> Result<Vec<Manager>, String> {
                 row.get::<_, u8>(11)?,
                 row.get::<_, String>(12)?,
                 row.get::<_, String>(13)?,
+                row.get::<_, Option<String>>(14)?,
             ))
         })
         .map_err(|_| GAME_PERSISTENCE_LOAD_ERROR.to_string())?;
@@ -159,6 +170,7 @@ pub fn load_all_managers(conn: &Connection) -> Result<Vec<Manager>, String> {
             warning_stage,
             stats_json,
             history_json,
+            media_json,
         ) = row.map_err(|_| GAME_PERSISTENCE_LOAD_ERROR.to_string())?;
         let career_stats: ManagerCareerStats = serde_json::from_str(&stats_json)
             .map_err(|_| GAME_PERSISTENCE_LOAD_ERROR.to_string())?;
@@ -179,6 +191,7 @@ pub fn load_all_managers(conn: &Connection) -> Result<Vec<Manager>, String> {
             warning_stage,
             career_stats,
             career_history,
+            media: media_json.and_then(|json| serde_json::from_str::<EntityMedia>(&json).ok()),
         });
     }
     Ok(managers)
@@ -188,6 +201,7 @@ pub fn load_all_managers(conn: &Connection) -> Result<Vec<Manager>, String> {
 mod tests {
     use super::*;
     use crate::game_database::GameDatabase;
+    use domain::media::{EntityMedia, MediaAssetRef};
     use rusqlite::Connection;
 
     fn test_db() -> GameDatabase {
@@ -281,6 +295,26 @@ mod tests {
         assert_eq!(loaded.career_stats.matches_managed, 42);
         assert_eq!(loaded.career_stats.wins, 20);
         assert_eq!(loaded.career_stats.trophies, 1);
+    }
+
+    #[test]
+    fn test_manager_media_roundtrip() {
+        let db = test_db();
+        let mut mgr = sample_manager();
+        mgr.media = Some(EntityMedia {
+            portrait: Some(MediaAssetRef {
+                path: Some("managers/mgr_user.png".to_string()),
+            }),
+            logo: None,
+        });
+
+        upsert_manager(db.conn(), &mgr).unwrap();
+        let loaded = load_manager(db.conn(), "mgr_user").unwrap().unwrap();
+
+        assert_eq!(
+            loaded.media.as_ref().and_then(|media| media.portrait.as_ref()).and_then(|asset| asset.path.as_deref()),
+            Some("managers/mgr_user.png")
+        );
     }
 
     #[test]

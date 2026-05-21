@@ -3,6 +3,15 @@ export interface TeamColors {
   secondary: string;
 }
 
+export interface MediaAssetRefData {
+  path?: string | null;
+}
+
+export interface EntityMediaData {
+  portrait?: MediaAssetRefData | null;
+  logo?: MediaAssetRefData | null;
+}
+
 export interface FacilitiesData {
   training: number;
   medical: number;
@@ -77,6 +86,7 @@ export interface TeamData {
   match_roles?: TeamMatchRolesData;
   form: string[];
   history: TeamSeasonRecord[];
+  media?: EntityMediaData | null;
 }
 
 export interface PlayerSeasonStats {
@@ -183,6 +193,7 @@ export interface PlayerData {
   ovr?: number;
   /** Player's potential ceiling (1–99). Set at generation; higher than ovr for young players. */
   potential?: number;
+  media?: EntityMediaData | null;
 }
 
 export interface TransferOfferData {
@@ -353,6 +364,7 @@ export interface ManagerData {
   warning_stage?: number;
   career_stats: ManagerCareerStats;
   career_history: ManagerCareerEntry[];
+  media?: EntityMediaData | null;
 }
 
 export interface FixtureData {

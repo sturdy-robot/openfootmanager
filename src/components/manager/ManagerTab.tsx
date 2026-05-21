@@ -1,5 +1,5 @@
 import { GameStateData } from "../../store/gameStore";
-import { Card, CardHeader, CardBody, ProgressBar, CountryFlag } from "../ui";
+import { Card, CardHeader, CardBody, ProgressBar, CountryFlag, PersonPortrait } from "../ui";
 import { formatDate } from "../../lib/helpers";
 import { useTranslation } from "react-i18next";
 import { countryName } from "../../lib/countries";
@@ -22,9 +22,15 @@ export default function ManagerTab({ gameState, onSelectTeam }: ManagerTabProps)
       {/* Profile card */}
       <Card accent="primary" className="md:col-span-3">
         <div className="bg-gradient-to-r from-navy-700 to-navy-800 p-6 rounded-t-xl flex items-center gap-6">
-          <div className="w-20 h-20 rounded-xl bg-primary-500/20 flex items-center justify-center font-heading font-bold text-3xl text-primary-400 border-2 border-primary-500/30">
-            {mgr.first_name.charAt(0)}{mgr.last_name.charAt(0)}
-          </div>
+          <PersonPortrait
+            id={mgr.id}
+            name={`${mgr.first_name} ${mgr.last_name}`}
+            media={mgr.media}
+            teamColors={myTeam?.colors}
+            className="h-20 w-20 border-2 border-primary-500/30 shadow-lg"
+            fallbackLabel={`${mgr.first_name.charAt(0)}${mgr.last_name.charAt(0)}`}
+            testId="manager-portrait"
+          />
           <div>
             <h2 className="text-2xl font-heading font-bold text-white uppercase tracking-wide">{mgr.first_name} {mgr.last_name}</h2>
             <p className="text-gray-400 text-sm mt-1">

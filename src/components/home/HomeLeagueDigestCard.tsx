@@ -1,17 +1,28 @@
 import { useTranslation } from "react-i18next";
 
 import { formatDateShort } from "../../lib/helpers";
-import type { NewsArticle } from "../../store/gameStore";
-import { Badge, Card, CardBody, CardHeader } from "../ui";
+import type {
+  ManagerData,
+  NewsArticle,
+  PlayerData,
+  TeamData,
+} from "../../store/gameStore";
+import { Badge, Card, CardBody, CardHeader, NewsCover } from "../ui";
 
 interface HomeLeagueDigestCardProps {
   articles: NewsArticle[];
+  teams?: TeamData[];
+  players?: PlayerData[];
+  managers?: ManagerData[];
   lang: string;
   onNavigate?: (tab: string) => void;
 }
 
 export default function HomeLeagueDigestCard({
   articles,
+  teams = [],
+  players = [],
+  managers = [],
   lang,
   onNavigate,
 }: HomeLeagueDigestCardProps) {
@@ -44,17 +55,30 @@ export default function HomeLeagueDigestCard({
                 onClick={() => onNavigate?.("News")}
                 className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-navy-700/50 transition-colors"
               >
-                <div className="flex items-center gap-2 mb-1.5">
-                  <Badge variant="neutral" size="sm">
-                    {t(`news.categories.${article.category}`)}
-                  </Badge>
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500">
-                    {formatDateShort(article.date, lang)} - {article.source}
-                  </span>
+                <div className="flex items-start gap-3">
+                  <NewsCover
+                    article={article}
+                    teams={teams}
+                    players={players}
+                    managers={managers}
+                    compact
+                    className="h-20 w-24 shrink-0"
+                    testId={`home-league-digest-cover-${article.id}`}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Badge variant="neutral" size="sm">
+                        {t(`news.categories.${article.category}`)}
+                      </Badge>
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                        {formatDateShort(article.date, lang)} - {article.source}
+                      </span>
+                    </div>
+                    <p className="text-sm font-heading font-bold text-gray-800 dark:text-gray-200 leading-snug">
+                      {article.headline}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm font-heading font-bold text-gray-800 dark:text-gray-200 leading-snug">
-                  {article.headline}
-                </p>
               </button>
             ))}
           </div>

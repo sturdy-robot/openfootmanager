@@ -2,12 +2,19 @@ import { Newspaper } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { formatDateShort, getTeamName } from "../../lib/helpers";
-import type { NewsArticle, TeamData } from "../../store/gameStore";
-import { Card, CardBody, CardHeader } from "../ui";
+import type {
+  ManagerData,
+  NewsArticle,
+  PlayerData,
+  TeamData,
+} from "../../store/gameStore";
+import { Card, CardBody, CardHeader, NewsCover } from "../ui";
 
 interface HomeLatestNewsCardProps {
   articles: NewsArticle[];
   teams: TeamData[];
+  players?: PlayerData[];
+  managers?: ManagerData[];
   lang: string;
   onNavigate?: (tab: string) => void;
 }
@@ -15,6 +22,8 @@ interface HomeLatestNewsCardProps {
 export default function HomeLatestNewsCard({
   articles,
   teams,
+  players = [],
+  managers = [],
   lang,
   onNavigate,
 }: HomeLatestNewsCardProps) {
@@ -50,25 +59,38 @@ export default function HomeLatestNewsCard({
                 onClick={() => onNavigate?.("News")}
                 className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-navy-700/50 transition-colors"
               >
-                <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">
-                  {formatDateShort(article.date, lang)} - {article.source}
-                </p>
-                <p className="text-sm font-heading font-bold text-gray-800 dark:text-gray-200 leading-snug line-clamp-2">
-                  {article.headline}
-                </p>
-                {article.match_score && (
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                      {getTeamName(teams, article.match_score.home_team_id)}
-                    </span>
-                    <span className="text-[10px] font-heading font-bold text-primary-500">
-                      {article.match_score.home_goals}-{article.match_score.away_goals}
-                    </span>
-                    <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                      {getTeamName(teams, article.match_score.away_team_id)}
-                    </span>
+                <div className="flex items-start gap-3">
+                  <NewsCover
+                    article={article}
+                    teams={teams}
+                    players={players}
+                    managers={managers}
+                    compact
+                    className="h-24 w-28 shrink-0"
+                    testId={`home-latest-news-cover-${article.id}`}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">
+                      {formatDateShort(article.date, lang)} - {article.source}
+                    </p>
+                    <p className="text-sm font-heading font-bold text-gray-800 dark:text-gray-200 leading-snug line-clamp-2">
+                      {article.headline}
+                    </p>
+                    {article.match_score && (
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                          {getTeamName(teams, article.match_score.home_team_id)}
+                        </span>
+                        <span className="text-[10px] font-heading font-bold text-primary-500">
+                          {article.match_score.home_goals}-{article.match_score.away_goals}
+                        </span>
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                          {getTeamName(teams, article.match_score.away_team_id)}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </button>
             ))}
           </div>
