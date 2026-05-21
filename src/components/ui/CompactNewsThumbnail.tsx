@@ -109,12 +109,12 @@ export function CompactNewsThumbnail({
                 data-testid={testId}
                 aria-label={cardLabel}
             >
-                <div className="flex flex-1 items-end justify-between px-3 pb-3 pt-1">
-                    <div className="pb-1">
+                <div className="flex flex-1 items-end justify-between px-3 py-5">
+                    <div className="">
                         {playerTeam ? (
-                            <TeamLogo team={playerTeam} className="h-10 w-10 shrink-0" />
+                            <TeamLogo team={playerTeam} className="h-8 w-8 shrink-0" />
                         ) : (
-                            <div className="h-10 w-10 shrink-0 rounded-xl bg-white/10" />
+                            <div className="h-8 w-8 shrink-0 rounded-xl bg-white/10" />
                         )}
                     </div>
                     <PersonPortrait
@@ -122,7 +122,7 @@ export function CompactNewsThumbnail({
                         name={featuredPlayer.full_name}
                         media={featuredPlayer.media}
                         teamColors={playerTeam?.colors}
-                        className="h-16 w-16 shrink-0"
+                        className="h-8 w-8 shrink-0"
                         fallbackLabel={featuredPlayer.match_name.slice(0, 2).toUpperCase()}
                     />
                 </div>
@@ -141,16 +141,16 @@ export function CompactNewsThumbnail({
                 data-testid={testId}
                 aria-label={cardLabel}
             >
-                <div className="flex flex-1 items-end justify-between px-3 pb-3 pt-1">
-                    <div className="pb-1">
-                        <TeamLogo team={primaryTeam} className="h-10 w-10 shrink-0" />
+                <div className="flex flex-1 items-end justify-between px-3 py-5">
+                    <div className="">
+                        <TeamLogo team={primaryTeam} className="h-8 w-8 shrink-0" />
                     </div>
                     <PersonPortrait
                         id={featuredManager.id}
                         name={`${featuredManager.first_name} ${featuredManager.last_name}`}
                         media={featuredManager.media}
                         teamColors={primaryTeam.colors}
-                        className="h-16 w-16 shrink-0"
+                        className="h-8 w-8 shrink-0"
                     />
                 </div>
             </div>
@@ -168,8 +168,8 @@ export function CompactNewsThumbnail({
                 data-testid={testId}
                 aria-label={cardLabel}
             >
-                <div className="flex flex-1 items-center justify-center px-3 pb-3 pt-1">
-                    <TeamLogo team={primaryTeam} className="h-16 w-16 shrink-0" />
+                <div className="flex flex-1 items-center justify-center px-3 py-5">
+                    <TeamLogo team={primaryTeam} className="h-8 w-8 shrink-0" />
                 </div>
             </div>
         );
