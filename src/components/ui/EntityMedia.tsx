@@ -36,10 +36,14 @@ function clampColorChannel(value: number) {
   return Math.max(0, Math.min(255, Math.round(value)));
 }
 
+function expandHexShorthand(hex: string) {
+  return hex.split("").map((char) => `${char}${char}`).join("");
+}
+
 function hexToRgb(hex: string) {
   const normalized = hex.replace("#", "");
   const expanded = normalized.length === 3
-    ? normalized.split("").map((char) => `${char}${char}`).join("")
+    ? expandHexShorthand(normalized)
     : normalized;
 
   if (!/^[\da-fA-F]{6}$/.test(expanded)) {
@@ -106,7 +110,7 @@ function pickPalette(seed: string, teamColors?: TeamColorsLike | null) {
 }
 
 function isDirectMediaPath(path: string) {
-  return /^(data:|blob:|https?:|file:|\/)/.test(path);
+  return /^(data:|blob:|https?:|\/)/.test(path);
 }
 
 function mediaPathFrom(media: EntityMediaData | null | undefined, kind: "portrait" | "logo") {
@@ -351,7 +355,9 @@ export function NewsCover({
   const primaryTeam = teams.find((team) => article.team_ids.includes(team.id));
   const secondaryTeam = article.match_score
     ? teams.find((team) => team.id === article.match_score?.away_team_id)
-    : teams.find((team) => team.id === article.team_ids[1]);
+    : article.team_ids[1]
+      ? teams.find((team) => team.id === article.team_ids[1])
+      : undefined;
   const featuredPlayer = players.find((player) => article.player_ids.includes(player.id));
   const playerTeam = featuredPlayer?.team_id
     ? teams.find((team) => team.id === featuredPlayer.team_id)
