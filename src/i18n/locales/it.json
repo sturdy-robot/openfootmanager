@@ -2521,7 +2521,18 @@
         "unbeatenStreak": {
           "headline": "{{team}} allunga la striscia da imbattuto a {{runLength}}",
           "body": "{{team}} è imbattuto da {{runLength}} partita/e e sta prendendo un vero slancio."
+        },
+        "humblingDefeat": {
+          "headline": "{{winner}} lascia {{loser}} frastornato dopo un netto {{winnerGoals}}-{{loserGoals}}",
+          "body": "{{winner}} ha travolto {{loser}}, trasformando una sfida attesa in un confronto a senso unico. Un margine di {{goalDifference}} gol terrà i riflettori puntati su entrambi gli spogliatoi nei prossimi giorni."
         }
+      },
+      "rivalryPreview": {
+        "headline0": "{{home}} e {{away}} si preparano a una sfida di rivalità",
+        "headline1": "Rivalità sotto i riflettori: {{home}} aspetta {{away}} alla giornata {{matchday}}",
+        "headline2": "Vecchia tensione, nuove conseguenze: {{home}} ritrova {{away}}",
+        "body": "C'è un'aria più tagliente attorno alla giornata {{matchday}} mentre {{home}} si prepara ad affrontare {{away}}. Questa gara porta con sé un vero peso di rivalità e nessuna delle due squadre vorrà regalare all'altra il diritto di vantarsi.",
+        "bodyHighIntensity": "La giornata {{matchday}} propone una delle sfide più incandescenti del calendario con {{home}} contro {{away}}. La rivalità è reale, la pressione che circonda l'incontro è evidente e il risultato rischia di lasciare il segno ben oltre il fischio finale."
       },
       "transferRumour": {
         "headline0": "{{player}} attrae l'interesse di diversi club",

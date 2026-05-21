@@ -2521,7 +2521,18 @@
         "unbeatenStreak": {
           "headline": "{{team}} porte sa série d'invincibilité à {{runLength}}",
           "body": "{{team}} reste sur {{runLength}} match(es) sans défaite et prend un vrai élan."
+        },
+        "humblingDefeat": {
+          "headline": "{{winner}} laisse {{loser}} sonné après un net succès {{winnerGoals}}-{{loserGoals}}",
+          "body": "{{winner}} a surclassé {{loser}}, transformant une affiche attendue en rencontre à sens unique. Un écart de {{goalDifference}} buts gardera les projecteurs braqués sur les deux vestiaires dans les jours qui viennent."
         }
+      },
+      "rivalryPreview": {
+        "headline0": "{{home}} et {{away}} se préparent pour un choc de rivalité",
+        "headline1": "Rivalité sous tension : {{home}} attend {{away}} lors de la journée {{matchday}}",
+        "headline2": "Vieille tension, nouvel enjeu : {{home}} retrouve {{away}}",
+        "body": "Il y a un supplément de tension autour de la journée {{matchday}} alors que {{home}} s'apprête à affronter {{away}}. Cette affiche porte un vrai poids de rivalité et aucun des deux camps ne voudra laisser les droits de fanfaronner à l'autre.",
+        "bodyHighIntensity": "La journée {{matchday}} propose l'un des rendez-vous les plus électriques du calendrier avec {{home}} face à {{away}}. La rivalité est bien réelle, la pression autour de l'affiche saute aux yeux et le résultat devrait peser bien au-delà du coup de sifflet final."
       },
       "transferRumour": {
         "headline0": "{{player}} suscite l'intérêt de plusieurs clubs",

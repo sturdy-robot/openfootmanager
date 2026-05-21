@@ -2,13 +2,16 @@ use crate::game::Game;
 use crate::messages;
 use crate::news;
 use chrono::{Datelike, Duration, NaiveDate};
-use domain::league::{Fixture, FixtureStatus, League, StandingEntry, TransferRumour};
+use domain::league::{Fixture, FixtureStatus, League, MatchResult, StandingEntry, TransferRumour};
 use rand::seq::SliceRandom;
 use std::collections::{HashMap, HashSet};
 
 const MAX_WEEKLY_TRANSFER_RUMOURS: usize = 2;
 const TRANSFER_RUMOUR_RETENTION_DAYS: i64 = 28;
 const MAX_DAILY_WORLD_NEWS_ARTICLES: usize = 5;
+const RIVALRY_PREVIEW_INTENSITY_THRESHOLD: u8 = 75;
+const HUMBLING_GOAL_DIFFERENCE_THRESHOLD: u8 = 4;
+const HUMBLING_WINNER_GOALS_THRESHOLD: u8 = 5;
 
 fn completed_fixtures_for_day<'a>(league: &'a League, today: &str) -> Vec<&'a Fixture> {
     league
@@ -32,6 +35,17 @@ fn team_name_or(game: &Game, team_id: &str, fallback: &str) -> String {
 
 fn team_name(game: &Game, team_id: &str) -> String {
     team_name_or(game, team_id, "")
+}
+
+fn rivalry_intensity(game: &Game, team_a_id: &str, team_b_id: &str) -> Option<u8> {
+    game.world_history
+        .rivalries
+        .iter()
+        .find(|rivalry| {
+            (rivalry.team_a_id == team_a_id && rivalry.team_b_id == team_b_id)
+                || (rivalry.team_a_id == team_b_id && rivalry.team_b_id == team_a_id)
+        })
+        .map(|rivalry| rivalry.intensity)
 }
 
 fn player_match_name_or_id(game: &Game, player_id: &str) -> String {
@@ -244,6 +258,49 @@ fn weekly_storyline_articles(
     }
 
     articles
+}
+
+fn humbling_storyline_article_for_fixture(
+    game: &Game,
+    fixture: &Fixture,
+    result: &MatchResult,
+    date: &str,
+) -> Option<domain::news::NewsArticle> {
+    let goal_difference = result.home_goals.abs_diff(result.away_goals);
+    let winner_goals = result.home_goals.max(result.away_goals);
+    if goal_difference < HUMBLING_GOAL_DIFFERENCE_THRESHOLD
+        && winner_goals < HUMBLING_WINNER_GOALS_THRESHOLD
+    {
+        return None;
+    }
+
+    let (winner_team_id, winner_goals, loser_team_id, loser_goals) =
+        if result.home_goals >= result.away_goals {
+            (
+                fixture.home_team_id.as_str(),
+                result.home_goals,
+                fixture.away_team_id.as_str(),
+                result.away_goals,
+            )
+        } else {
+            (
+                fixture.away_team_id.as_str(),
+                result.away_goals,
+                fixture.home_team_id.as_str(),
+                result.home_goals,
+            )
+        };
+
+    Some(news::humbling_defeat_storyline_article(
+        &format!("humbling_{}", fixture.id),
+        winner_team_id,
+        &team_name(game, winner_team_id),
+        loser_team_id,
+        &team_name(game, loser_team_id),
+        winner_goals,
+        loser_goals,
+        date,
+    ))
 }
 
 /// Selects interesting players from non-user AI teams who could plausibly be the subject
@@ -751,6 +808,65 @@ pub fn generate_matchday_news(game: &mut Game, today: &str) {
 
     let standings_article = news::standings_update_article(matchday, &standings, &date_str);
     game.news.push(standings_article);
+
+    let storyline_articles: Vec<_> = todays_fixtures
+        .iter()
+        .filter_map(|fixture| {
+            fixture.result.as_ref().and_then(|result| {
+                let candidate =
+                    humbling_storyline_article_for_fixture(game, fixture, result, &date_str)?;
+                (!game.news.iter().any(|article| article.id == candidate.id)).then_some(candidate)
+            })
+        })
+        .collect();
+    game.news.extend(storyline_articles);
+}
+
+pub(super) fn generate_pre_match_news(game: &mut Game, today: &str) {
+    let user_team_id = match &game.manager.team_id {
+        Some(id) => id.clone(),
+        None => return,
+    };
+
+    let target_str = match pre_match_target_date(today) {
+        Some(date) => date,
+        None => return,
+    };
+
+    let candidates = {
+        let Some(league) = &game.league else {
+            return;
+        };
+
+        scheduled_user_fixtures_for_date(league, &user_team_id, &target_str)
+            .into_iter()
+            .filter_map(|fixture| {
+                let intensity =
+                    rivalry_intensity(game, &fixture.home_team_id, &fixture.away_team_id)?;
+                if intensity < RIVALRY_PREVIEW_INTENSITY_THRESHOLD {
+                    return None;
+                }
+
+                let article_id = format!("rivalry_preview_{}", fixture.id);
+                if game.news.iter().any(|article| article.id == article_id) {
+                    return None;
+                }
+
+                Some(news::rivalry_preview_article(
+                    &article_id,
+                    &fixture.home_team_id,
+                    &team_name_or(game, &fixture.home_team_id, "Home"),
+                    &fixture.away_team_id,
+                    &team_name_or(game, &fixture.away_team_id, "Away"),
+                    fixture.matchday,
+                    intensity,
+                    &game.clock.current_date.to_rfc3339(),
+                ))
+            })
+            .collect::<Vec<_>>()
+    };
+
+    game.news.extend(candidates);
 }
 
 pub(super) fn generate_pre_match_messages(game: &mut Game, today: &str) {
@@ -796,7 +912,7 @@ pub(super) fn generate_pre_match_messages(game: &mut Game, today: &str) {
 mod tests {
     use super::{
         generate_match_news, generate_matchday_news, generate_pre_match_messages,
-        generate_weekly_digest_news,
+        generate_pre_match_news, generate_weekly_digest_news,
     };
     use crate::clock::GameClock;
     use crate::game::Game;
@@ -1274,6 +1390,95 @@ mod tests {
                 .count(),
             1
         );
+    }
+
+    #[test]
+    fn generate_pre_match_news_adds_rivalry_preview_for_intense_fixture() {
+        let mut game = make_game("2025-08-15", FixtureStatus::Scheduled);
+        game.world_history
+            .upsert_rivalry("team1", "team2", 88, Some(2024));
+
+        generate_pre_match_news(&mut game, "2025-08-12");
+
+        let article = game
+            .news
+            .iter()
+            .find(|article| article.id == "rivalry_preview_fx1")
+            .unwrap();
+        assert_eq!(article.category, NewsCategory::Editorial);
+        assert!(
+            [
+                "be.news.rivalryPreview.headline0",
+                "be.news.rivalryPreview.headline1",
+                "be.news.rivalryPreview.headline2"
+            ]
+            .contains(&article.headline_key.as_deref().unwrap())
+        );
+        assert_eq!(
+            article.body_key.as_deref(),
+            Some("be.news.rivalryPreview.bodyHighIntensity")
+        );
+        assert_eq!(
+            article.team_ids,
+            vec!["team1".to_string(), "team2".to_string()]
+        );
+    }
+
+    #[test]
+    fn generate_pre_match_news_skips_low_intensity_rivalries() {
+        let mut game = make_game("2025-08-15", FixtureStatus::Scheduled);
+        game.world_history
+            .upsert_rivalry("team1", "team2", 60, Some(2024));
+
+        generate_pre_match_news(&mut game, "2025-08-12");
+
+        assert!(
+            game.news
+                .iter()
+                .all(|article| article.id != "rivalry_preview_fx1")
+        );
+    }
+
+    #[test]
+    fn generate_matchday_news_adds_humbling_storyline_for_big_win() {
+        let mut game = make_game("2025-08-12", FixtureStatus::Completed);
+        game.league.as_mut().unwrap().fixtures[0].result = Some(MatchResult {
+            home_goals: 5,
+            away_goals: 1,
+            home_scorers: vec![],
+            away_scorers: vec![],
+            report: None,
+        });
+
+        generate_matchday_news(&mut game, "2025-08-12");
+
+        let article = game
+            .news
+            .iter()
+            .find(|article| article.id == "humbling_fx1")
+            .unwrap();
+        assert_eq!(article.category, NewsCategory::Editorial);
+        assert_eq!(
+            article.headline_key.as_deref(),
+            Some("be.news.storyline.humblingDefeat.headline")
+        );
+        assert_eq!(
+            article.i18n_params.get("winner"),
+            Some(&"Alpha FC".to_string())
+        );
+        assert_eq!(
+            article.i18n_params.get("loser"),
+            Some(&"Beta FC".to_string())
+        );
+    }
+
+    #[test]
+    fn generate_matchday_news_skips_humbling_storyline_for_regular_result() {
+        let mut game = make_game("2025-08-12", FixtureStatus::Completed);
+
+        generate_matchday_news(&mut game, "2025-08-12");
+
+        assert!(game.news.iter().all(|article| article.id != "humbling_fx1"));
     }
 
     #[test]

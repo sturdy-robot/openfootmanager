@@ -2351,7 +2351,18 @@
             "description": "放弃这名潜力球员，并将其从报告中移除。"
           }
         },
+        "humblingDefeat": {
+          "headline": "{{winner}}以{{winnerGoals}}比{{loserGoals}}重创{{loser}}",
+          "body": "{{winner}}彻底压制了{{loser}}，让一场原本受人关注的较量变成了一边倒。{{goalDifference}}球的差距会让两队更衣室在接下来几天都处在聚光灯下。"
+        },
         "effect": {
+          "rivalryPreview": {
+            "headline0": "{{home}}与{{away}}即将上演宿敌对决",
+            "headline1": "宿敌焦点战：{{home}}将在第{{matchday}}轮迎战{{away}}",
+            "headline2": "旧怨未消，新戏再起：{{home}}再度碰上{{away}}",
+            "body": "第{{matchday}}轮到来之际，{{home}}对阵{{away}}的比赛带着额外火药味。这场较量有着真实的宿敌意味，双方都不愿把赛后的谈资拱手让给对方。",
+            "bodyHighIntensity": "第{{matchday}}轮将带来赛程中火药味最浓的一场对决之一：{{home}}迎战{{away}}。这段宿怨分量十足，比赛周围的压力清晰可见，而结果的影响很可能会延续到终场哨响之后。"
+          },
           "sign": "{{player}} 已签下青训合同并加入你的青训学院。",
           "shortlist": "{{player}} 已加入你的青训候选名单。",
           "discard": "{{player}} 已从青训招募报告中移除。"
@@ -2518,7 +2529,18 @@
         "unbeatenStreak": {
           "headline": "{{team}}不败纪录延续至{{runLength}}场",
           "body": "{{team}}已连续{{runLength}}场比赛保持不败,势头正劲。"
+        },
+        "humblingDefeat": {
+          "headline": "{{winner}}以{{winnerGoals}}比{{loserGoals}}重创{{loser}}",
+          "body": "{{winner}}彻底压制了{{loser}}，让一场原本受人关注的较量变成了一边倒。{{goalDifference}}球的差距会让两队更衣室在接下来几天都处在聚光灯下。"
         }
+      },
+      "rivalryPreview": {
+        "headline0": "{{home}}与{{away}}即将上演宿敌对决",
+        "headline1": "宿敌焦点战：{{home}}将在第{{matchday}}轮迎战{{away}}",
+        "headline2": "旧怨未消，新戏再起：{{home}}再度碰上{{away}}",
+        "body": "第{{matchday}}轮到来之际，{{home}}对阵{{away}}的比赛带着额外火药味。这场较量有着真实的宿敌意味，双方都不愿把赛后的谈资拱手让给对方。",
+        "bodyHighIntensity": "第{{matchday}}轮将带来赛程中火药味最浓的一场对决之一：{{home}}迎战{{away}}。这段宿怨分量十足，比赛周围的压力清晰可见，而结果的影响很可能会延续到终场哨响之后。"
       },
       "transferRumour": {
         "headline0": "{{player}}引发多家俱乐部关注",

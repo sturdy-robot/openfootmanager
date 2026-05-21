@@ -2517,7 +2517,18 @@
         "unbeatenStreak": {
           "headline": "{{team}} Extend Unbeaten Run to {{runLength}}",
           "body": "{{team}} have gone {{runLength}} match(es) without defeat and are building real momentum."
+        },
+        "humblingDefeat": {
+          "headline": "{{winner}} leave {{loser}} reeling after emphatic {{winnerGoals}}-{{loserGoals}} win",
+          "body": "{{winner}} ran away with it against {{loser}}, turning a high-profile contest into a one-sided affair. A {{goalDifference}}-goal margin will keep the spotlight on both dressing rooms in the days ahead."
         }
+      },
+      "rivalryPreview": {
+        "headline0": "{{home}} and {{away}} set for rivalry showdown",
+        "headline1": "Rivalry watch: {{home}} brace for {{away}} on Matchday {{matchday}}",
+        "headline2": "Old tension, new stakes: {{home}} meet {{away}} again",
+        "body": "There is extra edge around Matchday {{matchday}} as {{home}} prepare to face {{away}}. This fixture carries genuine rivalry weight, and neither side will want to hand bragging rights to the other.",
+        "bodyHighIntensity": "Matchday {{matchday}} brings one of the fiercest fixtures on the calendar as {{home}} face {{away}}. The rivalry has real bite, the pressure around the contest is obvious, and the result is likely to shape the mood far beyond the final whistle."
       },
       "transferRumour": {
         "headline0": "{{player}} Attracting Interest from Several Clubs",

@@ -2521,7 +2521,18 @@
         "unbeatenStreak": {
           "headline": "{{team}} prolonga série invicta para {{runLength}}",
           "body": "{{team}} soma {{runLength}} jogo(s) sem perder e está a ganhar verdadeiro embalo."
+        },
+        "humblingDefeat": {
+          "headline": "{{winner}} deixa o {{loser}} abalado com um contundente {{winnerGoals}}-{{loserGoals}}",
+          "body": "O {{winner}} atropelou o {{loser}} e transformou um duelo de destaque num encontro sem história. Uma margem de {{goalDifference}} golos vai manter os holofotes apontados aos dois balneários nos próximos dias."
         }
+      },
+      "rivalryPreview": {
+        "headline0": "{{home}} e {{away}} preparam-se para um duelo de rivalidade",
+        "headline1": "Rivalidade em foco: o {{home}} recebe o {{away}} na Jornada {{matchday}}",
+        "headline2": "Tensão antiga, novas consequências: {{home}} e {{away}} voltam a medir forças",
+        "body": "Há uma carga extra em torno da Jornada {{matchday}} quando o {{home}} receber o {{away}}. Este jogo tem verdadeiro peso de rivalidade e nenhum dos lados quererá entregar direitos de gozo ao outro.",
+        "bodyHighIntensity": "A Jornada {{matchday}} traz um dos encontros mais quentes do calendário, com o {{home}} frente ao {{away}}. A rivalidade tem peso real, a pressão em torno do jogo é evidente e o resultado deverá moldar o ambiente muito para lá do apito final."
       },
       "transferRumour": {
         "headline0": "{{player}} desperta o interesse de vários clubes",

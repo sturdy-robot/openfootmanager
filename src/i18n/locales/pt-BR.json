@@ -2354,7 +2354,18 @@
             "description": "Dispense esta promessa e remova-a do relatório."
           }
         },
+        "humblingDefeat": {
+          "headline": "{{winner}} deixa {{loser}} atordoado com um categórico {{winnerGoals}}-{{loserGoals}}",
+          "body": "{{winner}} atropelou {{loser}} e transformou um confronto importante em uma partida de mão única. Uma margem de {{goalDifference}} gols vai manter os holofotes sobre os dois vestiários nos próximos dias."
+        },
         "effect": {
+          "rivalryPreview": {
+            "headline0": "{{home}} e {{away}} se preparam para um duelo de rivalidade",
+            "headline1": "Rivalidade em destaque: {{home}} recebe {{away}} na Rodada {{matchday}}",
+            "headline2": "Velha tensão, novas consequências: {{home}} reencontra {{away}}",
+            "body": "Existe um peso extra em torno da Rodada {{matchday}} quando {{home}} encara {{away}}. Este confronto carrega rivalidade de verdade, e nenhum dos lados vai querer entregar o direito de zoar ao outro.",
+            "bodyHighIntensity": "A Rodada {{matchday}} traz um dos confrontos mais pesados do calendário, com {{home}} diante de {{away}}. A rivalidade tem temperatura real, a pressão ao redor do jogo é evidente e o resultado deve mexer com o clima muito além do apito final."
+          },
           "sign": "{{player}} assinou um contrato de base e entrou na sua academia.",
           "shortlist": "{{player}} foi adicionado à sua pré-lista de base.",
           "discard": "{{player}} foi removido do relatório de recrutamento de base."
@@ -2521,7 +2532,18 @@
         "unbeatenStreak": {
           "headline": "{{team}} amplia sequência invicta para {{runLength}}",
           "body": "{{team}} já soma {{runLength}} jogo(s) sem perder e está ganhando embalo de verdade."
+        },
+        "humblingDefeat": {
+          "headline": "{{winner}} deixa {{loser}} atordoado com um categórico {{winnerGoals}}-{{loserGoals}}",
+          "body": "{{winner}} atropelou {{loser}} e transformou um confronto importante em uma partida de mão única. Uma margem de {{goalDifference}} gols vai manter os holofotes sobre os dois vestiários nos próximos dias."
         }
+      },
+      "rivalryPreview": {
+        "headline0": "{{home}} e {{away}} se preparam para um duelo de rivalidade",
+        "headline1": "Rivalidade em destaque: {{home}} recebe {{away}} na Rodada {{matchday}}",
+        "headline2": "Velha tensão, novas consequências: {{home}} reencontra {{away}}",
+        "body": "Existe um peso extra em torno da Rodada {{matchday}} quando {{home}} encara {{away}}. Este confronto carrega rivalidade de verdade, e nenhum dos lados vai querer entregar o direito de zoar ao outro.",
+        "bodyHighIntensity": "A Rodada {{matchday}} traz um dos confrontos mais pesados do calendário, com {{home}} diante de {{away}}. A rivalidade tem temperatura real, a pressão ao redor do jogo é evidente e o resultado deve mexer com o clima muito além do apito final."
       },
       "transferRumour": {
         "headline0": "{{player}} desperta o interesse de vários clubes",

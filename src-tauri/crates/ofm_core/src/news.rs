@@ -328,7 +328,7 @@ pub fn managerial_appointment_article(
 
 fn format_transfer_fee(fee: u64) -> String {
     crate::currency::format_compact_money(fee, crate::currency::DEFAULT_CURRENCY_CODE)
-    .unwrap_or_else(|| format!("{}{}", crate::currency::default_currency_symbol(), fee))
+        .unwrap_or_else(|| format!("{}{}", crate::currency::default_currency_symbol(), fee))
 }
 
 pub fn transfer_roundup_article(
@@ -433,7 +433,10 @@ pub fn season_awards_article(
     if let Some(manager) = manager {
         i18n_params.insert("managerWinner".to_string(), manager.manager_name.clone());
         i18n_params.insert("managerTeam".to_string(), manager.team_name.clone());
-        i18n_params.insert("managerWinRate".to_string(), format!("{:.0}", manager.win_rate));
+        i18n_params.insert(
+            "managerWinRate".to_string(),
+            format!("{:.0}", manager.win_rate),
+        );
     }
 
     let body_key = match (golden_boot, poty) {
@@ -597,6 +600,51 @@ pub fn preseason_digest_article(
     )
 }
 
+pub fn rivalry_preview_article(
+    id: &str,
+    home_team_id: &str,
+    home: &str,
+    away_team_id: &str,
+    away: &str,
+    matchday: u32,
+    intensity: u8,
+    date: &str,
+) -> NewsArticle {
+    let mut rng = rand::rng();
+    let headline_idx = rng.random_range(0..3);
+    let body_key = if intensity >= 85 {
+        "be.news.rivalryPreview.bodyHighIntensity"
+    } else {
+        "be.news.rivalryPreview.body"
+    };
+    let source_key = if intensity >= 85 {
+        "be.source.matchDayPress"
+    } else {
+        "be.source.leagueChronicle"
+    };
+
+    NewsArticle::new(
+        id.to_string(),
+        String::new(),
+        String::new(),
+        String::new(),
+        date.to_string(),
+        NewsCategory::Editorial,
+    )
+    .with_teams(vec![home_team_id.to_string(), away_team_id.to_string()])
+    .with_i18n(
+        &format!("be.news.rivalryPreview.headline{}", headline_idx),
+        body_key,
+        source_key,
+        params(&[
+            ("home", home),
+            ("away", away),
+            ("matchday", &matchday.to_string()),
+            ("intensity", &intensity.to_string()),
+        ]),
+    )
+}
+
 pub fn title_race_storyline_article(
     id: &str,
     leader_team_id: &str,
@@ -651,6 +699,46 @@ pub fn unbeaten_streak_storyline_article(
         "be.news.storyline.unbeatenStreak.body",
         "be.source.leagueChronicle",
         params(&[("team", team), ("runLength", &run_length.to_string())]),
+    )
+}
+
+pub fn humbling_defeat_storyline_article(
+    id: &str,
+    winner_team_id: &str,
+    winner: &str,
+    loser_team_id: &str,
+    loser: &str,
+    winner_goals: u8,
+    loser_goals: u8,
+    date: &str,
+) -> NewsArticle {
+    let goal_difference = winner_goals.saturating_sub(loser_goals);
+    let source_key = if winner_goals >= 5 {
+        "be.source.sportsGazette"
+    } else {
+        "be.source.footballHerald"
+    };
+
+    NewsArticle::new(
+        id.to_string(),
+        String::new(),
+        String::new(),
+        String::new(),
+        date.to_string(),
+        NewsCategory::Editorial,
+    )
+    .with_teams(vec![winner_team_id.to_string(), loser_team_id.to_string()])
+    .with_i18n(
+        "be.news.storyline.humblingDefeat.headline",
+        "be.news.storyline.humblingDefeat.body",
+        source_key,
+        params(&[
+            ("winner", winner),
+            ("loser", loser),
+            ("winnerGoals", &winner_goals.to_string()),
+            ("loserGoals", &loser_goals.to_string()),
+            ("goalDifference", &goal_difference.to_string()),
+        ]),
     )
 }
 
@@ -753,8 +841,8 @@ pub fn injury_news_article(
 #[cfg(test)]
 mod tests {
     use super::{
-        league_roundup_article, season_awards_article, season_preview_article,
-        standings_update_article,
+        humbling_defeat_storyline_article, league_roundup_article, rivalry_preview_article,
+        season_awards_article, season_preview_article, standings_update_article,
     };
     use crate::season_awards::{AwardEntry, SeasonAwards};
     use domain::news::NewsCategory;
@@ -980,6 +1068,112 @@ mod tests {
         assert_eq!(
             article.i18n_params.get("darkHorse"),
             Some(&"Solo FC".to_string())
+        );
+    }
+
+    #[test]
+    fn rivalry_preview_article_sets_editorial_keys_and_entities() {
+        let article = rivalry_preview_article(
+            "rivalry_preview_fx1",
+            "team1",
+            "Alpha FC",
+            "team2",
+            "Beta FC",
+            9,
+            91,
+            "2025-09-12T12:00:00Z",
+        );
+
+        assert_eq!(article.id, "rivalry_preview_fx1");
+        assert_eq!(article.category, NewsCategory::Editorial);
+        assert_eq!(article.headline, "");
+        assert_eq!(article.body, "");
+        assert_eq!(article.source, "");
+        assert_eq!(
+            article.team_ids,
+            vec!["team1".to_string(), "team2".to_string()]
+        );
+        assert!(
+            [
+                "be.news.rivalryPreview.headline0",
+                "be.news.rivalryPreview.headline1",
+                "be.news.rivalryPreview.headline2"
+            ]
+            .contains(&article.headline_key.as_deref().unwrap())
+        );
+        assert_eq!(
+            article.body_key.as_deref(),
+            Some("be.news.rivalryPreview.bodyHighIntensity")
+        );
+        assert_eq!(
+            article.source_key.as_deref(),
+            Some("be.source.matchDayPress")
+        );
+        assert_eq!(
+            article.i18n_params.get("home"),
+            Some(&"Alpha FC".to_string())
+        );
+        assert_eq!(
+            article.i18n_params.get("away"),
+            Some(&"Beta FC".to_string())
+        );
+        assert_eq!(article.i18n_params.get("matchday"), Some(&"9".to_string()));
+        assert_eq!(
+            article.i18n_params.get("intensity"),
+            Some(&"91".to_string())
+        );
+    }
+
+    #[test]
+    fn humbling_defeat_storyline_article_sets_scoreline_context() {
+        let article = humbling_defeat_storyline_article(
+            "humbling_fx1",
+            "team1",
+            "Alpha FC",
+            "team2",
+            "Beta FC",
+            5,
+            1,
+            "2025-09-12T12:00:00Z",
+        );
+
+        assert_eq!(article.id, "humbling_fx1");
+        assert_eq!(article.category, NewsCategory::Editorial);
+        assert_eq!(
+            article.team_ids,
+            vec!["team1".to_string(), "team2".to_string()]
+        );
+        assert_eq!(
+            article.headline_key.as_deref(),
+            Some("be.news.storyline.humblingDefeat.headline")
+        );
+        assert_eq!(
+            article.body_key.as_deref(),
+            Some("be.news.storyline.humblingDefeat.body")
+        );
+        assert_eq!(
+            article.source_key.as_deref(),
+            Some("be.source.sportsGazette")
+        );
+        assert_eq!(
+            article.i18n_params.get("winner"),
+            Some(&"Alpha FC".to_string())
+        );
+        assert_eq!(
+            article.i18n_params.get("loser"),
+            Some(&"Beta FC".to_string())
+        );
+        assert_eq!(
+            article.i18n_params.get("winnerGoals"),
+            Some(&"5".to_string())
+        );
+        assert_eq!(
+            article.i18n_params.get("loserGoals"),
+            Some(&"1".to_string())
+        );
+        assert_eq!(
+            article.i18n_params.get("goalDifference"),
+            Some(&"4".to_string())
         );
     }
 
