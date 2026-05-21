@@ -690,7 +690,10 @@ mod tests {
             framing.headline_key,
             "be.news.pressConference.headlineOpponentRespect"
         );
-        assert_eq!(framing.body_key, "be.news.pressConference.bodyOpponentFocus");
+        assert_eq!(
+            framing.body_key,
+            "be.news.pressConference.bodyOpponentFocus"
+        );
         assert_eq!(framing.opponent_name.as_deref(), Some("Away FC"));
         assert!(framing.player_name.is_none());
     }
