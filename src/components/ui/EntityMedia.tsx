@@ -365,7 +365,7 @@ export function NewsCover({
     return (
       <div
         className={cx(
-          "flex items-center justify-between gap-3 rounded-2xl bg-linear-to-r from-navy-800 via-navy-700 to-navy-800 p-4 text-white",
+          "flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-navy-800 via-navy-700 to-navy-800 p-4 text-white",
           className,
         )}
         data-testid={testId}
@@ -402,7 +402,7 @@ export function NewsCover({
     return (
       <div
         className={cx(
-          "flex items-center justify-between gap-3 rounded-2xl bg-linear-to-br from-primary-600 via-navy-800 to-navy-900 p-4 text-white",
+          "flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-br from-primary-600 via-navy-800 to-navy-900 p-4 text-white",
           className,
         )}
         data-testid={testId}
@@ -439,7 +439,7 @@ export function NewsCover({
     return (
       <div
         className={cx(
-          "flex items-center justify-between gap-3 rounded-2xl bg-linear-to-br from-orange-500 via-navy-800 to-navy-900 p-4 text-white",
+          "flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-br from-orange-500 via-navy-800 to-navy-900 p-4 text-white",
           className,
         )}
         data-testid={testId}
@@ -471,7 +471,7 @@ export function NewsCover({
     return (
       <div
         className={cx(
-          "flex items-center justify-between gap-3 rounded-2xl bg-linear-to-br from-navy-900 via-navy-800 to-primary-600 p-4 text-white",
+          "flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-br from-navy-900 via-navy-800 to-primary-600 p-4 text-white",
           className,
         )}
         data-testid={testId}
@@ -492,7 +492,7 @@ export function NewsCover({
   return (
     <div
       className={cx(
-        "flex items-center justify-between gap-3 rounded-2xl bg-linear-to-br from-gray-800 via-navy-800 to-gray-700 p-4 text-white",
+        "flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-br from-gray-800 via-navy-800 to-gray-700 p-4 text-white",
         className,
       )}
       data-testid={testId}
