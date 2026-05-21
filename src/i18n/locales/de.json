@@ -2555,9 +2555,17 @@
         "headlineManagerQuote": "{{team}} Trainer: {{quote}}",
         "headlinePressConf": "Pressekonferenz: \"{{quote}}\" — Trainer von {{team}}",
         "headlinePostMatch": "Nach dem Spiel: {{team}} über {{result}}",
+        "headlineResultVerdict": "{{team}} zieht nach {{result}} ein klares Fazit",
+        "headlineResultDefiant": "{{team}} schlägt nach {{result}} einen trotzigen Ton an",
+        "headlinePlayerPraise": "{{player}} erhält öffentliche Rückendeckung vom {{team}}-Trainer",
+        "headlinePlayerDemand": "{{team}}-Trainer fordert mehr von {{player}}",
+        "headlineLookingAhead": "{{team}} blickt nach {{result}} schon nach vorn",
         "bodyMultiple": "Nach dem Ergebnis {{result}} sprach der Trainer von {{team}} mit der Presse.\n\n{{quotes}}\n\nDie Pressekonferenz behandelte das Ergebnis, den taktischen Ansatz und das, was als Nächstes für das Team ansteht.",
         "bodySingle": "Der Trainer von {{team}} sprach kurz nach dem Ergebnis {{result}}.\n\n\"{{quote}}\"",
-        "bodyNone": "Der Trainer von {{team}} lehnte ein ausführliches Statement nach dem Ergebnis {{result}} ab."
+        "bodyNone": "Der Trainer von {{team}} lehnte ein ausführliches Statement nach dem Ergebnis {{result}} ab.",
+        "bodyResultReaction": "Die Pressekonferenz nach {{result}} wurde schnell zu einem grundsätzlicheren Urteil des {{team}}-Trainers über die Leistung.{{quotesSection}}\n\nDie Antworten rückten Anspruch, Umsetzung und die Sicht der Kabine auf diesen Nachmittag in den Mittelpunkt.",
+        "bodyPlayerFocus": "Die Fragen drehten sich bald um {{player}}, als der {{team}}-Trainer diese Leistung in der Pressekonferenz öffentlich einordnete.{{quotesSection}}\n\nDas gab der Geschichte einen deutlich persönlicheren Fokus als eine bloße Nachbetrachtung von {{result}}.",
+        "bodyLookingAhead": "Obwohl {{result}} noch frisch war, lenkte der {{team}}-Trainer die Pressekonferenz bereits auf das, was als Nächstes kommt.{{quotesSection}}\n\nVieles drehte sich um Erholung, Momentum und darum, wie {{team}} dieses Ergebnis mitnehmen will."
       }
     }
   },

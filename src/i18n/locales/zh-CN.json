@@ -2552,9 +2552,17 @@
         "headlineManagerQuote": "{{team}}主帅：{{quote}}",
         "headlinePressConf": "新闻发布会：\"{{quote}}\" —— {{team}}主帅",
         "headlinePostMatch": "赛后：{{team}}谈{{result}}",
+        "headlineResultVerdict": "{{team}}在{{result}}后给出明确判断",
+        "headlineResultDefiant": "{{team}}在{{result}}后摆出强硬姿态",
+        "headlinePlayerPraise": "{{player}}得到{{team}}主帅公开力挺",
+        "headlinePlayerDemand": "{{team}}主帅要求{{player}}拿出更多表现",
+        "headlineLookingAhead": "{{team}}在{{result}}后已经把目光投向下一战",
         "bodyMultiple": "在{{result}}的比赛之后，{{team}}主帅接受了媒体采访。\n\n{{quotes}}\n\n这场发布会谈到了比赛结果、战术安排以及球队接下来的方向。",
         "bodySingle": "{{team}}主帅在{{result}}的结果后简短发言。\n\n\"{{quote}}\"",
-        "bodyNone": "在{{result}}的结果后，{{team}}主帅拒绝长时间发言。"
+        "bodyNone": "在{{result}}的结果后，{{team}}主帅拒绝长时间发言。",
+        "bodyResultReaction": "{{result}}之后的新闻发布会很快变成了{{team}}主帅对整场表现的更全面定调。{{quotesSection}}\n\n这些回答把标准、执行力以及更衣室如何看待这个下午摆到了台前。",
+        "bodyPlayerFocus": "提问很快集中到{{player}}身上，{{team}}主帅借这场赛后发布会公开界定了这场表现。{{quotesSection}}\n\n这让整篇报道比单纯复盘{{result}}多出了鲜明的个人角度。",
+        "bodyLookingAhead": "尽管{{result}}的余波还在，{{team}}主帅已经借发布会把话题推向下一步。{{quotesSection}}\n\n整体语气更多围绕恢复、势头以及{{team}}打算如何把这场结果延续下去。"
       }
     }
   },

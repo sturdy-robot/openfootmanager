@@ -2585,9 +2585,17 @@
         "headlineManagerQuote": "Entrenador de {{team}}: {{quote}}",
         "headlinePressConf": "Rueda de Prensa: \"{{quote}}\" — técnico del {{team}}",
         "headlinePostMatch": "Post-Partido: {{team}} sobre {{result}}",
+        "headlineResultVerdict": "{{team}} deja un veredicto claro tras {{result}}",
+        "headlineResultDefiant": "{{team}} adopta un tono desafiante tras {{result}}",
+        "headlinePlayerPraise": "{{player}} recibe el respaldo público del técnico de {{team}}",
+        "headlinePlayerDemand": "El técnico de {{team}} le exige más a {{player}}",
+        "headlineLookingAhead": "{{team}} ya mira hacia adelante tras {{result}}",
         "bodyMultiple": "Tras el resultado {{result}}, el técnico del {{team}} atendió a la prensa.\n\n{{quotes}}\n\nLa comparecencia abordó el resultado, el planteamiento táctico y lo que viene para el equipo.",
         "bodySingle": "El técnico del {{team}} habló brevemente tras el resultado {{result}}.\n\n\"{{quote}}\"",
-        "bodyNone": "El técnico del {{team}} declinó hablar en profundidad tras el resultado {{result}}."
+        "bodyNone": "El técnico del {{team}} declinó hablar en profundidad tras el resultado {{result}}.",
+        "bodyResultReaction": "La rueda de prensa posterior a {{result}} se convirtió rápidamente en un juicio más amplio del técnico de {{team}} sobre la actuación.{{quotesSection}}\n\nLas respuestas pusieron el foco en la exigencia, la ejecución y en cómo el vestuario interpretó la tarde.",
+        "bodyPlayerFocus": "Las preguntas pronto giraron alrededor de {{player}}, con el técnico de {{team}} usando la comparecencia para enmarcar públicamente esa actuación.{{quotesSection}}\n\nEl intercambio dio a la historia un ángulo mucho más personal que un simple repaso de {{result}}.",
+        "bodyLookingAhead": "Aunque {{result}} seguía muy presente, el técnico de {{team}} usó la comparecencia para llevar la conversación hacia lo que viene.{{quotesSection}}\n\nGran parte del tono giró en torno a la recuperación, el impulso y la forma en que {{team}} pretende arrastrar este resultado hacia delante."
       }
     }
   },

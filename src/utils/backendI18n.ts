@@ -513,10 +513,17 @@ function normalizePressConferenceParams(
       return params;
     }
 
+    const quote = resolvedQuotes[0];
+    const quotesList = resolvedQuotes.map((resolvedQuote) => `• "${resolvedQuote}"`).join('\n');
+    const quotesSection = resolvedQuotes.length > 1
+      ? `\n\n${quotesList}`
+      : `\n\n"${quote}"`;
+
     return {
       ...params,
-      quote: resolvedQuotes[0],
-      quotes: resolvedQuotes.map((quote) => `• "${quote}"`).join('\n'),
+      quote,
+      quotes: quotesList,
+      quotesSection,
     };
   } catch {
     return params;

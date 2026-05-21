@@ -2555,9 +2555,17 @@
         "headlineManagerQuote": "Allenatore di {{team}}: {{quote}}",
         "headlinePressConf": "Conferenza Stampa: \"{{quote}}\" — allenatore del {{team}}",
         "headlinePostMatch": "Post-Partita: {{team}} su {{result}}",
+        "headlineResultVerdict": "{{team}} detta un verdetto chiaro dopo {{result}}",
+        "headlineResultDefiant": "{{team}} adotta un tono di sfida dopo {{result}}",
+        "headlinePlayerPraise": "{{player}} riceve il sostegno pubblico del tecnico di {{team}}",
+        "headlinePlayerDemand": "Il tecnico di {{team}} chiede di più a {{player}}",
+        "headlineLookingAhead": "{{team}} guarda già avanti dopo {{result}}",
         "bodyMultiple": "Dopo il risultato {{result}}, l'allenatore del {{team}} ha parlato con la stampa.\n\n{{quotes}}\n\nLa conferenza ha toccato il risultato, l'approccio tattico e ciò che attende la squadra.",
         "bodySingle": "L'allenatore del {{team}} ha parlato brevemente dopo il risultato {{result}}.\n\n\"{{quote}}\"",
-        "bodyNone": "L'allenatore del {{team}} ha rifiutato di parlare a lungo dopo il risultato {{result}}."
+        "bodyNone": "L'allenatore del {{team}} ha rifiutato di parlare a lungo dopo il risultato {{result}}.",
+        "bodyResultReaction": "La conferenza stampa dopo {{result}} è diventata presto un giudizio più ampio del tecnico di {{team}} sulla prestazione.{{quotesSection}}\n\nLe risposte hanno messo sotto i riflettori standard, esecuzione e il modo in cui lo spogliatoio ha letto il pomeriggio.",
+        "bodyPlayerFocus": "Le domande si sono presto concentrate su {{player}}, con il tecnico di {{team}} che ha usato il post partita per inquadrare pubblicamente quella prova.{{quotesSection}}\n\nLo scambio ha dato alla storia un taglio molto più personale di un semplice riepilogo di {{result}}.",
+        "bodyLookingAhead": "Anche con {{result}} ancora fresco, il tecnico di {{team}} ha usato la conferenza per spingere la conversazione verso ciò che arriva dopo.{{quotesSection}}\n\nMolto del tono ha riguardato recupero, slancio e il modo in cui {{team}} intende portarsi dietro questo risultato."
       }
     }
   },

@@ -2555,9 +2555,17 @@
         "headlineManagerQuote": "{{team}} Técnico: {{quote}}",
         "headlinePressConf": "Coletiva de Imprensa: \"{{quote}}\" — técnico do {{team}}",
         "headlinePostMatch": "Pós-Jogo: {{team}} sobre {{result}}",
+        "headlineResultVerdict": "{{team}} dá um recado claro após {{result}}",
+        "headlineResultDefiant": "{{team}} adota tom desafiador após {{result}}",
+        "headlinePlayerPraise": "{{player}} recebe respaldo público do técnico do {{team}}",
+        "headlinePlayerDemand": "Técnico do {{team}} cobra mais de {{player}}",
+        "headlineLookingAhead": "{{team}} já olha adiante após {{result}}",
         "bodyMultiple": "Após o resultado {{result}}, o técnico do {{team}} falou com a imprensa.\n\n{{quotes}}\n\nA coletiva abordou o resultado, a abordagem tática e o que vem pela frente para o time.",
         "bodySingle": "O técnico do {{team}} falou brevemente após o resultado {{result}}.\n\n\"{{quote}}\"",
-        "bodyNone": "O técnico do {{team}} não quis falar longamente após o resultado {{result}}."
+        "bodyNone": "O técnico do {{team}} não quis falar longamente após o resultado {{result}}.",
+        "bodyResultReaction": "A coletiva após {{result}} rapidamente virou um veredito mais amplo sobre a atuação por parte do técnico do {{team}}.{{quotesSection}}\n\nAs respostas colocaram em foco o nível de exigência, a execução e a forma como o vestiário enxergou a tarde.",
+        "bodyPlayerFocus": "As perguntas logo passaram a girar em torno de {{player}}, com o técnico do {{team}} usando a entrevista pós-jogo para enquadrar publicamente aquela atuação.{{quotesSection}}\n\nA troca deu à matéria um ângulo pessoal bem mais forte do que um simples resumo de {{result}}.",
+        "bodyLookingAhead": "Mesmo com {{result}} ainda fresco, o técnico do {{team}} usou a coletiva para empurrar a conversa para o que vem pela frente.{{quotesSection}}\n\nO tom geral passou por recuperação, embalo e pela forma como o {{team}} pretende carregar este resultado adiante."
       }
     }
   },

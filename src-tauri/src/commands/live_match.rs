@@ -40,6 +40,126 @@ struct LocalizedPressQuote {
     params: HashMap<String, String>,
 }
 
+struct PressConferenceFraming {
+    headline_key: &'static str,
+    body_key: &'static str,
+    player_name: Option<String>,
+}
+
+fn fallback_press_conference_framing(quote_count: usize) -> PressConferenceFraming {
+    match quote_count {
+        0 => PressConferenceFraming {
+            headline_key: "be.news.pressConference.headlinePostMatch",
+            body_key: "be.news.pressConference.bodyNone",
+            player_name: None,
+        },
+        1 => PressConferenceFraming {
+            headline_key: "be.news.pressConference.headlineManagerQuote",
+            body_key: "be.news.pressConference.bodySingle",
+            player_name: None,
+        },
+        _ => PressConferenceFraming {
+            headline_key: "be.news.pressConference.headlinePressConf",
+            body_key: "be.news.pressConference.bodyMultiple",
+            player_name: None,
+        },
+    }
+}
+
+fn resolve_press_conference_player_name(
+    game: &Game,
+    answer: &PressConferenceAnswer,
+) -> Option<String> {
+    answer
+        .response_text_params
+        .get("playerName")
+        .cloned()
+        .or_else(|| {
+            if answer.player_id.is_empty() {
+                None
+            } else {
+                game.players
+                    .iter()
+                    .find(|player| player.id == answer.player_id)
+                    .map(|player| player.match_name.clone())
+            }
+        })
+}
+
+fn select_press_conference_framing(
+    game: &Game,
+    answers: &[PressConferenceAnswer],
+    quote_count: usize,
+) -> PressConferenceFraming {
+    if quote_count == 0 {
+        return fallback_press_conference_framing(quote_count);
+    }
+
+    if let Some(answer) = answers
+        .iter()
+        .find(|answer| answer.question_id == "player_focus" && answer.response_id == "praise")
+    {
+        if let Some(player_name) = resolve_press_conference_player_name(game, answer) {
+            return PressConferenceFraming {
+                headline_key: "be.news.pressConference.headlinePlayerPraise",
+                body_key: "be.news.pressConference.bodyPlayerFocus",
+                player_name: Some(player_name),
+            };
+        }
+    }
+
+    if let Some(answer) = answers
+        .iter()
+        .find(|answer| answer.question_id == "player_focus" && answer.response_id == "demanding")
+    {
+        if let Some(player_name) = resolve_press_conference_player_name(game, answer) {
+            return PressConferenceFraming {
+                headline_key: "be.news.pressConference.headlinePlayerDemand",
+                body_key: "be.news.pressConference.bodyPlayerFocus",
+                player_name: Some(player_name),
+            };
+        }
+    }
+
+    if let Some(answer) = answers.iter().find(|answer| answer.question_id == "result") {
+        match answer.response_id.as_str() {
+            "defiant" | "frustrated" => {
+                return PressConferenceFraming {
+                    headline_key: "be.news.pressConference.headlineResultDefiant",
+                    body_key: "be.news.pressConference.bodyResultReaction",
+                    player_name: None,
+                };
+            }
+            "humble" | "confident" | "accept" | "fair" | "positive" => {
+                return PressConferenceFraming {
+                    headline_key: "be.news.pressConference.headlineResultVerdict",
+                    body_key: "be.news.pressConference.bodyResultReaction",
+                    player_name: None,
+                };
+            }
+            _ => {}
+        }
+    }
+
+    if answers.iter().any(|answer| {
+        (answer.question_id == "ahead"
+            && matches!(answer.response_id.as_str(), "focused" | "ambitious"))
+            || (answer.question_id == "fans"
+                && matches!(
+                    answer.response_id.as_str(),
+                    "shared" | "patience" | "understand"
+                ))
+    }) {
+        return PressConferenceFraming {
+            headline_key: "be.news.pressConference.headlineLookingAhead",
+            body_key: "be.news.pressConference.bodyLookingAhead",
+            player_name: None,
+        };
+    }
+
+    fallback_press_conference_framing(quote_count)
+}
+
 // ---------------------------------------------------------------------------
 // Live Match Commands
 // ---------------------------------------------------------------------------
@@ -218,27 +338,14 @@ pub fn submit_press_conference(
         "{} {} - {} {}",
         home_team, home_score, away_score, away_team
     );
-    let headline_key = if quotes.is_empty() {
-        ("be.news.pressConference.headlinePostMatch",)
-    } else if rng.random::<bool>() {
-        ("be.news.pressConference.headlineManagerQuote",)
-    } else {
-        ("be.news.pressConference.headlinePressConf",)
-    }
-    .0;
-
-    let body_key = if quotes.len() > 1 {
-        ("be.news.pressConference.bodyMultiple",)
-    } else if quotes.len() == 1 {
-        ("be.news.pressConference.bodySingle",)
-    } else {
-        ("be.news.pressConference.bodyNone",)
-    }
-    .0;
+    let framing = select_press_conference_framing(&game, &answers, quotes.len());
 
     let mut i18n_params = HashMap::new();
     i18n_params.insert("team".to_string(), user_team_name.clone());
     i18n_params.insert("result".to_string(), result_str.clone());
+    if let Some(player_name) = framing.player_name {
+        i18n_params.insert("player".to_string(), player_name);
+    }
     if !localized_quotes.is_empty() {
         if let Ok(serialized_quotes) = serde_json::to_string(&localized_quotes) {
             i18n_params.insert("quotesData".to_string(), serialized_quotes);
@@ -257,7 +364,12 @@ pub fn submit_press_conference(
     )
     .with_teams(vec![user_team_id.clone()])
     .with_players(mentioned_player_ids)
-    .with_i18n(headline_key, body_key, "be.source.sportsDaily", i18n_params);
+    .with_i18n(
+        framing.headline_key,
+        framing.body_key,
+        "be.source.sportsDaily",
+        i18n_params,
+    );
 
     game.news.push(article);
     state.set_game(game.clone());
@@ -270,7 +382,10 @@ pub fn submit_press_conference(
 
 #[cfg(test)]
 mod tests {
-    use super::{apply_team_talk_internal, finish_live_match_internal};
+    use super::{
+        apply_team_talk_internal, finish_live_match_internal, select_press_conference_framing,
+        PressConferenceAnswer,
+    };
     use chrono::{TimeZone, Utc};
     use domain::league::{Fixture, FixtureCompetition, FixtureStatus, League, StandingEntry};
     use domain::manager::Manager;
@@ -439,6 +554,97 @@ mod tests {
             .find(|result| result["player_id"] == player_id)
             .and_then(|result| result["delta"].as_i64())
             .unwrap()
+    }
+
+    fn press_answer(
+        question_id: &str,
+        response_id: &str,
+        response_text: &str,
+        player_id: &str,
+        response_text_params: &[(&str, &str)],
+    ) -> PressConferenceAnswer {
+        PressConferenceAnswer {
+            question_id: question_id.to_string(),
+            response_id: response_id.to_string(),
+            _response_tone: String::new(),
+            response_text: response_text.to_string(),
+            response_text_key: String::new(),
+            response_text_params: response_text_params
+                .iter()
+                .map(|(key, value)| (key.to_string(), value.to_string()))
+                .collect(),
+            question_text: String::new(),
+            player_id: player_id.to_string(),
+        }
+    }
+
+    #[test]
+    fn press_conference_framing_prefers_player_praise_when_present() {
+        let game = make_game_with_round();
+        let answers = vec![
+            press_answer("result", "humble", "The players worked hard.", "", &[]),
+            press_answer(
+                "player_focus",
+                "praise",
+                "Midfielder was fantastic.",
+                "t1_mid0",
+                &[("playerName", "t1 Mid0")],
+            ),
+        ];
+
+        let framing = select_press_conference_framing(&game, &answers, 2);
+
+        assert_eq!(
+            framing.headline_key,
+            "be.news.pressConference.headlinePlayerPraise"
+        );
+        assert_eq!(framing.body_key, "be.news.pressConference.bodyPlayerFocus");
+        assert_eq!(framing.player_name.as_deref(), Some("t1 Mid0"));
+    }
+
+    #[test]
+    fn press_conference_framing_uses_defiant_result_storyline() {
+        let game = make_game_with_round();
+        let answers = vec![press_answer(
+            "result",
+            "defiant",
+            "We created enough chances.",
+            "",
+            &[],
+        )];
+
+        let framing = select_press_conference_framing(&game, &answers, 1);
+
+        assert_eq!(
+            framing.headline_key,
+            "be.news.pressConference.headlineResultDefiant"
+        );
+        assert_eq!(
+            framing.body_key,
+            "be.news.pressConference.bodyResultReaction"
+        );
+        assert!(framing.player_name.is_none());
+    }
+
+    #[test]
+    fn press_conference_framing_falls_back_to_generic_quote_story() {
+        let game = make_game_with_round();
+        let answers = vec![press_answer(
+            "tactics",
+            "brief",
+            "We had a plan and the players executed it.",
+            "",
+            &[],
+        )];
+
+        let framing = select_press_conference_framing(&game, &answers, 1);
+
+        assert_eq!(
+            framing.headline_key,
+            "be.news.pressConference.headlineManagerQuote"
+        );
+        assert_eq!(framing.body_key, "be.news.pressConference.bodySingle");
+        assert!(framing.player_name.is_none());
     }
 
     #[test]

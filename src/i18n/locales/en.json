@@ -2551,9 +2551,17 @@
         "headlineManagerQuote": "{{team}} Manager: {{quote}}",
         "headlinePressConf": "Press Conference: \"{{quote}}\" — {{team}} boss",
         "headlinePostMatch": "Post-Match: {{team}} on {{result}}",
+        "headlineResultVerdict": "{{team}} boss gives clear verdict after {{result}}",
+        "headlineResultDefiant": "{{team}} strike defiant note after {{result}}",
+        "headlinePlayerPraise": "{{player}} gets strong backing from {{team}} boss",
+        "headlinePlayerDemand": "{{team}} boss demands more from {{player}}",
+        "headlineLookingAhead": "{{team}} already looking ahead after {{result}}",
         "bodyMultiple": "Speaking after the {{result}} result, the {{team}} manager addressed the press.\n\n{{quotes}}\n\nThe conference covered the result, tactical approach, and what lies ahead for the team.",
         "bodySingle": "The {{team}} manager spoke briefly after the {{result}} result.\n\n\"{{quote}}\"",
-        "bodyNone": "The {{team}} manager declined to speak at length after the {{result}} result."
+        "bodyNone": "The {{team}} manager declined to speak at length after the {{result}} result.",
+        "bodyResultReaction": "The press conference after {{result}} quickly became a broader verdict on the performance from the {{team}} manager.{{quotesSection}}\n\nThe answers put the spotlight on standards, execution and how the dressing room viewed the afternoon.",
+        "bodyPlayerFocus": "Questions soon centred on {{player}}, with the {{team}} manager using the post-match briefing to frame that performance in public.{{quotesSection}}\n\nThe exchange gave the story a sharper personal angle than a routine recap of {{result}}.",
+        "bodyLookingAhead": "Even with {{result}} still fresh, the {{team}} manager used the briefing to push the conversation toward what comes next.{{quotesSection}}\n\nMuch of the tone was about recovery, momentum and how {{team}} intend to carry this result forward."
       }
     }
   },

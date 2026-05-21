@@ -760,6 +760,52 @@ describe("resolveNewsArticle", () => {
     }
   });
 
+  it("localizes semantic press conference framing from stored quote metadata", async () => {
+    const previousLanguage = i18n.language;
+    await i18n.changeLanguage("pt-BR");
+
+    try {
+      const article = makeNewsArticle({
+        headline: '',
+        headline_key: 'be.news.pressConference.headlinePlayerPraise',
+        body: '',
+        body_key: 'be.news.pressConference.bodyPlayerFocus',
+        source: '',
+        source_key: 'be.source.sportsDaily',
+        i18n_params: {
+          team: 'Madrid Real',
+          result: 'Madrid Real 3 - 1 Rome Gladiators',
+          player: 'Jude Star',
+          quotesData: JSON.stringify([
+            {
+              key: 'match.press.playerFocus.responses.praise.text',
+              fallback: 'Jude Star has been fantastic. They are a key player for us.',
+              params: { playerName: 'Jude Star' },
+            },
+          ]),
+        },
+      });
+
+      const result = resolveNewsArticle(article);
+
+      expect(result.headline).toBe(
+        'Jude Star recebe respaldo público do técnico do Madrid Real',
+      );
+      expect(result.body).toContain(
+        'As perguntas logo passaram a girar em torno de Jude Star, com o técnico do Madrid Real usando a entrevista pós-jogo para enquadrar publicamente aquela atuação.',
+      );
+      expect(result.body).toContain(
+        '"Jude Star foi fantástico. É um jogador-chave para nós e a dedicação dele é exemplar."',
+      );
+      expect(result.body).toContain(
+        'A troca deu à matéria um ângulo pessoal bem mais forte do que um simples resumo de Madrid Real 3 - 1 Rome Gladiators.',
+      );
+      expect(result.source).toBe('Diário Esportivo');
+    } finally {
+      await i18n.changeLanguage(previousLanguage);
+    }
+  });
+
   it("localizes standings entries through backend keys", async () => {
     const previousLanguage = i18n.language;
     await i18n.changeLanguage("pt-BR");
