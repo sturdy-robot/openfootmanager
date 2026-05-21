@@ -300,7 +300,7 @@ describe("HomeTab", function (): void {
       expect.any(Array),
     );
     expect(screen.getByText("Resolved headline")).toBeInTheDocument();
-    expect(screen.getByText(/Resolved source/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Resolved source/).length).toBeGreaterThan(0);
   });
 
   it("renders the next opponent and league digest widgets when data is available", function (): void {

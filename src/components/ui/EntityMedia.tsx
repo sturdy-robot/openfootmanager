@@ -127,12 +127,13 @@ function useResolvedMediaSrc(path: string | null) {
       return;
     }
 
+    const relativePath = path;
     let cancelled = false;
 
     async function resolveRelativePath() {
       try {
         const baseDir = await appDataDir();
-        const absolutePath = await join(baseDir, "media", path);
+        const absolutePath = await join(baseDir, "media", relativePath);
         if (!cancelled) {
           setResolved(convertFileSrc(absolutePath));
         }

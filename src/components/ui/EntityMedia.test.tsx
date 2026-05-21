@@ -70,6 +70,7 @@ function makePlayer(overrides: Partial<PlayerData> = {}): PlayerData {
     injury: null,
     team_id: "team-1",
     retired: false,
+    training_focus: null,
     contract_end: null,
     wage: 0,
     market_value: 0,
