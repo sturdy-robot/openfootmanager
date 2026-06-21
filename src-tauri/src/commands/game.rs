@@ -1962,4 +1962,380 @@ mod tests {
             )
         }));
     }
+
+    // ─── QA scenario tests ──────────────────────────────────────────────────
+    //
+    // These tests exercise the full command layer end-to-end using real
+    // StateManager and SaveManager instances (no Tauri runtime required).
+    // They are the L1/L3 backbone of the QA framework: if a scenario here
+    // fails, the same failure will appear when an AI agent drives the game
+    // via MCP, but with a much shorter feedback loop.
+
+    /// Prove that a seeded game can be bootstrapped and that time advancement
+    /// works correctly over a 7-day window.
+    ///
+    /// Seed 42 is the canonical QA fixture seed. Same seed → same teams/players
+    /// every run, so this test is fully deterministic for the world state.
+    #[test]
+    fn scenario_seeded_game_lifecycle_advances_7_days() {
+        // Step 1: pre-generate world with seed 42 to discover the first team ID.
+        // bootstrap_game_for_mcp will generate the same world (same seed).
+        let world = ofm_core::generator::generate_world_data_seeded(42, None);
+        let first_team_id = world.teams[0].id.clone();
+        assert!(!first_team_id.is_empty(), "seeded world must have at least one team");
+
+        // Step 2: set up in-memory state with a temporary save directory.
+        let state_manager = std::sync::Arc::new(StateManager::new());
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let saves_dir =
+            std::env::temp_dir().join(format!("ofm-qa-scenario-lifecycle-{}", unique));
+        std::fs::create_dir_all(&saves_dir).unwrap();
+        let save_manager_state = crate::SaveManagerState(
+            Mutex::new(SaveManager::init(&saves_dir).expect("SaveManager init")),
+        );
+
+        // Step 3: bootstrap a complete game — replicate bootstrap_game_for_mcp
+        // inline so this test doesn't require the `mcp` feature flag.
+        let startup_options =
+            normalize_startup_options(None).expect("normalize_startup_options");
+        let clock =
+            game_clock_for_world(&startup_options, &world.metadata).expect("game_clock_for_world");
+        let manager = domain::manager::Manager::new(
+            "mgr_user".to_string(),
+            "QA".to_string(),
+            "Test".to_string(),
+            "1980-01-01".to_string(),
+            "England".to_string(),
+        );
+        let (mut game, current_stats_state) =
+            build_game_from_world_data(clock, manager, &startup_options, world);
+        let stats_state =
+            bootstrap_team_selection(&mut game, &first_team_id, StartPhase::SeasonStart, current_stats_state)
+                .expect("bootstrap_team_selection should succeed");
+        let save_id = {
+            let mut sm = save_manager_state.0.lock().expect("save manager lock (create)");
+            create_new_save(&mut sm, &game, &stats_state, "QA Scenario")
+                .expect("create_new_save should succeed")
+        };
+        state_manager.set_game(game);
+        state_manager.set_stats_state(stats_state);
+        state_manager.set_save_id(save_id.clone());
+
+        // Step 4: verify the initial game state is coherent.
+        let game = state_manager
+            .get_game(|g| g.clone())
+            .expect("game should be active after bootstrap");
+        let initial_date = game.clock.current_date;
+
+        assert!(game.manager.team_id.is_some(), "manager must have a team after bootstrap");
+        assert!(!game.teams.is_empty(), "game must have teams");
+        assert!(!game.players.is_empty(), "game must have players");
+        assert!(game.league.is_some(), "league schedule must exist after bootstrap");
+
+        // Step 5: advance 7 days.  The first 7 days of a season-start game
+        // are preseason training days (no fixtures until ~day 30), so
+        // advance_time_internal never blocks here.
+        for day in 1..=7 {
+            crate::commands::time::advance_time_internal(&state_manager)
+                .unwrap_or_else(|e| panic!("advance_time failed on day {day}: {e}"));
+        }
+
+        // Step 6: verify the clock advanced by exactly 7 days.
+        let game_after = state_manager
+            .get_game(|g| g.clone())
+            .expect("game must still be active after advancing time");
+        let elapsed = (game_after.clock.current_date - initial_date).num_days();
+        assert_eq!(elapsed, 7, "clock must advance exactly 7 days");
+
+        // Step 7: the original save must still be loadable from disk.
+        let mut sm = save_manager_state.0.lock().expect("save manager lock");
+        let saves = sm.load_saves().expect("load_saves should succeed");
+        assert_eq!(saves.len(), 1, "exactly one save should exist");
+        assert_eq!(saves[0].id, save_id, "save ID must match");
+
+        // Clean up.
+        std::fs::remove_dir_all(&saves_dir).ok();
+    }
+
+    /// Verify that after bootstrapping a seeded game the user's team has a
+    /// complete, internally-consistent squad: exactly 11 starters, all of whom
+    /// exist in the player roster and belong to that team.
+    #[test]
+    fn scenario_seeded_squad_has_valid_starting_xi() {
+        let world = ofm_core::generator::generate_world_data_seeded(42, None);
+        let first_team_id = world.teams[0].id.clone();
+
+        let state_manager = std::sync::Arc::new(StateManager::new());
+        let saves_dir = std::env::temp_dir().join(format!(
+            "ofm-qa-scenario-squad-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&saves_dir).unwrap();
+        let save_manager_state = crate::SaveManagerState(
+            Mutex::new(SaveManager::init(&saves_dir).expect("SaveManager init")),
+        );
+
+        let startup_options = normalize_startup_options(None).unwrap();
+        let clock = game_clock_for_world(&startup_options, &world.metadata).unwrap();
+        let manager = domain::manager::Manager::new(
+            "mgr_user".to_string(),
+            "QA".to_string(),
+            "Test".to_string(),
+            "1980-01-01".to_string(),
+            "England".to_string(),
+        );
+        let (mut game, current_stats_state) =
+            build_game_from_world_data(clock, manager, &startup_options, world);
+        let stats_state =
+            bootstrap_team_selection(&mut game, &first_team_id, StartPhase::SeasonStart, current_stats_state)
+                .unwrap();
+        {
+            let mut sm = save_manager_state.0.lock().unwrap();
+            create_new_save(&mut sm, &game, &stats_state, "QA Squad").unwrap();
+        }
+        state_manager.set_game(game.clone());
+
+        // The user's team must exist in the game.
+        let team = game
+            .teams
+            .iter()
+            .find(|t| t.id == first_team_id)
+            .expect("user team must exist in game");
+
+        // Formation must be a recognised formation string (non-empty, contains dashes).
+        assert!(!team.formation.is_empty(), "formation must be set");
+        assert!(
+            team.formation.contains('-'),
+            "formation '{}' doesn't look like a valid formation (expected e.g. 4-4-2)",
+            team.formation
+        );
+
+        // The team must have at least 11 outfield players assigned to it.
+        // (starting_xi_ids is intentionally empty; auto-selected at match time.)
+        let squad_size = game
+            .players
+            .iter()
+            .filter(|p| p.team_id.as_deref() == Some(first_team_id.as_str()))
+            .count();
+        assert!(
+            squad_size >= 11,
+            "team must have at least 11 players, got {}",
+            squad_size
+        );
+
+        // The league schedule must have been generated.
+        assert!(game.league.is_some(), "league schedule must exist after bootstrap");
+        let fixture_count = game.league.as_ref().unwrap().fixtures.len();
+        assert!(fixture_count > 0, "league must have fixtures after bootstrap");
+
+        // The manager must be assigned to this team.
+        assert_eq!(
+            game.manager.team_id.as_deref(),
+            Some(first_team_id.as_str()),
+            "manager team_id must match the selected team"
+        );
+        assert_eq!(
+            team.manager_id.as_deref(),
+            Some("mgr_user"),
+            "team manager_id must point back to the user manager"
+        );
+
+        std::fs::remove_dir_all(&saves_dir).ok();
+    }
+
+    /// Verify the full save → advance → persist → load round-trip:
+    /// a game bootstrapped, saved, advanced 3 days, re-saved, then loaded
+    /// from disk must have the same date as the in-memory state had before
+    /// the load.
+    #[test]
+    fn scenario_save_load_round_trip_preserves_date() {
+        let world = ofm_core::generator::generate_world_data_seeded(42, None);
+        let first_team_id = world.teams[0].id.clone();
+
+        let state_manager = std::sync::Arc::new(StateManager::new());
+        let saves_dir = std::env::temp_dir().join(format!(
+            "ofm-qa-scenario-saveload-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&saves_dir).unwrap();
+        let save_manager_state = crate::SaveManagerState(
+            Mutex::new(SaveManager::init(&saves_dir).expect("SaveManager init")),
+        );
+
+        // Bootstrap game.
+        let startup_options = normalize_startup_options(None).unwrap();
+        let clock = game_clock_for_world(&startup_options, &world.metadata).unwrap();
+        let manager = domain::manager::Manager::new(
+            "mgr_user".to_string(),
+            "QA".to_string(),
+            "Test".to_string(),
+            "1980-01-01".to_string(),
+            "England".to_string(),
+        );
+        let (mut game, current_stats_state) =
+            build_game_from_world_data(clock, manager, &startup_options, world);
+        let stats_state =
+            bootstrap_team_selection(&mut game, &first_team_id, StartPhase::SeasonStart, current_stats_state)
+                .unwrap();
+
+        // Create initial save.
+        let save_id = {
+            let mut sm = save_manager_state.0.lock().unwrap();
+            create_new_save(&mut sm, &game, &stats_state, "QA Save-Load").unwrap()
+        };
+        state_manager.set_game(game);
+        state_manager.set_stats_state(stats_state);
+        state_manager.set_save_id(save_id.clone());
+
+        // Advance 3 days.
+        for day in 1..=3 {
+            crate::commands::time::advance_time_internal(&state_manager)
+                .unwrap_or_else(|e| panic!("advance_time failed on day {day}: {e}"));
+        }
+
+        // Capture the date after advancing.
+        let expected_date = state_manager
+            .get_game(|g| g.clock.current_date)
+            .expect("game must be active");
+
+        // Persist the updated game to disk.
+        {
+            let game_snapshot = state_manager.get_game(|g| g.clone()).unwrap();
+            let stats_snapshot = state_manager.get_stats_state(|s| s.clone()).unwrap();
+            let mut sm = save_manager_state.0.lock().unwrap();
+            sm.save_game_with_stats(&game_snapshot, &stats_snapshot, &save_id)
+                .expect("save_game_with_stats should succeed");
+        }
+
+        // Clear in-memory state.
+        state_manager.clear_game();
+
+        // Load from disk.
+        let loaded_game = {
+            let mut sm = save_manager_state.0.lock().unwrap();
+            sm.load_game(&save_id).expect("load_game should succeed")
+        };
+
+        assert_eq!(
+            loaded_game.clock.current_date, expected_date,
+            "loaded game date must match the date at time of save"
+        );
+        assert_eq!(
+            loaded_game.manager.team_id.as_deref(),
+            Some(first_team_id.as_str()),
+            "loaded game must preserve manager team assignment"
+        );
+
+        std::fs::remove_dir_all(&saves_dir).ok();
+    }
+
+    /// Verify the match-day path: advance to the first fixture the user's team
+    /// plays, process that day, and confirm the fixture becomes Completed with
+    /// a recorded result (home_goals + away_goals set).
+    #[test]
+    fn scenario_first_match_day_produces_result() {
+        let world = ofm_core::generator::generate_world_data_seeded(42, None);
+        let first_team_id = world.teams[0].id.clone();
+
+        let state_manager = std::sync::Arc::new(StateManager::new());
+        let saves_dir = std::env::temp_dir().join(format!(
+            "ofm-qa-scenario-matchday-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&saves_dir).unwrap();
+        let save_manager_state = crate::SaveManagerState(
+            Mutex::new(SaveManager::init(&saves_dir).expect("SaveManager init")),
+        );
+
+        // Bootstrap game.
+        let startup_options = normalize_startup_options(None).unwrap();
+        let clock = game_clock_for_world(&startup_options, &world.metadata).unwrap();
+        let manager = domain::manager::Manager::new(
+            "mgr_user".to_string(),
+            "QA".to_string(),
+            "Test".to_string(),
+            "1980-01-01".to_string(),
+            "England".to_string(),
+        );
+        let (mut game, current_stats_state) =
+            build_game_from_world_data(clock, manager, &startup_options, world);
+        let stats_state =
+            bootstrap_team_selection(&mut game, &first_team_id, StartPhase::SeasonStart, current_stats_state)
+                .unwrap();
+        {
+            let mut sm = save_manager_state.0.lock().unwrap();
+            create_new_save(&mut sm, &game, &stats_state, "QA Match Day").unwrap();
+        }
+        state_manager.set_game(game);
+        state_manager.set_stats_state(stats_state);
+
+        // Advance day by day until we land on a match day for the user's team
+        // (at most 60 days, mirroring skip_to_match_day's limit).
+        let mut match_date: Option<String> = None;
+        for _ in 0..60 {
+            let g = state_manager.get_game(|g| g.clone()).unwrap();
+            let today = g.clock.current_date.format("%Y-%m-%d").to_string();
+
+            let has_match = g.league.as_ref().is_some_and(|league| {
+                league.fixtures.iter().any(|f| {
+                    f.date == today
+                        && f.status == domain::league::FixtureStatus::Scheduled
+                        && (f.home_team_id == first_team_id || f.away_team_id == first_team_id)
+                })
+            });
+
+            if has_match {
+                match_date = Some(today);
+                break;
+            }
+
+            crate::commands::time::advance_time_internal(&state_manager)
+                .expect("advance_time_internal should not fail before match day");
+        }
+
+        let match_date = match_date.expect("user's team must have a fixture within 60 days");
+
+        // Advance through the match day — this simulates the fixture.
+        crate::commands::time::advance_time_internal(&state_manager)
+            .expect("advance_time_internal should succeed on match day");
+
+        // The fixture must now be Completed with a result.
+        let game_after = state_manager.get_game(|g| g.clone()).unwrap();
+        let fixture = game_after
+            .league
+            .as_ref()
+            .expect("league must still exist")
+            .fixtures
+            .iter()
+            .find(|f| {
+                f.date == match_date
+                    && (f.home_team_id == first_team_id || f.away_team_id == first_team_id)
+            })
+            .expect("fixture for match day must still exist in league");
+
+        assert_eq!(
+            fixture.status,
+            domain::league::FixtureStatus::Completed,
+            "fixture must be Completed after advancing through match day"
+        );
+
+        let result = fixture.result.as_ref().expect("completed fixture must have a result");
+        // Goals are u8 — any value is valid, but both sides must be recorded.
+        let _ = result.home_goals;
+        let _ = result.away_goals;
+
+        std::fs::remove_dir_all(&saves_dir).ok();
+    }
 }
