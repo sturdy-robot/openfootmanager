@@ -1,4 +1,17 @@
 import "@testing-library/jest-dom/vitest";
+import { clearMocks, mockWindows } from "@tauri-apps/api/mocks";
+import { afterEach, beforeAll } from "vitest";
+
+// Establish a minimal Tauri window context so components that reference
+// window.__TAURI_INTERNALS__ don't throw during render.
+beforeAll(() => {
+  mockWindows("main");
+});
+
+// Reset any IPC intercepts registered via mockIPC between tests.
+afterEach(() => {
+  clearMocks();
+});
 
 // Polyfill localStorage for jsdom environment in Node 22+.
 // Node 24+ removed the built-in localStorage implementation and now requires
