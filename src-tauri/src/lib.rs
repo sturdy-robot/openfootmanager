@@ -134,6 +134,7 @@ pub fn run() {
                         &mgr_name,
                         &mgr_last,
                         &mgr_nat,
+                        None,
                     ) {
                         Ok(save_id) => {
                             log::info!("[mcp] Bootstrap complete, save_id={}", save_id);

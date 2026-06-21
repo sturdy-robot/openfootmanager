@@ -732,8 +732,9 @@ pub fn build_tool_router(context: &Arc<McpContext>, disabled: &[String]) -> OfmT
             ("first_name", "string", "Manager first name"),
             ("last_name", "string", "Manager last name"),
             ("nationality", "string", "Manager nationality"),
-            ("world_source", "string", "World JSON path (omit for random)"),
+            ("world_source", "string", "World JSON path (omit for random generation)"),
             ("team_id", "string", "Team to manage (required if world has no pre-assigned manager)"),
+            ("seed", "integer", "Seed for deterministic world generation (omit for random)"),
         ], &["first_name", "last_name", "nationality"]),
         ctx, args, {
             let first = match require_string_param(args, "first_name") { Ok(v) => v, Err(e) => return Ok(e) };
@@ -741,7 +742,8 @@ pub fn build_tool_router(context: &Arc<McpContext>, disabled: &[String]) -> OfmT
             let nat = match require_string_param(args, "nationality") { Ok(v) => v, Err(e) => return Ok(e) };
             let world = extract_string_param(args, "world_source");
             let team = extract_string_param(args, "team_id");
-            match tools_impl::game::game_new(ctx, first, last, nat, world, team) {
+            let seed = extract_u64_param(args, "seed");
+            match tools_impl::game::game_new(ctx, first, last, nat, world, team, seed) {
                 Ok(text) => Ok(text_result(text)),
                 Err(e) => Ok(err_result(&e)),
             }

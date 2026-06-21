@@ -50,7 +50,7 @@ pub fn game_save(ctx: Arc<McpContext>) -> Result<String, String> {
 
 // ─── game_new ───────────────────────────────────────────────────────────────
 
-pub fn game_new(ctx: Arc<McpContext>, first_name: String, last_name: String, nationality: String, world_source: Option<String>, team_id: Option<String>) -> Result<String, String> {
+pub fn game_new(ctx: Arc<McpContext>, first_name: String, last_name: String, nationality: String, world_source: Option<String>, team_id: Option<String>, seed: Option<u64>) -> Result<String, String> {
     // Validate inputs
     if first_name.trim().is_empty() || last_name.trim().is_empty() {
         return Err("be.error.createManager.nameRequired".to_string());
@@ -59,7 +59,7 @@ pub fn game_new(ctx: Arc<McpContext>, first_name: String, last_name: String, nat
         return Err("be.error.createManager.nationalityRequired".to_string());
     }
 
-    // Determine world path
+    // Determine world path (empty → random generation)
     let world_path = world_source.unwrap_or_default();
 
     // Use the MCP bootstrap path to create the game
@@ -71,6 +71,7 @@ pub fn game_new(ctx: Arc<McpContext>, first_name: String, last_name: String, nat
         &first_name,
         &last_name,
         &nationality,
+        seed,
     );
 
     match result {

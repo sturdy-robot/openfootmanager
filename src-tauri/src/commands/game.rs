@@ -61,6 +61,10 @@ pub struct RawStartupOptions {
     start_phase: Option<String>,
     #[serde(default)]
     history_depth_years: Option<u32>,
+    /// Seed for deterministic world generation. Same seed always produces the same
+    /// teams/players. Intended for QA fixture saves and reproducible testing.
+    #[serde(default)]
+    pub(crate) seed: Option<u64>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -178,9 +182,12 @@ fn apply_generated_past_history(game: &mut Game, startup_options: &StartupOption
     );
 }
 
-fn load_world_data(world_source: Option<&str>) -> Result<ofm_core::generator::WorldData, String> {
+fn load_world_data(world_source: Option<&str>, seed: Option<u64>) -> Result<ofm_core::generator::WorldData, String> {
     match world_source {
-        None | Some("random") => Ok(ofm_core::generator::generate_world_data(None)),
+        None | Some("random") | Some("") => match seed {
+            Some(s) => Ok(ofm_core::generator::generate_world_data_seeded(s, None)),
+            None => Ok(ofm_core::generator::generate_world_data(None)),
+        },
         Some(source) => load_world_data_from_path(source),
     }
 }
@@ -513,8 +520,9 @@ pub async fn start_new_game(
     let birth_date = chrono::NaiveDate::parse_from_str(&dob, "%Y-%m-%d")
         .map_err(|_| "be.error.createManager.invalidDobFormat".to_string())?;
 
+    let seed = startup_options.as_ref().and_then(|o| o.seed);
     let startup_options = normalize_startup_options(startup_options)?;
-    let mut world = load_world_data(world_source.as_deref())?;
+    let mut world = load_world_data(world_source.as_deref(), seed)?;
     let clock = game_clock_for_world(&startup_options, &world.metadata)?;
     if matches!(world_source.as_deref(), Some(source) if source != "random") {
         ofm_core::generator::normalize_imported_world_for_career_start(&mut world);
@@ -694,12 +702,14 @@ pub fn bootstrap_game_for_mcp(
     manager_first_name: &str,
     manager_last_name: &str,
     manager_nationality: &str,
+    seed: Option<u64>,
 ) -> Result<String, String> {
-    // Step 1: Load world data
-    let mut world = load_world_data_from_path(world_path)?;
-
-    // Normalize imported world for career start (same as start_new_game does for non-random imports)
-    ofm_core::generator::normalize_imported_world_for_career_start(&mut world);
+    // Step 1: Load world data (empty/random path → generate; file path → import)
+    let mut world = load_world_data(Some(world_path), seed)?;
+    if !world_path.is_empty() && world_path != "random" {
+        // Normalize imported world for career start (only for file-based imports)
+        ofm_core::generator::normalize_imported_world_for_career_start(&mut world);
+    }
 
     // Step 2: Find the existing user manager in the world data.
     // HistoricalSnapshot exports include the user manager (id "mgr_user") already
@@ -1210,6 +1220,7 @@ mod tests {
             start_year: Some(2019),
             start_phase: Some("seasonStart".to_string()),
             history_depth_years: None,
+            seed: None,
         }));
 
         assert_eq!(result.unwrap_err(), "be.error.createManager.startYearMin");
@@ -1221,6 +1232,7 @@ mod tests {
             start_year: Some(2026),
             start_phase: Some("playoffs".to_string()),
             history_depth_years: None,
+            seed: None,
         }));
 
         assert_eq!(
@@ -1235,6 +1247,7 @@ mod tests {
             start_year: Some(2026),
             start_phase: Some("seasonStart".to_string()),
             history_depth_years: Some(MAX_GENERATED_HISTORY_DEPTH_YEARS + 1),
+            seed: None,
         }));
 
         assert_eq!(
@@ -1249,6 +1262,7 @@ mod tests {
             start_year: Some(2026),
             start_phase: Some("seasonStart".to_string()),
             history_depth_years: Some(24),
+            seed: None,
         }))
         .unwrap();
 
