@@ -273,6 +273,7 @@ pub fn run() {
             apply_team_talk,
             submit_press_conference,
             exit_to_menu,
+            list_user_locales,
             get_settings,
             save_settings,
             clear_all_saves,

@@ -33,6 +33,38 @@ const SUPPORTED_LANGUAGE_CODES = SUPPORTED_LANGUAGES.map(
   ({ code }) => code,
 );
 
+// Tracks user-provided locale codes registered at runtime via registerUserLocale().
+// Kept separate from i18n.options.supportedLngs to avoid aliasing i18next internals
+// (e.g. "cimode", which i18next always appends to supportedLngs).
+const _userLocaleCodes = new Set<string>();
+
+/**
+ * Register a user-provided locale code so that changeAppLanguage() passes it
+ * through to i18next without normalization, and so that i18next's LanguageUtil
+ * builds the correct language hierarchy for translation lookups.
+ *
+ * Must be called after i18nReady resolves (i18next must be initialized first).
+ */
+export function registerUserLocale(code: string): void {
+  if (_userLocaleCodes.has(code)) return;
+  _userLocaleCodes.add(code);
+
+  const current = i18n.options.supportedLngs;
+  if (Array.isArray(current) && !current.includes(code as never)) {
+    const updated = [...current, code];
+    // Update options so i18next's changeLanguage() accepts the code.
+    i18n.options.supportedLngs = updated;
+    // LanguageUtil copies supportedLngs from options at init time into its own
+    // instance property. Update that copy too so toResolveHierarchy() builds
+    // the correct i18n.languages array (which drives actual translation lookups).
+    const lu = (i18n.services as unknown as Record<string, unknown>)
+      .languageUtils as { supportedLngs: string[] | false } | undefined;
+    if (lu && Array.isArray(lu.supportedLngs)) {
+      lu.supportedLngs = updated;
+    }
+  }
+}
+
 function localeBackendLoader(language: string): Promise<TranslationResource> {
   const resolvedLanguage = resolveSupportedLanguage(language);
   const prefix = `./locales/${resolvedLanguage}/`;
@@ -89,9 +121,11 @@ function detectInitialLanguage(): string {
 }
 
 export async function changeAppLanguage(locale: string): Promise<string> {
-  const resolvedLanguage = resolveSupportedLanguage(locale);
-  await i18n.changeLanguage(resolvedLanguage);
-  return resolvedLanguage;
+  const target = _userLocaleCodes.has(locale)
+    ? locale
+    : resolveSupportedLanguage(locale);
+  await i18n.changeLanguage(target);
+  return target;
 }
 
 export const i18nReady = i18n

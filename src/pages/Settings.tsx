@@ -6,6 +6,7 @@ import { useSettingsStore, AppSettings } from "../store/settingsStore";
 import { useTheme } from "../context/ThemeContext";
 import { ThemeToggle, Select } from "../components/ui";
 import { SUPPORTED_LANGUAGES, changeAppLanguage } from "../i18n";
+import { getUserLocales } from "../i18n/userLocales";
 import {
   ArrowLeft,
   Monitor,
@@ -191,6 +192,11 @@ export default function Settings() {
               {SUPPORTED_LANGUAGES.map((lang) => (
                 <option key={lang.code} value={lang.code}>
                   {t(lang.labelKey)}
+                </option>
+              ))}
+              {getUserLocales().map(({ code }) => (
+                <option key={code} value={code}>
+                  {code}
                 </option>
               ))}
             </Select>

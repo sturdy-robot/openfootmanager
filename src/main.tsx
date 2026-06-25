@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { ThemeProvider } from "./context/ThemeContext";
 import { i18nReady } from "./i18n";
+import { loadUserLocales } from "./i18n/userLocales";
 import App from "./App";
 
 const rootElement = document.getElementById("root") as HTMLElement | null;
@@ -23,6 +24,7 @@ function renderApp() {
 }
 
 void i18nReady
+  .then(() => loadUserLocales())
   .catch((error) => {
     console.error("Failed to initialize i18n:", error);
   })
