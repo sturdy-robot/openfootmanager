@@ -1,0 +1,14 @@
+{
+  "title": "Scegli il tuo club",
+  "subtitle": "Seleziona la squadra che vuoi allenare",
+  "confirming": "Conferma in corso...",
+  "manage": "Allena {{team}}",
+  "reputation": "Reputazione",
+  "squad": "Rosa",
+  "finances": "Finanze",
+  "avgOvr": "OVR medio",
+  "worldClass": "Di livello mondiale",
+  "strong": "Forte",
+  "average": "Media",
+  "developing": "In crescita"
+}

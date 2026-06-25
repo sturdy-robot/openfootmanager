@@ -1,0 +1,14 @@
+{
+  "title": "Escolha Seu Clube",
+  "subtitle": "Selecione o time que você quer comandar",
+  "confirming": "Confirmando...",
+  "manage": "Comandar {{team}}",
+  "reputation": "Reputação",
+  "squad": "Elenco",
+  "finances": "Finanças",
+  "avgOvr": "OVR Médio",
+  "worldClass": "Classe Mundial",
+  "strong": "Forte",
+  "average": "Mediano",
+  "developing": "Em Desenvolvimento"
+}

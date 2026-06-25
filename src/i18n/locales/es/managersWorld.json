@@ -1,0 +1,14 @@
+{
+  "title": "Entrenadores",
+  "subtitle": "Entrenadores de la liga y vacantes abiertas",
+  "vacancy": "Vacante",
+  "employed": "En activo",
+  "unemployed": "Sin club",
+  "reputation": "Reputación",
+  "winRate": "Porcentaje de victorias",
+  "matches": "Partidos",
+  "currentClub": "Club actual",
+  "openRole": "Vacante abierta en {{team}}",
+  "vacancyBadge": "La directiva busca",
+  "noManagers": "No hay entrenadores disponibles."
+}

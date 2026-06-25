@@ -1,0 +1,8 @@
+{
+  "objective": {
+    "LeaguePosition": "Финишировать в топ-{{target}}",
+    "Wins": "Выиграть не менее {{target}} матчей",
+    "GoalsScored": "Забить не менее {{target}} голов",
+    "FinancialStability": "Держать расходы на зарплаты на уровне не выше {{target}}% бюджета"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "title": "Crea allenatore",
+  "firstName": "Nome",
+  "lastName": "Cognome",
+  "dob": "Data di nascita",
+  "startYear": "Anno di inizio",
+  "startPhase": "Fase di inizio",
+  "phaseSeasonStart": "Inizio stagione",
+  "phaseMidSeason": "Metà stagione",
+  "nationality": "Nazionalità",
+  "countryOfOrigin": "Paese/Regione di origine",
+  "selectNationality": "Seleziona nazionalità...",
+  "selectCountry": "Seleziona Paese/Regione...",
+  "searchNationalities": "Cerca nazionalità...",
+  "chooseWorld": "Scegli Mondo",
+  "placeholderFirst": "es. José",
+  "placeholderLast": "es. Mourinho"
+}

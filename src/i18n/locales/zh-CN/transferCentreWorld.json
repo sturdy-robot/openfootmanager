@@ -1,0 +1,17 @@
+{
+  "title": "转会中心",
+  "subtitle": "追踪联赛各队的转会传闻与已完成交易",
+  "rumours": "传闻",
+  "completedDeals": "已完成交易",
+  "currentClub": "当前俱乐部",
+  "sourceClub": "来自",
+  "destinationClub": "去向",
+  "reportedOn": "报道时间",
+  "agreedOn": "成交时间",
+  "fee": "转会费",
+  "noRumours": "暂无活跃传闻。",
+  "noCompletedDeals": "暂无已记录的完成交易。",
+  "rumourTag": "传闻",
+  "completedTag": "已完成",
+  "playerButton": "查看 {{player}}"
+}

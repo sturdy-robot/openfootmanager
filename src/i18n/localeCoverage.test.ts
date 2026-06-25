@@ -6,25 +6,32 @@ import {
   type LocaleTree,
 } from "./i18nTestHelpers";
 import INTENTIONAL_SAME from "./INTENTIONAL_SAME.json";
-import de from "./locales/de.json";
-import en from "./locales/en.json";
-import es from "./locales/es.json";
-import fr from "./locales/fr.json";
-import itLocale from "./locales/it.json";
-import ptBR from "./locales/pt-BR.json";
-import pt from "./locales/pt.json";
-import ru from "./locales/ru.json";
-import zhCN from "./locales/zh-CN.json";
+
+const allModules = import.meta.glob<{ default: Record<string, unknown> }>(
+  "./locales/*/*.json",
+  { eager: true },
+);
+
+function buildBundle(code: string): LocaleTree {
+  const prefix = `./locales/${code}/`;
+  return Object.fromEntries(
+    Object.entries(allModules)
+      .filter(([path]) => path.startsWith(prefix))
+      .map(([path, module]) => [path.slice(prefix.length, -5), module.default]),
+  ) as LocaleTree;
+}
+
+const en = buildBundle("en");
 
 const LOCALES: Record<string, LocaleTree> = {
-  de,
-  es,
-  fr,
-  it: itLocale,
-  pt,
-  "pt-BR": ptBR,
-  ru,
-  "zh-CN": zhCN,
+  de: buildBundle("de"),
+  es: buildBundle("es"),
+  fr: buildBundle("fr"),
+  it: buildBundle("it"),
+  pt: buildBundle("pt"),
+  "pt-BR": buildBundle("pt-BR"),
+  ru: buildBundle("ru"),
+  "zh-CN": buildBundle("zh-CN"),
 };
 
 describe("locale coverage", () => {

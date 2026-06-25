@@ -1,0 +1,22 @@
+{
+  "title": "Ruhmeshalle",
+  "subtitle": "Zurückgetretene Legenden und frühere Meister",
+  "legends": "Zurückgetretene Legenden",
+  "pastChampions": "Frühere Meister",
+  "worldCupChampions": "Weltmeister",
+  "worldCupEdition": "WM {{year}}",
+  "noLegends": "Noch keine zurückgetretenen Legenden erfasst.",
+  "noChampions": "Noch keine früheren Meister erfasst.",
+  "appearances": "Einsätze",
+  "goals": "Tore",
+  "assists": "Vorlagen",
+  "titles": "Titel",
+  "lastClub": "Letzter Klub",
+  "finalSeason": "Letzte Saison",
+  "played": "Spiele",
+  "record": "Bilanz",
+  "goalDifference": "Tordifferenz",
+  "legendsCount": "Erfasste Legenden",
+  "championsCount": "Meistersaisons",
+  "seasonLabel": "Saison {{season}}"
+}

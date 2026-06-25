@@ -1,0 +1,86 @@
+{
+  "Speedster": {
+    "label": "Velocista",
+    "desc": "Velocidad excepcional"
+  },
+  "Tank": {
+    "label": "Tanque",
+    "desc": "Poderoso e incansable"
+  },
+  "Agile": {
+    "label": "Ágil",
+    "desc": "Rápido y escurridizo"
+  },
+  "Tireless": {
+    "label": "Incansable",
+    "desc": "Nunca se queda sin energía"
+  },
+  "Playmaker": {
+    "label": "Creador",
+    "desc": "Pasador creativo con visión"
+  },
+  "Sharpshooter": {
+    "label": "Goleador",
+    "desc": "Finalizador clínico"
+  },
+  "Dribbler": {
+    "label": "Regateador",
+    "desc": "Hábil con el balón"
+  },
+  "BallWinner": {
+    "label": "Recuperador",
+    "desc": "Recupera el balón sin descanso"
+  },
+  "Rock": {
+    "label": "Roca",
+    "desc": "Muro defensivo inamovible"
+  },
+  "Leader": {
+    "label": "Líder",
+    "desc": "Inspira a sus compañeros"
+  },
+  "CoolHead": {
+    "label": "Cabeza Fría",
+    "desc": "Calmado bajo presión"
+  },
+  "Visionary": {
+    "label": "Visionario",
+    "desc": "Ve pases que otros no pueden"
+  },
+  "HotHead": {
+    "label": "Temperamental",
+    "desc": "Propenso a perder los estribos"
+  },
+  "TeamPlayer": {
+    "label": "Jugador de Equipo",
+    "desc": "Siempre antepone al equipo"
+  },
+  "SafeHands": {
+    "label": "Manos Seguras",
+    "desc": "Portero fiable"
+  },
+  "CatReflexes": {
+    "label": "Reflejos Felinos",
+    "desc": "Reflejos ultrarrápidos"
+  },
+  "AerialDominance": {
+    "label": "Dominio Aéreo",
+    "desc": "Domina el área por alto"
+  },
+  "CompleteForward": {
+    "label": "Delantero Completo",
+    "desc": "Peligroso en todos los sentidos"
+  },
+  "Engine": {
+    "label": "Motor",
+    "desc": "Potencia de área a área"
+  },
+  "SetPieceSpecialist": {
+    "label": "Espec. Balón Parado",
+    "desc": "Letal a balón parado"
+  },
+  "Wonderkid": {
+    "label": "Prodigio",
+    "desc": "Joven talento con potencial excepcional"
+  }
+}

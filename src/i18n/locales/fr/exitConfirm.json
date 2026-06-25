@@ -1,0 +1,8 @@
+{
+  "title": "Quitter vers le Menu Principal ?",
+  "message": "Votre partie sera sauvegardée automatiquement avant de revenir au menu principal.",
+  "cancel": "Annuler",
+  "saveExit": "Sauvegarder et Quitter",
+  "savingTitle": "Sauvegarde de votre partie...",
+  "savingMessage": "Veuillez patienter pendant que nous sauvegardons votre progression et revenons au menu principal."
+}

@@ -1,0 +1,14 @@
+{
+  "title": "Allenatori",
+  "subtitle": "Allenatori del campionato e incarichi vacanti",
+  "vacancy": "Vacante",
+  "employed": "In carica",
+  "unemployed": "Senza squadra",
+  "reputation": "Reputazione",
+  "winRate": "Percentuale vittorie",
+  "matches": "Partite",
+  "currentClub": "Club attuale",
+  "openRole": "Incarico aperto al {{team}}",
+  "vacancyBadge": "Dirigenza in cerca",
+  "noManagers": "Nessun allenatore disponibile."
+}

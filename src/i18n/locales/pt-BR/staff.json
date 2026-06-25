@@ -1,0 +1,36 @@
+{
+  "myStaff": "Minha Comissão ({{count}})",
+  "available": "Disponíveis ({{count}})",
+  "searchStaff": "Buscar comissão...",
+  "noStaffMatch": "Nenhum membro da comissão corresponde aos seus filtros.",
+  "noAvailableStaff": "Nenhuma comissão técnica disponível.",
+  "releaseStaff": "Dispensar membro da comissão",
+  "openScoutingWorkflow": "Abrir fluxo de observação",
+  "activeAssignment": "atribuição ativa",
+  "activeAssignments": "atribuições ativas",
+  "youthSearch": "busca da base",
+  "youthSearches": "buscas da base",
+  "hireStaff": "Contratar membro da comissão",
+  "best": "Melhor",
+  "roles": {
+    "AssistantManager": "Assistente Técnico",
+    "Coach": "Treinador",
+    "Scout": "Olheiro",
+    "Physio": "Fisioterapeuta"
+  },
+  "attrs": {
+    "coaching": "Treinamento",
+    "judgingAbility": "Avaliar Habilidade",
+    "judgingPotential": "Avaliar Potencial",
+    "physiotherapy": "Fisioterapia"
+  },
+  "specializations": {
+    "Fitness": "Condicionamento",
+    "Technique": "Técnica",
+    "Tactics": "Tática",
+    "Defending": "Defesa",
+    "Attacking": "Ataque",
+    "GoalKeeping": "Goleiros",
+    "Youth": "Base"
+  }
+}

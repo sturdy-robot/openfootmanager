@@ -1,0 +1,9 @@
+{
+  "searchPlaceholder": "Rechercher par nom ou nationalité...",
+  "allPos": "Toutes Pos",
+  "allTeams": "Toutes les Équipes",
+  "nPlayersFound": "{{count}} joueur(s) trouvé(s)",
+  "noMatch": "Aucun joueur ne correspond à vos filtres.",
+  "showingFirst": "Affichage des {{shown}} premiers sur {{total}} joueurs. Affinez votre recherche.",
+  "showingRange": "{{from}}–{{to}} sur {{total}}"
+}

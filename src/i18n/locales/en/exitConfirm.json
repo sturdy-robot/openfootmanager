@@ -1,0 +1,8 @@
+{
+  "title": "Exit to Main Menu?",
+  "message": "Your game will be saved automatically before returning to the main menu.",
+  "cancel": "Cancel",
+  "saveExit": "Save & Exit",
+  "savingTitle": "Saving your game...",
+  "savingMessage": "Please wait while we save your progress and return to the main menu."
+}

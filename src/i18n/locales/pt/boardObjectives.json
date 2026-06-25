@@ -1,0 +1,8 @@
+{
+  "objective": {
+    "LeaguePosition": "Termina entre os primeiros {{target}}",
+    "Wins": "Ganha pelo menos {{target}} jogos",
+    "GoalsScored": "Marca pelo menos {{target}} golos",
+    "FinancialStability": "Mantém a despesa salarial em ou abaixo de {{target}}% do orçamento"
+  }
+}

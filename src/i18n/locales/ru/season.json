@@ -1,0 +1,28 @@
+{
+  "preseasonStatus": "Статус предсезонки",
+  "preseasonFocus": "Используйте это время, чтобы подготовить состав, оценить трансферы и подойти во всеоружии к старту.",
+  "friendly": "Товарищеский матч",
+  "preseasonTournament": "Предсезонный турнир",
+  "opener": "Старт сезона",
+  "startsOn": "Начинается {{date}}",
+  "startsInDays": "До начала {{count}} дн.",
+  "noOpener": "Старт сезона ещё не назначен.",
+  "standingsLocked": "Таблица лиги откроется после начала официальных матчей.",
+  "tournamentsPreseasonHint": "Таблицы турниров и гонки наград появятся, когда сезон начнётся.",
+  "windowClosed": "Трансферное окно закрыто",
+  "windowClosesToday": "Последний день трансферного окна",
+  "windowClosesInDays": "До закрытия окна {{count}} дн.",
+  "windowOpensInDays": "До открытия окна {{count}} дн.",
+  "windowOpensOn": "Окно откроется {{date}}",
+  "windowClosesOn": "Окно закроется {{date}}",
+  "phases": {
+    "Preseason": "Предсезонка",
+    "InSeason": "В сезоне",
+    "PostSeason": "После сезона"
+  },
+  "transferWindowStatus": {
+    "Closed": "Окно закрыто",
+    "Open": "Окно открыто",
+    "DeadlineDay": "День дедлайна"
+  }
+}

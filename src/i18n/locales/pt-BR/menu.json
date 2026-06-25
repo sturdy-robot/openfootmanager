@@ -1,0 +1,21 @@
+{
+  "newGame": "Novo Jogo",
+  "loadGame": "Carregar Jogo",
+  "settings": "Configurações",
+  "exitGame": "Sair do jogo",
+  "noSaves": "Nenhum save encontrado.",
+  "loadingSaves": "Carregando saves...",
+  "deleteConfirm": "Excluir <strong>{{name}}</strong>?",
+  "delete": "Excluir",
+  "cancel": "Cancelar",
+  "manager": "Treinador: {{name}}",
+  "deleteSave": "Excluir save",
+  "noResults": "Sem resultados",
+  "importedDescription": "Banco de dados importado",
+  "importedPackageDescription": "Pacote de mundo importado",
+  "loadGameFailed": "Não foi possível carregar o save: {{error}}",
+  "invalidWorldDb": "Arquivo de banco de dados de mundo inválido: {{error}}",
+  "failedStartGame": "Falha ao iniciar o jogo: {{error}}",
+  "openDiscord": "Abrir comunidade Discord",
+  "openGithub": "Abrir repositório GitHub"
+}

@@ -1,0 +1,14 @@
+{
+  "title": "Тренеры",
+  "subtitle": "Тренеры лиги и открытые вакансии",
+  "vacancy": "Вакансия",
+  "employed": "Работает",
+  "unemployed": "Без клуба",
+  "reputation": "Репутация",
+  "winRate": "Процент побед",
+  "matches": "Матчи",
+  "currentClub": "Текущий клуб",
+  "openRole": "Открытая вакансия в {{team}}",
+  "vacancyBadge": "Совет ищет",
+  "noManagers": "Доступных тренеров нет."
+}

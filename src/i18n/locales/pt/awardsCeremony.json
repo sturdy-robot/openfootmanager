@@ -1,0 +1,12 @@
+{
+  "title": "Cerimonia de Premios",
+  "subtitle": "Epoca {{season}} em {{league}}",
+  "managerOfSeason": "Treinador da Época",
+  "goldenBoot": "Bota de Ouro",
+  "playerOfYear": "Jogador do Ano",
+  "continue": "Continuar para o painel",
+  "back": "Voltar as noticias",
+  "goals": "Golos",
+  "rating": "Classificacao",
+  "winRate": "Taxa de vitórias"
+}

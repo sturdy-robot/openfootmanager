@@ -1,0 +1,22 @@
+{
+  "title": "Galeria da Fama",
+  "subtitle": "Lendas retiradas e campeões históricos",
+  "legends": "Lendas retiradas",
+  "pastChampions": "Campeões históricos",
+  "worldCupChampions": "Campeões do mundo",
+  "worldCupEdition": "Mundial de {{year}}",
+  "noLegends": "Ainda não há lendas retiradas registadas.",
+  "noChampions": "Ainda não há campeões históricos registados.",
+  "appearances": "Jogos",
+  "goals": "Golos",
+  "assists": "Assistências",
+  "titles": "Títulos",
+  "lastClub": "Último clube",
+  "finalSeason": "Última época",
+  "played": "Jogados",
+  "record": "Registo",
+  "goalDifference": "Diferença de golos",
+  "legendsCount": "Lendas registadas",
+  "championsCount": "Épocas de campeão",
+  "seasonLabel": "Época {{season}}"
+}

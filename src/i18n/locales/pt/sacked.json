@@ -1,0 +1,19 @@
+{
+  "title": "Foi Demitido",
+  "subtitle": "A direção perdeu confiança na sua capacidade de gerir o clube.",
+  "teamLabel": "Clube",
+  "finalSatisfaction": "Confiança da Direção",
+  "careerOverview": "Resumo da Carreira",
+  "matchesManaged": "Jogos",
+  "wins": "Vitórias",
+  "draws": "Empates",
+  "losses": "Derrotas",
+  "winRate": "% Vitórias",
+  "bestFinish": "Melhor Posição",
+  "trophies": "Troféus",
+  "careerHistory": "Histórico",
+  "returnToMenu": "Voltar ao Menu Principal",
+  "present": "Atual",
+  "bestLabel": "Melhor",
+  "dismissalLetter": "O conselho de administração decidiu dispensá-lo das suas funções como treinador do {{team}}, com efeito imediato.\n\nAgradecemos pelos seus serviços e desejamos-lhe o melhor para a sua futura carreira.\n\nAtenciosamente,\nO Conselho de Administração"
+}

@@ -1,0 +1,28 @@
+{
+  "preseasonStatus": "Estado da pré-época",
+  "preseasonFocus": "Use este período para preparar o plantel, rever o mercado e chegar pronto ao arranque da época.",
+  "friendly": "Amigável",
+  "preseasonTournament": "Torneio de pré-época",
+  "opener": "Jogo inaugural",
+  "startsOn": "Começa a {{date}}",
+  "startsInDays": "Faltam {{count}} dia(s) para o arranque",
+  "noOpener": "O arranque da época ainda não foi agendado.",
+  "standingsLocked": "A classificação será desbloqueada depois do início dos jogos oficiais.",
+  "tournamentsPreseasonHint": "Tabelas e corridas pelos prémios aparecerão quando a época arrancar.",
+  "windowClosed": "Janela fechada",
+  "windowClosesToday": "Último dia da janela",
+  "windowClosesInDays": "Faltam {{count}} dia(s) para o fecho da janela",
+  "windowOpensInDays": "Faltam {{count}} dia(s) para a abertura da janela",
+  "windowOpensOn": "A janela abre a {{date}}",
+  "windowClosesOn": "A janela fecha a {{date}}",
+  "phases": {
+    "Preseason": "Pré-época",
+    "InSeason": "Época em curso",
+    "PostSeason": "Pós-época"
+  },
+  "transferWindowStatus": {
+    "Closed": "Janela Fechada",
+    "Open": "Janela Aberta",
+    "DeadlineDay": "Dia Final"
+  }
+}

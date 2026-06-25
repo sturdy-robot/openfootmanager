@@ -1,0 +1,28 @@
+{
+  "preseasonStatus": "Status der Vorbereitung",
+  "preseasonFocus": "Nutze diese Phase, um deinen Kader vorzubereiten, Transfergeschäfte zu prüfen und bereit in den Saisonstart zu gehen.",
+  "friendly": "Freundschaftsspiel",
+  "preseasonTournament": "Vorbereitungsturnier",
+  "opener": "Saisonauftakt",
+  "startsOn": "Startet am {{date}}",
+  "startsInDays": "Noch {{count}} Tag(e) bis zum Saisonstart",
+  "noOpener": "Der Saisonauftakt ist noch nicht angesetzt.",
+  "standingsLocked": "Die Tabelle wird freigeschaltet, sobald Pflichtspiele begonnen haben.",
+  "tournamentsPreseasonHint": "Tabellen und Auszeichnungen erscheinen, sobald die Saison läuft.",
+  "windowClosed": "Transferfenster geschlossen",
+  "windowClosesToday": "Transferschluss heute",
+  "windowClosesInDays": "Noch {{count}} Tag(e) bis zum Ende des Transferfensters",
+  "windowOpensInDays": "Noch {{count}} Tag(e) bis zur Öffnung des Transferfensters",
+  "windowOpensOn": "Das Transferfenster öffnet am {{date}}",
+  "windowClosesOn": "Das Transferfenster schließt am {{date}}",
+  "phases": {
+    "Preseason": "Vorbereitung",
+    "InSeason": "Saison läuft",
+    "PostSeason": "Nachsaison"
+  },
+  "transferWindowStatus": {
+    "Closed": "Fenster Geschlossen",
+    "Open": "Fenster Offen",
+    "DeadlineDay": "Stichtag"
+  }
+}

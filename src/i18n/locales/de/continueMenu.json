@@ -1,0 +1,12 @@
+{
+  "goToField": "Aufs Spielfeld",
+  "goToFieldDesc": "Volle Spielkontrolle",
+  "watchSpectator": "Als Zuschauer",
+  "watchSpectatorDesc": "Spiel anschauen ohne Kontrolle",
+  "delegateAssistant": "An Assistent delegieren",
+  "delegateAssistantDesc": "KI übernimmt alles",
+  "skipToMatchDay": "Zum Spieltag springen",
+  "skipToMatchDayDesc": "Vorspulen bis zum nächsten Spiel",
+  "matchDayTitle": "Spieltag",
+  "delegateWarning": "Dein Assistent übernimmt das Spiel. Du kannst nicht eingreifen."
+}

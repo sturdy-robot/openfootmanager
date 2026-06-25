@@ -1,0 +1,12 @@
+{
+  "title": "Ceremonie des Recompenses",
+  "subtitle": "Saison {{season}} en {{league}}",
+  "managerOfSeason": "Entraîneur de la Saison",
+  "goldenBoot": "Soulier d'Or",
+  "playerOfYear": "Joueur de l'Annee",
+  "continue": "Continuer vers le tableau de bord",
+  "back": "Retour aux actualites",
+  "goals": "Buts",
+  "rating": "Note",
+  "winRate": "Taux de victoire"
+}

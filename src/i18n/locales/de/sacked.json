@@ -1,0 +1,19 @@
+{
+  "title": "Sie Wurden Entlassen",
+  "subtitle": "Der Vorstand hat das Vertrauen in Ihre Fähigkeit, den Verein zu führen, verloren.",
+  "teamLabel": "Verein",
+  "finalSatisfaction": "Vertrauen des Vorstands",
+  "careerOverview": "Karriereübersicht",
+  "matchesManaged": "Spiele",
+  "wins": "Siege",
+  "draws": "Unentschieden",
+  "losses": "Niederlagen",
+  "winRate": "Siegquote",
+  "bestFinish": "Beste Platzierung",
+  "trophies": "Trophäen",
+  "careerHistory": "Karriereverlauf",
+  "returnToMenu": "Zurück zum Hauptmenü",
+  "present": "Aktuell",
+  "bestLabel": "Beste",
+  "dismissalLetter": "Der Vorstand hat beschlossen, Sie mit sofortiger Wirkung als Trainer von {{team}} zu entlassen.\n\nWir danken Ihnen für Ihre Dienste und wünschen Ihnen alles Gute für Ihre weitere Karriere.\n\nMit freundlichen Grüßen,\nDer Vorstand"
+}

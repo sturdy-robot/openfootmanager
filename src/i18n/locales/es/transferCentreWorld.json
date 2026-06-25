@@ -1,0 +1,17 @@
+{
+  "title": "Centro de fichajes",
+  "subtitle": "Sigue rumores y acuerdos cerrados en toda la liga",
+  "rumours": "Rumores",
+  "completedDeals": "Operaciones cerradas",
+  "currentClub": "Club actual",
+  "sourceClub": "Desde",
+  "destinationClub": "Hacia",
+  "reportedOn": "Publicado",
+  "agreedOn": "Cerrado",
+  "fee": "Importe",
+  "noRumours": "No hay rumores activos.",
+  "noCompletedDeals": "No hay operaciones cerradas registradas.",
+  "rumourTag": "Rumor",
+  "completedTag": "Cerrado",
+  "playerButton": "Ver a {{player}}"
+}

@@ -1,0 +1,14 @@
+{
+  "title": "Primeiros Passos",
+  "description": "Complete estas etapas para preparar seu time para a próxima temporada. A comissão técnica é especialmente importante — ela potencializa o treino e a recuperação.",
+  "reviewSquad": "Avalie seu elenco",
+  "reviewSquadDesc": "Confira as estatísticas, condição e características dos jogadores",
+  "hireStaff": "Contrate a comissão técnica",
+  "hireStaffDesc": "A comissão melhora a qualidade do treino e recuperação — contrate um Treinador e um Fisioterapeuta",
+  "setTactics": "Defina sua formação e táticas",
+  "setTacticsDesc": "Escolha uma formação e estilo de jogo que se encaixem no seu elenco",
+  "configTraining": "Configure o treinamento",
+  "configTrainingDesc": "Escolha um foco e calendário para desenvolver seus jogadores",
+  "readMessages": "Leia suas mensagens",
+  "readMessagesDesc": "Informações importantes da diretoria e comissão técnica aguardam"
+}

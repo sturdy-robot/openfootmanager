@@ -1,0 +1,19 @@
+{
+  "seasonComplete": "Сезон завершён",
+  "champions": "Чемпионы!",
+  "position": "Место",
+  "points": "Очки",
+  "finalStandings": "Итоговая таблица (топ-5)",
+  "leagueChampions": "Чемпионы лиги",
+  "startNextSeason": "Начать следующий сезон",
+  "processing": "Обработка...",
+  "statsArchived": "Статистика игроков будет архивирована. Будет сгенерирован новый календарь.",
+  "seasonLine": "{{league}} — Сезон {{season}}",
+  "newSeason": "Сезон {{n}}",
+  "newScheduleReleased": "Новый календарь опубликован. Удачи!",
+  "goldenBoot": "Золотая бутса",
+  "nGoals": "{{count}} голов",
+  "playerOfYear": "Игрок года",
+  "avgRating": "Средний рейтинг: {{rating}}",
+  "continueDashboard": "Продолжить в дашборд"
+}

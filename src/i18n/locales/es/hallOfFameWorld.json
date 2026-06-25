@@ -1,0 +1,22 @@
+{
+  "title": "Salón de la Fama",
+  "subtitle": "Leyendas retiradas y campeones históricos",
+  "legends": "Leyendas retiradas",
+  "pastChampions": "Campeones históricos",
+  "worldCupChampions": "Campeones del mundo",
+  "worldCupEdition": "Mundial de {{year}}",
+  "noLegends": "Aún no hay leyendas retiradas registradas.",
+  "noChampions": "Aún no hay campeones históricos registrados.",
+  "appearances": "Partidos",
+  "goals": "Goles",
+  "assists": "Asistencias",
+  "titles": "Títulos",
+  "lastClub": "Último club",
+  "finalSeason": "Última temporada",
+  "played": "Jugados",
+  "record": "Balance",
+  "goalDifference": "Diferencia de goles",
+  "legendsCount": "Leyendas registradas",
+  "championsCount": "Temporadas campeonas",
+  "seasonLabel": "Temporada {{season}}"
+}

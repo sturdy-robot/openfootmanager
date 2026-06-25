@@ -1,0 +1,14 @@
+{
+  "title": "Wähle Deinen Verein",
+  "subtitle": "Wähle das Team, das du trainieren möchtest",
+  "confirming": "Bestätigung...",
+  "manage": "{{team}} trainieren",
+  "reputation": "Ruf",
+  "squad": "Kader",
+  "finances": "Finanzen",
+  "avgOvr": "Durchschn. OVR",
+  "worldClass": "Weltklasse",
+  "strong": "Stark",
+  "average": "Durchschnitt",
+  "developing": "In Entwicklung"
+}

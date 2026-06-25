@@ -1,0 +1,19 @@
+{
+  "title": "Sei Stato Esonerato",
+  "subtitle": "Il consiglio ha perso fiducia nella tua capacità di gestire il club.",
+  "teamLabel": "Squadra",
+  "finalSatisfaction": "Fiducia del Consiglio",
+  "careerOverview": "Riepilogo Carriera",
+  "matchesManaged": "Partite",
+  "wins": "Vittorie",
+  "draws": "Pareggi",
+  "losses": "Sconfitte",
+  "winRate": "% Vittorie",
+  "bestFinish": "Miglior Piazzamento",
+  "trophies": "Trofei",
+  "careerHistory": "Cronologia",
+  "returnToMenu": "Torna al Menu Principale",
+  "present": "Attuale",
+  "bestLabel": "Migliore",
+  "dismissalLetter": "Il consiglio di amministrazione ha deciso di sollevarla dall'incarico di allenatore del {{team}}, con effetto immediato.\n\nLa ringraziamo per i suoi servizi e le auguriamo il meglio per la sua futura carriera.\n\nCordiali saluti,\nIl Consiglio di Amministrazione"
+}

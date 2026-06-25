@@ -1,0 +1,19 @@
+{
+  "title": "Vous Êtes Limogé",
+  "subtitle": "Le conseil d'administration a perdu confiance en votre capacité à diriger le club.",
+  "teamLabel": "Club",
+  "finalSatisfaction": "Confiance du Conseil",
+  "careerOverview": "Bilan de Carrière",
+  "matchesManaged": "Matchs",
+  "wins": "Victoires",
+  "draws": "Nuls",
+  "losses": "Défaites",
+  "winRate": "% Victoires",
+  "bestFinish": "Meilleur Classement",
+  "trophies": "Trophées",
+  "careerHistory": "Historique",
+  "returnToMenu": "Retour au Menu Principal",
+  "present": "Actuel",
+  "bestLabel": "Meilleur",
+  "dismissalLetter": "Le conseil d'administration a décidé de vous relever de vos fonctions d'entraîneur de {{team}}, avec effet immédiat.\n\nNous vous remercions pour vos services et vous souhaitons bonne chance pour la suite de votre carrière.\n\nCordialement,\nLe Conseil d'Administration"
+}

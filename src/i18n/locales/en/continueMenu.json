@@ -1,0 +1,12 @@
+{
+  "goToField": "Go to the Field",
+  "goToFieldDesc": "Full match control (default)",
+  "watchSpectator": "Watch as Spectator",
+  "watchSpectatorDesc": "Watch the match, no controls",
+  "delegateAssistant": "Delegate to Assistant",
+  "delegateAssistantDesc": "AI handles everything instantly",
+  "skipToMatchDay": "Skip to Match Day",
+  "skipToMatchDayDesc": "Fast-forward to your next fixture",
+  "matchDayTitle": "Match Day",
+  "delegateWarning": "Your assistant will manage the match. You won't be able to intervene."
+}

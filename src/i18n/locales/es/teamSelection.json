@@ -1,0 +1,14 @@
+{
+  "title": "Elige Tu Club",
+  "subtitle": "Selecciona el equipo que quieres dirigir",
+  "confirming": "Confirmando...",
+  "manage": "Dirigir {{team}}",
+  "reputation": "Reputación",
+  "squad": "Plantilla",
+  "finances": "Finanzas",
+  "avgOvr": "Media OVR",
+  "worldClass": "Clase Mundial",
+  "strong": "Fuerte",
+  "average": "Medio",
+  "developing": "En Desarrollo"
+}

@@ -25,29 +25,33 @@ const SIMPLIFIED_CHINESE_LOCALES = new Set(["zh", "zh-cn", "zh-sg", "zh-my"]);
 
 type TranslationResource = Record<string, unknown>;
 
-const localeModules = import.meta.glob<{ default: TranslationResource }>(
-  "./locales/*.json",
+const localeModules = import.meta.glob<{ default: Record<string, unknown> }>(
+  "./locales/*/*.json",
 );
 
 const SUPPORTED_LANGUAGE_CODES = SUPPORTED_LANGUAGES.map(
   ({ code }) => code,
 );
 
-function localeModulePath(language: string): string {
-  return `./locales/${language}.json`;
-}
-
 function localeBackendLoader(language: string): Promise<TranslationResource> {
   const resolvedLanguage = resolveSupportedLanguage(language);
-  const loader = localeModules[localeModulePath(resolvedLanguage)];
+  const prefix = `./locales/${resolvedLanguage}/`;
+  const pairs = Object.entries(localeModules).filter(([path]) =>
+    path.startsWith(prefix),
+  );
 
-  if (!loader) {
+  if (pairs.length === 0) {
     return Promise.reject(
-      new Error(`Unsupported locale module: ${resolvedLanguage}`),
+      new Error(`No locale modules found for: ${resolvedLanguage}`),
     );
   }
 
-  return loader().then((module) => module.default);
+  return Promise.all(
+    pairs.map(async ([path, load]) => {
+      const domain = path.slice(prefix.length, -5); // strip prefix + ".json"
+      return [domain, (await load()).default] as const;
+    }),
+  ).then(Object.fromEntries) as Promise<TranslationResource>;
 }
 
 export function resolveSupportedLanguage(locale: string): string {

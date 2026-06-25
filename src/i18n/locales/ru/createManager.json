@@ -1,0 +1,18 @@
+{
+  "title": "Создание менеджера",
+  "firstName": "Имя",
+  "lastName": "Фамилия",
+  "dob": "Дата рождения",
+  "startYear": "Год старта",
+  "startPhase": "Фаза старта",
+  "phaseSeasonStart": "Начало сезона",
+  "phaseMidSeason": "Середина сезона",
+  "nationality": "Национальность",
+  "countryOfOrigin": "Страна/регион происхождения",
+  "selectNationality": "Выберите национальность...",
+  "selectCountry": "Выберите страну/регион...",
+  "searchNationalities": "Поиск национальностей...",
+  "chooseWorld": "Выбрать мир",
+  "placeholderFirst": "например, José",
+  "placeholderLast": "например, Mourinho"
+}

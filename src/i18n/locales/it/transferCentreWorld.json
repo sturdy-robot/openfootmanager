@@ -1,0 +1,17 @@
+{
+  "title": "Centro trasferimenti",
+  "subtitle": "Segui le voci di mercato e gli affari conclusi in tutto il campionato",
+  "rumours": "Voci",
+  "completedDeals": "Affari conclusi",
+  "currentClub": "Club attuale",
+  "sourceClub": "Da",
+  "destinationClub": "A",
+  "reportedOn": "Segnalato",
+  "agreedOn": "Concluso",
+  "fee": "Costo",
+  "noRumours": "Nessuna voce attiva.",
+  "noCompletedDeals": "Nessun affare concluso registrato.",
+  "rumourTag": "Voce",
+  "completedTag": "Concluso",
+  "playerButton": "Vedi {{player}}"
+}

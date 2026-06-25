@@ -1,0 +1,36 @@
+{
+  "myStaff": "Мой штаб ({{count}})",
+  "available": "Свободно ({{count}})",
+  "searchStaff": "Поиск персонала...",
+  "noStaffMatch": "Персонал не найден по выбранным фильтрам.",
+  "noAvailableStaff": "Свободных сотрудников нет.",
+  "releaseStaff": "Уволить сотрудника",
+  "openScoutingWorkflow": "Открыть сценарий скаутинга",
+  "activeAssignment": "активное задание",
+  "activeAssignments": "активных заданий",
+  "youthSearch": "поиск таланта",
+  "youthSearches": "поисков талантов",
+  "hireStaff": "Нанять сотрудника",
+  "best": "Лучшее",
+  "roles": {
+    "AssistantManager": "Ассистент тренера",
+    "Coach": "Тренер",
+    "Scout": "Скаут",
+    "Physio": "Физиотерапевт"
+  },
+  "attrs": {
+    "coaching": "Тренерство",
+    "judgingAbility": "Оценка уровня",
+    "judgingPotential": "Оценка потенциала",
+    "physiotherapy": "Физиотерапия"
+  },
+  "specializations": {
+    "Fitness": "Фитнес",
+    "Technique": "Техника",
+    "Tactics": "Тактика",
+    "Defending": "Оборона",
+    "Attacking": "Атака",
+    "GoalKeeping": "Вратарская работа",
+    "Youth": "Молодёжь"
+  }
+}

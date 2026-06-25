@@ -1,0 +1,17 @@
+{
+  "noNews": "No news articles yet.",
+  "newsWillAppear": "News will appear as the season progresses.",
+  "backToNews": "Back to News",
+  "nArticles": "{{count}} article(s)",
+  "categories": {
+    "MatchReport": "Match Report",
+    "LeagueRoundup": "League Roundup",
+    "StandingsUpdate": "Standings",
+    "TransferRumour": "Transfer",
+    "TransferRoundup": "Transfer Roundup",
+    "InjuryNews": "Injury",
+    "SeasonPreview": "Season Preview",
+    "Editorial": "Editorial",
+    "ManagerialChange": "Managerial"
+  }
+}

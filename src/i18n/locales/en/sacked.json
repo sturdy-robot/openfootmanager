@@ -1,0 +1,19 @@
+{
+  "title": "You've Been Sacked",
+  "subtitle": "The board has lost confidence in your ability to manage the club.",
+  "teamLabel": "Club",
+  "finalSatisfaction": "Board Confidence",
+  "careerOverview": "Career Overview",
+  "matchesManaged": "Matches",
+  "wins": "Wins",
+  "draws": "Draws",
+  "losses": "Losses",
+  "winRate": "Win Rate",
+  "bestFinish": "Best Finish",
+  "trophies": "Trophies",
+  "careerHistory": "Career History",
+  "returnToMenu": "Return to Main Menu",
+  "present": "Present",
+  "bestLabel": "Best",
+  "dismissalLetter": "The board of directors has decided to relieve you of your duties as manager of {{team}}, effective immediately.\n\nWe thank you for your service and wish you well in your future career.\n\nYours sincerely,\nThe Board of Directors"
+}

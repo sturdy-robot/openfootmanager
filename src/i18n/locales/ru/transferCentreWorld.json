@@ -1,0 +1,17 @@
+{
+  "title": "Трансферный центр",
+  "subtitle": "Следите за слухами и завершёнными сделками по всей лиге",
+  "rumours": "Слухи",
+  "completedDeals": "Завершённые сделки",
+  "currentClub": "Текущий клуб",
+  "sourceClub": "Из",
+  "destinationClub": "В",
+  "reportedOn": "Сообщено",
+  "agreedOn": "Согласовано",
+  "fee": "Сумма",
+  "noRumours": "Никаких активных слухов.",
+  "noCompletedDeals": "Завершенных сделок не зарегистрировано.",
+  "rumourTag": "Слух",
+  "completedTag": "Сделка",
+  "playerButton": "Посмотреть {{player}}"
+}

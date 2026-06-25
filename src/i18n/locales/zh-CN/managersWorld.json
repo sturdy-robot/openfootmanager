@@ -1,0 +1,14 @@
+{
+  "title": "主教练",
+  "subtitle": "联赛主教练与空缺职位",
+  "vacancy": "空缺",
+  "employed": "在任",
+  "unemployed": "待业",
+  "reputation": "声望",
+  "winRate": "胜率",
+  "matches": "比赛",
+  "currentClub": "当前俱乐部",
+  "openRole": "{{team}} 帅位空缺",
+  "vacancyBadge": "董事会招募中",
+  "noManagers": "暂无主教练信息。"
+}

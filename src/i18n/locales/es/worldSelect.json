@@ -1,0 +1,43 @@
+{
+  "title": "Elegir Mundo",
+  "scanning": "Buscando bases de datos...",
+  "importFile": "Importar archivo",
+  "importPackage": "Importar paquete de mundo",
+  "packageErrorsTitle": "Problemas del paquete",
+  "importCompetitions": "Añadir archivo de competiciones",
+  "removeCompetitions": "Quitar",
+  "competitionsErrorsTitle": "Este archivo de competiciones no se puede usar:",
+  "startCareer": "Iniciar Carrera",
+  "creatingWorld": "Creando Mundo...",
+  "teams": "{{count}} equipos",
+  "players": "{{count}} jugadores",
+  "randomWorld": "Mundo Aleatorio",
+  "randomDescription": "Un mundo generado proceduralmente con clubes, jugadores y staff",
+  "historyMode": {
+    "generated": "Historia generada",
+    "reference": "Historia de referencia",
+    "hybrid": "Historia híbrida"
+  },
+  "summary": {
+    "startYear": "Inicio de carrera",
+    "seasonStart": {
+      "generated": "Comienza en {{year}} con un mundo nuevo y {{count}} temporadas generadas de trasfondo.",
+      "reference": "Comienza en {{year}} usando la instantánea histórica seleccionada como base del mundo.",
+      "hybrid": "Comienza en {{year}} usando la plantilla de esta base de datos mientras se generan alrededor de {{count}} temporadas del historial faltante."
+    },
+    "midSeason": {
+      "generated": "Toma el mando a mitad de {{year}} con clasificación, calendario, noticias, historial de partidos y {{count}} temporadas generadas de trasfondo.",
+      "reference": "Toma el mando a mitad de {{year}} con la instantánea histórica seleccionada y el contexto de la temporada ya presente.",
+      "hybrid": "Toma el mando a mitad de {{year}} con la plantilla de esta base de datos más {{count}} temporadas de contexto histórico generado y progreso de temporada heredado."
+    }
+  },
+  "historyDepth": {
+    "label": "Historia generada",
+    "hint": "Elige cuánto trasfondo generar. Un archivo más profundo añade contexto, pero tarda más en crearse.",
+    "reference": "Este mundo ya incluye su propio archivo histórico.",
+    "applied": "{{count}} temporadas generadas",
+    "none": "Sin trasfondo",
+    "option": "{{count}} temporadas",
+    "recommended": "Recomendado"
+  }
+}

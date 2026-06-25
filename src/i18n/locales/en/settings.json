@@ -1,0 +1,83 @@
+{
+  "title": "Settings",
+  "display": "Display",
+  "theme": "Theme",
+  "themeDesc": "Choose how the app looks",
+  "themeOptions": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": "Language",
+  "languageDesc": "Choose the display language",
+  "currency": "Currency",
+  "currencyDesc": "How monetary values are displayed",
+  "currencyOptions": {
+    "eur": "Euro",
+    "gbp": "Pound",
+    "usd": "Dollar"
+  },
+  "languages": {
+    "en": "English",
+    "es": "Spanish",
+    "pt": "Portuguese",
+    "fr": "French",
+    "de": "German",
+    "it": "Italian",
+    "ptBR": "Portuguese (Brazil)",
+    "zhCN": "Simplified Chinese",
+    "ru": "Russian"
+  },
+  "gameplay": "Gameplay",
+  "defaultMatchMode": "Default Match Mode",
+  "defaultMatchModeDesc": "How matches start when you press Continue",
+  "matchSpeed": "Match Speed",
+  "matchSpeedDesc": "Default simulation speed for live matches",
+  "matchCommentary": "Match Commentary",
+  "matchCommentaryDesc": "Show event commentary during live matches",
+  "confirmAdvance": "Confirm Before Advancing",
+  "confirmAdvanceDesc": "Ask for confirmation before advancing a day",
+  "continueToNextEvent": "Continue Skips to Next Event",
+  "continueToNextEventDesc": "Continue rolls forward until your next match, a blocker, a transfer deadline, or important news",
+  "savesData": "Saves & Data",
+  "autoSave": "Auto-Save",
+  "autoSaveDesc": "Automatically save your game after each day",
+  "exportWorld": "Export World Database",
+  "exportWorldDesc": "Save the current world data as a shareable JSON file",
+  "export": "Export",
+  "exportedTo": "Exported to: {{path}}",
+  "clearSaves": "Clear All Saves",
+  "clearSavesDesc": "Permanently delete all saved games",
+  "clear": "Clear",
+  "savesCleared": "Saves cleared!",
+  "about": "About",
+  "matchModes": {
+    "live": "Go to the Field",
+    "liveDesc": "Full match control",
+    "spectator": "Watch as Spectator",
+    "spectatorDesc": "Watch only, no controls",
+    "delegate": "Delegate to Assistant",
+    "delegateDesc": "AI handles everything"
+  },
+  "speeds": {
+    "slow": "Slow",
+    "normal": "Normal",
+    "fast": "Fast"
+  },
+  "uiScale": "UI Scale",
+  "uiScaleDesc": "Adjust font size and spacing for readability",
+  "uiScaleOptions": {
+    "small": "Small",
+    "normal": "Normal",
+    "large": "Large",
+    "xlarge": "Extra Large"
+  },
+  "highContrast": "High Contrast",
+  "highContrastDesc": "Boost text contrast in dark mode for improved readability",
+  "fullscreen": "Fullscreen",
+  "fullscreenDesc": "Toggle fullscreen mode for an immersive experience",
+  "enterFullscreen": "Enter",
+  "exitFullscreen": "Exit",
+  "switchToLightMode": "Switch to light mode",
+  "switchToDarkMode": "Switch to dark mode"
+}

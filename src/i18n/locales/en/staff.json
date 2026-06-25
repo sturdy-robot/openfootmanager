@@ -1,0 +1,36 @@
+{
+  "myStaff": "My Staff ({{count}})",
+  "available": "Available ({{count}})",
+  "searchStaff": "Search staff...",
+  "noStaffMatch": "No staff members match your filters.",
+  "noAvailableStaff": "No available staff found.",
+  "releaseStaff": "Release staff member",
+  "openScoutingWorkflow": "Open scouting workflow",
+  "activeAssignment": "active assignment",
+  "activeAssignments": "active assignments",
+  "youthSearch": "youth search",
+  "youthSearches": "youth searches",
+  "hireStaff": "Hire staff member",
+  "best": "Best",
+  "roles": {
+    "AssistantManager": "Assistant Manager",
+    "Coach": "Coach",
+    "Scout": "Scout",
+    "Physio": "Physio"
+  },
+  "attrs": {
+    "coaching": "Coaching",
+    "judgingAbility": "Judging Ability",
+    "judgingPotential": "Judging Potential",
+    "physiotherapy": "Physiotherapy"
+  },
+  "specializations": {
+    "Fitness": "Fitness",
+    "Technique": "Technique",
+    "Tactics": "Tactics",
+    "Defending": "Defending",
+    "Attacking": "Attacking",
+    "GoalKeeping": "Goalkeeping",
+    "Youth": "Youth Dev"
+  }
+}

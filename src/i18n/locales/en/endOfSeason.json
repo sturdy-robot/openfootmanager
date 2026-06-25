@@ -1,0 +1,19 @@
+{
+  "seasonComplete": "Season Complete",
+  "champions": "Champions!",
+  "position": "Position",
+  "points": "Points",
+  "finalStandings": "Final Standings (Top 5)",
+  "leagueChampions": "League Champions",
+  "startNextSeason": "Start Next Season",
+  "processing": "Processing...",
+  "statsArchived": "Player stats will be archived. A new schedule will be generated.",
+  "seasonLine": "{{league}} — Season {{season}}",
+  "newSeason": "Season {{n}}",
+  "newScheduleReleased": "The new schedule has been released. Good luck!",
+  "goldenBoot": "Golden Boot",
+  "nGoals": "{{count}} goals",
+  "playerOfYear": "Player of the Year",
+  "avgRating": "Avg rating: {{rating}}",
+  "continueDashboard": "Continue to Dashboard"
+}

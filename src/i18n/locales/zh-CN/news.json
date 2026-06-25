@@ -1,0 +1,17 @@
+{
+  "noNews": "暂无新闻报道。",
+  "newsWillAppear": "随着赛季推进，新闻将会出现在此。",
+  "backToNews": "返回新闻",
+  "nArticles": "{{count}} 篇文章",
+  "categories": {
+    "MatchReport": "比赛报道",
+    "LeagueRoundup": "联赛综述",
+    "StandingsUpdate": "积分榜",
+    "TransferRumour": "转会",
+    "TransferRoundup": "转会综述",
+    "InjuryNews": "伤病",
+    "SeasonPreview": "赛季前瞻",
+    "Editorial": "社论",
+    "ManagerialChange": "教练变动"
+  }
+}

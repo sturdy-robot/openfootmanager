@@ -1,0 +1,14 @@
+{
+  "title": "Premiers Pas",
+  "description": "Complétez ces étapes pour préparer votre équipe pour la saison à venir.",
+  "reviewSquad": "Examinez votre effectif",
+  "reviewSquadDesc": "Consultez les stats, la condition et les traits des joueurs",
+  "hireStaff": "Engagez du personnel",
+  "hireStaffDesc": "Le staff améliore la qualité de l'entraînement et la récupération",
+  "setTactics": "Définissez votre formation et tactique",
+  "setTacticsDesc": "Choisissez une formation et un style adaptés à votre effectif",
+  "configTraining": "Configurez l'entraînement",
+  "configTrainingDesc": "Choisissez un focus et un planning pour développer vos joueurs",
+  "readMessages": "Lisez vos messages",
+  "readMessagesDesc": "Des informations importantes de la direction et du staff vous attendent"
+}

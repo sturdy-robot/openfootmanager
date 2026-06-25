@@ -1,0 +1,17 @@
+{
+  "noNews": "Новостей пока нет.",
+  "newsWillAppear": "Новости появятся по мере продвижения сезона.",
+  "backToNews": "Назад к новостям",
+  "nArticles": "{{count}} статей",
+  "categories": {
+    "MatchReport": "Отчёт о матче",
+    "LeagueRoundup": "Обзор лиги",
+    "StandingsUpdate": "Таблица",
+    "TransferRumour": "Трансферы",
+    "TransferRoundup": "Обзор трансферов",
+    "InjuryNews": "Травмы",
+    "SeasonPreview": "Предсезонный обзор",
+    "Editorial": "Редакционная колонка",
+    "ManagerialChange": "Смена тренера"
+  }
+}

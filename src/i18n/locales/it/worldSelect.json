@@ -1,0 +1,43 @@
+{
+  "title": "Scegli Mondo",
+  "scanning": "Ricerca database in corso...",
+  "importFile": "Importa da file",
+  "importPackage": "Importa pacchetto mondo",
+  "packageErrorsTitle": "Problemi del pacchetto",
+  "importCompetitions": "Aggiungi file competizioni",
+  "removeCompetitions": "Rimuovi",
+  "competitionsErrorsTitle": "Questo file delle competizioni non può essere usato:",
+  "startCareer": "Inizia carriera",
+  "creatingWorld": "Creazione del mondo...",
+  "teams": "{{count}} squadre",
+  "players": "{{count}} giocatori",
+  "randomWorld": "Mondo casuale",
+  "randomDescription": "Un mondo generato proceduralmente con club, giocatori e staff",
+  "historyMode": {
+    "generated": "Storia generata",
+    "reference": "Storia di riferimento",
+    "hybrid": "Storia ibrida"
+  },
+  "summary": {
+    "startYear": "Inizio carriera",
+    "seasonStart": {
+      "generated": "Inizia nel {{year}} con un mondo nuovo e {{count}} stagioni di storia generate.",
+      "reference": "Inizia nel {{year}} usando l'istantanea storica selezionata come base del mondo.",
+      "hybrid": "Inizia nel {{year}} usando la rosa di questo database mentre intorno vengono generate {{count}} stagioni di storia mancante."
+    },
+    "midSeason": {
+      "generated": "Subentra a metà del {{year}} con classifica, calendario, notizie, storico partite e {{count}} stagioni di storia generate.",
+      "reference": "Subentra a metà del {{year}} con l'istantanea storica selezionata e il contesto stagionale già presente.",
+      "hybrid": "Subentra a metà del {{year}} con la rosa di questo database più {{count}} stagioni di contesto storico generato e avanzamento stagionale ereditato."
+    }
+  },
+  "historyDepth": {
+    "label": "Storia generata",
+    "hint": "Scegli quanta storia generare. Archivi più profondi aggiungono contesto, ma richiedono più tempo.",
+    "reference": "Questo mondo include già il proprio archivio storico.",
+    "applied": "{{count}} stagioni generate",
+    "none": "Nessun passato",
+    "option": "{{count}} stagioni",
+    "recommended": "Consigliato"
+  }
+}

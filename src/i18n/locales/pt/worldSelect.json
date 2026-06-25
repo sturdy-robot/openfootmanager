@@ -1,0 +1,43 @@
+{
+  "title": "Escolher Mundo",
+  "scanning": "A procurar bases de dados...",
+  "importFile": "Importar ficheiro",
+  "importPackage": "Importar pacote de mundo",
+  "packageErrorsTitle": "Problemas do pacote",
+  "importCompetitions": "Adicionar ficheiro de competições",
+  "removeCompetitions": "Remover",
+  "competitionsErrorsTitle": "Este ficheiro de competições não pode ser usado:",
+  "startCareer": "Iniciar Carreira",
+  "creatingWorld": "A criar mundo...",
+  "teams": "{{count}} equipas",
+  "players": "{{count}} jogadores",
+  "randomWorld": "Mundo Aleatório",
+  "randomDescription": "Um mundo gerado proceduralmente com clubes, jogadores e staff",
+  "historyMode": {
+    "generated": "Histórico gerado",
+    "reference": "Histórico de referência",
+    "hybrid": "Histórico híbrido"
+  },
+  "summary": {
+    "startYear": "Início da carreira",
+    "seasonStart": {
+      "generated": "Começa em {{year}} com um mundo novo e {{count}} épocas de histórico gerado.",
+      "reference": "Começa em {{year}} usando o snapshot histórico selecionado como base do mundo.",
+      "hybrid": "Começa em {{year}} usando o plantel desta base de dados enquanto {{count}} épocas do histórico em falta são geradas à volta."
+    },
+    "midSeason": {
+      "generated": "Assume a equipa a meio de {{year}} com classificação, calendário, notícias, histórico de jogos e {{count}} épocas de histórico gerado.",
+      "reference": "Assume a equipa a meio de {{year}} com o snapshot histórico selecionado e o contexto da época já presente.",
+      "hybrid": "Assume a equipa a meio de {{year}} com o plantel desta base de dados mais {{count}} épocas de contexto histórico gerado e progresso de época herdado."
+    }
+  },
+  "historyDepth": {
+    "label": "Histórico gerado",
+    "hint": "Escolhe quanto passado gerar. Arquivos mais profundos dão mais contexto, mas demoram mais a criar.",
+    "reference": "Este mundo já inclui o seu próprio arquivo histórico.",
+    "applied": "{{count}} épocas geradas",
+    "none": "Sem passado gerado",
+    "option": "{{count}} épocas",
+    "recommended": "Recomendado"
+  }
+}

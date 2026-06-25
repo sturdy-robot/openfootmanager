@@ -1,0 +1,19 @@
+{
+  "title": "Has Sido Destituido",
+  "subtitle": "La directiva ha perdido la confianza en tu capacidad para dirigir el club.",
+  "teamLabel": "Club",
+  "finalSatisfaction": "Confianza de la Directiva",
+  "careerOverview": "Resumen de Carrera",
+  "matchesManaged": "Partidos",
+  "wins": "Victorias",
+  "draws": "Empates",
+  "losses": "Derrotas",
+  "winRate": "% Victorias",
+  "bestFinish": "Mejor Posición",
+  "trophies": "Trofeos",
+  "careerHistory": "Historial",
+  "returnToMenu": "Volver al Menú Principal",
+  "present": "Actual",
+  "bestLabel": "Mejor",
+  "dismissalLetter": "La junta directiva ha decidido relevarle de sus funciones como entrenador de {{team}}, con efecto inmediato.\n\nLe agradecemos sus servicios y le deseamos lo mejor en su futura carrera.\n\nAtentamente,\nLa Junta Directiva"
+}

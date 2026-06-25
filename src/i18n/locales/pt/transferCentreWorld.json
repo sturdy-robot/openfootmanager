@@ -1,0 +1,17 @@
+{
+  "title": "Centro de transferências",
+  "subtitle": "Acompanha rumores de mercado e negócios concluídos por toda a liga",
+  "rumours": "Rumores",
+  "completedDeals": "Negócios concluídos",
+  "currentClub": "Clube atual",
+  "sourceClub": "De",
+  "destinationClub": "Para",
+  "reportedOn": "Reportado",
+  "agreedOn": "Fechado",
+  "fee": "Valor",
+  "noRumours": "Sem rumores ativos.",
+  "noCompletedDeals": "Sem negócios concluídos registados.",
+  "rumourTag": "Rumor",
+  "completedTag": "Concluído",
+  "playerButton": "Ver {{player}}"
+}

@@ -1,0 +1,19 @@
+{
+  "seasonComplete": "Saison Terminée",
+  "champions": "Champions !",
+  "position": "Position",
+  "points": "Points",
+  "finalStandings": "Classement Final (Top 5)",
+  "leagueChampions": "Champions de la Ligue",
+  "startNextSeason": "Démarrer la Saison Suivante",
+  "processing": "Traitement...",
+  "statsArchived": "Les statistiques des joueurs seront archivées. Un nouveau calendrier sera généré.",
+  "seasonLine": "{{league}} — Saison {{season}}",
+  "newSeason": "Saison {{n}}",
+  "newScheduleReleased": "Le nouveau calendrier a été publié. Bonne chance !",
+  "goldenBoot": "Soulier d'Or",
+  "nGoals": "{{count}} buts",
+  "playerOfYear": "Joueur de l'Année",
+  "avgRating": "Note moyenne : {{rating}}",
+  "continueDashboard": "Continuer vers le Tableau de Bord"
+}

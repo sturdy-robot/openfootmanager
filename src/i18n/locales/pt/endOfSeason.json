@@ -1,0 +1,19 @@
+{
+  "seasonComplete": "Época Completa",
+  "champions": "Campeões!",
+  "position": "Posição",
+  "points": "Pontos",
+  "finalStandings": "Classificação Final (Top 5)",
+  "leagueChampions": "Campeões da Liga",
+  "startNextSeason": "Iniciar Próxima Época",
+  "processing": "A processar...",
+  "statsArchived": "As estatísticas dos jogadores serão arquivadas. Um novo calendário será gerado.",
+  "seasonLine": "{{league}} — Época {{season}}",
+  "newSeason": "Época {{n}}",
+  "newScheduleReleased": "O novo calendário foi publicado. Boa sorte!",
+  "goldenBoot": "Bota de Ouro",
+  "nGoals": "{{count}} golos",
+  "playerOfYear": "Jogador do Ano",
+  "avgRating": "Classificação média: {{rating}}",
+  "continueDashboard": "Continuar para o Painel"
+}

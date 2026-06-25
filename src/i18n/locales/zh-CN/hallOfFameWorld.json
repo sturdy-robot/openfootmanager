@@ -1,0 +1,22 @@
+{
+  "title": "名人堂",
+  "subtitle": "退役传奇与历届冠军",
+  "legends": "退役传奇",
+  "pastChampions": "历届冠军",
+  "worldCupChampions": "世界杯冠军",
+  "worldCupEdition": "{{year}}年世界杯",
+  "noLegends": "暂无已记录的退役传奇。",
+  "noChampions": "暂无已记录的历届冠军。",
+  "appearances": "出场",
+  "goals": "进球",
+  "assists": "助攻",
+  "titles": "冠军",
+  "lastClub": "最后效力俱乐部",
+  "finalSeason": "最后赛季",
+  "played": "已赛",
+  "record": "战绩",
+  "goalDifference": "净胜球",
+  "legendsCount": "已记录传奇",
+  "championsCount": "冠军赛季",
+  "seasonLabel": "第 {{season}} 赛季"
+}

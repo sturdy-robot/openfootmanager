@@ -1,0 +1,19 @@
+{
+  "seasonComplete": "赛季结束",
+  "champions": "冠军！",
+  "position": "排名",
+  "points": "积分",
+  "finalStandings": "最终排名（前 5 名）",
+  "leagueChampions": "联赛冠军",
+  "startNextSeason": "开始下赛季",
+  "processing": "处理中...",
+  "statsArchived": "球员数据将被存档。新的赛程将被生成。",
+  "seasonLine": "{{league}} — 第 {{season}} 赛季",
+  "newSeason": "第 {{n}} 赛季",
+  "newScheduleReleased": "新赛程已发布。祝您好运！",
+  "goldenBoot": "金靴奖",
+  "nGoals": "{{count}} 个进球",
+  "playerOfYear": "年度最佳球员",
+  "avgRating": "平均评分：{{rating}}",
+  "continueDashboard": "继续至主控台"
+}

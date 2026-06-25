@@ -1,0 +1,43 @@
+{
+  "title": "Choisir le Monde",
+  "scanning": "Recherche de bases de données...",
+  "importFile": "Importer un fichier",
+  "importPackage": "Importer un package de monde",
+  "packageErrorsTitle": "Problèmes du package",
+  "importCompetitions": "Ajouter un fichier de compétitions",
+  "removeCompetitions": "Retirer",
+  "competitionsErrorsTitle": "Ce fichier de compétitions ne peut pas être utilisé :",
+  "startCareer": "Démarrer la Carrière",
+  "creatingWorld": "Création du Monde...",
+  "teams": "{{count}} équipes",
+  "players": "{{count}} joueurs",
+  "randomWorld": "Monde Aléatoire",
+  "randomDescription": "Un monde généré de façon procédurale avec des clubs, joueurs et staff",
+  "historyMode": {
+    "generated": "Historique généré",
+    "reference": "Historique de référence",
+    "hybrid": "Historique hybride"
+  },
+  "summary": {
+    "startYear": "Début de carrière",
+    "seasonStart": {
+      "generated": "Commencez en {{year}} avec un nouveau monde et {{count}} saisons d'historique généré.",
+      "reference": "Commencez en {{year}} en utilisant l'instantané historique sélectionné comme base du monde.",
+      "hybrid": "Commencez en {{year}} avec l'effectif de cette base de données pendant que {{count}} saisons d'historique manquant sont générées autour."
+    },
+    "midSeason": {
+      "generated": "Prenez l'équipe à mi-saison {{year}} avec classement, calendrier, actualités, historique des matchs et {{count}} saisons d'historique généré.",
+      "reference": "Prenez l'équipe à mi-saison {{year}} avec l'instantané historique sélectionné et le contexte de saison déjà en place.",
+      "hybrid": "Prenez l'équipe à mi-saison {{year}} avec l'effectif de cette base de données, {{count}} saisons de contexte historique généré et une progression de saison déjà héritée."
+    }
+  },
+  "historyDepth": {
+    "label": "Historique généré",
+    "hint": "Choisissez la quantité de passé à générer. Une archive plus profonde ajoute du contexte mais prend plus de temps à créer.",
+    "reference": "Ce monde inclut déjà sa propre archive historique.",
+    "applied": "{{count}} saisons générées",
+    "none": "Sans passé généré",
+    "option": "{{count}} saisons",
+    "recommended": "Recommandé"
+  }
+}

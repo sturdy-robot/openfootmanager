@@ -1,0 +1,43 @@
+{
+  "title": "选择世界",
+  "scanning": "正在扫描数据库...",
+  "importFile": "从文件导入",
+  "importPackage": "导入世界包",
+  "packageErrorsTitle": "世界包问题",
+  "importCompetitions": "添加赛事文件",
+  "removeCompetitions": "移除",
+  "competitionsErrorsTitle": "无法使用此赛事文件：",
+  "startCareer": "开始生涯",
+  "creatingWorld": "正在创建世界...",
+  "teams": "{{count}} 支球队",
+  "players": "{{count}} 名球员",
+  "randomWorld": "随机世界",
+  "randomDescription": "程序化生成的足球世界，包含俱乐部、球员和职员",
+  "historyMode": {
+    "generated": "生成历史",
+    "reference": "参考历史",
+    "hybrid": "混合历史"
+  },
+  "summary": {
+    "startYear": "生涯起点",
+    "seasonStart": {
+      "generated": "在 {{year}} 年以全新世界开局，并获得 {{count}} 个赛季的生成背景历史。",
+      "reference": "在 {{year}} 年以所选历史快照作为世界基础开始生涯。",
+      "hybrid": "在 {{year}} 年以该数据库阵容开局，同时自动补全 {{count}} 个赛季的缺失历史内容。"
+    },
+    "midSeason": {
+      "generated": "在 {{year}} 年赛季中途接手，继承积分榜、赛程、新闻、比赛历史以及 {{count}} 个赛季的生成背景历史。",
+      "reference": "在 {{year}} 年赛季中途接手，并直接继承所选历史快照与当前赛季上下文。",
+      "hybrid": "在 {{year}} 年赛季中途接手，使用该数据库阵容，并继承 {{count}} 个赛季的生成历史背景与赛季进度。"
+    }
+  },
+  "historyDepth": {
+    "label": "生成历史",
+    "hint": "选择要生成多少背景历史。历史越深，世界上下文越丰富，但创建时间也会更长。",
+    "reference": "这个世界已经自带历史档案。",
+    "applied": "已生成 {{count}} 个赛季",
+    "none": "无背景历史",
+    "option": "{{count}} 个赛季",
+    "recommended": "推荐"
+  }
+}

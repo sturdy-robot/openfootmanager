@@ -1,0 +1,883 @@
+{
+  "error": {
+    "noActiveGameSession": "当前没有活动中的游戏会话",
+    "noActiveSaveSession": "当前没有活动中的存档会话",
+    "saveNotFound": "未找到存档“{{saveId}}”。",
+    "teamNotFound": "未找到球队",
+    "jobOffer": {
+      "teamNotVacant": "该俱乐部已不再寻找主教练。"
+    },
+    "noTeamAssigned": "尚未分配球队",
+    "playerNotOnTeam": "该球员不属于您的球队",
+    "roleNotValidForPosition": "该角色对球员的位置无效",
+    "invalidPlayerRole": "无效的球员角色",
+    "playerNotFound": "未找到球员",
+    "invalidSquadRole": "无效的阵容角色",
+    "jerseyNumberOutOfRange": "球衣号码必须在 1 到 99 之间",
+    "jerseyNumberTaken": "该球衣号码已被阵容中的另一名球员使用",
+    "invalidKitPattern": "无效的球衣图案",
+    "staffMemberNotFound": "未找到职员",
+    "staffMemberAlreadyEmployed": "该职员已受雇于某支球队",
+    "playerNotInSquad": "球员不在你的阵容中",
+    "playerNotInClub": "该球员不属于你的俱乐部",
+    "invalidDateOfBirth": "出生日期无效",
+    "youthAcademyOverage": "只有21岁及以下的球员才能加入青训学院",
+    "staffMemberNotInTeam": "该工作人员不属于你的球队",
+    "noActiveLiveMatch": "当前没有进行中的实时比赛",
+    "seasonNotComplete": "赛季尚未结束",
+    "managedTeamNotFound": "未找到你执教的球队",
+    "unknownFacilityType": "未知的设施类型",
+    "liveMatch": {
+      "noLeague": "该比赛暂无联赛数据。",
+      "fixtureNotFound": "未找到所选比赛。",
+      "maxSubstitutionsReached": "已达到最大换人次数",
+      "preMatchSwapTooLate": "赛前对调只能在开球前进行",
+      "cannotSubstituteSentOffPlayer": "不能换下被罚下的球员",
+      "playerNotOnPitch": "球员不在场上",
+      "playerAlreadySubstitutedOff": "该球员已经被换下",
+      "playerNotOnBench": "球员不在替补席上",
+      "playerNotInStartingXi": "球员不在首发阵容中"
+    },
+    "worldReadFileFailed": "读取世界数据库文件失败。",
+    "package": {
+      "invalid": "此世界包无效，无法加载。",
+      "readFailed": "无法读取某个包文件。",
+      "missingSchema": "某个包文件缺少 \"schema\" 字段。",
+      "unknownSchema": "未知的 schema \"{{schema}}\"。",
+      "invalidEntity": "\"{{schema}}\" 条目无效。",
+      "missingId": "某个 {{kind}} 条目缺少 id。",
+      "duplicateId": "重复的 {{kind}} id \"{{id}}\"。",
+      "unknownConfederation": "国家 \"{{country}}\" 引用了未知的足联 \"{{confederation}}\"。",
+      "unknownCountry": "\"{{entity}}\" 引用了未知的国家 \"{{country}}\"。",
+      "unknownTeam": "球员 \"{{player}}\" 引用了未知的俱乐部 \"{{team}}\"。"
+    },
+    "competitionDef": {
+      "invalidEmbedded": "该世界的赛事定义无效，无法加载。",
+      "invalidStandalone": "所选的赛事定义文件无效。",
+      "parseFailed": "无法将赛事定义文件解析为 JSON。",
+      "unsupportedVersion": "不支持的格式版本 {{version}}；此版本最高支持 {{supported}}。",
+      "berthUnknownTarget": "参赛资格指向未知的赛事 \"{{target}}\"。",
+      "berthInvalidRange": "无效的名次范围 {{from}}–{{to}}。",
+      "berthRequiresLeague": "按名次或附加赛产生的资格只能由联赛授予。",
+      "berthRequiresCup": "杯赛冠军资格只能由淘汰赛赛事授予。",
+      "berthPlayoffTooSmall": "附加赛至少需要两支参赛队。",
+      "emptyId": "某项赛事缺少 id。",
+      "duplicateId": "重复的赛事 id“{{id}}”。",
+      "emptyName": "某项赛事缺少名称。",
+      "unknownRegion": "未知地区“{{region}}”。",
+      "unknownCountry": "未知国家“{{country}}”。",
+      "groupConfigOnNonGroupFormat": "分组设置仅适用于小组赛加淘汰赛格式。",
+      "groupSizeTooSmall": "小组规模 {{groupSize}} 太小（至少 2）。",
+      "zeroLegs": "赛事至少需要一回合。",
+      "noParticipants": "没有参赛者：请提供明确列表或选择器。",
+      "bothParticipantSources": "请提供明确列表或选择器，二者不可兼用。",
+      "tooFewParticipants": "至少需要两个参赛者。",
+      "unknownTeam": "未知球队“{{team}}”。",
+      "selectorMissingCountry": "该选择器需要一个国家。",
+      "selectorCountTooSmall": "该选择器的数量至少为 2。",
+      "selectorMissingRegion": "该选择器需要一个地区。",
+      "unknownSourceCompetition": "未知的来源赛事“{{source}}”。",
+      "selectorMissingSource": "该选择器需要一个来源赛事。",
+      "unknownExcludedCompetition": "未知的排除赛事“{{excluded}}”。",
+      "selectorCycle": "赛事之间存在循环资格依赖。"
+    },
+    "worldParseFailed": "解析世界数据库文件失败。",
+    "worldWriteFileFailed": "导出世界数据库文件失败。",
+    "worldWriteDatabaseFailed": "保存导入的世界数据库失败。",
+    "worldSerializeFailed": "导出世界数据库数据失败。",
+    "saveLoad": {
+      "corrupted": "该存档文件已损坏，无法加载。",
+      "incompatibleVersion": "该存档由更新版本的游戏创建（存档 v{{saveVersion}}；当前版本最高支持 v{{supported}}）。请更新游戏后再加载。",
+      "missingData": "该存档缺少必要数据，无法加载。",
+      "invalidWorld": "该存档的世界或模组数据无效，无法加载。",
+      "unknown": "由于发生意外错误，无法加载该存档。"
+    },
+    "gameDatabase": {
+      "openFailed": "打开存档数据失败。",
+      "migrationFailed": "准备存档数据失败。",
+      "schemaVersionReadFailed": "读取存档数据的架构版本失败。",
+      "currentVersionReadFailed": "验证存档数据的架构版本失败。"
+    },
+    "gamePersistence": {
+      "gameMetaMissing": "存档缺少核心游戏元数据。",
+      "invalidStartDate": "存档包含无效的开始日期。",
+      "invalidGameDate": "存档包含无效的当前日期。",
+      "managerNotFound": "未在该存档中找到主教练“{{managerId}}”。",
+      "loadFailed": "加载存档数据失败。",
+      "writeFailed": "保存比赛数据失败。"
+    },
+    "saveIndex": {
+      "checksumReadFailed": "读取存档数据以验证校验和失败。",
+      "loadFailed": "加载存档索引失败。",
+      "writeFailed": "更新存档索引失败。"
+    },
+    "saveManagerUnavailable": "存档数据暂时不可用。",
+    "saveDeleteFailed": "无法删除存档文件。",
+    "settings": {
+      "loadFailed": "加载设置失败。",
+      "parseFailed": "设置数据无效。",
+      "saveFailed": "保存设置失败。",
+      "invalidCurrency": "所选货币不受支持。"
+    },
+    "profiles": {
+      "loadFailed": "无法加载经理档案。",
+      "saveFailed": "无法保存经理档案。",
+      "pathFailed": "无法解析档案存储路径。"
+    },
+    "finance": {
+      "boardSupportUnavailable": "只有当现金储备承压时，董事会紧急支持才可用。",
+      "boardSupportAlreadyUsed": "董事会本赛季已经批准过一次紧急支持。",
+      "sponsorPitchUnavailable": "只有当俱乐部面临工资或现金压力时，才能发起赞助接洽。",
+      "sponsorPitchPendingOffer": "已经有一份赞助报价在等待你的决定。",
+      "sponsorPitchAlreadyAttemptedToday": "商务团队今天已经接洽过赞助商。",
+      "sponsorPitchActiveSponsor": "当前已经有生效中的赞助协议。",
+      "marketingCampaignUnavailable": "只有当俱乐部面临工资或现金压力时，才能发起营销活动。",
+      "marketingCampaignCoolingDown": "商务团队在再次发起营销活动前还需要一些时间。",
+      "facilityUpgradeInsufficientFunds": "资金不足，无法升级该设施。需要 {{amount}}。",
+      "facilityUpgradeOverBudget": "当俱乐部超出工资预算时，设施升级会被禁止。",
+      "facilityUpgradeCritical": "当俱乐部面临严重财务压力时，设施升级会被禁止。"
+    },
+    "createManager": {
+      "nameRequired": "名字和姓氏均为必填项。",
+      "nameMaxLength": "名字和姓氏都不能超过 30 个字符。",
+      "nationalityRequired": "国籍为必填项。",
+      "invalidDobFormat": "出生日期无效。请使用 YYYY-MM-DD 格式。",
+      "minAge": "经理年龄必须至少为 30 岁。",
+      "invalidDob": "出生日期无效。",
+      "startYearMin": "开始年份必须为 2020 或之后。",
+      "invalidStartYear": "所选开始年份无效。",
+      "invalidStartPhase": "所选开始阶段无效。",
+      "historyDepthMax": "生成历史深度必须为 24 个赛季或更少。"
+    },
+    "transfers": {
+      "transferWindowClosed": "转会窗口已关闭",
+      "cannotBidOnOwnPlayer": "你不能为自己的球员报价",
+      "playerHasNoTeam": "该球员没有所属球队",
+      "insufficientFunds": "资金不足",
+      "transferBudgetTooLow": "转会预算过低",
+      "playerNotOwnedByUser": "未找到该球员，或该球员不属于你",
+      "offerNotPending": "未找到报价，或该报价已不再处于待处理状态",
+      "counterOfferMustExceedCurrentOffer": "还价必须高于当前报价",
+      "invalidYouthScoutingRegion": "不支持的青年球探区域。",
+      "invalidYouthScoutingObjective": "不支持的青年球探目标。",
+      "invalidYouthScoutingTargetPosition": "不支持的青年球探目标位置。"
+    },
+    "contracts": {
+      "playerNotOwnedByClub": "该球员不属于你的俱乐部",
+      "playerNotFreeAgent": "该球员不是自由球员",
+      "unableToCalculateContractEndDate": "无法计算新的合同结束日期",
+      "playerHasNoActiveContract": "该球员没有有效合同",
+      "terminationWouldLeaveMatchdaySquadShort": "终止这份合同会让你的阵容无法在比赛日排出首发十一人",
+      "noAssistantManagerAssigned": "你的球队没有分配助理教练",
+      "playerHasNoTeam": "该球员没有所属球队",
+      "boardWagePolicy": "这次续约被董事会薪资政策阻止。请将年度工资控制在接近 {{budget}} 的水平以恢复状况。"
+    },
+    "scouting": {
+      "scoutNotFound": "未找到球探",
+      "staffMemberNotScout": "该工作人员不是球探",
+      "scoutNotInTeam": "该球探不属于你的球队",
+      "cannotScoutOwnPlayer": "你不能考察自己的球员",
+      "scoutAssignmentFull": "该球探已经被分配到另一项考察任务（{{currentCount}}/{{maxSlots}} 项分配）。",
+      "playerAlreadyScouted": "这名球员已经在被考察",
+      "youthSearchAlreadyActive": "已有相同的青训招募搜索在进行中",
+      "youthAssignmentNotFound": "未找到青训招募任务",
+      "scoutAlreadyAssignedToSearch": "该球探已经分配给这项搜索"
+    }
+  },
+  "sender": {
+    "boardOfDirectors": "董事会",
+    "leagueOffice": "联赛办公室",
+    "assistantManager": "助理教练",
+    "matchReporter": "赛事记者",
+    "headPhysio": "首席理疗师",
+    "financialDirector": "财务总监",
+    "commercialDirector": "商务总监",
+    "communityManager": "社区经理",
+    "directorOfFootball": "足球总监",
+    "intlLiaison": "国际联络官",
+    "player": "球员",
+    "pressOfficer": "新闻官",
+    "scout": "球探",
+    "transferCommittee": "转会委员会"
+  },
+  "role": {
+    "chairman": "主席",
+    "competitionSecretary": "赛事秘书",
+    "assistantManager": "助理教练",
+    "pressOfficer": "新闻官",
+    "headPhysio": "首席理疗师",
+    "financialDirector": "财务总监",
+    "commercialDirector": "商务总监",
+    "communityManager": "社区经理",
+    "directorOfFootball": "足球总监",
+    "intlLiaison": "国际联络官",
+    "player": "球员",
+    "scout": "球探"
+  },
+  "source": {
+    "sportsGazette": "体育公报",
+    "footballHerald": "足球先驱报",
+    "playersUnder21": "U21球员",
+    "matchDayPress": "比赛日新闻",
+    "leagueChronicle": "联赛纪事",
+    "leagueWire": "联赛快讯",
+    "transferIntelligence": "转会情报",
+    "sportsDaily": "体育日报"
+  },
+  "msg": {
+    "world": {
+      "randomName": "随机世界",
+      "randomDescription": "一个在欧洲各地随机生成、包含 {{teamCount}} 支球队的联赛",
+      "exportedName": "导出的世界",
+      "exportedDescription": "从存档导出的世界，包含 {{teamCount}} 支球队"
+    },
+    "welcome": {
+      "subject0": "欢迎来到{{team}}",
+      "subject1": "{{team}}的新时代",
+      "subject2": "{{team}}期待您的领导",
+      "body0": "{{team}}董事会很高兴欢迎您出任新任经理。\n\n我们对您的任期寄予厚望,相信您能带领俱乐部走向辉煌。您的首要任务是审视阵容,并为即将到来的赛季制定战术方案。\n\n祝您好运。",
+      "body1": "谨代表全体{{team}}大家庭,我们非常高兴地宣布您被任命为经理。\n\n球迷们都迫切地想看到您为球队带来的构想。请抽时间评估阵容、审视我们的财务状况,并确定您的战术思路。\n\n董事会将全力支持您。",
+      "body2": "欢迎来到{{team}}!支持者和工作人员都对您执教下的未来充满期待。\n\n建议您先从审视阵容的优势与不足开始,随后确定偏好的阵型和训练计划。\n\n即将到来的赛季将是一次真正的考验——请让我们为您骄傲。",
+      "actionReview": "审视阵容",
+      "actionThank": "感谢董事会"
+    },
+    "schedule": {
+      "subject": "赛季日程已公布",
+      "body0": "{{league}}的赛程已公布。本赛季将于{{start}}开赛。\n\n请查看赛程表,确保您的阵容已为未来的挑战做好准备。季前准备至关重要。",
+      "body1": "赛程表已确认!{{league}}赛季将于{{start}}拉开帷幕。\n\n请仔细研究揭幕战——一个强势的开局能为整个赛季定下基调。确保您的核心球员状态良好。",
+      "actionView": "查看赛程"
+    },
+    "preMatch": {
+      "subject": "即将到来:对阵{{opponent}}({{venue}})",
+      "body0": "您在{{matchDate}}将迎来{{venue}}对阵{{opponent}}的比赛。\n\n这是超级联赛第{{matchday}}轮。请确保您的首发阵容状态良好,战术已就绪。\n\n充分利用{{venue}}作战的优势。",
+      "body1": "提醒:您将于{{matchDate}}在{{venue}}对阵{{opponent}}。\n\n这是第{{matchday}}轮——请审视阵容体能,并考虑必要的战术调整。",
+      "actionTactics": "设置战术",
+      "actionScout": "侦察对手",
+      "body0Home": "您将在{{matchDate}}迎来主场对阵{{opponent}}的比赛。\n\n这是超级联赛第{{matchday}}轮。请确保您的首发阵容状态良好,战术已就绪。\n\n主场优势可能会成为这场比赛的关键。",
+      "body0Away": "您将在{{matchDate}}迎来客场对阵{{opponent}}的比赛。\n\n这是超级联赛第{{matchday}}轮。请确保您的首发阵容状态良好,战术已就绪。\n\n客场跟上对手的强度可能会成为这场比赛的关键。",
+      "body1Home": "提醒:3天后（{{matchDate}}）您将主场迎战{{opponent}}。\n\n这是第{{matchday}}轮——请审视阵容体能,并考虑必要的战术调整。主场球迷会站在您身后。",
+      "body1Away": "提醒:3天后（{{matchDate}}）您将客场挑战{{opponent}}。\n\n这是第{{matchday}}轮——请审视阵容体能,并考虑必要的战术调整。客场状态将受到考验——请派出最强阵容。"
+    },
+    "matchResult": {
+      "subject": {
+        "victory": "胜利:{{home}} {{homeGoals}} - {{awayGoals}} {{away}}",
+        "defeat": "失利:{{home}} {{homeGoals}} - {{awayGoals}} {{away}}",
+        "draw": "平局:{{home}} {{homeGoals}} - {{awayGoals}} {{away}}"
+      },
+      "body": {
+        "victory0": "全场结束:{{home}} {{homeGoals}} - {{awayGoals}} {{away}}。\n\n非常出色的结果!球队展现了强劲的表现。第{{matchday}}轮——请保持这股势头。",
+        "victory1": "终场哨响:{{home}} {{homeGoals}} - {{awayGoals}} {{away}}。\n\n三分到手!小伙子们在场上展现了极佳的品格。第{{matchday}}轮圆满收官。",
+        "defeat0": "全场结束:{{home}} {{homeGoals}} - {{awayGoals}} {{away}}。\n\n令人失望的结果。我们需要重整旗鼓,在薄弱环节上下功夫。第{{matchday}}轮——还有时间扭转局面。",
+        "defeat1": "最终比分:{{home}} {{homeGoals}} - {{awayGoals}} {{away}}。\n\n这不是我们想要的结果。第{{matchday}}轮——董事会希望看到改进。请检查失利原因,备战下一场挑战。",
+        "draw": "全场结束:{{home}} {{homeGoals}} - {{awayGoals}} {{away}}。\n\n第{{matchday}}轮收获一分。视其他赛场结果而定,这一分可能很有价值。球队奋力拼搏,但未能觅得绝杀。"
+      },
+      "actionStandings": "查看积分榜"
+    },
+    "staffAdvice": {
+      "subject": "工作人员报告——教练职位空缺",
+      "body": "老板,我看了一下{{team}}的工作人员情况,有几点想提醒您:\n\n• 一位优秀的教练能显著提升训练效果——您的球员会成长得更快。\n• 一位合格的理疗师有助于预防伤病,并加快比赛之间的恢复。\n• 我们的球探可以帮助发现转会目标并评估对手。\n\n我强烈建议在赛季开始前填补任何空缺。您可以在工作人员板块找到可聘用的人员。\n\n有空时看看吧。",
+      "actionView": "查看工作人员"
+    },
+    "boardExpect": {
+      "subject": "{{team}}——赛季目标",
+      "body": "董事会为本赛季设定了以下期望:\n\n• 联赛排名进入上半区\n• 保持财务稳健\n• 培养青训营的年轻天才\n\n达成这些目标将巩固您的地位。若未能达到最低期望,可能会对您的任期进行审视。\n\n我们信任您的能力。",
+      "actionAccept": "接受目标"
+    },
+    "boardObjectives": {
+      "subject": "{{season}}赛季——董事会目标",
+      "body": "董事会为本赛季设定了以下目标:\n\n1. 联赛排名进入前{{expectedPos}}\n2. 至少取得{{winTarget}}场胜利\n3. 至少打进{{goalsTarget}}粒进球\n\n达成这些指标将提升董事会对您执教的信心。若未能达到期望,可能导致预算削减或其他后果。"
+    },
+    "financeCritical": {
+      "subject": "紧急:俱乐部负债",
+      "body": "俱乐部目前负债{{amount}}。这种状况难以为继。\n\n董事会要求立即采取行动应对财务危机。请考虑出售球员、削减工作人员或寻找其他收入来源。\n\n若无法解决,可能对您的职位带来严重后果。"
+    },
+    "financeWarning": {
+      "subject": "财务警告——储备不足",
+      "body": "我们的财务储备正在走低。按当前消耗速度(周薪{{weeklyWages}}/周),大约还剩{{weeksLeft}}周的资金。\n\n我建议审视薪资支出,并探索增加收入的途径。"
+    },
+    "wageOverBudget": {
+      "subject": "薪资支出超出预算",
+      "body": "我们的年度薪资支出({{annualWages}})目前已超过分配的薪资预算({{wageBudget}})。\n\n短期内尚可维持,但董事会希望看到薪资支出得到控制。"
+    },
+    "financeBoardPressure": {
+      "subject": "董事会审查——财务压力",
+      "bodyWarning": "董事会仍然担忧俱乐部的财务状况。本周其对你执教的信心下降了 {{penalty}} 点。\n\n你需要改善薪资结构和短期现金状况，否则他们的耐心会继续下降。",
+      "bodyCritical": "董事会已经审查了俱乐部持续恶化的财务状况，本周其对你执教的信心下降了 {{penalty}} 点。\n\n现金储备和薪资承诺都已处于危险状态，董事会希望你立即采取纠正措施。"
+    },
+    "marketingCampaign": {
+      "subject": "营销活动报告",
+      "body": "本次商业推广已完成，毛销售额为 {{grossRevenue}}。扣除 {{campaignCost}} 的活动成本后，俱乐部新增 {{netIncome}} 收入。\n\n商务团队还需要等待 {{days}} 天才能再次发起活动。"
+    },
+    "seasonPayout": {
+      "subject": "{{season}}赛季奖金发放",
+      "body": "董事会已确认因您获得联赛第{{position}}名发放奖金{{amount}}。该款项已计入俱乐部账户。",
+      "ledgerDescription": "{{season}}赛季第{{position}}{{suffix}}名奖金"
+    },
+    "seasonReview": {
+      "subject": "{{season}}赛季回顾",
+      "body": {
+        "champion": "恭喜!{{team}}荣膺联赛冠军!这是一项难以置信的成就。\n\n董事会对您的表现非常满意。您以{{points}}积分收官。\n\n我们期待下赛季成功卫冕。",
+        "topFour": "{{team}}度过了稳健的一个赛季。您以{{points}}积分排名第{{position}}{{suffix}}位。\n\n董事会对本赛季表示满意。下赛季让我们一起冲击冠军。",
+        "midTable": "{{team}}本赛季以{{points}}积分排名第{{position}}{{suffix}}位。\n\n中游收官。董事会期望下赛季有所进步。我们需要更具竞争力。",
+        "lowerHalf": "{{team}}度过了令人失望的一个赛季。仅以{{points}}积分排名第{{position}}{{suffix}}位,低于预期。\n\n董事会表示关切。下赛季需要大幅改进,否则您的职位可能受到审视。"
+      }
+    },
+    "promotion": {
+      "subject": "升入{{division}}！",
+      "body": "祝贺！俱乐部成功升级，将在第 {{season}} 赛季征战{{division}}。\n\n董事会对这一成就感到非常高兴。让我们为更高水平的比赛做好准备。"
+    },
+    "relegation": {
+      "subject": "降入{{division}}",
+      "body": "俱乐部不幸降级，将在第 {{season}} 赛季征战{{division}}。\n\n董事会深感失望。球队需要立即向升级发起冲击。"
+    },
+    "worldCupChampion": {
+      "subject": "{{nation}}夺得{{year}}年世界杯冠军！",
+      "body": "{{nation}}在{{year}}年世界杯上加冕世界冠军。\n\n这一代球员将因这一伟业被铭记。"
+    },
+    "newSeasonSchedule": {
+      "subject": "{{season}}赛季——新赛程发布",
+      "body": "{{season}}赛季的赛程已发布!新赛季将在4周后开赛。\n\n请利用这段休整期评估阵容,进行必要的调整,为即将到来的挑战做好准备。\n\n祝您好运!"
+    },
+    "fitness": {
+      "critical": {
+        "subject": "紧急:阵容体能危机",
+        "body": {
+          "intense": "老板,我们遇到了严重的体能危机。{{criticalCount}}名球员状况危急,有受伤风险:\n\n{{players}}\n\n阵容平均体能为{{avgCondition}}%。按照当前的高强度训练计划(每周6天),球员被压榨得太狠了。切换到均衡计划能给他们恢复时间。\n\n若继续不给他们休息地施压,伤病将不可避免。",
+          "balanced": "老板,我们遇到了严重的体能危机。{{criticalCount}}名球员状况危急,有受伤风险:\n\n{{players}}\n\n阵容平均体能为{{avgCondition}}%。即便处于均衡计划,阵容仍需关照。请考虑暂时切换到轻度计划。\n\n若继续不给他们休息地施压,伤病将不可避免。",
+          "light": "老板,我们遇到了严重的体能危机。{{criticalCount}}名球员状况危急,有受伤风险:\n\n{{players}}\n\n阵容平均体能为{{avgCondition}}%。阵容已处于轻度计划——问题可能出在高强度训练上。请考虑降低强度。\n\n若继续不给他们休息地施压,伤病将不可避免。"
+        }
+      },
+      "warning": {
+        "subject": "阵容体能警告",
+        "body": {
+          "intense": "老板,阵容看起来很疲惫。平均体能{{avgCondition}}%,{{exhaustedCount}}名球员状态低于40%。\n\n切换到均衡计划能给阵容更多恢复时间。\n\n我们应考虑在下一场比赛前让小伙子们休息一下。",
+          "balanced": "老板,阵容看起来很疲惫。平均体能{{avgCondition}}%,{{exhaustedCount}}名球员状态低于40%。\n\n几天的轻度计划能帮助阵容恢复过来。\n\n我们应考虑在下一场比赛前让小伙子们休息一下。",
+          "light": "老板,阵容看起来很疲惫。平均体能{{avgCondition}}%,{{exhaustedCount}}名球员状态低于40%。\n\n阵容已处于轻度计划,恢复应能自然进行。只需留意那些特别疲惫的球员。\n\n我们应考虑在下一场比赛前让小伙子们休息一下。"
+        }
+      },
+      "actionAdjust": "调整训练"
+    },
+    "event": {
+      "ack": "明白了",
+      "respond": "回应"
+    },
+    "action": {
+      "viewFinances": "查看财务"
+    },
+    "playerEvent": {
+      "respond": "回应",
+      "options": {
+        "moraleCrisis": {
+          "encourage": {
+            "label": "鼓励他",
+            "description": "表达共情,鼓励球员继续努力。"
+          },
+          "promiseTime": {
+            "label": "承诺更多出场时间",
+            "description": "告诉他们会有机会——士气提升更大,但会拉高期望。"
+          },
+          "workHarder": {
+            "label": "告诉他们要更努力",
+            "description": "严厉鞭策——可能适得其反,也可能激发斗志。"
+          }
+        },
+        "benchComplaint": {
+          "explain": {
+            "label": "说明情况",
+            "description": "平静地解释阵容竞争与轮换。士气稳步提升。"
+          },
+          "promiseChance": {
+            "label": "承诺很快给他们机会",
+            "description": "他们会更开心,但将期待在接下来的比赛中首发。"
+          },
+          "proveYourself": {
+            "label": "告诉他们证明自己",
+            "description": "挑战他们靠实力赢得位置。有风险——可能激发动力也可能令其沮丧。"
+          }
+        },
+        "happyPlayer": {
+          "praiseBack": {
+            "label": "回以赞赏",
+            "description": "告诉他们您有多重视他们的贡献。"
+          },
+          "stayProfessional": {
+            "label": "保持专业",
+            "description": "肯定他们的状态,但把握分寸。"
+          },
+          "higherExpectations": {
+            "label": "提出更高期望",
+            "description": "激励他们达到更高水平。可能推动也可能施压。"
+          }
+        },
+        "contractConcern": {
+          "reassure": {
+            "label": "安抚其对续约的疑虑",
+            "description": "告诉他们您想留下他们。士气大幅提升。"
+          },
+          "noncommittal": {
+            "label": "不作承诺",
+            "description": "保留您的选择空间。球员可能心神不宁。"
+          },
+          "noRenewal": {
+            "label": "告诉他们不会续约",
+            "description": "坦诚但残酷。士气将骤降。"
+          }
+        }
+      },
+      "effects": {
+        "moraleCrisis": {
+          "encourage": {
+            "positive": "球员感觉好了一些。士气{{delta}}",
+            "negative": "球员并不买账。士气{{delta}}"
+          },
+          "promiseTime": "球员因您的承诺而安心。士气{{delta}}。他们将期待很快首发。",
+          "workHarder": {
+            "positive": "球员接受挑战。士气{{delta}}",
+            "negative": "球员对严厉鞭策感到被冒犯。士气{{delta}}"
+          }
+        },
+        "benchComplaint": {
+          "explain": {
+            "positive": "球员勉强接受。士气{{delta}}",
+            "negative": "球员并不信服。士气{{delta}}"
+          },
+          "promiseChance": "球员对机会感到兴奋。士气{{delta}}。他们期待下场首发。",
+          "proveYourself": {
+            "positive": "球员斗志昂扬,要证明自己的价值。士气{{delta}}",
+            "negative": "球员感到被轻视和侮辱。士气{{delta}}"
+          }
+        },
+        "happyPlayer": {
+          "praiseBack": "球员因赞赏而喜笑颜开。士气{{delta}}",
+          "stayProfessional": {
+            "positive": "球员专业地点头致意。士气{{delta}}",
+            "negative": "球员期待更多温暖。士气{{delta}}"
+          },
+          "higherExpectations": {
+            "positive": "球员迎接挑战。士气{{delta}}",
+            "negative": "球员觉得这种压力不公平。士气{{delta}}"
+          }
+        },
+        "contractConcern": {
+          "reassure": "球员对未来感到放心。士气{{delta}}",
+          "noncommittal": {
+            "positive": "球员暂时勉强接受。士气{{delta}}",
+            "negative": "球员心神不宁,郁郁不乐。士气{{delta}}"
+          },
+          "noRenewal": "球员深受打击。士气{{delta}}。可能会影响更衣室氛围。",
+          "noRenewalWithDressingRoom": "球员深受打击。士气{{delta}}。可能会影响更衣室氛围。更衣室气氛低沉——{{affected}}名队友士气下降。"
+        }
+      }
+    },
+    "sponsor": {
+      "subject": "赞助邀约——{{sponsor}}",
+      "body": "好消息,老板!{{sponsor}}表达了成为{{team}}赞助商的意向。\n\n他们提议未来12周内每周支付{{amount}},以换取在训练基地的广告位。\n\n这看起来是一笔不错的交易,但决定权在您。",
+      "options": {
+        "accept": {
+          "label": "接受协议",
+          "description": "收到{{amount}}的赞助收入。"
+        },
+        "decline": {
+          "label": "礼貌婉拒",
+          "description": "婉拒邀约。无财务影响。"
+        }
+      },
+      "effects": {
+        "accepted": "签下赞助协议！未来12周你每周将收到{{amount}}。",
+        "declined": "已拒绝赞助。"
+      }
+    },
+    "trainingInjury": {
+      "subject": "伤病——{{player}}({{injury}})",
+      "body0": "训练场传来坏消息。{{player}}在今天的训练中遭遇了{{injury}}。\n\n医疗团队估计需要缺阵{{days}}天。我们会密切关注恢复情况。",
+      "body1": "不幸的是,{{player}}今天在训练中因{{injury}}倒下。\n\n初步评估:缺阵约{{days}}天。我们会随时向您通报进展。"
+    },
+    "mediaPositive": {
+      "subject": "正面媒体报道——{{player}}",
+      "body": "本地报纸今天刊登了一篇关于{{player}}的非常正面的报道。\n\n他们着重介绍了该球员近期的出色状态以及对{{team}}的忠诚。这类报道对球员的信心和俱乐部的形象都大有裨益。"
+    },
+    "mediaNegative": {
+      "subject": "负面媒体报道——{{player}}",
+      "body": "今日小报对{{player}}有一些不太友善的报道。\n\n记者们质疑他的状态以及对{{team}}的忠诚。这可能影响球员的士气——您或许应该和他谈谈。"
+    },
+    "intlCallup": {
+      "subject": "国家队征召——{{player}}",
+      "body": "{{player}}被{{nationality}}国家队征召,参加即将到来的国际比赛日。\n\n这对球员来说是莫大荣誉,也为俱乐部增光。他回来时会精神振奋,但请留意他的疲劳程度。"
+    },
+    "community": {
+      "subject0": "社区开放日",
+      "subject1": "青少年教学活动",
+      "subject2": "慈善赛公告",
+      "body0": "{{team}}今天在训练基地举办了社区开放日活动。\n\n球迷们有机会与球员见面并观摩训练课。气氛非常热烈,对团队凝聚力帮助很大。",
+      "body1": "{{team}}的几位一线队球员志愿前往当地一所学校参加青少年教学活动。\n\n对俱乐部来说是很好的公关,球员们也似乎因这次经历而受到鼓舞。",
+      "body2": "俱乐部与当地基金会合作开展了一项慈善活动。\n\n{{team}}持续加强与社区的纽带。董事会对这份正面形象感到满意。"
+    },
+    "moodReport": {
+      "subject": "更衣室报告——氛围:{{mood}}",
+      "body": "以下是本周的更衣室报告:\n\n• 整体氛围:{{mood}}(平均士气:{{avgMorale}})\n• 士气高涨的球员(80分以上):{{highCount}}\n• 士气低迷的球员(40分以下):{{lowCount}}\n• 阵容总人数:{{total}}"
+    },
+    "boardConfidence": {
+      "subject": "董事会会议——战绩受审视",
+      "body0": "董事会召开了紧急会议。连续三场失利引发了对球队走向的严重担忧。\n\n“我们需要尽快看到进步。球迷们躁动不安,战绩必须改变。”\n\n您如何回应?",
+      "body1": "在连续一系列糟糕战绩之后,主席召您进行一次艰难的谈话。\n\n“我们给了您资源和时间。结果根本不够好。您的计划是什么?”\n\n请谨慎选择回应方式。",
+      "options": {
+        "reassureBoard": {
+          "label": "以计划安抚董事会",
+          "description": "提出清晰的扭转战略。为您争取时间。"
+        },
+        "acceptPressure": {
+          "label": "承担责任",
+          "description": "承担战绩不佳的责任。董事会欣赏坦诚。"
+        },
+        "blameCircumstances": {
+          "label": "归咎于伤病与运气",
+          "description": "将责任推给外部因素。可能说服他们,也可能不会。"
+        }
+      },
+      "effects": {
+        "reassureBoard": "你安抚了董事会。他们暂时会再给你一些时间。",
+        "acceptPressure": "你承认了压力。董事会认可你的坦诚。",
+        "blameCircumstances": "董事会并未完全相信这些解释，但他们会继续观察。"
+      }
+    },
+    "fanPetition": {
+      "subject0": "球迷请愿——更多进攻足球",
+      "subject1": "球迷请愿——给青年人机会",
+      "subject2": "球迷公开信——透明度",
+      "body0": "一群{{team}}的支持者发起了请愿,呼吁踢更多进攻型足球。\n\n“我们花了钱观看精彩的足球。我们希望看到球队向前进攻,给我们带来激情!”\n\n目前已有500多个签名。您如何回应?",
+      "body1": "{{team}}的支持者发起了一场运动,敦促您给更多青训营年轻球员机会。\n\n“俱乐部的未来取决于培养本土人才。别再忽视这些孩子了!”\n\n此事在社交媒体上不断发酵。您的回应是什么?",
+      "body2": "{{team}}球迷信托已发表一封公开信,要求管理层更加透明。\n\n“我们想了解俱乐部的愿景。我们要往哪里走?长远规划是什么?”\n\n本地媒体正在报道此事。您如何处理?",
+      "options": {
+        "listenFans": {
+          "label": "与球迷沟通",
+          "description": "与球迷代表会面,倾听他们的诉求。有利于士气。"
+        },
+        "ignoreFans": {
+          "label": "专注于足球",
+          "description": "礼貌婉拒——足球决策留在更衣室。"
+        },
+        "addressPublicly": {
+          "label": "发表公开声明",
+          "description": "在新闻发布会上回应请愿。透明且主动。"
+        }
+      },
+      "effects": {
+        "listenFans": "你与球迷进行了沟通。球队士气略有提升。",
+        "ignoreFans": "你决定专注于足球事务。球迷有些失望。",
+        "addressPublicly": "你的公开回应收效不错。球迷信心提升了。"
+      }
+    },
+    "rivalInterest": {
+      "subject": "转会传闻——{{player}}与{{rival}}传出绯闻",
+      "body0": "我们得知{{rival}}一直在打听{{player}}的情况。\n\n他们的球探近几场比赛都在现场,消息人士称他们可能很快就会提出正式报价。\n\n若他们联系我们,您希望我们如何回应?",
+      "body1": "媒体报道称{{player}}是{{rival}}的引援目标。\n\n据消息人士透露,这名球员因近期表现引起关注。尚无正式报价,但只是时间问题。\n\n您的立场是什么?",
+      "options": {
+        "notForSale": {
+          "label": "非卖品",
+          "description": "明确表示球员哪里也不去。提振他的士气。"
+        },
+        "openToOffers": {
+          "label": "愿意考虑报价",
+          "description": "释放愿意谈判的信号。球员可能会心神不宁。"
+        },
+        "noComment": {
+          "label": "无可奉告",
+          "description": "保持沉默,静观其变。中立立场。"
+        }
+      },
+      "effects": {
+        "notForSale": "你明确表示这名球员是非卖品。他感到自己被重视。",
+        "openToOffers": "你表示愿意听取报价。球员因此有些不安。",
+        "noComment": "无可奉告。传闻还会继续发酵……"
+      }
+    },
+    "moraleCrisis": {
+      "subject": "{{player}}——士气危机",
+      "body0": "老板,{{player}}请求进行一次私人会面。他最近看起来很低落,想聊聊他在俱乐部的处境。\n\n他的士气仅为{{morale}}——您应在这情绪影响更衣室之前妥善处理。",
+      "body1": "{{player}}在训练中一直神情沮丧。他请求和您聊聊目前的状态。\n\n士气:{{morale}}。您的处理方式将决定他信心的走向。"
+    },
+    "benchComplaint": {
+      "subject": "{{player}}——希望获得更多出场时间",
+      "body0": "老板,{{player}}来找您了。他对近期缺乏出场时间感到沮丧,想知道自己需要做些什么才能回到首发。\n\n“我感觉自己训练得不错,但就是没机会在场上展示出来。”",
+      "body1": "{{player}}敲开了您办公室的门,神情郁郁。他在最近几场比赛中都没有出场,想要一个说法。\n\n“我来这家俱乐部是为了踢球。如果我不在您的计划之中,还不如直接告诉我。”"
+    },
+    "happyPlayer": {
+      "subject": "{{player}}——状态极佳",
+      "body0": "{{player}}带着灿烂的笑容来到您的办公室。他对自己的状态和球队的走向感到满意。\n\n“老板,我就想说,我现在真的很享受踢球。更衣室的氛围棒极了。”",
+      "body1": "您的助理教练提到{{player}}最近心情极佳。他在训练后主动找到您。\n\n“老板,我爱这里的每一分钟。保持这个势头,我愿意为您赴汤蹈火。”"
+    },
+    "contractConcern": {
+      "subject": "{{player}}——合同接近到期",
+      "body0": "{{player}}找您谈了合同问题。他的合同只剩{{days}}天,他想知道自己的处境。\n\n“老板,我的合同快到期了。我需要知道自己是否在您未来的计划之中,或者是否应该开始另寻出路。”",
+      "body1": "您的助理教练提示,{{player}}的合同大约还有{{months}}个月到期。该球员一直在更衣室里打听自己未来的去向。\n\n或许应在他变得心神不宁、或其他俱乐部开始围猎之前,先与他谈谈。"
+    },
+    "takeoverContractReview": {
+      "subject": "助理教练 - 合同审查",
+      "bodyNoneUrgent": "你的助理教练在你上任后审查了球队合同。本赛季共有{{totalExpiring}}名球员将进入续约期,但今天还没有人需要你立刻做决定。\n\n先梳理清楚你想留下谁,这样局面才能保持可控。",
+      "bodyUrgent": "你的助理教练在你上任后审查了球队合同。本赛季共有{{totalExpiring}}名球员将进入续约期,其中{{urgentContracts}}人已经需要在未来六个月内重点处理。\n\n你不必一次解决所有问题,但这些案例应该排在你初期工作的前列。",
+      "bodyFinalMonth": "你的助理教练在你上任后审查了球队合同。本赛季共有{{totalExpiring}}名球员将进入续约期,{{urgentContracts}}人需要在未来六个月内重点处理,而{{finalMonthContracts}}人已经进入最后一个月。\n\n先稳住最紧急的案例,再分阶段处理其余的续约名单。",
+      "actionReview": "查看球队合同"
+    },
+    "contractExpired": {
+      "subject": "{{player}} 自由离队",
+      "body": "{{player}} 与 {{team}} 的合同到期后离队。这名球员现在是自由球员。"
+    },
+    "contractTerminated": {
+      "subject": "{{player}} 被解约",
+      "body": "{{player}} 已被 {{team}} 解约。俱乐部支付了 {{severance}} 的剩余工资作为解约补偿。",
+      "ledgerDescription": "已向 {{player}} 支付合同解约补偿"
+    },
+    "freeAgentSigned": {
+      "subject": "{{player}} 签约 {{team}}",
+      "body": "{{player}} 以自由球员身份加盟 {{team}}，签下了一份 {{years}} 年合同。"
+    },
+    "delegatedRenewals": {
+      "subject": "助理教练报告——合同续约",
+      "body": "老板,我梳理了{{team}}的续约名单。{{successes}}个已完成,{{stalled}}个仍在推进,{{failures}}个未成。",
+      "case": {
+        "successful": "已完成:{{player}}同意以{{wage}}/周签约{{years}}年。",
+        "stalled": "仍有难度:{{player}}——{{detail}}",
+        "failed": "未成功:{{player}}——{{detail}}"
+      },
+      "notes": {
+        "managerBlocked": "您交代过暂不重启合同谈判。",
+        "completed": "我无需您亲自出面便已谈妥此人。",
+        "beyondLimits": "他们团队要求约{{wage}}/周、{{years}}年,超出了我可授权的范围。",
+        "boardWagePolicy": "董事会薪资政策阻止了此次续约。在恢复期内,年薪总额需维持在{{budget}}左右。",
+        "prefersManager": "他们愿意听取建议,但仍要求约{{wage}}/周、{{years}}年,且希望直接与您沟通。",
+        "relationshipBlocked": "在当前的关系和合同状况下,他们不愿通过我方签约。"
+      }
+    },
+    "youthRecruitmentReport": {
+      "subject": "球探报告——青训招募",
+      "bodyAny": "{{scout}} 已完成 {{team}} 最近一次青训招募搜索。我在 {{regionLabel}} 市场找到了 {{count}} 名符合 {{objectiveLabel}} 方向的潜力球员。\n\n请查看附带的球员卡，并决定谁应该加入青训学院。",
+      "bodyTargeted": "{{scout}} 已完成 {{team}} 最近一次青训招募搜索。我在 {{regionLabel}} 市场找到了 {{count}} 名符合 {{objectiveLabel}} 方向、重点针对 {{targetLabel}} 的潜力球员。\n\n请查看附带的球员卡，并决定谁应该加入青训学院。"
+    },
+    "youthRecruitment": {
+      "option": {
+        "sign": {
+          "label": "签入青训学院",
+          "description": "为这名潜力球员提供青训合同，并将其加入学院。"
+        },
+        "shortlist": {
+          "label": "加入候选名单",
+          "description": "继续观察这名潜力球员，并将其移入单独的候选消息中。"
+        },
+        "discard": {
+          "label": "放弃",
+          "description": "放弃这名潜力球员，并将其从报告中移除。"
+        }
+      },
+      "effect": {
+        "sign": "{{player}} 已签下青训合同并加入你的青训学院。",
+        "shortlist": "{{player}} 已加入你的青训候选名单。",
+        "discard": "{{player}} 已从青训招募报告中移除。"
+      }
+    },
+    "youthRecruitmentShortlist": {
+      "subject": "青训潜力球员已入候选名单",
+      "body": "{{player}} 已移入你的青训候选名单。你可以稍后再次查看，再做最终决定。"
+    },
+    "scoutReport": {
+      "subject": "球探报告:{{player}}",
+      "body": "您的球探{{scout}}已完成对{{player}}的评估。完整报告可在球探工作板块查看。"
+    },
+    "boardWarning": {
+      "subject": "董事会关切——战绩审视",
+      "body": "董事会对{{team}}近期的战绩越来越感到担忧。如不尽快改善,您的职位将面临严肃审视。"
+    },
+    "boardFinalWarning": {
+      "subject": "最后警告——需立即改进",
+      "body": "这是对您的最后警告。{{team}}董事会对目前的战绩已失去耐心。除非立即出现重大改善,否则我们别无选择,只能考虑您的去留问题。"
+    },
+    "boardFired": {
+      "subject": "解雇通知——{{team}}",
+      "body": "{{team}}董事会决定即日起解除您的经理职务。我们感谢您的付出,并祝您未来事业顺利。"
+    },
+    "jobOffer": {
+      "subject": "经理职位空缺——{{team}}",
+      "body": "{{team}}({{city}})董事会正在寻找新任经理带领俱乐部前行。上赛季排名:{{league_position}}。\n\n在审视了您的资历后,我们认为您可能是合适的人选。您是否愿意接受这一挑战?",
+      "accept": "接受职位",
+      "decline": "婉拒邀约",
+      "effects": {
+        "accepted": "您已被任命为{{team}}经理",
+        "declined": "您拒绝了{{team}}的邀约",
+        "alreadyEmployed": "您目前已有任职,无法接受{{team}}的邀约",
+        "unavailable": "{{team}}的职位已有人选,该邀约不再有效",
+        "failed": "无法接受{{team}}的邀约"
+      },
+      "acceptDescription": "成为{{team}}的新任主教练",
+      "declineDescription": "继续寻找其他机会"
+    },
+    "jobOfferExpired": {
+      "subject": "职位已有人选——{{team}}",
+      "body": "{{team}}的空缺职位现已补齐,因此该邀约不再有效。"
+    },
+    "jobHired": {
+      "subject": "欢迎来到{{team}}",
+      "body": "{{team}}董事会很高兴欢迎您出任新任经理。我们期待与您携手共创辉煌。"
+    },
+    "jobRejection": {
+      "subject": "申请结果——{{team}}",
+      "body": "感谢您对{{team}}经理职位的关注。经过慎重考虑,我们决定录用其他候选人。祝您未来事业顺利。"
+    },
+    "transferComplete": {
+      "subject": "转会完成：{{player}}",
+      "body": "{{player}}的转会已以{{fee}}完成。\n\n该球员已加入球队并可供选择上场。"
+    },
+    "transferOffer": {
+      "subject": "收到对{{player}}的报价",
+      "body": "{{team}}为{{player}}提交了一份{{fee}}的报价。请在转会标签页中查看该报价并决定接受或拒绝。",
+      "actionReview": "查看报价"
+    },
+    "transferInterest": {
+      "subject": "对 {{player}} 的转会兴趣",
+      "body": "对 {{player}} 提出有效报价的俱乐部：{{n}}。最新询问：{{team}}（{{fee}}）。请在转会标签页查看报价并回应。",
+      "actionReview": "查看报价"
+    }
+  },
+  "news": {
+    "matchReport": {
+      "headline": {
+        "homeWin": {
+          "0": "{{home}} {{homeGoals}} - {{awayGoals}} {{away}}:主队告捷",
+          "1": "{{home}}在第{{matchday}}轮险胜{{away}}",
+          "2": "{{home}}高效击败{{away}}"
+        },
+        "awayWin": {
+          "0": "{{home}} {{homeGoals}} - {{awayGoals}} {{away}}:客队告捷",
+          "1": "{{away}}客场爆冷击败{{home}}",
+          "2": "{{away}}客场之旅收获喜悦"
+        },
+        "draw": {
+          "0": "{{home}} {{homeGoals}} - {{awayGoals}} {{away}}:平分秋色",
+          "1": "{{home}}与{{away}}握手言和",
+          "2": "{{home}}主场陷入僵局"
+        }
+      },
+      "body0": "在第{{matchday}}轮的比赛中,最终比分为{{home}} {{homeGoals}} - {{awayGoals}} {{away}}。随着赛季推进,这一结果可能对联赛积分榜产生影响。\n\n进球:{{scorers}}",
+      "body1": "第{{matchday}}轮的对决中,比赛最终以{{home}} {{homeGoals}} - {{awayGoals}} {{away}}结束。双方在精彩的较量中都倾尽全力。\n\n进球:{{scorers}}",
+      "body2": "第{{matchday}}轮再现精彩对决,{{home}}迎战{{away}}({{homeGoals}}-{{awayGoals}})。球迷们享受了一场势均力敌的比赛。\n\n进球:{{scorers}}",
+      "body0.noScorers": "在第{{matchday}}轮的比赛中,最终比分为{{home}} {{homeGoals}} - {{awayGoals}} {{away}}。随着赛季推进,这一结果可能对联赛积分榜产生影响。",
+      "body1.noScorers": "第{{matchday}}轮的对决中,比赛最终以{{home}} {{homeGoals}} - {{awayGoals}} {{away}}结束。双方在精彩的较量中都倾尽全力。",
+      "body2.noScorers": "第{{matchday}}轮再现精彩对决,{{home}}迎战{{away}}({{homeGoals}}-{{awayGoals}})。球迷们享受了一场势均力敌的比赛。",
+      "scorer": "{{player}}（{{team}}，{{minute}}'）",
+      "scorersSection": "\n\n进球:{{scorers}}",
+      "reportFriendly": {
+        "title": "{{home}} {{homeGoals}} - {{awayGoals}} {{away}}: 友谊赛战报",
+        "body": "在友谊赛中,{{home}} {{homeGoals}} - {{awayGoals}} {{away}}。双方都把这场比赛当作正式赛季开始前的热身机会。{{scorersSection}}"
+      },
+      "reportPreseason": {
+        "title": "{{home}} {{homeGoals}} - {{awayGoals}} {{away}}: 季前锦标赛战报",
+        "body": "在季前锦标赛中,{{home}} {{homeGoals}} - {{awayGoals}} {{away}}。双方都把这场比赛当作正式赛季开始前的热身机会。{{scorersSection}}"
+      }
+    },
+    "roundup": {
+      "headline0": "第{{matchday}}轮综述:精彩一天共入{{totalGoals}}球",
+      "headline1": "超级联赛第{{matchday}}轮:全部结果",
+      "headline2": "第{{matchday}}轮进球如潮",
+      "body": "第{{matchday}}轮已尘埃落定。以下是完整结果:\n\n{{results}}\n\n{{matchCount}}场比赛共打进{{totalGoals}}球。{{biggestWinnerLine}}",
+      "resultLine": "  {{home}} {{homeGoals}} - {{awayGoals}} {{away}}",
+      "biggestWinnerLine": " {{biggestWinner}}拿下了当日最悬殊的一场胜利。"
+    },
+    "standings": {
+      "headline0": "第{{matchday}}轮过后{{leader}}高居榜首",
+      "headline1": "超级联赛积分榜:{{leader}}领跑",
+      "headline2": "积分榜更新——第{{matchday}}轮",
+      "body": "第{{matchday}}轮过后,{{leader}}位居超级联赛积分榜首位。\n\n积分榜:\n{{standings}}",
+      "entry": "  {{rank}}. {{team}} — {{points}}分（净胜球：{{goalDifference}}）"
+    },
+    "seasonPreview": {
+      "headline0": "赛季前瞻:{{teamCount}}支球队角逐荣耀",
+      "headline1": "超级联赛新赛季即将开战",
+      "headline2": "{{favourite}}能否加冕?赛季前瞻",
+      "body": "超级联赛即将揭幕,{{teamCount}}支球队将为冠军展开争夺。\n\n季前预测将{{favourite}}视为早期夺冠热门,但{{darkHorse}}可能成为本赛季值得关注的黑马。\n\n部分俱乐部迎来了新任经理,本赛季有望成为近年来竞争最激烈的一届。冠军争夺战白热化之际,每一分都至关重要。\n\n球队:{{teamList}}"
+    },
+    "managerialChange": {
+      "headline": "{{team}}解雇{{manager}}",
+      "body": "{{team}}在一连串糟糕战绩后解雇了{{manager}},俱乐部现正寻找新任经理。"
+    },
+    "managerialAppointment": {
+      "headline": "{{team}}任命{{manager}}",
+      "body": "{{team}}迅速填补俱乐部空缺,任命{{manager}}为新任经理。"
+    },
+    "majorTransfer": {
+      "headline": "{{player}}转会至{{toTeam}}",
+      "body": "{{toTeam}}已完成从{{fromTeam}}签下{{player}}的交易,转会费为{{fee}}。"
+    },
+    "transferRoundup": {
+      "headline": "转会综述——{{weekStart}}当周",
+      "body": "本周转会市场依旧活跃,联赛中共有{{transferCount}}笔已完成的交易最受关注。\n\n{{deals}}",
+      "dealLine": "  {{player}}：从{{fromTeam}}转会至{{toTeam}}（{{fee}}）"
+    },
+    "worldCupQualifying": {
+      "headline": "通往{{year}}年世界杯之路开启",
+      "body": "{{nations}}支球队开启{{year}}年世界杯预选赛征程，本赛季将在各个国际比赛日进行。"
+    },
+    "worldCupKickoff": {
+      "headline": "{{year}}年世界杯拉开帷幕",
+      "body": "{{nations}}支球队齐聚{{year}}年世界杯。这个夏天，世界顶尖球员追逐足球界最高荣誉，其他一切都为之让路。"
+    },
+    "worldCupChampion": {
+      "headline": "{{nation}}加冕世界冠军",
+      "body": "{{nation}}赢得了{{year}}年世界杯，载入足球史册。整个国家欢庆这一将被世代铭记的伟大胜利。"
+    },
+    "seasonAwards": {
+      "headline": "第{{season}}赛季奖项",
+      "bodyBoth": "第{{season}}赛季落下帷幕,{{goldenBootWinner}}（{{goldenBootTeam}}）以{{goldenBootGoals}}粒进球荣膺金靴奖。年度最佳球员由{{potyWinner}}（{{potyTeam}}）获得,其平均评分为{{potyRating}}。",
+      "bodyGoldenBootOnly": "第{{season}}赛季结束,{{goldenBootWinner}}（{{goldenBootTeam}}）以{{goldenBootGoals}}粒进球加冕最佳射手。",
+      "bodyPotyOnly": "第{{season}}赛季结束,{{potyWinner}}（{{potyTeam}}）凭借{{potyRating}}的平均评分当选年度最佳球员。"
+    },
+    "weeklyDigest": {
+      "headline": "每周摘要——{{weekStart}}当周",
+      "bodyNoTopScorer": "最新的每周摘要来了。{{leader}}领跑积分榜,本周有{{storylineCount}}条故事线影响着联赛格局。",
+      "bodyWithTopScorer": "最新的每周摘要来了。{{leader}}领跑积分榜,{{topScorer}}以{{topScorerGoals}}球位居射手榜首。本周有{{storylineCount}}条故事线影响着联赛格局。"
+    },
+    "preseasonDigest": {
+      "headline": "季前摘要——{{weekStart}}当周",
+      "bodyNoResults": "最新的季前摘要来了。各队仍在继续进行训练营、阵容取舍和转会运作，为揭幕战做准备。{{unbeatenLine}}",
+      "bodyWithResults": "最新的季前摘要来了。本周联赛范围内进行了{{resultCount}}场友谊赛，共产生{{totalGoals}}粒进球。\n\n结果：\n{{results}}{{unbeatenLine}}",
+      "resultLine": "  {{home}} {{homeGoals}} - {{awayGoals}} {{away}}",
+      "unbeatenLine": {
+        "one": "\n\n{{team}}在季前赛中仍保持不败。",
+        "two": "\n\n{{first}}和{{second}}在季前赛中仍保持不败。",
+        "multiple": "\n\n{{teams}}在季前赛中仍保持不败。"
+      }
+    },
+    "storyline": {
+      "titleRace": {
+        "headline": "冠军争夺白热化——{{leader}}领先{{challenger}} {{gap}}分",
+        "body": "{{leader}}仍居首位,但{{challenger}}仅落后{{gap}}分,冠军之争格局渐显。"
+      },
+      "unbeatenStreak": {
+        "headline": "{{team}}不败纪录延续至{{runLength}}场",
+        "body": "{{team}}已连续{{runLength}}场比赛保持不败,势头正劲。"
+      }
+    },
+    "transferRumour": {
+      "headline0": "{{player}}引发多家俱乐部关注",
+      "headline1": "{{player}}前途未卜，各俱乐部蠢蠢欲动",
+      "headline2": "{{player}}被传离开{{team}}",
+      "body0": "知情人士透露，{{player}}可能即将转会，多家俱乐部据报正在密切关注这名{{team}}球员。{{team}}方面尚未公开表态，但相关传言短期内恐难平息。",
+      "body1": "据悉，{{player}}已引起联赛多家俱乐部的兴趣。这名{{team}}球员本赛季表现出色，外界认为在转会窗口关闭前，正式报价或将出现。",
+      "body2": "围绕{{player}}的转会传言愈演愈烈，据称这名{{team}}球员正在权衡自己的选择。据报经纪人层面已有接触，但目前尚无任何官方确认。"
+    },
+    "injuryNews": {
+      "headline0": "{{player}}受伤，{{team}}遭受打击",
+      "headline1": "{{player}}即将缺席一段时间",
+      "headline2": "约{{weeksOut}}周——{{team}}为主力球员的伤情担忧",
+      "body0Days": "{{team}}已证实{{player}}受伤，预计将缺阵{{daysOut}}天。俱乐部将评估伤情后发布进一步的最新消息。",
+      "body0Weeks": "{{team}}已证实{{player}}受伤，预计将缺阵约{{weeksOut}}周。俱乐部将评估伤情后发布进一步的最新消息。",
+      "body1Days": "{{player}}在训练中遭遇挫折，这名{{team}}球员将缺席{{daysOut}}天。在赛季进入关键阶段之际，这一缺阵将是重大打击。",
+      "body1Weeks": "{{player}}在训练中遭遇挫折，这名{{team}}球员将缺席约{{weeksOut}}周。在赛季进入关键阶段之际，这一缺阵将是重大打击。"
+    },
+    "pressConference": {
+      "headlineManagerQuote": "{{team}}主帅：{{quote}}",
+      "headlinePressConf": "新闻发布会：\"{{quote}}\" —— {{team}}主帅",
+      "headlinePostMatch": "赛后：{{team}}谈{{result}}",
+      "bodyMultiple": "在{{result}}的比赛之后，{{team}}主帅接受了媒体采访。\n\n{{quotes}}\n\n这场发布会谈到了比赛结果、战术安排以及球队接下来的方向。",
+      "bodySingle": "{{team}}主帅在{{result}}的结果后简短发言。\n\n\"{{quote}}\"",
+      "bodyNone": "在{{result}}的结果后，{{team}}主帅拒绝长时间发言。"
+    }
+  }
+}

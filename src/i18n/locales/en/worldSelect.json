@@ -1,0 +1,43 @@
+{
+  "title": "Choose World",
+  "scanning": "Scanning for databases...",
+  "importFile": "Import from file",
+  "importPackage": "Import World Package",
+  "packageErrorsTitle": "Package problems",
+  "importCompetitions": "Add competitions file",
+  "removeCompetitions": "Remove",
+  "competitionsErrorsTitle": "This competitions file can't be used:",
+  "startCareer": "Start Career",
+  "creatingWorld": "Creating World...",
+  "teams": "{{count}} teams",
+  "players": "{{count}} players",
+  "randomWorld": "Random World",
+  "randomDescription": "A procedurally generated world of clubs, players, and staff",
+  "historyMode": {
+    "generated": "Generated History",
+    "reference": "Reference History",
+    "hybrid": "Hybrid History"
+  },
+  "summary": {
+    "startYear": "Career Start",
+    "seasonStart": {
+      "generated": "Kick off in {{year}} with a fresh world and {{count}} generated seasons of backstory.",
+      "reference": "Kick off in {{year}} using the selected historical snapshot as your world baseline.",
+      "hybrid": "Kick off in {{year}} using this database roster while {{count}} seasons of missing history are generated around it."
+    },
+    "midSeason": {
+      "generated": "Take over halfway through {{year}} with inherited standings, fixtures, news, match history, and {{count}} generated seasons of backstory.",
+      "reference": "Take over halfway through {{year}} with the selected historical snapshot and current-season context already in place.",
+      "hybrid": "Take over halfway through {{year}} with this database roster plus {{count}} generated seasons of historical context and inherited season progress."
+    }
+  },
+  "historyDepth": {
+    "label": "Generated History",
+    "hint": "Choose how much backstory to generate. Deeper archives add more context but take longer to create.",
+    "reference": "This world already includes its own historical archive.",
+    "applied": "{{count}} generated seasons",
+    "none": "No backstory",
+    "option": "{{count}} seasons",
+    "recommended": "Recommended"
+  }
+}

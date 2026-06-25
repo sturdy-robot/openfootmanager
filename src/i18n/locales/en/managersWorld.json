@@ -1,0 +1,14 @@
+{
+  "title": "Managers",
+  "subtitle": "League managers and open jobs",
+  "vacancy": "Vacancy",
+  "employed": "Employed",
+  "unemployed": "Unemployed",
+  "reputation": "Reputation",
+  "winRate": "Win rate",
+  "matches": "Matches",
+  "currentClub": "Current club",
+  "openRole": "Open role at {{team}}",
+  "vacancyBadge": "Board searching",
+  "noManagers": "No managers available."
+}

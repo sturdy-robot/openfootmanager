@@ -1,0 +1,8 @@
+{
+  "title": "Sair para o Menu Principal?",
+  "message": "O teu jogo será guardado automaticamente antes de voltar ao menu principal.",
+  "cancel": "Cancelar",
+  "saveExit": "Guardar e Sair",
+  "savingTitle": "A guardar o teu jogo...",
+  "savingMessage": "Aguarda enquanto guardamos o teu progresso e voltamos ao menu principal."
+}

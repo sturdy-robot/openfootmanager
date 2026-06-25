@@ -1,0 +1,32 @@
+{
+  "noSchedule": "No league schedule available.",
+  "noLeague": "No league schedule available.",
+  "standingsUnavailable": "Standings are not available for this competition.",
+  "fixtures": "Fixtures",
+  "standings": "Standings",
+  "matchday": "Matchday {{number}}",
+  "season": "Season {{number}}",
+  "international": "International",
+  "internationalDuty": "On International Duty",
+  "promotionZone": "Promotion",
+  "loadMore": "Load more",
+  "relegationZone": "Relegation",
+  "nextMatch": "Next match",
+  "noUpcoming": "No upcoming fixtures.",
+  "pastResults": "Past results",
+  "calendar": {
+    "title": "Calendar",
+    "mon": "Mo",
+    "tue": "Tu",
+    "wed": "We",
+    "thu": "Th",
+    "fri": "Fr",
+    "sat": "Sa",
+    "sun": "Su",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "dayWithFixtures": "{{date}} — has fixtures",
+    "yourMatch": "Your match",
+    "otherFixtures": "Other fixtures"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "goToField": "进入球场",
+  "goToFieldDesc": "完整比赛控制（默认）",
+  "watchSpectator": "以观众身份观看",
+  "watchSpectatorDesc": "观看比赛，无操作控制",
+  "delegateAssistant": "委托助理教练",
+  "delegateAssistantDesc": "AI 即时处理一切",
+  "skipToMatchDay": "跳至比赛日",
+  "skipToMatchDayDesc": "快进到下一场赛程",
+  "matchDayTitle": "比赛日",
+  "delegateWarning": "助理教练将接管比赛。您将无法介入。"
+}

@@ -1,0 +1,17 @@
+{
+  "noNews": "Sin noticias todavía.",
+  "newsWillAppear": "Las noticias aparecerán a medida que avanza la temporada.",
+  "backToNews": "Volver a Noticias",
+  "nArticles": "{{count}} artículo(s)",
+  "categories": {
+    "MatchReport": "Crónica del Partido",
+    "LeagueRoundup": "Resumen de Jornada",
+    "StandingsUpdate": "Clasificación",
+    "TransferRumour": "Fichaje",
+    "TransferRoundup": "Resumen de Fichajes",
+    "InjuryNews": "Lesión",
+    "SeasonPreview": "Previa de Temporada",
+    "Editorial": "Editorial",
+    "ManagerialChange": "Cambio de Entrenador"
+  }
+}

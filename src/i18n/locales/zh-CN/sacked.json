@@ -1,0 +1,19 @@
+{
+  "title": "您被解雇了",
+  "subtitle": "董事会对您管理俱乐部的能力失去了信心。",
+  "teamLabel": "俱乐部",
+  "finalSatisfaction": "董事会信心",
+  "careerOverview": "生涯概览",
+  "matchesManaged": "执教场次",
+  "wins": "胜",
+  "draws": "平",
+  "losses": "负",
+  "winRate": "胜率",
+  "bestFinish": "最佳战绩",
+  "trophies": "奖杯",
+  "careerHistory": "生涯历史",
+  "returnToMenu": "返回主菜单",
+  "present": "至今",
+  "bestLabel": "最佳",
+  "dismissalLetter": "董事会已决定解除您在 {{team}} 的主教练职务，即刻生效。\n\n感谢您的付出，祝您未来一帆风顺。\n\n此致,\n董事会"
+}

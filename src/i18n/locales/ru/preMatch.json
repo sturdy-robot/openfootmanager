@@ -1,0 +1,22 @@
+{
+  "formationFit": "Формирование",
+  "autoSelect": "Автоматический выбор лучшего XI",
+  "selecting": "Выбор...",
+  "startingXI": "Стартовый состав",
+  "substitutes": "Запасные",
+  "opponent": "Соперник",
+  "nPlayers": "{{count}} игроков",
+  "nAvailable": "{{count}} доступны",
+  "noBench": "Игроков на скамейке нет.",
+  "cancelSwap": "Отмена",
+  "swapHint": "Выберите запасного игрока для замены",
+  "setPieces": "Стандарты и капитан",
+  "lineup": "Расстановка",
+  "startMatch": "Начать матч",
+  "captain": "Капитан",
+  "penaltyTaker": "Исполнитель пенальти",
+  "freeKickTaker": "Исполнитель штрафного",
+  "cornerTaker": "Исполнитель углового",
+  "fit": "ФИТ",
+  "keyStats": "Ключевые показатели"
+}

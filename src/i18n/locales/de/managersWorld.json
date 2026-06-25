@@ -1,0 +1,14 @@
+{
+  "title": "Trainer",
+  "subtitle": "Trainer der Liga und offene Stellen",
+  "vacancy": "Vakanz",
+  "employed": "Im Amt",
+  "unemployed": "Vereinslos",
+  "reputation": "Ruf",
+  "winRate": "Siegquote",
+  "matches": "Spiele",
+  "currentClub": "Aktueller Klub",
+  "openRole": "Offene Stelle bei {{team}}",
+  "vacancyBadge": "Vorstand sucht",
+  "noManagers": "Keine Trainer verfügbar."
+}

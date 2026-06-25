@@ -1,0 +1,83 @@
+{
+  "title": "Paramètres",
+  "display": "Affichage",
+  "theme": "Thème",
+  "themeDesc": "Choisissez l'apparence de l'application",
+  "themeOptions": {
+    "light": "Clair",
+    "dark": "Sombre",
+    "system": "Système"
+  },
+  "language": "Langue",
+  "languageDesc": "Choisissez la langue d'affichage",
+  "currency": "Devise",
+  "currencyDesc": "Affichage des valeurs monétaires",
+  "currencyOptions": {
+    "eur": "Euro",
+    "gbp": "Livre sterling",
+    "usd": "Dollar"
+  },
+  "languages": {
+    "en": "Anglais",
+    "es": "Espagnol",
+    "pt": "Portugais",
+    "fr": "Français",
+    "de": "Allemand",
+    "it": "Italien",
+    "ptBR": "Portugais (Brésil)",
+    "zhCN": "Chinois simplifié",
+    "ru": "Russe"
+  },
+  "gameplay": "Gameplay",
+  "defaultMatchMode": "Mode de Match par Défaut",
+  "defaultMatchModeDesc": "Comment les matchs démarrent quand vous appuyez sur Continuer",
+  "matchSpeed": "Vitesse du Match",
+  "matchSpeedDesc": "Vitesse de simulation par défaut pour les matchs en direct",
+  "matchCommentary": "Commentaires du Match",
+  "matchCommentaryDesc": "Afficher les commentaires d'événements pendant les matchs",
+  "confirmAdvance": "Confirmer Avant d'Avancer",
+  "confirmAdvanceDesc": "Demander confirmation avant d'avancer d'un jour",
+  "continueToNextEvent": "Continuer passe à l’événement suivant",
+  "continueToNextEventDesc": "Continuer avance jusqu’à votre prochain match, un blocage, une date limite de transfert ou une actualité importante",
+  "savesData": "Sauvegardes et Données",
+  "autoSave": "Sauvegarde Auto",
+  "autoSaveDesc": "Sauvegarder automatiquement après chaque jour",
+  "exportWorld": "Exporter la Base de Données",
+  "exportWorldDesc": "Sauvegarder les données du monde en fichier JSON partageable",
+  "export": "Exporter",
+  "exportedTo": "Exporté vers : {{path}}",
+  "clearSaves": "Supprimer Toutes les Sauvegardes",
+  "clearSavesDesc": "Supprimer définitivement toutes les parties sauvegardées",
+  "clear": "Supprimer",
+  "savesCleared": "Sauvegardes supprimées !",
+  "about": "À propos",
+  "matchModes": {
+    "live": "Aller sur le Terrain",
+    "liveDesc": "Contrôle total du match",
+    "spectator": "Regarder en Spectateur",
+    "spectatorDesc": "Regarder sans contrôles",
+    "delegate": "Déléguer à l'Assistant",
+    "delegateDesc": "L'IA gère tout"
+  },
+  "speeds": {
+    "slow": "Lent",
+    "normal": "Normal",
+    "fast": "Rapide"
+  },
+  "uiScale": "Échelle de l'UI",
+  "uiScaleDesc": "Ajuster la taille de police et l'espacement pour la lisibilité",
+  "uiScaleOptions": {
+    "small": "Petite",
+    "normal": "Normale",
+    "large": "Grande",
+    "xlarge": "Très grande"
+  },
+  "highContrast": "Contraste Élevé",
+  "highContrastDesc": "Améliorer le contraste du texte en mode sombre",
+  "fullscreen": "Plein Écran",
+  "fullscreenDesc": "Basculer en mode plein écran",
+  "enterFullscreen": "Entrer",
+  "exitFullscreen": "Quitter",
+  "switchToLightMode": "Passer au mode clair",
+  "switchToDarkMode": "Passer au mode sombre"
+}

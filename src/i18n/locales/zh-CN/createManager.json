@@ -1,0 +1,18 @@
+{
+  "title": "创建经理",
+  "firstName": "名",
+  "lastName": "姓",
+  "dob": "出生日期",
+  "startYear": "开始年份",
+  "startPhase": "开始阶段",
+  "phaseSeasonStart": "赛季开始",
+  "phaseMidSeason": "赛季中期",
+  "nationality": "国籍",
+  "countryOfOrigin": "原籍国家/地区",
+  "selectNationality": "选择国籍...",
+  "selectCountry": "选择国家/地区...",
+  "searchNationalities": "搜索国籍...",
+  "chooseWorld": "选择世界",
+  "placeholderFirst": "例如：何塞",
+  "placeholderLast": "例如：穆里尼奥"
+}

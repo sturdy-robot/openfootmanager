@@ -1,0 +1,83 @@
+{
+  "title": "Configurações",
+  "display": "Exibição",
+  "theme": "Tema",
+  "themeDesc": "Escolha a aparência do aplicativo",
+  "themeOptions": {
+    "light": "Claro",
+    "dark": "Escuro",
+    "system": "Sistema"
+  },
+  "language": "Idioma",
+  "languageDesc": "Escolha o idioma de exibição",
+  "currency": "Moeda",
+  "currencyDesc": "Como os valores monetários são exibidos",
+  "currencyOptions": {
+    "eur": "Euro",
+    "gbp": "Libra",
+    "usd": "Dólar"
+  },
+  "languages": {
+    "en": "Inglês",
+    "es": "Espanhol",
+    "pt": "Português",
+    "fr": "Francês",
+    "de": "Alemão",
+    "it": "Italiano",
+    "ptBR": "Português (Brasil)",
+    "zhCN": "Chinês simplificado",
+    "ru": "Russo"
+  },
+  "gameplay": "Jogabilidade",
+  "defaultMatchMode": "Modo de Partida Padrão",
+  "defaultMatchModeDesc": "Como as partidas começam quando você pressiona Continuar",
+  "matchSpeed": "Velocidade da Partida",
+  "matchSpeedDesc": "Velocidade padrão de simulação para partidas ao vivo",
+  "matchCommentary": "Narração da Partida",
+  "matchCommentaryDesc": "Mostrar narração de eventos durante partidas ao vivo",
+  "confirmAdvance": "Confirmar Antes de Avançar",
+  "confirmAdvanceDesc": "Pedir confirmação antes de avançar um dia",
+  "continueToNextEvent": "Continuar avança até o próximo evento",
+  "continueToNextEventDesc": "Continuar avança até a próxima partida, um bloqueio, um prazo de transferências ou uma notícia importante",
+  "savesData": "Saves e Dados",
+  "autoSave": "Salvar Automaticamente",
+  "autoSaveDesc": "Salvar automaticamente após cada dia",
+  "exportWorld": "Exportar Banco de Dados do Mundo",
+  "exportWorldDesc": "Salvar os dados do mundo atual como um arquivo JSON compartilhável",
+  "export": "Exportar",
+  "exportedTo": "Exportado para: {{path}}",
+  "clearSaves": "Apagar Todos os Saves",
+  "clearSavesDesc": "Excluir permanentemente todos os jogos salvos",
+  "clear": "Apagar",
+  "savesCleared": "Saves apagados!",
+  "about": "Sobre",
+  "matchModes": {
+    "live": "Ir para o Campo",
+    "liveDesc": "Controle total da partida",
+    "spectator": "Assistir como Espectador",
+    "spectatorDesc": "Apenas assistir, sem controles",
+    "delegate": "Delegar ao Assistente",
+    "delegateDesc": "A IA resolve tudo"
+  },
+  "speeds": {
+    "slow": "Lento",
+    "normal": "Normal",
+    "fast": "Rápido"
+  },
+  "uiScale": "Escala da Interface",
+  "uiScaleDesc": "Ajuste o tamanho da fonte e espaçamento para melhor leitura",
+  "uiScaleOptions": {
+    "small": "Pequena",
+    "normal": "Normal",
+    "large": "Grande",
+    "xlarge": "Muito grande"
+  },
+  "highContrast": "Alto Contraste",
+  "highContrastDesc": "Aumentar contraste do texto no modo escuro para melhor leitura",
+  "fullscreen": "Tela Cheia",
+  "fullscreenDesc": "Ativar modo tela cheia para uma experiência imersiva",
+  "enterFullscreen": "Entrar",
+  "exitFullscreen": "Sair",
+  "switchToLightMode": "Mudar para o modo claro",
+  "switchToDarkMode": "Mudar para o modo escuro"
+}

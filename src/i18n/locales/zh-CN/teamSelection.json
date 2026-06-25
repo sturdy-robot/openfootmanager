@@ -1,0 +1,14 @@
+{
+  "title": "选择您的俱乐部",
+  "subtitle": "选择您想管理的球队",
+  "confirming": "确认中...",
+  "manage": "管理 {{team}}",
+  "reputation": "声望",
+  "squad": "阵容",
+  "finances": "财务",
+  "avgOvr": "平均综合",
+  "worldClass": "世界级",
+  "strong": "强队",
+  "average": "中游",
+  "developing": "发展中"
+}

@@ -1,0 +1,43 @@
+{
+  "title": "Welt Wählen",
+  "scanning": "Suche nach Datenbanken...",
+  "importFile": "Datei importieren",
+  "importPackage": "Welt-Paket importieren",
+  "packageErrorsTitle": "Paketprobleme",
+  "importCompetitions": "Wettbewerbsdatei hinzufügen",
+  "removeCompetitions": "Entfernen",
+  "competitionsErrorsTitle": "Diese Wettbewerbsdatei kann nicht verwendet werden:",
+  "startCareer": "Karriere Starten",
+  "creatingWorld": "Welt wird erstellt...",
+  "teams": "{{count}} Teams",
+  "players": "{{count}} Spieler",
+  "randomWorld": "Zufällige Welt",
+  "randomDescription": "Eine prozedural generierte Welt aus Vereinen, Spielern und Staff",
+  "historyMode": {
+    "generated": "Generierte Historie",
+    "reference": "Referenzhistorie",
+    "hybrid": "Hybride Historie"
+  },
+  "summary": {
+    "startYear": "Karrierestart",
+    "seasonStart": {
+      "generated": "Starte {{year}} mit einer frischen Welt und {{count}} generierten Saisons Vorgeschichte.",
+      "reference": "Starte {{year}} mit dem ausgewählten historischen Schnappschuss als Weltbasis.",
+      "hybrid": "Starte {{year}} mit diesem Datenbank-Kader, während {{count}} Saisons fehlender Historie darum herum generiert werden."
+    },
+    "midSeason": {
+      "generated": "Übernimm zur Saisonhälfte {{year}} mit geerbter Tabelle, Spielplan, Nachrichten, Spielhistorie und {{count}} generierten Saisons Vorgeschichte.",
+      "reference": "Übernimm zur Saisonhälfte {{year}} mit dem ausgewählten historischen Schnappschuss und bereits vorhandenem Saisonkontext.",
+      "hybrid": "Übernimm zur Saisonhälfte {{year}} mit diesem Datenbank-Kader plus {{count}} generierten Saisons historischem Kontext und vorhandenem Saisonfortschritt."
+    }
+  },
+  "historyDepth": {
+    "label": "Generierte Historie",
+    "hint": "Wähle, wie viel Vorgeschichte generiert werden soll. Tiefere Archive liefern mehr Kontext, brauchen aber länger.",
+    "reference": "Diese Welt bringt bereits ein eigenes historisches Archiv mit.",
+    "applied": "{{count}} generierte Saisons",
+    "none": "Keine Vorgeschichte",
+    "option": "{{count}} Saisons",
+    "recommended": "Empfohlen"
+  }
+}

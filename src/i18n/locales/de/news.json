@@ -1,0 +1,17 @@
+{
+  "noNews": "Noch keine Nachrichten.",
+  "newsWillAppear": "Nachrichten erscheinen im Laufe der Saison.",
+  "backToNews": "Zurück zu Nachrichten",
+  "nArticles": "{{count}} Artikel",
+  "categories": {
+    "MatchReport": "Spielbericht",
+    "LeagueRoundup": "Spieltag-Zusammenfassung",
+    "StandingsUpdate": "Tabelle",
+    "TransferRumour": "Transfer",
+    "TransferRoundup": "Transferüberblick",
+    "InjuryNews": "Verletzung",
+    "SeasonPreview": "Saisonvorschau",
+    "Editorial": "Kommentar",
+    "ManagerialChange": "Trainerwechsel"
+  }
+}

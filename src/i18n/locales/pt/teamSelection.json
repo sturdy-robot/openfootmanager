@@ -1,0 +1,14 @@
+{
+  "title": "Escolhe o Teu Clube",
+  "subtitle": "Seleciona a equipa que queres treinar",
+  "confirming": "A confirmar...",
+  "manage": "Treinar {{team}}",
+  "reputation": "Reputação",
+  "squad": "Plantel",
+  "finances": "Finanças",
+  "avgOvr": "Média OVR",
+  "worldClass": "Classe Mundial",
+  "strong": "Forte",
+  "average": "Médio",
+  "developing": "Em Desenvolvimento"
+}

@@ -1,0 +1,14 @@
+{
+  "title": "Erste Schritte",
+  "description": "Schließe diese Schritte ab, um dein Team auf die kommende Saison vorzubereiten.",
+  "reviewSquad": "Kader überprüfen",
+  "reviewSquadDesc": "Überprüfe Spielerstatistiken, Kondition und Eigenschaften",
+  "hireStaff": "Trainerstab einstellen",
+  "hireStaffDesc": "Staff verbessert Trainingsqualität und Erholung",
+  "setTactics": "Formation & Taktik festlegen",
+  "setTacticsDesc": "Wähle eine Formation und Spielweise, die zu deinem Kader passt",
+  "configTraining": "Training konfigurieren",
+  "configTrainingDesc": "Wähle einen Fokus und Zeitplan zur Spielerentwicklung",
+  "readMessages": "Nachrichten lesen",
+  "readMessagesDesc": "Wichtige Informationen vom Vorstand und Staff warten auf dich"
+}

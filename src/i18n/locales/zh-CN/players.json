@@ -1,0 +1,9 @@
+{
+  "searchPlaceholder": "按姓名或国籍搜索...",
+  "allPos": "所有位置",
+  "allTeams": "所有球队",
+  "nPlayersFound": "找到 {{count}} 名球员",
+  "noMatch": "没有球员符合您的筛选条件。",
+  "showingFirst": "显示前 {{shown}} / {{total}} 名球员。请细化搜索以查看更多。",
+  "showingRange": "{{from}}–{{to}} / {{total}}"
+}

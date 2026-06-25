@@ -1,0 +1,18 @@
+{
+  "title": "Créer un Entraîneur",
+  "firstName": "Prénom",
+  "lastName": "Nom",
+  "dob": "Date de Naissance",
+  "startYear": "Année de départ",
+  "startPhase": "Phase de départ",
+  "phaseSeasonStart": "Début de saison",
+  "phaseMidSeason": "Mi-saison",
+  "nationality": "Nationalité",
+  "countryOfOrigin": "Pays/Région d'Origine",
+  "selectNationality": "Sélectionner la nationalité...",
+  "selectCountry": "Sélectionner le Pays/Région...",
+  "searchNationalities": "Rechercher une nationalité...",
+  "chooseWorld": "Choisir le Monde",
+  "placeholderFirst": "ex. José",
+  "placeholderLast": "ex. Mourinho"
+}

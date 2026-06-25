@@ -1,0 +1,125 @@
+{
+  "weeklySchedule": "Calendário Semanal",
+  "trainingFocus": "Foco do Treino",
+  "intensity": "Intensidade",
+  "squadFitness": "Forma Física do Plantel",
+  "playerFitness": "Forma Física dos Jogadores",
+  "avgCondition": "Condição Média",
+  "avgMorale": "Moral Médio",
+  "train": "Treino",
+  "rest": "Descanso",
+  "todayIs": "Hoje é <strong>{{day}}</strong> — {{type}}.",
+  "aTrainingDay": "dia de treino",
+  "aRestDay": "dia de descanso",
+  "currentlyTraining": "A treinar: <strong>{{attrs}}</strong> com intensidade <strong>{{intensity}}</strong>.",
+  "recoveryNote": "Os jogadores vão focar-se no descanso e recuperação em todos os dias.",
+  "effectiveFocus": "Foco",
+  "trainingAppliedNote": "O treino é aplicado nos dias programados quando avanças o tempo. Dias de descanso proporcionam recuperação total.",
+  "criticalCondition": "{{count}} jogador(es) em condição crítica (<25%)",
+  "exhaustedPlayers": "{{count}} jogador(es) exausto(s) (<40%)",
+  "staffAlert": "Alerta do Staff",
+  "staffWarning": "Aviso do Staff",
+  "staffSuggestion": "Sugestão do Staff",
+  "staffAdvice": {
+    "critical": "Crise de condição física! {{criticalCount}} jogador(es) em estado crítico. {{scheduleAdvice}}",
+    "warn": "O plantel está cansado (média {{avgCondition}}%, {{exhaustedCount}} abaixo de 40%). {{scheduleAdvice}}",
+    "ok": "A condição física do plantel está alta. Podes mudar para Equilibrado ou Intenso para mais desenvolvimento.",
+    "scheduleAdvice": {
+      "criticalIntense": "Muda para um horário Equilibrado ou Leve imediatamente.",
+      "criticalBalanced": "Considera um horário Leve ou foco em Recuperação.",
+      "criticalLight": "Define o foco em Recuperação até a condição melhorar.",
+      "warnIntense": "Um horário Equilibrado daria mais tempo de recuperação.",
+      "warnBalanced": "Um horário Leve poderia ajudar o plantel a recuperar.",
+      "warnLight": "O foco em Recuperação maximizaria a recuperação de condição."
+    }
+  },
+  "focuses": {
+    "Physical": {
+      "label": "Físico",
+      "desc": "Desenvolver condição e força"
+    },
+    "Technical": {
+      "label": "Técnico",
+      "desc": "Aprimorar habilidades com bola"
+    },
+    "Tactical": {
+      "label": "Tático",
+      "desc": "Melhorar inteligência de jogo"
+    },
+    "Defending": {
+      "label": "Defesa",
+      "desc": "Solidificar a defesa"
+    },
+    "Attacking": {
+      "label": "Ataque",
+      "desc": "Aumentar ameaça ofensiva"
+    },
+    "Recovery": {
+      "label": "Recuperação",
+      "desc": "Dia de descanso — recuperação máxima"
+    }
+  },
+  "intensities": {
+    "Low": {
+      "label": "Baixa",
+      "desc": "Sessão suave — menos fadiga, crescimento lento"
+    },
+    "Medium": {
+      "label": "Média",
+      "desc": "Carga equilibrada — resultados padrão"
+    },
+    "High": {
+      "label": "Alta",
+      "desc": "Treino intenso — crescimento rápido, mais fadiga"
+    }
+  },
+  "schedules": {
+    "Intense": {
+      "label": "Intenso",
+      "desc": "6 dias de treino, 1 descanso",
+      "detail": "Desenvolvimento máximo. Apenas domingo de folga. Risco de acumulação de fadiga."
+    },
+    "Balanced": {
+      "label": "Equilibrado",
+      "desc": "4 dias de treino, 3 descanso",
+      "detail": "Treino seg, ter, qui, sex. Descanso qua, sáb, dom. Recomendado para a maioria."
+    },
+    "Light": {
+      "label": "Leve",
+      "desc": "2 dias de treino, 5 descanso",
+      "detail": "Treino apenas ter e qui. Prioriza recuperação. Bom após calendário intenso."
+    }
+  },
+  "days": {
+    "mon": "Seg",
+    "tue": "Ter",
+    "wed": "Qua",
+    "thu": "Qui",
+    "fri": "Sex",
+    "sat": "Sáb",
+    "sun": "Dom"
+  },
+  "groups": {
+    "trainingGroups": "Grupos de Treino",
+    "trainingGroupsDesc": "Atribui jogadores a grupos com diferentes focos de treino. Jogadores sem grupo usam o foco padrão da equipa.",
+    "addGroup": "Adicionar Grupo",
+    "groupName": "Nome do Grupo",
+    "groupFocus": "Foco",
+    "removeGroup": "Remover Grupo",
+    "ungrouped": "Sem Grupo",
+    "noGroups": "Nenhum grupo de treino criado. Adiciona um grupo e atribui jogadores para personalizar o treino.",
+    "group": "Grupo",
+    "teamDefault": "Padrão da Equipa",
+    "assignPlayer": "Atribuir ao grupo",
+    "removePlayer": "Remover do grupo",
+    "playerCount": "{{count}} jogador(es)",
+    "maxGroups": "Máximo de 5 grupos de treino permitidos.",
+    "defaultGroupNames": {
+      "0": "Defesas",
+      "1": "Médios",
+      "2": "Avançados",
+      "3": "Jovens",
+      "4": "Recuperação"
+    }
+  }
+}

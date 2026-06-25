@@ -1,0 +1,86 @@
+{
+  "Speedster": {
+    "label": "极速型",
+    "desc": "速度出众"
+  },
+  "Tank": {
+    "label": "坦克型",
+    "desc": "强壮且不知疲倦"
+  },
+  "Agile": {
+    "label": "敏捷型",
+    "desc": "灵活迅捷"
+  },
+  "Tireless": {
+    "label": "不知疲倦",
+    "desc": "体能永不枯竭"
+  },
+  "Playmaker": {
+    "label": "组织核心",
+    "desc": "富有视野的传球大师"
+  },
+  "Sharpshooter": {
+    "label": "神射手",
+    "desc": "冷静而致命的终结者"
+  },
+  "Dribbler": {
+    "label": "盘带好手",
+    "desc": "脚下技术精湛"
+  },
+  "BallWinner": {
+    "label": "抢断专家",
+    "desc": "不惜体力抢回球权"
+  },
+  "Rock": {
+    "label": "磐石",
+    "desc": "坚不可摧的防守长城"
+  },
+  "Leader": {
+    "label": "领袖",
+    "desc": "激励队友"
+  },
+  "CoolHead": {
+    "label": "冷静沉着",
+    "desc": "压力之下从容不迫"
+  },
+  "Visionary": {
+    "label": "视野大师",
+    "desc": "洞察他人无法看到的传球线路"
+  },
+  "HotHead": {
+    "label": "火爆脾气",
+    "desc": "容易失去冷静"
+  },
+  "TeamPlayer": {
+    "label": "团队至上",
+    "desc": "始终以球队为先"
+  },
+  "SafeHands": {
+    "label": "稳健双手",
+    "desc": "可靠的扑救手"
+  },
+  "CatReflexes": {
+    "label": "猫式反应",
+    "desc": "闪电般的反应速度"
+  },
+  "AerialDominance": {
+    "label": "制空统治",
+    "desc": "牢牢掌控禁区制空权"
+  },
+  "CompleteForward": {
+    "label": "全能前锋",
+    "desc": "各方面都极具威胁"
+  },
+  "Engine": {
+    "label": "发动机",
+    "desc": "攻防两端的中场大师"
+  },
+  "SetPieceSpecialist": {
+    "label": "定位球专家",
+    "desc": "定位球极具杀伤力"
+  },
+  "Wonderkid": {
+    "label": "天才少年",
+    "desc": "潜力非凡的年轻才俊"
+  }
+}

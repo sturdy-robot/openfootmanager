@@ -1,0 +1,16 @@
+{
+  "attentionRequired": "Aufmerksamkeit erforderlich",
+  "resolveBeforeContinuing": "Behebe diese Probleme, bevor du weitermachst",
+  "goTo": "Gehe zu",
+  "reviewIssues": "Probleme überprüfen",
+  "continueAnyway": "Trotzdem fortfahren",
+  "blockers": {
+    "injuredXi": "{{count}} verletzte Spieler in der Startelf: {{players}}",
+    "incompleteXi": "Die Startelf hat nur {{count}} fitte Spieler — stelle deine Aufstellung ein",
+    "squadSizeCrisis": "Der Kader hat nur {{count}} Vertragsspieler — verpflichte vor dem Spieltag neue Spieler",
+    "plannedContractExitCrisis": "Geplante Vertragsabgänge würden nur {{healthyPlayers}} fitte Spieler und {{goalkeepers}} Torhüter übrig lassen: {{players}}",
+    "urgentMessages": "{{count}} ungelesene dringende Nachricht(en)",
+    "keyContractRisk": "Vertragsrisiko bei Schlüsselspielern in der Kaderplanung: {{players}}",
+    "contractWageRisk": "{{amount}} an Gehältern sind an riskante Verträge gebunden — prüfe dein Gehaltsbudget"
+  }
+}

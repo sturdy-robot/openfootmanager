@@ -1,0 +1,12 @@
+{
+  "title": "Awards Ceremony",
+  "subtitle": "Season {{season}} in {{league}}",
+  "managerOfSeason": "Manager of the Season",
+  "goldenBoot": "Golden Boot",
+  "playerOfYear": "Player of the Year",
+  "continue": "Continue to dashboard",
+  "back": "Back to news",
+  "goals": "Goals",
+  "rating": "Rating",
+  "winRate": "Win rate"
+}

@@ -1,0 +1,36 @@
+{
+  "myStaff": "Mi Staff ({{count}})",
+  "available": "Disponibles ({{count}})",
+  "searchStaff": "Buscar staff...",
+  "noStaffMatch": "Ningún miembro del staff coincide con tus filtros.",
+  "noAvailableStaff": "No hay staff disponible.",
+  "releaseStaff": "Despedir miembro del staff",
+  "openScoutingWorkflow": "Abrir flujo de scouting",
+  "activeAssignment": "asignación activa",
+  "activeAssignments": "asignaciones activas",
+  "youthSearch": "búsqueda juvenil",
+  "youthSearches": "búsquedas juveniles",
+  "hireStaff": "Contratar miembro del staff",
+  "best": "Mejor",
+  "roles": {
+    "AssistantManager": "Segundo Entrenador",
+    "Coach": "Entrenador",
+    "Scout": "Ojeador",
+    "Physio": "Fisioterapeuta"
+  },
+  "attrs": {
+    "coaching": "Entrenamiento",
+    "judgingAbility": "Evaluar Habilidad",
+    "judgingPotential": "Evaluar Potencial",
+    "physiotherapy": "Fisioterapia"
+  },
+  "specializations": {
+    "Fitness": "Condición Física",
+    "Technique": "Técnica",
+    "Tactics": "Táctica",
+    "Defending": "Defensa",
+    "Attacking": "Ataque",
+    "GoalKeeping": "Porteros",
+    "Youth": "Cantera"
+  }
+}

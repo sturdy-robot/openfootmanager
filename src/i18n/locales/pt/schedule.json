@@ -1,0 +1,32 @@
+{
+  "noSchedule": "Nenhum calendário de liga disponível.",
+  "noLeague": "Nenhum calendário de liga disponível.",
+  "standingsUnavailable": "A classificação não está disponível para esta competição.",
+  "fixtures": "Jogos",
+  "standings": "Classificação",
+  "matchday": "Jornada {{number}}",
+  "season": "Temporada {{number}}",
+  "international": "Internacional",
+  "internationalDuty": "Ao serviço da seleção",
+  "promotionZone": "Subida",
+  "loadMore": "Carregar mais",
+  "relegationZone": "Despromoção",
+  "nextMatch": "Próximo jogo",
+  "noUpcoming": "Nenhum jogo próximo.",
+  "pastResults": "Resultados anteriores",
+  "calendar": {
+    "title": "Calendário",
+    "mon": "Se",
+    "tue": "Te",
+    "wed": "Qu",
+    "thu": "Qu",
+    "fri": "Se",
+    "sat": "Sá",
+    "sun": "Do",
+    "prevMonth": "Mês anterior",
+    "nextMonth": "Próximo mês",
+    "dayWithFixtures": "{{date}} — tem jogos",
+    "yourMatch": "O teu jogo",
+    "otherFixtures": "Outros jogos"
+  }
+}

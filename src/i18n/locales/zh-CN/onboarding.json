@@ -1,0 +1,14 @@
+{
+  "title": "新手入门",
+  "description": "完成以下步骤，为您的球队备战新赛季。员工尤为重要 — 他们能提升训练效果和恢复速度。",
+  "reviewSquad": "查看您的阵容",
+  "reviewSquadDesc": "检查球员数据、状态和特质",
+  "hireStaff": "聘请教练组",
+  "hireStaffDesc": "员工能提升训练质量和恢复速度 — 聘请一名教练和理疗师",
+  "setTactics": "设置阵型与战术",
+  "setTacticsDesc": "选择适合您阵容的阵型和打法",
+  "configTraining": "配置训练",
+  "configTrainingDesc": "选择训练重点和日程，培养您的球员",
+  "readMessages": "阅读您的消息",
+  "readMessagesDesc": "来自董事会和员工的重要信息等待您查阅"
+}

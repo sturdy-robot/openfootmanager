@@ -1,0 +1,22 @@
+{
+  "formationFit": "Ajuste da Formação",
+  "autoSelect": "Selecionar Melhor XI",
+  "selecting": "A selecionar...",
+  "startingXI": "Onze Inicial",
+  "substitutes": "Suplentes",
+  "opponent": "Adversário",
+  "nPlayers": "{{count}} jogadores",
+  "nAvailable": "{{count}} disponíveis",
+  "noBench": "Sem suplentes disponíveis.",
+  "cancelSwap": "Cancelar",
+  "swapHint": "Seleciona um suplente para trocar",
+  "setPieces": "Bola Parada e Capitão",
+  "lineup": "Escalação",
+  "startMatch": "Iniciar Jogo",
+  "captain": "Capitão",
+  "penaltyTaker": "Marcador de Penáltis",
+  "freeKickTaker": "Marcador de Livres",
+  "cornerTaker": "Marcador de Cantos",
+  "fit": "APT",
+  "keyStats": "Estatísticas-Chave"
+}

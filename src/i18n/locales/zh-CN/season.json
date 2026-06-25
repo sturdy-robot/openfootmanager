@@ -1,0 +1,28 @@
+{
+  "preseasonStatus": "季前状态",
+  "preseasonFocus": "利用这段时间备战阵容、复盘转会事务，为揭幕日做好准备。",
+  "friendly": "友谊赛",
+  "preseasonTournament": "季前赛事",
+  "opener": "赛季揭幕战",
+  "startsOn": "{{date}} 开始",
+  "startsInDays": "距开赛还有 {{count}} 天",
+  "noOpener": "揭幕日尚未安排。",
+  "standingsLocked": "联赛积分榜将在正式比赛开始后解锁。",
+  "tournamentsPreseasonHint": "赛季开始后，赛事积分榜与奖项争夺将陆续呈现。",
+  "windowClosed": "转会窗口已关闭",
+  "windowClosesToday": "转会截止日",
+  "windowClosesInDays": "窗口剩余 {{count}} 天",
+  "windowOpensInDays": "距窗口开启还有 {{count}} 天",
+  "windowOpensOn": "窗口于 {{date}} 开启",
+  "windowClosesOn": "窗口于 {{date}} 关闭",
+  "phases": {
+    "Preseason": "季前",
+    "InSeason": "赛季中",
+    "PostSeason": "赛季末"
+  },
+  "transferWindowStatus": {
+    "Closed": "窗口关闭",
+    "Open": "窗口开启",
+    "DeadlineDay": "截止日"
+  }
+}

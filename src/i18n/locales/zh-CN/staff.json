@@ -1,0 +1,36 @@
+{
+  "myStaff": "我的员工（{{count}}）",
+  "available": "可聘用（{{count}}）",
+  "searchStaff": "搜索员工...",
+  "noStaffMatch": "没有员工符合您的筛选条件。",
+  "noAvailableStaff": "未找到可聘用的员工。",
+  "releaseStaff": "释放员工",
+  "openScoutingWorkflow": "打开球探流程",
+  "activeAssignment": "项进行中的任务",
+  "activeAssignments": "项进行中的任务",
+  "youthSearch": "项青训搜索",
+  "youthSearches": "项青训搜索",
+  "hireStaff": "聘用员工",
+  "best": "最佳",
+  "roles": {
+    "AssistantManager": "助理教练",
+    "Coach": "教练",
+    "Scout": "球探",
+    "Physio": "理疗师"
+  },
+  "attrs": {
+    "coaching": "执教",
+    "judgingAbility": "能力判断",
+    "judgingPotential": "潜力判断",
+    "physiotherapy": "理疗"
+  },
+  "specializations": {
+    "Fitness": "体能",
+    "Technique": "技术",
+    "Tactics": "战术",
+    "Defending": "防守",
+    "Attacking": "进攻",
+    "GoalKeeping": "门将",
+    "Youth": "青训"
+  }
+}

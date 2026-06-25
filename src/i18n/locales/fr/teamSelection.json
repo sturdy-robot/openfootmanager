@@ -1,0 +1,14 @@
+{
+  "title": "Choisissez Votre Club",
+  "subtitle": "Sélectionnez l'équipe que vous voulez entraîner",
+  "confirming": "Confirmation...",
+  "manage": "Entraîner {{team}}",
+  "reputation": "Réputation",
+  "squad": "Effectif",
+  "finances": "Finances",
+  "avgOvr": "OVR Moyen",
+  "worldClass": "Classe Mondiale",
+  "strong": "Fort",
+  "average": "Moyen",
+  "developing": "En Développement"
+}

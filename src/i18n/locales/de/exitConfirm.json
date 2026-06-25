@@ -1,0 +1,8 @@
+{
+  "title": "Zum Hauptmenü?",
+  "message": "Dein Spiel wird automatisch gespeichert, bevor du zum Hauptmenü zurückkehrst.",
+  "cancel": "Abbrechen",
+  "saveExit": "Speichern & Beenden",
+  "savingTitle": "Spiel wird gespeichert...",
+  "savingMessage": "Bitte warte, während dein Fortschritt gespeichert wird und du zum Hauptmenü zurückkehrst."
+}

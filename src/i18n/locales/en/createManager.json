@@ -1,0 +1,18 @@
+{
+  "title": "Create Manager",
+  "firstName": "First Name",
+  "lastName": "Last Name",
+  "dob": "Date of Birth",
+  "startYear": "Start Year",
+  "startPhase": "Start Phase",
+  "phaseSeasonStart": "Season Start",
+  "phaseMidSeason": "Mid-Season",
+  "nationality": "Nationality",
+  "countryOfOrigin": "Country/Region of Origin",
+  "selectNationality": "Select nationality...",
+  "selectCountry": "Select Country/Region...",
+  "searchNationalities": "Search nationalities...",
+  "chooseWorld": "Choose World",
+  "placeholderFirst": "e.g. José",
+  "placeholderLast": "e.g. Mourinho"
+}

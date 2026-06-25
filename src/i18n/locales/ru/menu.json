@@ -1,0 +1,21 @@
+{
+  "newGame": "Новая игра",
+  "loadGame": "Загрузить игру",
+  "settings": "Настройки",
+  "exitGame": "Выйти из игры",
+  "noSaves": "Сохраненные игры не найдены.",
+  "loadingSaves": "Загрузка сохранений...",
+  "deleteConfirm": "Удалить <strong>{{name}}</strong>?",
+  "delete": "Удалить",
+  "cancel": "Отмена",
+  "manager": "Менеджер: {{name}}",
+  "deleteSave": "Удалить сохранение",
+  "noResults": "Ничего не найдено",
+  "importedDescription": "Импортированная база мира",
+  "importedPackageDescription": "Импортированный пакет мира",
+  "loadGameFailed": "Не удалось загрузить сохранение: {{error}}",
+  "invalidWorldDb": "Недопустимый файл базы мира: {{error}}",
+  "failedStartGame": "Не удалось начать игру: {{error}}",
+  "openDiscord": "Открыть сообщество в Discord",
+  "openGithub": "Открыть репозиторий на GitHub"
+}

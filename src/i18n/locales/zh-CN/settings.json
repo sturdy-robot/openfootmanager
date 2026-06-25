@@ -1,0 +1,83 @@
+{
+  "title": "设置",
+  "display": "显示",
+  "theme": "主题",
+  "themeDesc": "选择应用外观",
+  "themeOptions": {
+    "light": "浅色",
+    "dark": "深色",
+    "system": "系统"
+  },
+  "language": "语言",
+  "languageDesc": "选择显示语言",
+  "currency": "货币",
+  "currencyDesc": "金额的显示方式",
+  "currencyOptions": {
+    "eur": "欧元",
+    "gbp": "英镑",
+    "usd": "美元"
+  },
+  "languages": {
+    "en": "英语",
+    "es": "西班牙语",
+    "pt": "葡萄牙语",
+    "fr": "法语",
+    "de": "德语",
+    "it": "意大利语",
+    "ptBR": "巴西葡萄牙语",
+    "zhCN": "简体中文",
+    "ru": "俄语"
+  },
+  "gameplay": "玩法",
+  "defaultMatchMode": "默认比赛模式",
+  "defaultMatchModeDesc": "按下继续时比赛的启动方式",
+  "matchSpeed": "比赛速度",
+  "matchSpeedDesc": "实时比赛的默认模拟速度",
+  "matchCommentary": "比赛解说",
+  "matchCommentaryDesc": "在实时比赛中显示事件解说",
+  "confirmAdvance": "推进前确认",
+  "confirmAdvanceDesc": "推进一天前请求确认",
+  "continueToNextEvent": "继续将跳至下一个事件",
+  "continueToNextEventDesc": "继续会推进到你的下一场比赛、需要处理的事项、转会截止日或重要新闻",
+  "savesData": "存档与数据",
+  "autoSave": "自动存档",
+  "autoSaveDesc": "每天结束后自动保存游戏",
+  "exportWorld": "导出世界数据库",
+  "exportWorldDesc": "将当前世界数据保存为可分享的 JSON 文件",
+  "export": "导出",
+  "exportedTo": "已导出至：{{path}}",
+  "clearSaves": "清除所有存档",
+  "clearSavesDesc": "永久删除所有已保存的游戏",
+  "clear": "清除",
+  "savesCleared": "存档已清除！",
+  "about": "关于",
+  "matchModes": {
+    "live": "亲临赛场",
+    "liveDesc": "全面掌控比赛",
+    "spectator": "以观众身份观看",
+    "spectatorDesc": "仅观看，不可操控",
+    "delegate": "委托给助理教练",
+    "delegateDesc": "AI 全权处理"
+  },
+  "speeds": {
+    "slow": "慢速",
+    "normal": "正常",
+    "fast": "快速"
+  },
+  "uiScale": "界面缩放",
+  "uiScaleDesc": "调整字号与间距以提升可读性",
+  "uiScaleOptions": {
+    "small": "小",
+    "normal": "标准",
+    "large": "大",
+    "xlarge": "超大"
+  },
+  "highContrast": "高对比度",
+  "highContrastDesc": "在深色模式下增强文字对比度以提升可读性",
+  "fullscreen": "全屏",
+  "fullscreenDesc": "切换全屏模式以获得沉浸式体验",
+  "enterFullscreen": "进入",
+  "exitFullscreen": "退出",
+  "switchToLightMode": "切换到浅色模式",
+  "switchToDarkMode": "切换到深色模式"
+}

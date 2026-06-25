@@ -1,0 +1,21 @@
+{
+  "newGame": "Neues Spiel",
+  "loadGame": "Spiel Laden",
+  "settings": "Einstellungen",
+  "exitGame": "Spiel beenden",
+  "noSaves": "Keine gespeicherten Spiele gefunden.",
+  "loadingSaves": "Lade Spielstände...",
+  "deleteConfirm": "<strong>{{name}}</strong> löschen?",
+  "delete": "Löschen",
+  "cancel": "Abbrechen",
+  "manager": "Trainer: {{name}}",
+  "deleteSave": "Spielstand löschen",
+  "noResults": "Keine Ergebnisse",
+  "importedDescription": "Importierte Weltdatenbank",
+  "importedPackageDescription": "Importiertes Welt-Paket",
+  "loadGameFailed": "Speicherstand konnte nicht geladen werden: {{error}}",
+  "invalidWorldDb": "Ungültige Welt-Datenbankdatei: {{error}}",
+  "failedStartGame": "Spiel konnte nicht gestartet werden: {{error}}",
+  "openDiscord": "Discord-Community öffnen",
+  "openGithub": "GitHub-Repository öffnen"
+}

@@ -1,0 +1,12 @@
+{
+  "title": "Cerimonia de Premiacao",
+  "subtitle": "Temporada {{season}} em {{league}}",
+  "managerOfSeason": "Técnico da Temporada",
+  "goldenBoot": "Chuteira de Ouro",
+  "playerOfYear": "Jogador da Temporada",
+  "continue": "Continuar para o painel",
+  "back": "Voltar as noticias",
+  "goals": "Gols",
+  "rating": "Nota",
+  "winRate": "Aproveitamento"
+}

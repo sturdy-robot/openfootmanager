@@ -1,0 +1,22 @@
+{
+  "formationFit": "Formation Fit",
+  "autoSelect": "Auto-Select Best XI",
+  "selecting": "Selecting...",
+  "startingXI": "Starting XI",
+  "substitutes": "Substitutes",
+  "opponent": "Opponent",
+  "nPlayers": "{{count}} players",
+  "nAvailable": "{{count}} available",
+  "noBench": "No bench players available.",
+  "cancelSwap": "Cancel",
+  "swapHint": "Select a bench player to swap with",
+  "setPieces": "Set Pieces & Captain",
+  "lineup": "Lineup",
+  "startMatch": "Start Match",
+  "captain": "Captain",
+  "penaltyTaker": "Penalty Taker",
+  "freeKickTaker": "Free Kick Taker",
+  "cornerTaker": "Corner Taker",
+  "fit": "FIT",
+  "keyStats": "Key Stats"
+}

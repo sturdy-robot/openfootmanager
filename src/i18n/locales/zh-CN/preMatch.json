@@ -1,0 +1,22 @@
+{
+  "formationFit": "阵型契合度",
+  "autoSelect": "自动选择最佳 11 人",
+  "selecting": "选择中...",
+  "startingXI": "首发 11 人",
+  "substitutes": "替补",
+  "opponent": "对手",
+  "nPlayers": "{{count}} 名球员",
+  "nAvailable": "{{count}} 名可用",
+  "noBench": "没有可用的替补球员。",
+  "cancelSwap": "取消",
+  "swapHint": "选择一名替补球员进行替换",
+  "setPieces": "定位球与队长",
+  "lineup": "阵容",
+  "startMatch": "开始比赛",
+  "captain": "队长",
+  "penaltyTaker": "点球主罚",
+  "freeKickTaker": "任意球主罚",
+  "cornerTaker": "角球主罚",
+  "fit": "契合",
+  "keyStats": "关键数据"
+}

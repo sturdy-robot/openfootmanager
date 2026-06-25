@@ -1,0 +1,21 @@
+{
+  "newGame": "Nouvelle Partie",
+  "loadGame": "Charger Partie",
+  "settings": "Paramètres",
+  "exitGame": "Quitter le jeu",
+  "noSaves": "Aucune sauvegarde trouvée.",
+  "loadingSaves": "Chargement des sauvegardes...",
+  "deleteConfirm": "Supprimer <strong>{{name}}</strong> ?",
+  "delete": "Supprimer",
+  "cancel": "Annuler",
+  "manager": "Entraîneur : {{name}}",
+  "deleteSave": "Supprimer la sauvegarde",
+  "noResults": "Aucun résultat",
+  "importedDescription": "Base de données de monde importée",
+  "importedPackageDescription": "Package de monde importé",
+  "loadGameFailed": "Impossible de charger la sauvegarde : {{error}}",
+  "invalidWorldDb": "Fichier de base de données de monde invalide : {{error}}",
+  "failedStartGame": "Échec du démarrage du jeu : {{error}}",
+  "openDiscord": "Ouvrir la communauté Discord",
+  "openGithub": "Ouvrir le dépôt GitHub"
+}

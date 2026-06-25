@@ -1,0 +1,28 @@
+{
+  "preseasonStatus": "Stato del precampionato",
+  "preseasonFocus": "Sfrutta questo periodo per preparare la rosa, seguire il mercato e arrivare pronto al via della stagione.",
+  "friendly": "Amichevole",
+  "preseasonTournament": "Torneo precampionato",
+  "opener": "Esordio stagionale",
+  "startsOn": "Inizia il {{date}}",
+  "startsInDays": "Mancano {{count}} giorno/i al debutto",
+  "noOpener": "L'inizio della stagione non è ancora programmato.",
+  "standingsLocked": "La classifica si sbloccherà quando inizieranno le partite ufficiali.",
+  "tournamentsPreseasonHint": "Classifiche e corse ai premi appariranno quando la stagione entrerà nel vivo.",
+  "windowClosed": "Mercato chiuso",
+  "windowClosesToday": "Ultimo giorno di mercato",
+  "windowClosesInDays": "Mancano {{count}} giorno/i alla chiusura del mercato",
+  "windowOpensInDays": "Mancano {{count}} giorno/i all'apertura del mercato",
+  "windowOpensOn": "Il mercato apre il {{date}}",
+  "windowClosesOn": "Il mercato chiude il {{date}}",
+  "phases": {
+    "Preseason": "Precampionato",
+    "InSeason": "Stagione in corso",
+    "PostSeason": "Post-stagione"
+  },
+  "transferWindowStatus": {
+    "Closed": "Mercato Chiuso",
+    "Open": "Mercato Aperto",
+    "DeadlineDay": "Ultimo Giorno"
+  }
+}

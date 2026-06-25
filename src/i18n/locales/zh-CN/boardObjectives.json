@@ -1,0 +1,8 @@
+{
+  "objective": {
+    "LeaguePosition": "联赛排名进入前 {{target}}",
+    "Wins": "至少赢得 {{target}} 场比赛",
+    "GoalsScored": "至少打进 {{target}} 个进球",
+    "FinancialStability": "将工资支出控制在预算的 {{target}}% 以内"
+  }
+}

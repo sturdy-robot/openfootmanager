@@ -4,15 +4,30 @@ import {
   collectMissingKeys,
   type LocaleTree,
 } from "../i18n/i18nTestHelpers";
-import de from "../i18n/locales/de.json";
-import en from "../i18n/locales/en.json";
-import es from "../i18n/locales/es.json";
-import fr from "../i18n/locales/fr.json";
-import itLocale from "../i18n/locales/it.json";
-import ptBR from "../i18n/locales/pt-BR.json";
-import pt from "../i18n/locales/pt.json";
-import ru from "../i18n/locales/ru.json";
-import zhCN from "../i18n/locales/zh-CN.json";
+
+const allModules = import.meta.glob<{ default: Record<string, unknown> }>(
+  "../i18n/locales/*/*.json",
+  { eager: true },
+);
+
+function buildBundle(code: string): LocaleTree {
+  const prefix = `../i18n/locales/${code}/`;
+  return Object.fromEntries(
+    Object.entries(allModules)
+      .filter(([path]) => path.startsWith(prefix))
+      .map(([path, module]) => [path.slice(prefix.length, -5), module.default]),
+  ) as LocaleTree;
+}
+
+const en = buildBundle("en");
+const de = buildBundle("de");
+const es = buildBundle("es");
+const fr = buildBundle("fr");
+const itLocale = buildBundle("it");
+const ptBR = buildBundle("pt-BR");
+const pt = buildBundle("pt");
+const ru = buildBundle("ru");
+const zhCN = buildBundle("zh-CN");
 
 const LOCALES: Record<string, LocaleTree> = {
   de,

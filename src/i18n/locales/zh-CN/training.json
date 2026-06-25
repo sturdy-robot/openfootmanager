@@ -1,0 +1,125 @@
+{
+  "weeklySchedule": "每周日程",
+  "trainingFocus": "训练重点",
+  "intensity": "强度",
+  "squadFitness": "阵容体能",
+  "playerFitness": "球员体能",
+  "avgCondition": "平均状态",
+  "avgMorale": "平均士气",
+  "train": "训练",
+  "rest": "休息",
+  "todayIs": "今天是 <strong>{{day}}</strong> — {{type}}。",
+  "aTrainingDay": "训练日",
+  "aRestDay": "休息日",
+  "currentlyTraining": "当前训练内容:<strong>{{attrs}}</strong>,强度 <strong>{{intensity}}</strong>。",
+  "recoveryNote": "球员每天都将专注于休息与状态恢复。",
+  "effectiveFocus": "重点",
+  "trainingAppliedNote": "训练会在你推进日期时的训练日生效。休息日可完全恢复。",
+  "criticalCondition": "{{count}} 名球员状态极差(<25%)",
+  "exhaustedPlayers": "{{count}} 名球员已精疲力竭(<40%)",
+  "staffAlert": "教练组警报",
+  "staffWarning": "教练组警告",
+  "staffSuggestion": "教练组建议",
+  "staffAdvice": {
+    "critical": "体能危机!{{criticalCount}} 名球员状态极差。{{scheduleAdvice}}",
+    "warn": "阵容疲劳(平均 {{avgCondition}}%,{{exhaustedCount}} 人低于 40%)。{{scheduleAdvice}}",
+    "ok": "阵容体能良好。可切换至平衡或高强度以获得更多成长。",
+    "scheduleAdvice": {
+      "criticalIntense": "立即切换至平衡或轻度日程。",
+      "criticalBalanced": "考虑采用轻度日程或恢复重点。",
+      "criticalLight": "将重点设为恢复,直到体能回升。",
+      "warnIntense": "平衡日程可提供更多恢复时间。",
+      "warnBalanced": "轻度日程有助于阵容恢复。",
+      "warnLight": "恢复重点可最大化体能恢复。"
+    }
+  },
+  "focuses": {
+    "Physical": {
+      "label": "身体",
+      "desc": "提升体能与力量"
+    },
+    "Technical": {
+      "label": "技术",
+      "desc": "打磨球技"
+    },
+    "Tactical": {
+      "label": "战术",
+      "desc": "提升比赛阅读能力"
+    },
+    "Defending": {
+      "label": "防守",
+      "desc": "巩固后防线"
+    },
+    "Attacking": {
+      "label": "进攻",
+      "desc": "增强进球威胁"
+    },
+    "Recovery": {
+      "label": "恢复",
+      "desc": "休息日 — 最大化恢复"
+    }
+  },
+  "intensities": {
+    "Low": {
+      "label": "低",
+      "desc": "轻度课程 — 疲劳更少,成长较慢"
+    },
+    "Medium": {
+      "label": "中",
+      "desc": "平衡负荷 — 标准效果"
+    },
+    "High": {
+      "label": "高",
+      "desc": "高强度训练 — 成长更快,疲劳更多"
+    }
+  },
+  "schedules": {
+    "Intense": {
+      "label": "高强度",
+      "desc": "训练 6 天,休息 1 天",
+      "detail": "最大化球员发展。仅周日休息。存在疲劳累积风险。"
+    },
+    "Balanced": {
+      "label": "平衡",
+      "desc": "训练 4 天,休息 3 天",
+      "detail": "周一、周二、周四、周五训练。周三、周六、周日休息。适合大多数阵容。"
+    },
+    "Light": {
+      "label": "轻度",
+      "desc": "训练 2 天,休息 5 天",
+      "detail": "仅周二和周四训练。优先恢复。适合赛程密集之后使用。"
+    }
+  },
+  "days": {
+    "mon": "周一",
+    "tue": "周二",
+    "wed": "周三",
+    "thu": "周四",
+    "fri": "周五",
+    "sat": "周六",
+    "sun": "周日"
+  },
+  "groups": {
+    "trainingGroups": "训练小组",
+    "trainingGroupsDesc": "将球员分配到具有不同训练重点的小组。未分组球员使用球队默认设置。",
+    "addGroup": "添加小组",
+    "groupName": "小组名称",
+    "groupFocus": "重点",
+    "removeGroup": "删除小组",
+    "ungrouped": "未分组",
+    "noGroups": "尚未创建训练小组。添加一个小组并分配球员以自定义他们的训练。",
+    "group": "小组",
+    "teamDefault": "球队默认",
+    "assignPlayer": "分配到小组",
+    "removePlayer": "从小组移除",
+    "playerCount": "{{count}} 名球员",
+    "maxGroups": "最多允许 5 个训练小组。",
+    "defaultGroupNames": {
+      "0": "后卫",
+      "1": "中场",
+      "2": "前锋",
+      "3": "青年",
+      "4": "恢复"
+    }
+  }
+}

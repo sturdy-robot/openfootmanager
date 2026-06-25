@@ -1,0 +1,125 @@
+{
+  "weeklySchedule": "Wochenplan",
+  "trainingFocus": "Trainingsfokus",
+  "intensity": "Intensität",
+  "squadFitness": "Kaderfitness",
+  "playerFitness": "Spielerfitness",
+  "avgCondition": "Durchschn. Kondition",
+  "avgMorale": "Durchschn. Moral",
+  "train": "Training",
+  "rest": "Ruhe",
+  "todayIs": "Heute ist <strong>{{day}}</strong> — {{type}}.",
+  "aTrainingDay": "ein Trainingstag",
+  "aRestDay": "ein Ruhetag",
+  "currentlyTraining": "Aktuelles Training: <strong>{{attrs}}</strong> mit <strong>{{intensity}}</strong> Intensität.",
+  "recoveryNote": "Die Spieler konzentrieren sich an allen Tagen auf Ruhe und Erholung.",
+  "effectiveFocus": "Fokus",
+  "trainingAppliedNote": "Training wird an geplanten Tagen angewendet, wenn du die Zeit vorrückst. Ruhetage bieten volle Erholung.",
+  "criticalCondition": "{{count}} Spieler in kritischem Zustand (<25%)",
+  "exhaustedPlayers": "{{count}} Spieler erschöpft (<40%)",
+  "staffAlert": "Staff-Alarm",
+  "staffWarning": "Staff-Warnung",
+  "staffSuggestion": "Staff-Vorschlag",
+  "staffAdvice": {
+    "critical": "Fitnesskrisis! {{criticalCount}} Spieler in kritischem Zustand. {{scheduleAdvice}}",
+    "warn": "Das Team ist müde (Durchschn. {{avgCondition}}%, {{exhaustedCount}} unter 40%). {{scheduleAdvice}}",
+    "ok": "Die Teamfitness ist hoch. Du könntest zu Ausgewogen oder Intensiv wechseln, um mehr Entwicklung zu fördern.",
+    "scheduleAdvice": {
+      "criticalIntense": "Wechsle sofort zu einem Ausgewogenen oder Leichten Zeitplan.",
+      "criticalBalanced": "Erwäge einen Leichten Zeitplan oder den Fokus Erholung.",
+      "criticalLight": "Setze den Fokus auf Erholung, bis sich die Fitness verbessert.",
+      "warnIntense": "Ein Ausgewogener Zeitplan würde mehr Erholungszeit geben.",
+      "warnBalanced": "Ein Leichter Zeitplan könnte dem Team helfen, sich zu erholen.",
+      "warnLight": "Erholungsfokus würde die Fitness-Erholung maximieren."
+    }
+  },
+  "focuses": {
+    "Physical": {
+      "label": "Physisch",
+      "desc": "Fitness & Kraft aufbauen"
+    },
+    "Technical": {
+      "label": "Technisch",
+      "desc": "Ballfertigkeiten verbessern"
+    },
+    "Tactical": {
+      "label": "Taktisch",
+      "desc": "Spielintelligenz verbessern"
+    },
+    "Defending": {
+      "label": "Verteidigung",
+      "desc": "Abwehr stärken"
+    },
+    "Attacking": {
+      "label": "Angriff",
+      "desc": "Offensivkraft steigern"
+    },
+    "Recovery": {
+      "label": "Erholung",
+      "desc": "Ruhetag — maximale Erholung"
+    }
+  },
+  "intensities": {
+    "Low": {
+      "label": "Niedrig",
+      "desc": "Leichte Einheit — weniger Ermüdung, langsameres Wachstum"
+    },
+    "Medium": {
+      "label": "Mittel",
+      "desc": "Ausgewogene Belastung — Standardergebnisse"
+    },
+    "High": {
+      "label": "Hoch",
+      "desc": "Intensives Training — schnelleres Wachstum, mehr Ermüdung"
+    }
+  },
+  "schedules": {
+    "Intense": {
+      "label": "Intensiv",
+      "desc": "6 Trainingstage, 1 Ruhetag",
+      "detail": "Maximale Entwicklung. Nur Sonntag frei. Risiko von Ermüdungsaufbau."
+    },
+    "Balanced": {
+      "label": "Ausgeglichen",
+      "desc": "4 Trainingstage, 3 Ruhetage",
+      "detail": "Training Mo, Di, Do, Fr. Ruhe Mi, Sa, So. Empfohlen für die meisten Kader."
+    },
+    "Light": {
+      "label": "Leicht",
+      "desc": "2 Trainingstage, 5 Ruhetage",
+      "detail": "Training nur Di & Do. Priorität Erholung. Gut nach dichtem Spielplan."
+    }
+  },
+  "days": {
+    "mon": "Mo",
+    "tue": "Di",
+    "wed": "Mi",
+    "thu": "Do",
+    "fri": "Fr",
+    "sat": "Sa",
+    "sun": "So"
+  },
+  "groups": {
+    "trainingGroups": "Trainingsgruppen",
+    "trainingGroupsDesc": "Weise Spieler Gruppen mit unterschiedlichem Trainingsfokus zu. Spieler ohne Gruppe nutzen den Teamstandard.",
+    "addGroup": "Gruppe hinzufügen",
+    "groupName": "Gruppenname",
+    "groupFocus": "Fokus",
+    "removeGroup": "Gruppe entfernen",
+    "ungrouped": "Ohne Gruppe",
+    "noGroups": "Keine Trainingsgruppen erstellt. Erstelle eine Gruppe und weise Spieler zu, um ihr Training anzupassen.",
+    "group": "Gruppe",
+    "teamDefault": "Teamstandard",
+    "assignPlayer": "Zur Gruppe zuweisen",
+    "removePlayer": "Aus Gruppe entfernen",
+    "playerCount": "{{count}} Spieler",
+    "maxGroups": "Maximal 5 Trainingsgruppen erlaubt.",
+    "defaultGroupNames": {
+      "0": "Verteidiger",
+      "1": "Mittelfeldspieler",
+      "2": "Angreifer",
+      "3": "Jugend",
+      "4": "Erholung"
+    }
+  }
+}

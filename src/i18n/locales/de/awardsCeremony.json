@@ -1,0 +1,12 @@
+{
+  "title": "Preisverleihung",
+  "subtitle": "Saison {{season}} in {{league}}",
+  "managerOfSeason": "Trainer der Saison",
+  "goldenBoot": "Torjägerkanone",
+  "playerOfYear": "Spieler des Jahres",
+  "continue": "Weiter zum Dashboard",
+  "back": "Zurück zu den Nachrichten",
+  "goals": "Tore",
+  "rating": "Bewertung",
+  "winRate": "Siegquote"
+}

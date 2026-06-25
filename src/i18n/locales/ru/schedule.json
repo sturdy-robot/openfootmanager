@@ -1,0 +1,32 @@
+{
+  "noSchedule": "Расписание лиги пока недоступно.",
+  "noLeague": "Расписание лиги пока недоступно.",
+  "standingsUnavailable": "Турнирная таблица недоступна для этого турнира.",
+  "fixtures": "Матчи",
+  "standings": "Таблица",
+  "matchday": "Тур {{number}}",
+  "season": "Сезон {{number}}",
+  "international": "Сборные",
+  "internationalDuty": "В сборной",
+  "promotionZone": "Повышение",
+  "loadMore": "Загрузить ещё",
+  "relegationZone": "Вылет",
+  "nextMatch": "Следующий матч",
+  "noUpcoming": "Нет предстоящих матчей.",
+  "pastResults": "Прошлые результаты",
+  "calendar": {
+    "title": "Календарь",
+    "mon": "Пн",
+    "tue": "Вт",
+    "wed": "Ср",
+    "thu": "Чт",
+    "fri": "Пт",
+    "sat": "Сб",
+    "sun": "Вс",
+    "prevMonth": "Предыдущий месяц",
+    "nextMonth": "Следующий месяц",
+    "dayWithFixtures": "{{date}} — есть матчи",
+    "yourMatch": "Ваш матч",
+    "otherFixtures": "Другие матчи"
+  }
+}

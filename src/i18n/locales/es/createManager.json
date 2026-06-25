@@ -1,0 +1,18 @@
+{
+  "title": "Crear Mánager",
+  "firstName": "Nombre",
+  "lastName": "Apellidos",
+  "dob": "Fecha de Nacimiento",
+  "startYear": "Año de inicio",
+  "startPhase": "Fase de inicio",
+  "phaseSeasonStart": "Inicio de temporada",
+  "phaseMidSeason": "Mitad de temporada",
+  "nationality": "Nacionalidad",
+  "countryOfOrigin": "País/Región de Origen",
+  "selectNationality": "Seleccionar nacionalidad...",
+  "selectCountry": "Seleccionar País/Región...",
+  "searchNationalities": "Buscar nacionalidades...",
+  "chooseWorld": "Elegir Mundo",
+  "placeholderFirst": "ej. José",
+  "placeholderLast": "ej. Mourinho"
+}

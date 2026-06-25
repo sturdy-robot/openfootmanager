@@ -1,0 +1,21 @@
+{
+  "newGame": "New Game",
+  "loadGame": "Load Game",
+  "settings": "Settings",
+  "exitGame": "Exit Game",
+  "noSaves": "No saved games found.",
+  "loadingSaves": "Loading saves...",
+  "deleteConfirm": "Delete <strong>{{name}}</strong>?",
+  "delete": "Delete",
+  "cancel": "Cancel",
+  "manager": "Manager: {{name}}",
+  "deleteSave": "Delete save",
+  "noResults": "No results",
+  "importedDescription": "Imported world database",
+  "importedPackageDescription": "Imported world package",
+  "loadGameFailed": "Couldn't load the save: {{error}}",
+  "invalidWorldDb": "Invalid world database file: {{error}}",
+  "failedStartGame": "Failed to start game: {{error}}",
+  "openDiscord": "Open Discord community",
+  "openGithub": "Open GitHub repository"
+}

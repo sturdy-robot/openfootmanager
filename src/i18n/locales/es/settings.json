@@ -1,0 +1,83 @@
+{
+  "title": "Configuración",
+  "display": "Pantalla",
+  "theme": "Tema",
+  "themeDesc": "Elige la apariencia de la aplicación",
+  "themeOptions": {
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema"
+  },
+  "language": "Idioma",
+  "languageDesc": "Elige el idioma de visualización",
+  "currency": "Moneda",
+  "currencyDesc": "Cómo se muestran los valores monetarios",
+  "currencyOptions": {
+    "eur": "Euro",
+    "gbp": "Libra",
+    "usd": "Dólar"
+  },
+  "languages": {
+    "en": "Inglés",
+    "es": "Español",
+    "pt": "Portugués",
+    "fr": "Francés",
+    "de": "Alemán",
+    "it": "Italiano",
+    "ptBR": "Portugués (Brasil)",
+    "zhCN": "Chino simplificado",
+    "ru": "Ruso"
+  },
+  "gameplay": "Jugabilidad",
+  "defaultMatchMode": "Modo de Partido por Defecto",
+  "defaultMatchModeDesc": "Cómo empiezan los partidos al pulsar Continuar",
+  "matchSpeed": "Velocidad del Partido",
+  "matchSpeedDesc": "Velocidad de simulación por defecto para partidos en vivo",
+  "matchCommentary": "Comentarios del Partido",
+  "matchCommentaryDesc": "Mostrar comentarios de eventos durante partidos en vivo",
+  "confirmAdvance": "Confirmar Antes de Avanzar",
+  "confirmAdvanceDesc": "Pedir confirmación antes de avanzar un día",
+  "continueToNextEvent": "Continuar salta al próximo evento",
+  "continueToNextEventDesc": "Continuar avanza hasta tu próximo partido, un bloqueo, una fecha límite de fichajes o una noticia importante",
+  "savesData": "Guardados y Datos",
+  "autoSave": "Autoguardado",
+  "autoSaveDesc": "Guardar automáticamente después de cada día",
+  "exportWorld": "Exportar Base de Datos del Mundo",
+  "exportWorldDesc": "Guardar los datos del mundo como archivo JSON compartible",
+  "export": "Exportar",
+  "exportedTo": "Exportado a: {{path}}",
+  "clearSaves": "Borrar Todos los Guardados",
+  "clearSavesDesc": "Eliminar permanentemente todas las partidas guardadas",
+  "clear": "Borrar",
+  "savesCleared": "¡Guardados borrados!",
+  "about": "Acerca de",
+  "matchModes": {
+    "live": "Ir al Campo",
+    "liveDesc": "Control total del partido",
+    "spectator": "Ver como Espectador",
+    "spectatorDesc": "Solo ver, sin controles",
+    "delegate": "Delegar al Asistente",
+    "delegateDesc": "La IA lo maneja todo"
+  },
+  "speeds": {
+    "slow": "Lento",
+    "normal": "Normal",
+    "fast": "Rápido"
+  },
+  "uiScale": "Escala de UI",
+  "uiScaleDesc": "Ajustar tamaño de fuente y espaciado para legibilidad",
+  "uiScaleOptions": {
+    "small": "Pequeña",
+    "normal": "Normal",
+    "large": "Grande",
+    "xlarge": "Muy grande"
+  },
+  "highContrast": "Alto Contraste",
+  "highContrastDesc": "Mejorar contraste de texto en modo oscuro",
+  "fullscreen": "Pantalla Completa",
+  "fullscreenDesc": "Alternar modo de pantalla completa",
+  "enterFullscreen": "Entrar",
+  "exitFullscreen": "Salir",
+  "switchToLightMode": "Cambiar al modo claro",
+  "switchToDarkMode": "Cambiar al modo oscuro"
+}

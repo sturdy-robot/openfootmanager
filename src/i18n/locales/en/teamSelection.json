@@ -1,0 +1,14 @@
+{
+  "title": "Choose Your Club",
+  "subtitle": "Select the team you want to manage",
+  "confirming": "Confirming...",
+  "manage": "Manage {{team}}",
+  "reputation": "Reputation",
+  "squad": "Squad",
+  "finances": "Finances",
+  "avgOvr": "Avg OVR",
+  "worldClass": "World Class",
+  "strong": "Strong",
+  "average": "Average",
+  "developing": "Developing"
+}

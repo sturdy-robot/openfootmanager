@@ -1,0 +1,14 @@
+{
+  "title": "Primeiros Passos",
+  "description": "Completa estes passos para preparar a tua equipa para a próxima temporada.",
+  "reviewSquad": "Revê o teu plantel",
+  "reviewSquadDesc": "Consulta estatísticas, condição e características dos jogadores",
+  "hireStaff": "Contrata staff técnico",
+  "hireStaffDesc": "O staff melhora a qualidade do treino e a recuperação",
+  "setTactics": "Define a tua formação e tática",
+  "setTacticsDesc": "Escolhe uma formação e estilo de jogo adequados ao teu plantel",
+  "configTraining": "Configura o treino",
+  "configTrainingDesc": "Escolhe um foco e horário para desenvolver os teus jogadores",
+  "readMessages": "Lê as tuas mensagens",
+  "readMessagesDesc": "Informações importantes da direção e staff à tua espera"
+}

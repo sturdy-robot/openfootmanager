@@ -1,0 +1,28 @@
+{
+  "preseasonStatus": "Preseason Status",
+  "preseasonFocus": "Use this time to prepare your squad, review transfer business, and get ready for the opening day.",
+  "friendly": "Friendly",
+  "preseasonTournament": "Preseason Tournament",
+  "opener": "Season Opener",
+  "startsOn": "Starts on {{date}}",
+  "startsInDays": "{{count}} day(s) to kickoff",
+  "noOpener": "Opening day not scheduled yet.",
+  "standingsLocked": "League standings will unlock after competitive matches begin.",
+  "tournamentsPreseasonHint": "Competition tables and award races will appear once the season gets underway.",
+  "windowClosed": "Transfer window closed",
+  "windowClosesToday": "Transfer deadline day",
+  "windowClosesInDays": "{{count}} day(s) left in the window",
+  "windowOpensInDays": "{{count}} day(s) until the window opens",
+  "windowOpensOn": "Window opens on {{date}}",
+  "windowClosesOn": "Window closes on {{date}}",
+  "phases": {
+    "Preseason": "Preseason",
+    "InSeason": "In Season",
+    "PostSeason": "Postseason"
+  },
+  "transferWindowStatus": {
+    "Closed": "Window Closed",
+    "Open": "Window Open",
+    "DeadlineDay": "Deadline Day"
+  }
+}

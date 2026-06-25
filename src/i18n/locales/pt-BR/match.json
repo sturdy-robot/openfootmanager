@@ -1,0 +1,618 @@
+{
+  "live": "Ao Vivo",
+  "paused": "Pausado",
+  "events": "Eventos",
+  "stats": "Estatísticas",
+  "lineups": "Escalações",
+  "simSpeed": "Velocidade de Simulação",
+  "pause": "Pausa",
+  "slow": "Lento",
+  "normal": "Normal",
+  "fast": "Rápido",
+  "max": "Máx",
+  "step1Min": "Avançar 1 Minuto",
+  "teamControls": "Controles do Time",
+  "subs": "Substituições",
+  "formation": "Formação",
+  "playStyle": "Estilo de Jogo",
+  "keyEvents": "Eventos-Chave",
+  "noEventsYet": "A partida ainda não começou.",
+  "waitingKickoff": "Aguardando o pontapé inicial...",
+  "assist": "assistência: {{name}}",
+  "subFor": "por {{name}}",
+  "possession": "Posse de Bola",
+  "shots": "Finalizações",
+  "shotsOnTarget": "Finalizações no Gol",
+  "fouls": "Faltas",
+  "corners": "Escanteios",
+  "yellowCards": "Cartões Amarelos",
+  "bench": "Banco",
+  "substitutions": "Substituições",
+  "substitutionsTitle": "Substituições",
+  "subsUsed": "{{used}}/{{max}} usadas",
+  "allSubsUsed": "Todas as substituições usadas",
+  "selectPlayerOff": "Selecione um jogador para substituir",
+  "takingOff": "Saindo: {{name}}",
+  "selectReplacement": "Selecione o substituto do banco",
+  "selectToTakeOff": "Selecionar para sair",
+  "clearReplacementSelection": "Limpar substituto",
+  "selectReplacementMenu": "Selecionar substituto",
+  "selectPlayerToTakeOffFirst": "Selecione primeiro o jogador que vai sair",
+  "selectForSwap": "Selecionar para troca",
+  "swapWithSelectedStarter": "Trocar com o titular selecionado",
+  "benchPlayers": "Jogadores no banco",
+  "selectBenchToCompare": "Selecione um jogador do banco para comparar",
+  "confirmSubstitution": "Confirmar substituição",
+  "noBenchAvailable": "Nenhum jogador no banco disponível",
+  "history": "Histórico",
+  "player": "Jogador",
+  "fitness": "Condição",
+  "halfTime": "Intervalo",
+  "ht": "INT",
+  "fullTime": "Fim de Jogo",
+  "ft": "FJ",
+  "firstHalfEvents": "Eventos do 1º Tempo",
+  "noMajorEvents": "Sem eventos importantes.",
+  "teamTalk": "Preleção",
+  "teamTalkPrompt": "Escolha como se dirigir ao time no intervalo.",
+  "teamTalkOptions": {
+    "calm": {
+      "label": "Mantenham a calma",
+      "description": "Peça calma ao time e mantenha o foco no plano de jogo."
+    },
+    "motivational": {
+      "label": "Motivar",
+      "description": "Incentive os jogadores a darem o melhor de si."
+    },
+    "assertive": {
+      "label": "Cobrar mais",
+      "description": "Deixe claro que o desempenho ainda não é bom o suficiente."
+    },
+    "aggressive": {
+      "label": "Incendiar o time",
+      "description": "Faça uma preleção agressiva e cheia de energia."
+    },
+    "praise": {
+      "label": "Elogiar",
+      "description": "Diga ao time que ele vem sendo excelente."
+    },
+    "disappointed": {
+      "label": "Mostrar decepção",
+      "description": "Expresse sua decepção com o empenho da equipe."
+    }
+  },
+  "deliverTeamTalk": "Fazer Preleção",
+  "delivering": "Entregando...",
+  "teamTalkFailed": "A preleção falhou. Por favor, tente novamente.",
+  "delivered": "Feito",
+  "spectatorMode": "Modo Espectador",
+  "spectatorHT": "Ambos os treinadores estão conversando com seus times no vestiário.",
+  "makeSubstitution": "Fazer Substituição",
+  "waitingSecondHalf": "Aguardando o 2º tempo...",
+  "makeChanges": "Faça suas alterações e retome a partida.",
+  "resumeMatch": "Retomar Partida",
+  "victory": "Vitória",
+  "defeat": "Derrota",
+  "draw": "Empate",
+  "matchEvents": "Eventos da Partida",
+  "quietMatch": "Uma partida tranquila.",
+  "quickStats": "Estatísticas Rápidas",
+  "postMatchTeamTalk": "Preleção Pós-Jogo",
+  "addressPlayers": "Fale com seus jogadores após a partida.",
+  "matchOver": "Partida Encerrada",
+  "ratings": "Notas do {{team}}",
+  "motm": "Melhor em Campo",
+  "roundSummary": "Resumo da Rodada",
+  "roundSummaryUnavailable": "Resumo da rodada indisponível.",
+  "otherMatches": "Outros Jogos",
+  "otherMatchesToday": "Outros Jogos de Hoje",
+  "otherMatchesUnavailable": "O contexto dos outros jogos ainda não está disponível para esta partida.",
+  "viewDetails": "Ver detalhes",
+  "matchDetails": "Detalhes da Partida",
+  "scorers": "Artilheiros",
+  "noGoals": "Nenhum gol marcado.",
+  "matchComplete": "Partida completa.",
+  "addressPress": "Fale com a imprensa ou volte ao painel.",
+  "skip": "Pular",
+  "pressConference": "Coletiva de Imprensa",
+  "pressSubtitle": "Coletiva pós-jogo — {{team}}",
+  "skipConference": "Pular Coletiva →",
+  "submitting": "Enviando...",
+  "leaveConference": "Encerrar Coletiva",
+  "nextQuestion": "Próxima Pergunta",
+  "pressReport": {
+    "headlineManagerQuote": "{{team}} Técnico: {{quote}}",
+    "headlinePressConf": "Coletiva de Imprensa: \"{{quote}}\" — técnico do {{team}}",
+    "headlinePostMatch": "Pós-Jogo: {{team}} sobre {{result}}",
+    "bodyIntro": "Após o resultado {{result}}, o técnico do {{team}} falou com a imprensa.",
+    "bodyOutro": "A coletiva abordou o resultado, a abordagem tática e o que está por vir para o time.",
+    "bodySingle": "O técnico do {{team}} falou brevemente após o resultado {{result}}.",
+    "bodyNone": "O técnico do {{team}} não quis falar longamente após o resultado {{result}}."
+  },
+  "press": {
+    "result": {
+      "questions": {
+        "win": "Foi um grande resultado hoje, {{userScore}}-{{oppScore}} contra o {{oppName}}. O quão satisfeito você está com a atuação?",
+        "loss": "Foi um resultado duro hoje, derrota por {{userScore}}-{{oppScore}} para o {{oppName}}. O que deu errado em campo?",
+        "draw": "Empate em {{userScore}}-{{oppScore}} contra o {{oppName}}. Você acha que foi um resultado justo?"
+      },
+      "responses": {
+        "win": {
+          "humble": {
+            "tone": "Humilde",
+            "text": "Os jogadores trabalharam duro. Nos preparamos bem e executamos o plano de jogo."
+          },
+          "confident": {
+            "tone": "Confiante",
+            "text": "Fomos o melhor time do começo ao fim. Um resultado merecido."
+          },
+          "deflect": {
+            "tone": "Desviar",
+            "text": "São só três pontos. Agora vamos para a próxima."
+          }
+        },
+        "loss": {
+          "accept": {
+            "tone": "Assumir",
+            "text": "Hoje não fomos bons o suficiente. Temos que entender o que deu errado."
+          },
+          "defiant": {
+            "tone": "Desafiante",
+            "text": "Não acho que merecíamos perder. Criamos chances suficientes."
+          },
+          "deflect": {
+            "tone": "Desviar",
+            "text": "Prefiro não ficar remoendo isso. Estaremos prontos para a próxima partida."
+          }
+        },
+        "draw": {
+          "fair": {
+            "tone": "Justo",
+            "text": "Foi um resultado justo. Os dois times tiveram chances."
+          },
+          "frustrated": {
+            "tone": "Frustrado",
+            "text": "A gente deveria ter vencido. Perdemos oportunidades demais."
+          },
+          "positive": {
+            "tone": "Positivo",
+            "text": "Um ponto é um ponto. Dá para tirar coisas boas do jogo de hoje."
+          }
+        }
+      }
+    },
+    "playerFocus": {
+      "questions": {
+        "scored": "{{playerName}} marcou hoje. Qual a importância da contribuição dele para o time?",
+        "default": "Você pode comentar a atuação de {{playerName}} hoje?"
+      },
+      "responses": {
+        "praise": {
+          "tone": "Elogio",
+          "text": "{{playerName}} foi fantástico. É um jogador-chave para nós e a dedicação dele é exemplar."
+        },
+        "demanding": {
+          "tone": "Exigente",
+          "text": "{{playerName}} pode render mais. Espero mais de um jogador da qualidade dele."
+        },
+        "deflect": {
+          "tone": "Desviar",
+          "text": "Não gosto de destacar indivíduos. Futebol é jogo coletivo."
+        }
+      }
+    },
+    "tactics": {
+      "question": "Pode nos explicar sua abordagem tática hoje?",
+      "responses": {
+        "detailed": {
+          "tone": "Detalhado",
+          "text": "Montamos a equipe para controlar o meio-campo e usar a largura. Acho que a estrutura funcionou bem."
+        },
+        "brief": {
+          "tone": "Direto",
+          "text": "Tínhamos um plano e os jogadores executaram. É isso que importa."
+        },
+        "evasive": {
+          "tone": "Evasivo",
+          "text": "Prefiro não revelar muita coisa. Todo time tem seus segredos."
+        }
+      }
+    },
+    "fans": {
+      "questions": {
+        "win": "A torcida apoiou muito hoje. O que esse apoio significa para você?",
+        "loss": "Alguns torcedores demonstraram frustração no fim. Você tem uma mensagem para eles?",
+        "draw": "Em alguns momentos o clima estava tenso hoje. Como você lida com essa pressão?"
+      },
+      "responses": {
+        "win": {
+          "grateful": {
+            "tone": "Humilde",
+            "text": "A torcida é incrível. Ela nos empurra em cada jogo e merece atuações como a de hoje."
+          },
+          "shared": {
+            "tone": "Confiante",
+            "text": "Todo mundo comemora junto — jogadores, comissão e torcedores. Essa vitória também é deles."
+          },
+          "deflect": {
+            "tone": "Desviar",
+            "text": "A torcida sabe o que representamos. Nós só focamos no campo."
+          }
+        },
+        "loss": {
+          "apologize": {
+            "tone": "Assumir",
+            "text": "Eu entendo completamente a frustração deles. Eles merecem mais e vamos trabalhar duro para entregar isso."
+          },
+          "patience": {
+            "tone": "Focado",
+            "text": "Peço paciência. Estamos construindo algo e dias ruins acontecem. Vamos voltar mais fortes."
+          },
+          "curt": {
+            "tone": "Seco",
+            "text": "Não vou comentar coisas ditas no calor do momento. Vamos seguir em frente."
+          }
+        },
+        "draw": {
+          "appreciate": {
+            "tone": "Positivo",
+            "text": "Eu valorizo cada torcedor que vem nos ver. A energia deles levanta o time."
+          },
+          "understand": {
+            "tone": "Justo",
+            "text": "Eles querem nos ver vencer e eu também. Vamos continuar insistindo até os resultados aparecerem."
+          },
+          "curt": {
+            "tone": "Seco",
+            "text": "Eu não me envolvo com o que acontece nas arquibancadas. Meu foco está no campo."
+          }
+        }
+      }
+    },
+    "ahead": {
+      "question": "Qual é o seu foco para a próxima partida?",
+      "responses": {
+        "focused": {
+          "tone": "Focado",
+          "text": "Primeiro recuperação, depois preparação. Vamos jogo a jogo."
+        },
+        "ambitious": {
+          "tone": "Ambicioso",
+          "text": "Queremos continuar construindo embalo. O objetivo está claro."
+        },
+        "curt": {
+          "tone": "Seco",
+          "text": "Próxima pergunta, por favor. A gente se preocupa com isso quando chegar a hora."
+        }
+      }
+    }
+  },
+  "pen": "PÊN",
+  "home": "Casa",
+  "away": "Fora",
+  "matchDay": "Dia de Jogo",
+  "preMatchPrep": "Preparação Pré-Jogo",
+  "startingLineup": "Escalação Titular",
+  "setPiecesCaptain": "Bola Parada e Capitão",
+  "formationFit": "Ajuste da Formação",
+  "selecting": "Selecionando...",
+  "autoSelectXI": "Selecionar Melhores Titulares",
+  "startingXI": "Titulares",
+  "cancel": "Cancelar",
+  "nPlayers": "{{count}} jogadores",
+  "swapPrompt": "Selecione um jogador do banco para a troca",
+  "substitutes": "Reservas",
+  "nAvailable": "{{count}} disponíveis",
+  "noBenchAvailable2": "Nenhum reserva disponível.",
+  "opponent": "Adversário",
+  "autoSelectTakers": "Selecionar Melhores Cobradores",
+  "captain": "Capitão",
+  "penaltyTaker": "Cobrador de Pênalti",
+  "freeKickTaker": "Cobrador de Falta",
+  "cornerTaker": "Cobrador de Escanteio",
+  "startMatch": "Iniciar Partida",
+  "notAssigned": "Não atribuído",
+  "keyStats": "Estatísticas-Chave",
+  "continueDashboard": "Continuar para o Painel",
+  "phases": {
+    "PreKickOff": "Pré-jogo",
+    "FirstHalf": "1º Tempo",
+    "HalfTime": "Intervalo",
+    "SecondHalf": "2º Tempo",
+    "FullTime": "Fim de Jogo",
+    "ExtraTimeFirstHalf": "1º Tempo da Prorrogação",
+    "ExtraTimeHalfTime": "Intervalo da Prorrogação",
+    "ExtraTimeSecondHalf": "2º Tempo da Prorrogação",
+    "ExtraTimeEnd": "Fim da Prorrogação",
+    "PenaltyShootout": "Pênaltis",
+    "Finished": "Final"
+  },
+  "eventTypes": {
+    "Goal": "Gol",
+    "PenaltyGoal": "Gol de Pênalti",
+    "PenaltyMiss": "Pênalti Perdido",
+    "YellowCard": "Cartão Amarelo",
+    "RedCard": "Cartão Vermelho",
+    "SecondYellow": "Segundo Amarelo",
+    "Substitution": "Substituição",
+    "Injury": "Lesão",
+    "KickOff": "Pontapé Inicial",
+    "HalfTime": "Intervalo",
+    "SecondHalfStart": "Início do 2º Tempo",
+    "FullTime": "Fim de Jogo",
+    "ShotSaved": "Defesa",
+    "ShotOffTarget": "Chute para Fora",
+    "ShotBlocked": "Chute Bloqueado",
+    "Corner": "Escanteio",
+    "FreeKick": "Falta",
+    "Foul": "Falta",
+    "PenaltyAwarded": "Pênalti Marcado"
+  },
+  "commentary": {
+    "Goal": {
+      "headline": "GOOOL!",
+      "lines": {
+        "0": "{{player}} balança as redes para o {{team}}!",
+        "1": "{{player}} marca! Que finalização!",
+        "2": "{{player}} faz o gol para o {{team}}!"
+      },
+      "opener": {
+        "headline": "GOOOL!",
+        "lines": {
+          "0": "{{player}} abre o placar para o {{team}}!",
+          "1": "O {{team}} sai na frente — {{player}} marca!"
+        }
+      },
+      "equaliser": {
+        "headline": "GOOOL!",
+        "lines": {
+          "0": "{{player}} empata para o {{team}}! O jogo continua!",
+          "1": "O {{team}} empata o jogo — {{player}} com o gol de empate!"
+        }
+      },
+      "extends": {
+        "headline": "GOOOL!",
+        "lines": {
+          "0": "{{player}} amplia a vantagem do {{team}}!",
+          "1": "{{player}} marca de novo — o {{team}} abrindo vantagem!"
+        }
+      },
+      "consolation": {
+        "headline": "GOL",
+        "lines": {
+          "0": "{{player}} desconta para o {{team}}.",
+          "1": "Um gol de honra para o {{team}} com {{player}} marcando."
+        }
+      },
+      "brace": {
+        "headline": "GOOOL!",
+        "lines": {
+          "0": "{{player}} marca mais um — dobradinha!",
+          "1": "Dois gols para {{player}}!"
+        }
+      },
+      "hattrick": {
+        "headline": "HAT-TRICK!",
+        "lines": {
+          "0": "{{player}} completa o hat-trick! Que espetáculo!",
+          "1": "Três gols de {{player}} — que dia histórico!"
+        }
+      }
+    },
+    "PenaltyGoal": {
+      "headline": "PÊNALTI — GOL!",
+      "lines": {
+        "0": "{{player}} encobre o goleiro e o {{team}} marca de pênalti.",
+        "1": "Sangue frio de {{player}} — pênalti convertido para o {{team}}!"
+      }
+    },
+    "PenaltyMiss": {
+      "headline": "PÊNALTI PERDIDO!",
+      "lines": {
+        "0": "{{player}} perde o pênalti! Que alívio para o {{opponent}}!",
+        "1": "Defendido! {{player}} vai ter pesadelos com este pênalti."
+      }
+    },
+    "PenaltyAwarded": {
+      "headline": "PÊNALTI!",
+      "lines": {
+        "0": "O árbitro aponta para a marca do pênalti — pênalti para o {{team}}!",
+        "1": "É pênalti para o {{team}}! Momento decisivo."
+      }
+    },
+    "ShotSaved": {
+      "headline": "GRANDE DEFESA!",
+      "lines": {
+        "0": "{{player}} obriga o goleiro a uma defesa.",
+        "1": "O goleiro impede o gol de {{player}}!"
+      },
+      "routine": {
+        "headline": "DEFENDIDO",
+        "lines": {
+          "0": "Uma defesa tranquila no chute de {{player}}.",
+          "1": "Direto para o goleiro o chute de {{player}}."
+        }
+      },
+      "strong": {
+        "headline": "BOA DEFESA!",
+        "lines": {
+          "0": "O goleiro precisa estar ligado para segurar {{player}}!",
+          "1": "Mãos firmes para negar o gol a {{player}}!"
+        }
+      },
+      "worldClass": {
+        "headline": "QUE DEFESA!",
+        "lines": {
+          "0": "Incrível! O goleiro consegue defender o chute de {{player}} de forma miraculosa!",
+          "1": "Defesa de classe mundial para negar um gol a {{player}}!"
+        }
+      }
+    },
+    "ShotOffTarget": {
+      "headline": "QUE PERTO!",
+      "lines": {
+        "0": "{{player}} manda para fora por pouco pelo {{team}}.",
+        "1": "Tão perto! {{player}} não consegue acertar o alvo."
+      },
+      "speculative": {
+        "headline": "FORA",
+        "lines": {
+          "0": "{{player}} tenta de longe mas foi muito desviado.",
+          "1": "Muito ambicioso de {{player}} — passou longe."
+        }
+      },
+      "decent": {
+        "headline": "PERTO!",
+        "lines": {
+          "0": "O chute de {{player}} passa rente à trave.",
+          "1": "Não faltou muito para {{player}}!"
+        }
+      },
+      "bigChance": {
+        "headline": "COMO QUE PERDEU?!",
+        "lines": {
+          "0": "{{player}} tinha que ter marcado ali — foi para fora de forma agonizante!",
+          "1": "Uma chance enorme desperdiçada pelo {{team}}! {{player}} não vai acreditar."
+        }
+      }
+    },
+    "ShotBlocked": {
+      "headline": "BLOQUEADO!",
+      "lines": {
+        "0": "O chute de {{player}} é bloqueado por um defensor corajoso.",
+        "1": "Corpos no caminho! {{player}} é parado."
+      },
+      "bigChance": {
+        "headline": "GRANDE BLOQUEIO!",
+        "lines": {
+          "0": "Um bloqueio crucial impede {{player}} de marcar em ótima posição!",
+          "1": "Defesa de última hora para negar o gol a {{player}}!"
+        }
+      }
+    },
+    "Foul": {
+      "headline": "FALTA",
+      "lines": {
+        "0": "{{player}} comete falta em {{victim}}. Falta para o {{opponent}}.",
+        "1": "{{player}} dá uma falta contra {{victim}}."
+      },
+      "hard": {
+        "headline": "É FALTA",
+        "lines": {
+          "0": "{{player}} entra forte em {{victim}}! Falta para o {{opponent}}.",
+          "1": "Uma entrada dura de {{player}} em {{victim}}."
+        }
+      },
+      "reckless": {
+        "headline": "IMPRUDENTE!",
+        "lines": {
+          "0": "{{player}} se joga em {{victim}} — isso é perigoso!",
+          "1": "Falta violenta de {{player}} em {{victim}}! O árbitro não vai gostar."
+        }
+      }
+    },
+    "YellowCard": {
+      "headline": "CARTÃO AMARELO",
+      "lines": {
+        "0": "{{player}} recebe o cartão amarelo pelo {{team}}.",
+        "1": "Cartão amarelo para {{player}}."
+      }
+    },
+    "RedCard": {
+      "headline": "CARTÃO VERMELHO!",
+      "lines": {
+        "0": "{{player}} é expulso! O {{team}} fica com dez!",
+        "1": "Vermelho direto para {{player}}! Desastre para o {{team}}."
+      }
+    },
+    "SecondYellow": {
+      "headline": "SEGUNDO AMARELO — EXPULSO!",
+      "lines": {
+        "0": "{{player}} recebe o segundo amarelo e é expulso!",
+        "1": "Dois amarelos e fora — {{player}} deixa o {{team}} com um a menos."
+      }
+    },
+    "Injury": {
+      "headline": "LESÃO",
+      "lines": {
+        "0": "{{player}} está no chão e precisa de atendimento.",
+        "1": "Preocupação no {{team}}: {{player}} cai lesionado."
+      }
+    },
+    "Substitution": {
+      "headline": "SUBSTITUIÇÃO",
+      "lines": {
+        "0": "O {{team}} faz uma mudança: {{player}} entra, {{victim}} sai.",
+        "1": "{{player}} substitui {{victim}} no {{team}}."
+      }
+    },
+    "KickOff": {
+      "headline": "INÍCIO DE JOGO",
+      "lines": {
+        "0": "A bola está rolando!",
+        "1": "A partida começou!"
+      }
+    },
+    "HalfTime": {
+      "headline": "INTERVALO",
+      "lines": {
+        "0": "O árbitro apita o final do primeiro tempo.",
+        "1": "É o fim do primeiro tempo."
+      }
+    },
+    "SecondHalfStart": {
+      "headline": "SEGUNDO TEMPO",
+      "lines": {
+        "0": "Estamos de volta para o segundo tempo.",
+        "1": "O segundo tempo começa!"
+      }
+    },
+    "FullTime": {
+      "headline": "FIM DE JOGO",
+      "lines": {
+        "0": "É isso — fim de jogo!",
+        "1": "O árbitro encerra a partida."
+      }
+    }
+  },
+  "recommendedPlan": "Plano recomendado",
+  "recommendedChanges": "Mudanças recomendadas",
+  "noRecommendedChanges": "Ainda não existe uma mudança clara que se destaque.",
+  "quickTacticalTweaks": "Ajustes táticos rápidos",
+  "roleFit": "Encaixe da função",
+  "fitExact": "Exato",
+  "fitAdjusted": "Ajustado",
+  "subRecommendationReasons": {
+    "low-fitness": "Baixa condição",
+    "yellow-risk": "Risco de cartão",
+    "fresh-legs": "Pernas frescas",
+    "upgrade": "Ganho de qualidade",
+    "role-match": "Encaixe de função",
+    "attacking-boost": "Impulso ofensivo",
+    "defensive-cover": "Cobertura defensiva"
+  },
+  "subScenario": {
+    "steady": {
+      "title": "Gestão Estável",
+      "description": "Ainda não há necessidade de forçar o jogo. Priorize ganhos limpos de energia e trocas posição por posição."
+    },
+    "protect-lead": {
+      "title": "Proteger A Vantagem",
+      "description": "A prioridade é controle e segurança defensiva. Pernas frescas e perfis mais seguros importam mais neste momento."
+    },
+    "find-winner": {
+      "title": "Buscar A Vitória",
+      "description": "O jogo ainda pode ser ganho. Procure pernas mais vivas e opções mais agressivas."
+    },
+    "chase-goal": {
+      "title": "Buscar O Gol",
+      "description": "Você precisa de mais ameaça. Priorize energia ofensiva, risco e jogadores capazes de mudar o ritmo."
+    }
+  },
+  "matchReport": "Relatório da partida",
+  "playerRatings": "Avaliações",
+  "yourResult": "Seu resultado",
+  "continue": "Continuar",
+  "notableUpset": "Grande surpresa",
+  "pts": "pts"
+}

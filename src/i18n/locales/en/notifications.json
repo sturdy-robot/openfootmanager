@@ -1,0 +1,16 @@
+{
+  "attentionRequired": "Attention Required",
+  "resolveBeforeContinuing": "Resolve these issues before continuing",
+  "goTo": "Go to",
+  "reviewIssues": "Review Issues",
+  "continueAnyway": "Continue Anyway",
+  "blockers": {
+    "injuredXi": "{{count}} injured player(s) in Starting XI: {{players}}",
+    "incompleteXi": "Starting XI has only {{count}} healthy players — set your lineup",
+    "squadSizeCrisis": "Squad has only {{count}} contracted player(s) — sign players before match day",
+    "plannedContractExitCrisis": "Planned contract exits would leave only {{healthyPlayers}} healthy player(s) and {{goalkeepers}} goalkeeper(s): {{players}}",
+    "urgentMessages": "{{count}} urgent unread message(s)",
+    "keyContractRisk": "Key player contract risk in squad planning: {{players}}",
+    "contractWageRisk": "{{amount}} of wages are tied to at-risk contracts — review your wage budget"
+  }
+}

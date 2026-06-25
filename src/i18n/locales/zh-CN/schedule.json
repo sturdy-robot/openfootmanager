@@ -1,0 +1,32 @@
+{
+  "noSchedule": "暂无联赛赛程。",
+  "noLeague": "暂无联赛赛程。",
+  "standingsUnavailable": "这项赛事暂无积分榜。",
+  "fixtures": "赛程",
+  "standings": "积分榜",
+  "matchday": "第 {{number}} 轮",
+  "season": "第 {{number}} 赛季",
+  "international": "国际",
+  "internationalDuty": "国家队征召",
+  "promotionZone": "升级区",
+  "loadMore": "加载更多",
+  "relegationZone": "降级区",
+  "nextMatch": "下一场比赛",
+  "noUpcoming": "没有即将到来的比赛。",
+  "pastResults": "过去结果",
+  "calendar": {
+    "title": "日历",
+    "mon": "一",
+    "tue": "二",
+    "wed": "三",
+    "thu": "四",
+    "fri": "五",
+    "sat": "六",
+    "sun": "日",
+    "prevMonth": "上个月",
+    "nextMonth": "下个月",
+    "dayWithFixtures": "{{date}} — 有比赛",
+    "yourMatch": "您的比赛",
+    "otherFixtures": "其他比赛"
+  }
+}

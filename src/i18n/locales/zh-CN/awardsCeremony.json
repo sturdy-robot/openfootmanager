@@ -1,0 +1,12 @@
+{
+  "title": "颁奖典礼",
+  "subtitle": "{{league}} 第 {{season}} 赛季",
+  "managerOfSeason": "赛季最佳主教练",
+  "goldenBoot": "金靴奖",
+  "playerOfYear": "年度最佳球员",
+  "continue": "继续返回仪表盘",
+  "back": "返回新闻",
+  "goals": "进球",
+  "rating": "评分",
+  "winRate": "胜率"
+}

@@ -1,0 +1,9 @@
+{
+  "saveConfirm": {
+    "title": "Guardar Perfil",
+    "body": "Fizeste alterações ao perfil de {{name}}. O que queres fazer?",
+    "update": "Atualizar \"{{name}}\"",
+    "saveNew": "Guardar como Novo Perfil",
+    "skip": "Continuar sem guardar"
+  }
+}

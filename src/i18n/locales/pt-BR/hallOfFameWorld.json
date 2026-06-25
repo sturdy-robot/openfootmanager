@@ -1,0 +1,22 @@
+{
+  "title": "Hall da Fama",
+  "subtitle": "Lendas aposentadas e campeões do passado",
+  "legends": "Lendas aposentadas",
+  "pastChampions": "Campeões do passado",
+  "worldCupChampions": "Campeões da Copa do Mundo",
+  "worldCupEdition": "Copa do Mundo de {{year}}",
+  "noLegends": "Ainda não há lendas aposentadas registradas.",
+  "noChampions": "Ainda não há campeões do passado registrados.",
+  "appearances": "Jogos",
+  "goals": "Gols",
+  "assists": "Assistências",
+  "titles": "Títulos",
+  "lastClub": "Último clube",
+  "finalSeason": "Última temporada",
+  "played": "Jogados",
+  "record": "Campanha",
+  "goalDifference": "Saldo de gols",
+  "legendsCount": "Lendas registradas",
+  "championsCount": "Temporadas campeãs",
+  "seasonLabel": "Temporada {{season}}"
+}

@@ -1,0 +1,125 @@
+{
+  "weeklySchedule": "Programma settimanale",
+  "trainingFocus": "Focus allenamento",
+  "intensity": "Intensità",
+  "squadFitness": "Forma della rosa",
+  "playerFitness": "Forma dei giocatori",
+  "avgCondition": "Condizione media",
+  "avgMorale": "Morale medio",
+  "train": "Allenamento",
+  "rest": "Riposo",
+  "todayIs": "Oggi è <strong>{{day}}</strong> — {{type}}.",
+  "aTrainingDay": "un giorno di allenamento",
+  "aRestDay": "un giorno di riposo",
+  "currentlyTraining": "Attualmente in allenamento: <strong>{{attrs}}</strong> con intensità <strong>{{intensity}}</strong>.",
+  "recoveryNote": "I giocatori si concentreranno su riposo e recupero della condizione in tutti i giorni.",
+  "effectiveFocus": "Focus",
+  "trainingAppliedNote": "L'allenamento viene applicato nei giorni previsti quando avanzi il tempo. I giorni di riposo garantiscono recupero completo.",
+  "criticalCondition": "{{count}} giocatore/i in condizioni critiche (<25%)",
+  "exhaustedPlayers": "{{count}} giocatore/i esausto/i (<40%)",
+  "staffAlert": "Allerta staff",
+  "staffWarning": "Avviso staff",
+  "staffSuggestion": "Suggerimento staff",
+  "staffAdvice": {
+    "critical": "Crisi di forma fisica! {{criticalCount}} giocatore/i in condizioni critiche. {{scheduleAdvice}}",
+    "warn": "La squadra è stanca (media {{avgCondition}}%, {{exhaustedCount}} sotto il 40%). {{scheduleAdvice}}",
+    "ok": "La forma fisica della squadra è alta. Potresti passare a Bilanciato o Intenso per più sviluppo.",
+    "scheduleAdvice": {
+      "criticalIntense": "Passa immediatamente a un programma Bilanciato o Leggero.",
+      "criticalBalanced": "Considera un programma Leggero o il focus Recupero.",
+      "criticalLight": "Imposta il focus su Recupero finché la condizione non migliora.",
+      "warnIntense": "Un programma Bilanciato darebbe più tempo di recupero.",
+      "warnBalanced": "Un programma Leggero potrebbe aiutare la squadra a riprendersi.",
+      "warnLight": "Il focus Recupero massimizzerebbe il recupero della condizione."
+    }
+  },
+  "focuses": {
+    "Physical": {
+      "label": "Fisico",
+      "desc": "Migliora forma e potenza"
+    },
+    "Technical": {
+      "label": "Tecnico",
+      "desc": "Affina la tecnica con la palla"
+    },
+    "Tactical": {
+      "label": "Tattico",
+      "desc": "Migliora l'intelligenza di gioco"
+    },
+    "Defending": {
+      "label": "Difesa",
+      "desc": "Rafforza il reparto arretrato"
+    },
+    "Attacking": {
+      "label": "Attacco",
+      "desc": "Aumenta la pericolosità offensiva"
+    },
+    "Recovery": {
+      "label": "Recupero",
+      "desc": "Giorno di riposo — recupero massimo"
+    }
+  },
+  "intensities": {
+    "Low": {
+      "label": "Bassa",
+      "desc": "Sessione leggera — meno fatica, crescita più lenta"
+    },
+    "Medium": {
+      "label": "Media",
+      "desc": "Carico equilibrato — risultati standard"
+    },
+    "High": {
+      "label": "Alta",
+      "desc": "Allenamento intenso — crescita più rapida, più fatica"
+    }
+  },
+  "schedules": {
+    "Intense": {
+      "label": "Intenso",
+      "desc": "6 giorni di allenamento, 1 di riposo",
+      "detail": "Massimo sviluppo dei giocatori. Solo domenica libera. Rischio di accumulo di fatica."
+    },
+    "Balanced": {
+      "label": "Equilibrato",
+      "desc": "4 giorni di allenamento, 3 di riposo",
+      "detail": "Allenati lun, mar, gio, ven. Riposo mer, sab, dom. Consigliato per la maggior parte delle rose."
+    },
+    "Light": {
+      "label": "Leggero",
+      "desc": "2 giorni di allenamento, 5 di riposo",
+      "detail": "Allenamento solo mar e gio. Privilegia il recupero. Ottimo dopo calendari molto fitti."
+    }
+  },
+  "days": {
+    "mon": "Lun",
+    "tue": "Mar",
+    "wed": "Mer",
+    "thu": "Gio",
+    "fri": "Ven",
+    "sat": "Sab",
+    "sun": "Dom"
+  },
+  "groups": {
+    "trainingGroups": "Gruppi di allenamento",
+    "trainingGroupsDesc": "Assegna i giocatori a gruppi con focus diversi. I giocatori non assegnati usano il focus predefinito della squadra.",
+    "addGroup": "Aggiungi gruppo",
+    "groupName": "Nome gruppo",
+    "groupFocus": "Focus",
+    "removeGroup": "Rimuovi gruppo",
+    "ungrouped": "Non assegnati",
+    "noGroups": "Nessun gruppo di allenamento creato. Aggiungi un gruppo e assegna i giocatori per personalizzare il loro allenamento.",
+    "group": "Gruppo",
+    "teamDefault": "Predefinito squadra",
+    "assignPlayer": "Assegna al gruppo",
+    "removePlayer": "Rimuovi dal gruppo",
+    "playerCount": "{{count}} giocatore/i",
+    "maxGroups": "Massimo 5 gruppi di allenamento consentiti.",
+    "defaultGroupNames": {
+      "0": "Difensori",
+      "1": "Centrocampisti",
+      "2": "Attaccanti",
+      "3": "Giovani",
+      "4": "Recupero"
+    }
+  }
+}

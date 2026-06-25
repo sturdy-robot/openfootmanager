@@ -1,0 +1,22 @@
+{
+  "formationFit": "Ajustement Formation",
+  "autoSelect": "Sélection Auto du XI",
+  "selecting": "Sélection...",
+  "startingXI": "Onze de Départ",
+  "substitutes": "Remplaçants",
+  "opponent": "Adversaire",
+  "nPlayers": "{{count}} joueurs",
+  "nAvailable": "{{count}} disponibles",
+  "noBench": "Aucun remplaçant disponible.",
+  "cancelSwap": "Annuler",
+  "swapHint": "Sélectionnez un remplaçant pour l'échange",
+  "setPieces": "Coups de Pied Arrêtés et Capitaine",
+  "lineup": "Composition",
+  "startMatch": "Lancer le Match",
+  "captain": "Capitaine",
+  "penaltyTaker": "Tireur de Penalty",
+  "freeKickTaker": "Tireur de Coup Franc",
+  "cornerTaker": "Tireur de Corner",
+  "fit": "APT",
+  "keyStats": "Stats Clés"
+}

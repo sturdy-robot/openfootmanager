@@ -1,0 +1,86 @@
+{
+  "Speedster": {
+    "label": "Speedster",
+    "desc": "Exceptional pace"
+  },
+  "Tank": {
+    "label": "Tank",
+    "desc": "Powerful and tireless"
+  },
+  "Agile": {
+    "label": "Agile",
+    "desc": "Quick and nimble"
+  },
+  "Tireless": {
+    "label": "Tireless",
+    "desc": "Never runs out of energy"
+  },
+  "Playmaker": {
+    "label": "Playmaker",
+    "desc": "Creative passer with vision"
+  },
+  "Sharpshooter": {
+    "label": "Sharpshooter",
+    "desc": "Clinical finisher"
+  },
+  "Dribbler": {
+    "label": "Dribbler",
+    "desc": "Skillful on the ball"
+  },
+  "BallWinner": {
+    "label": "Ball Winner",
+    "desc": "Wins the ball back relentlessly"
+  },
+  "Rock": {
+    "label": "Rock",
+    "desc": "Immovable defensive wall"
+  },
+  "Leader": {
+    "label": "Leader",
+    "desc": "Inspires teammates"
+  },
+  "CoolHead": {
+    "label": "Cool Head",
+    "desc": "Calm under pressure"
+  },
+  "Visionary": {
+    "label": "Visionary",
+    "desc": "Sees passes others can't"
+  },
+  "HotHead": {
+    "label": "Hot Head",
+    "desc": "Prone to losing temper"
+  },
+  "TeamPlayer": {
+    "label": "Team Player",
+    "desc": "Always puts the team first"
+  },
+  "SafeHands": {
+    "label": "Safe Hands",
+    "desc": "Reliable shot stopper"
+  },
+  "CatReflexes": {
+    "label": "Cat Reflexes",
+    "desc": "Lightning-fast reflexes"
+  },
+  "AerialDominance": {
+    "label": "Aerial Dom.",
+    "desc": "Commands the box in the air"
+  },
+  "CompleteForward": {
+    "label": "Complete Forward",
+    "desc": "Dangerous in every way"
+  },
+  "Engine": {
+    "label": "Engine",
+    "desc": "Box-to-box powerhouse"
+  },
+  "SetPieceSpecialist": {
+    "label": "Set Piece Spec.",
+    "desc": "Deadly from dead balls"
+  },
+  "Wonderkid": {
+    "label": "Wonderkid",
+    "desc": "Young talent with exceptional potential"
+  }
+}

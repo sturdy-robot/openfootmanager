@@ -1,0 +1,17 @@
+{
+  "title": "Transferzentrum",
+  "subtitle": "Verfolge Transfergerüchte und abgeschlossene Deals in der ganzen Liga",
+  "rumours": "Gerüchte",
+  "completedDeals": "Abgeschlossene Deals",
+  "currentClub": "Aktueller Klub",
+  "sourceClub": "Von",
+  "destinationClub": "Zu",
+  "reportedOn": "Gemeldet",
+  "agreedOn": "Abgeschlossen",
+  "fee": "Ablöse",
+  "noRumours": "Keine aktiven Gerüchte.",
+  "noCompletedDeals": "Keine abgeschlossenen Deals erfasst.",
+  "rumourTag": "Gerücht",
+  "completedTag": "Abgeschlossen",
+  "playerButton": "{{player}} ansehen"
+}

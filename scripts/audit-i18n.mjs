@@ -398,21 +398,37 @@ function groupByFile(findings) {
   }, new Map());
 }
 
+function mergeLocaleBundle(localeDir) {
+  const domainFiles = fs
+    .readdirSync(localeDir, { withFileTypes: true })
+    .filter((e) => e.isFile() && e.name.endsWith(".json"))
+    .map((e) => e.name);
+
+  const bundle = {};
+  for (const filename of domainFiles) {
+    const domain = filename.slice(0, -5);
+    bundle[domain] = readJson(path.join(localeDir, filename));
+  }
+  return bundle;
+}
+
 function printLocaleCoverage() {
-  const localeFiles = walkFiles(
-    LOCALES_DIR,
-    (filePath) => path.extname(filePath) === ".json",
-  ).sort();
-  const english = readJson(path.join(LOCALES_DIR, "en.json"));
+  const localeCodes = fs
+    .readdirSync(LOCALES_DIR, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name)
+    .sort();
+
+  const english = mergeLocaleBundle(path.join(LOCALES_DIR, "en"));
 
   console.log("Locale coverage");
 
   let missingLocaleCount = 0;
-  for (const filePath of localeFiles) {
-    const localeCode = path.basename(filePath, ".json");
+  for (const localeCode of localeCodes) {
     if (localeCode === "en") continue;
 
-    const missingKeys = collectMissingKeys(english, readJson(filePath));
+    const bundle = mergeLocaleBundle(path.join(LOCALES_DIR, localeCode));
+    const missingKeys = collectMissingKeys(english, bundle);
     if (missingKeys.length === 0) continue;
 
     missingLocaleCount += 1;

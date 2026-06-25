@@ -1,8 +1,19 @@
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
-import { hasLocaleKey } from "./i18nTestHelpers";
-import en from "./locales/en.json";
+import { hasLocaleKey, type LocaleTree } from "./i18nTestHelpers";
+
+const enModules = import.meta.glob<{ default: Record<string, unknown> }>(
+  "./locales/en/*.json",
+  { eager: true },
+);
+
+const en = Object.fromEntries(
+  Object.entries(enModules).map(([path, module]) => [
+    path.slice("./locales/en/".length, -5),
+    module.default,
+  ]),
+) as LocaleTree;
 
 const sourceModules = import.meta.glob("../**/*.ts", {
   eager: true,

@@ -1,0 +1,8 @@
+{
+  "objective": {
+    "LeaguePosition": "Beende die Saison unter den Top {{target}}",
+    "Wins": "Gewinne mindestens {{target}} Spiele",
+    "GoalsScored": "Erziele mindestens {{target}} Tore",
+    "FinancialStability": "Halte die Lohnausgaben bei höchstens {{target}} % des Budgets"
+  }
+}

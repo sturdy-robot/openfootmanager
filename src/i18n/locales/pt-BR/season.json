@@ -1,0 +1,28 @@
+{
+  "preseasonStatus": "Status da pré-temporada",
+  "preseasonFocus": "Use este período para preparar o elenco, revisar o mercado e chegar pronto para a estreia.",
+  "friendly": "Amistoso",
+  "preseasonTournament": "Torneio de pré-temporada",
+  "opener": "Estreia da temporada",
+  "startsOn": "Começa em {{date}}",
+  "startsInDays": "Faltam {{count}} dia(s) para a estreia",
+  "noOpener": "A estreia ainda não foi agendada.",
+  "standingsLocked": "A classificação será liberada depois do início dos jogos oficiais.",
+  "tournamentsPreseasonHint": "Tabelas e disputas por prêmios aparecerão quando a temporada começar.",
+  "windowClosed": "Janela fechada",
+  "windowClosesToday": "Dia final da janela",
+  "windowClosesInDays": "Faltam {{count}} dia(s) para o fechamento da janela",
+  "windowOpensInDays": "Faltam {{count}} dia(s) para a abertura da janela",
+  "windowOpensOn": "A janela abre em {{date}}",
+  "windowClosesOn": "A janela fecha em {{date}}",
+  "phases": {
+    "Preseason": "Pré-temporada",
+    "InSeason": "Temporada em andamento",
+    "PostSeason": "Pós-temporada"
+  },
+  "transferWindowStatus": {
+    "Closed": "Janela Fechada",
+    "Open": "Janela Aberta",
+    "DeadlineDay": "Dia Final"
+  }
+}

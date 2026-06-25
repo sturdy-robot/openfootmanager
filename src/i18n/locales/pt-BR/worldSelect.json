@@ -1,0 +1,43 @@
+{
+  "title": "Escolher Mundo",
+  "scanning": "Buscando bancos de dados...",
+  "importFile": "Importar arquivo",
+  "importPackage": "Importar pacote de mundo",
+  "packageErrorsTitle": "Problemas do pacote",
+  "importCompetitions": "Adicionar arquivo de competições",
+  "removeCompetitions": "Remover",
+  "competitionsErrorsTitle": "Este arquivo de competições não pode ser usado:",
+  "startCareer": "Iniciar Carreira",
+  "creatingWorld": "Criando Mundo...",
+  "teams": "{{count}} times",
+  "players": "{{count}} jogadores",
+  "randomWorld": "Mundo Aleatório",
+  "randomDescription": "Um mundo gerado proceduralmente com clubes, jogadores e staff",
+  "historyMode": {
+    "generated": "Histórico gerado",
+    "reference": "Histórico de referência",
+    "hybrid": "Histórico híbrido"
+  },
+  "summary": {
+    "startYear": "Início da carreira",
+    "seasonStart": {
+      "generated": "Comece em {{year}} com um mundo novo e {{count}} temporadas de histórico gerado.",
+      "reference": "Comece em {{year}} usando o snapshot histórico selecionado como base do mundo.",
+      "hybrid": "Comece em {{year}} usando o elenco deste banco de dados enquanto {{count}} temporadas do histórico ausente são geradas ao redor."
+    },
+    "midSeason": {
+      "generated": "Assuma o time na metade de {{year}} com tabela, calendário, notícias, histórico de partidas e {{count}} temporadas de histórico gerado.",
+      "reference": "Assuma o time na metade de {{year}} com o snapshot histórico selecionado e o contexto da temporada já presente.",
+      "hybrid": "Assuma o time na metade de {{year}} com o elenco deste banco de dados mais {{count}} temporadas de contexto histórico gerado e progresso de temporada herdado."
+    }
+  },
+  "historyDepth": {
+    "label": "Histórico gerado",
+    "hint": "Escolha quanto passado gerar. Arquivos mais profundos adicionam contexto, mas levam mais tempo para criar.",
+    "reference": "Este mundo já inclui seu próprio arquivo histórico.",
+    "applied": "{{count}} temporadas geradas",
+    "none": "Sem histórico prévio",
+    "option": "{{count}} temporadas",
+    "recommended": "Recomendado"
+  }
+}

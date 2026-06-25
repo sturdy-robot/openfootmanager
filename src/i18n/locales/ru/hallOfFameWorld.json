@@ -1,0 +1,22 @@
+{
+  "title": "Зал славы",
+  "subtitle": "Завершившие карьеру легенды и прошлые чемпионы",
+  "legends": "Легенды",
+  "pastChampions": "Прошлые чемпионы",
+  "worldCupChampions": "Чемпионы мира",
+  "worldCupEdition": "Чемпионат мира {{year}}",
+  "noLegends": "Завершивших карьеру легенд пока нет.",
+  "noChampions": "Чемпионские сезоны пока не зафиксированы.",
+  "appearances": "Матчи",
+  "goals": "Голы",
+  "assists": "Голевые передачи",
+  "titles": "Титулы",
+  "lastClub": "Последний клуб",
+  "finalSeason": "Финальный сезон",
+  "played": "Сыграно",
+  "record": "Баланс",
+  "goalDifference": "Разница мячей",
+  "legendsCount": "Легенд в архиве",
+  "championsCount": "Чемпионских сезонов",
+  "seasonLabel": "Сезон {{season}}"
+}

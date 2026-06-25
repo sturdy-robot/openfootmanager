@@ -1,0 +1,882 @@
+{
+  "error": {
+    "noActiveGameSession": "No active game session",
+    "noActiveSaveSession": "No active save session",
+    "saveNotFound": "Save '{{saveId}}' not found.",
+    "saveManagerUnavailable": "Save data is temporarily unavailable.",
+    "saveDeleteFailed": "Failed to delete the save file.",
+    "settings": {
+      "loadFailed": "Failed to load settings.",
+      "parseFailed": "Settings data is invalid.",
+      "saveFailed": "Failed to save settings.",
+      "invalidCurrency": "Selected currency is not supported."
+    },
+    "profiles": {
+      "loadFailed": "Failed to load manager profiles.",
+      "saveFailed": "Failed to save manager profile.",
+      "pathFailed": "Could not resolve the profiles storage path."
+    },
+    "teamNotFound": "Team not found",
+    "jobOffer": {
+      "teamNotVacant": "This club is no longer looking for a manager."
+    },
+    "noTeamAssigned": "No team assigned",
+    "playerNotOnTeam": "Player does not belong to your team",
+    "roleNotValidForPosition": "This role is not valid for the player's position",
+    "invalidPlayerRole": "Invalid player role",
+    "playerNotFound": "Player not found",
+    "invalidSquadRole": "Invalid squad role",
+    "jerseyNumberOutOfRange": "Jersey number must be between 1 and 99",
+    "jerseyNumberTaken": "That jersey number is already taken by another player in your squad",
+    "invalidKitPattern": "Invalid kit pattern",
+    "staffMemberNotFound": "Staff member not found",
+    "staffMemberAlreadyEmployed": "Staff member already employed by a team",
+    "playerNotInSquad": "Player is not in your squad",
+    "playerNotInClub": "Player does not belong to your club",
+    "invalidDateOfBirth": "Invalid date of birth",
+    "youthAcademyOverage": "Only players aged 21 or under can join the youth academy",
+    "staffMemberNotInTeam": "Staff member does not belong to your team",
+    "noActiveLiveMatch": "No active live match",
+    "seasonNotComplete": "Season is not yet complete",
+    "managedTeamNotFound": "Managed team not found",
+    "unknownFacilityType": "Unknown facility type",
+    "liveMatch": {
+      "noLeague": "No league data is available for this match.",
+      "fixtureNotFound": "The selected fixture could not be found.",
+      "maxSubstitutionsReached": "Maximum substitutions reached",
+      "preMatchSwapTooLate": "Pre-match swaps are only allowed before kick-off",
+      "cannotSubstituteSentOffPlayer": "Cannot substitute a sent-off player",
+      "playerNotOnPitch": "Player not on pitch",
+      "playerAlreadySubstitutedOff": "Player has already been substituted off",
+      "playerNotOnBench": "Player not on bench",
+      "playerNotInStartingXi": "Player not in starting XI"
+    },
+    "worldReadFileFailed": "Failed to read the world database file.",
+    "package": {
+      "invalid": "This world package is invalid and could not be loaded.",
+      "readFailed": "A package file could not be read.",
+      "missingSchema": "A package file is missing its \"schema\" field.",
+      "unknownSchema": "Unknown schema \"{{schema}}\".",
+      "invalidEntity": "A \"{{schema}}\" entry is invalid.",
+      "missingId": "A {{kind}} entry is missing its id.",
+      "duplicateId": "Duplicate {{kind}} id \"{{id}}\".",
+      "unknownConfederation": "Country \"{{country}}\" references unknown confederation \"{{confederation}}\".",
+      "unknownCountry": "\"{{entity}}\" references unknown country \"{{country}}\".",
+      "unknownTeam": "Player \"{{player}}\" references unknown club \"{{team}}\"."
+    },
+    "competitionDef": {
+      "invalidEmbedded": "This world's competition definitions are invalid and could not be loaded.",
+      "invalidStandalone": "The selected competition definition file is invalid.",
+      "parseFailed": "The competition definition file could not be read as JSON.",
+      "unsupportedVersion": "Unsupported format version {{version}}; this build supports up to {{supported}}.",
+      "berthUnknownTarget": "A qualification berth points at unknown competition \"{{target}}\".",
+      "berthInvalidRange": "Invalid berth position range {{from}}–{{to}}.",
+      "berthRequiresLeague": "Position and playoff berths can only be awarded by a league table.",
+      "berthRequiresCup": "A cup-winner berth can only be awarded by a knockout competition.",
+      "berthPlayoffTooSmall": "A playoff berth needs at least two contestants.",
+      "emptyId": "A competition is missing its id.",
+      "duplicateId": "Duplicate competition id \"{{id}}\".",
+      "emptyName": "A competition is missing its name.",
+      "unknownRegion": "Unknown region \"{{region}}\".",
+      "unknownCountry": "Unknown country \"{{country}}\".",
+      "groupConfigOnNonGroupFormat": "Group settings only apply to a group-and-knockout format.",
+      "groupSizeTooSmall": "Group size {{groupSize}} is too small (minimum 2).",
+      "zeroLegs": "A competition needs at least one leg.",
+      "noParticipants": "No participants: provide an explicit list or a selector.",
+      "bothParticipantSources": "Provide either an explicit list or a selector, not both.",
+      "tooFewParticipants": "At least two participants are required.",
+      "unknownTeam": "Unknown team \"{{team}}\".",
+      "selectorMissingCountry": "This selector needs a country.",
+      "selectorCountTooSmall": "This selector needs a count of at least 2.",
+      "selectorMissingRegion": "This selector needs a region.",
+      "unknownSourceCompetition": "Unknown source competition \"{{source}}\".",
+      "selectorMissingSource": "This selector needs a source competition.",
+      "unknownExcludedCompetition": "Unknown excluded competition \"{{excluded}}\".",
+      "selectorCycle": "Circular qualification between competitions."
+    },
+    "worldParseFailed": "Failed to parse the world database file.",
+    "worldWriteFileFailed": "Failed to export the world database file.",
+    "worldWriteDatabaseFailed": "Failed to save the imported world database.",
+    "worldSerializeFailed": "Failed to export the world database data.",
+    "saveLoad": {
+      "corrupted": "This save file is corrupted and can't be loaded.",
+      "incompatibleVersion": "This save was made by a newer version of the game (save v{{saveVersion}}; this build supports up to v{{supported}}). Update the game to load it.",
+      "missingData": "This save is missing required data and can't be loaded.",
+      "invalidWorld": "This save's world or mod data is invalid and can't be loaded.",
+      "unknown": "This save couldn't be loaded due to an unexpected error."
+    },
+    "gameDatabase": {
+      "openFailed": "Failed to open save data.",
+      "migrationFailed": "Failed to prepare save data.",
+      "schemaVersionReadFailed": "Failed to read the save data schema version.",
+      "currentVersionReadFailed": "Failed to validate the save data schema version."
+    },
+    "gamePersistence": {
+      "gameMetaMissing": "Save data is missing core game metadata.",
+      "invalidStartDate": "Save data has an invalid start date.",
+      "invalidGameDate": "Save data has an invalid current date.",
+      "managerNotFound": "Manager '{{managerId}}' was not found in this save.",
+      "loadFailed": "Failed to load save data.",
+      "writeFailed": "Failed to save game data."
+    },
+    "saveIndex": {
+      "checksumReadFailed": "Failed to read save data for checksum validation.",
+      "loadFailed": "Failed to load the save index.",
+      "writeFailed": "Failed to update the save index."
+    },
+    "finance": {
+      "boardSupportUnavailable": "Emergency board support is only available when cash reserves are under pressure.",
+      "boardSupportAlreadyUsed": "The board has already approved emergency support this season.",
+      "sponsorPitchUnavailable": "Sponsor pitches are only available when the club is under wage or cash pressure.",
+      "sponsorPitchPendingOffer": "There is already a sponsor offer waiting for your decision.",
+      "sponsorPitchAlreadyAttemptedToday": "The commercial team has already pitched sponsors today.",
+      "sponsorPitchActiveSponsor": "An active sponsorship deal is already in place.",
+      "marketingCampaignUnavailable": "Marketing campaigns are only available when the club is under wage or cash pressure.",
+      "marketingCampaignCoolingDown": "The commercial team needs time before running another marketing campaign.",
+      "facilityUpgradeInsufficientFunds": "Insufficient funds for this facility upgrade. Need {{amount}}.",
+      "facilityUpgradeOverBudget": "Facility upgrades are blocked while the club is over its wage budget.",
+      "facilityUpgradeCritical": "Facility upgrades are blocked while the club is under serious financial pressure."
+    },
+    "createManager": {
+      "nameRequired": "First name and last name are required.",
+      "nameMaxLength": "First name and last name must not exceed 30 characters.",
+      "nationalityRequired": "Nationality is required.",
+      "invalidDobFormat": "Invalid date of birth. Use YYYY-MM-DD format.",
+      "minAge": "Manager must be at least 30 years old.",
+      "invalidDob": "Invalid date of birth.",
+      "startYearMin": "Start year must be 2020 or later.",
+      "invalidStartYear": "Invalid start year selected.",
+      "invalidStartPhase": "Invalid start phase selected.",
+      "historyDepthMax": "Generated history depth must be 24 seasons or fewer."
+    },
+    "transfers": {
+      "transferWindowClosed": "Transfer window is closed",
+      "cannotBidOnOwnPlayer": "Cannot bid on your own player",
+      "playerHasNoTeam": "Player has no team",
+      "insufficientFunds": "Insufficient funds",
+      "transferBudgetTooLow": "Transfer budget too low",
+      "playerNotOwnedByUser": "Player not found or not yours",
+      "offerNotPending": "Offer not found or not pending",
+      "counterOfferMustExceedCurrentOffer": "Counter offer must exceed current offer",
+      "invalidYouthScoutingRegion": "Unsupported youth scouting region.",
+      "invalidYouthScoutingObjective": "Unsupported youth scouting objective.",
+      "invalidYouthScoutingTargetPosition": "Unsupported youth scouting target position."
+    },
+    "contracts": {
+      "playerNotOwnedByClub": "Player does not belong to your club",
+      "playerNotFreeAgent": "Player is not a free agent",
+      "unableToCalculateContractEndDate": "Unable to calculate new contract end date",
+      "playerHasNoActiveContract": "Player does not have an active contract",
+      "terminationWouldLeaveMatchdaySquadShort": "Terminating this contract would leave your squad unable to field a matchday XI",
+      "noAssistantManagerAssigned": "No assistant manager assigned to your team",
+      "playerHasNoTeam": "Player has no team",
+      "boardWagePolicy": "Renewal blocked by board wage policy. Keep annual wages near {{budget}} to recover."
+    },
+    "scouting": {
+      "scoutNotFound": "Scout not found",
+      "staffMemberNotScout": "Staff member is not a scout",
+      "scoutNotInTeam": "Scout does not belong to your team",
+      "cannotScoutOwnPlayer": "Cannot scout your own players",
+      "scoutAssignmentFull": "Scout is already assigned to another scouting task ({{currentCount}}/{{maxSlots}} assignments).",
+      "playerAlreadyScouted": "This player is already being scouted",
+      "youthSearchAlreadyActive": "A matching youth recruitment search is already active",
+      "youthAssignmentNotFound": "Youth recruitment assignment not found",
+      "scoutAlreadyAssignedToSearch": "Scout is already assigned to this search"
+    }
+  },
+  "sender": {
+    "boardOfDirectors": "Board of Directors",
+    "leagueOffice": "League Office",
+    "assistantManager": "Assistant Manager",
+    "matchReporter": "Match Reporter",
+    "headPhysio": "Head Physio",
+    "financialDirector": "Financial Director",
+    "commercialDirector": "Commercial Director",
+    "communityManager": "Community Manager",
+    "directorOfFootball": "Director of Football",
+    "intlLiaison": "International Liaison",
+    "player": "Player",
+    "pressOfficer": "Press Officer",
+    "scout": "Scout",
+    "transferCommittee": "Transfer Committee"
+  },
+  "role": {
+    "chairman": "Chairman",
+    "competitionSecretary": "Competition Secretary",
+    "assistantManager": "Assistant Manager",
+    "pressOfficer": "Press Officer",
+    "headPhysio": "Head Physio",
+    "financialDirector": "Financial Director",
+    "commercialDirector": "Commercial Director",
+    "communityManager": "Community Manager",
+    "directorOfFootball": "Director of Football",
+    "intlLiaison": "International Liaison",
+    "player": "Player",
+    "scout": "Scout"
+  },
+  "source": {
+    "sportsGazette": "Sports Gazette",
+    "footballHerald": "The Football Herald",
+    "matchDayPress": "Match Day Press",
+    "leagueChronicle": "League Chronicle",
+    "leagueWire": "League Wire",
+    "transferIntelligence": "Transfer Intelligence",
+    "sportsDaily": "Sports Daily"
+  },
+  "msg": {
+    "world": {
+      "randomName": "Random World",
+      "randomDescription": "Randomly generated league with {{teamCount}} teams across Europe",
+      "exportedName": "Exported World",
+      "exportedDescription": "World with {{teamCount}} teams exported from saved game"
+    },
+    "welcome": {
+      "subject0": "Welcome to {{team}}",
+      "subject1": "New Era at {{team}}",
+      "subject2": "{{team}} Awaits Your Leadership",
+      "body0": "The board of directors at {{team}} is delighted to welcome you as the new manager.\n\nWe have high hopes for your tenure and believe you can lead this club to glory. Your first task will be to review the squad and prepare a tactical plan for the upcoming season.\n\nWe wish you the best of luck.",
+      "body1": "On behalf of the entire {{team}} family, we are thrilled to announce your appointment as manager.\n\nThe fans are eager to see your vision for the team. Please take time to assess the squad, review our financial position, and set your tactical approach.\n\nThe board stands behind you.",
+      "body2": "Welcome to {{team}}! The supporters and staff are excited about the future under your guidance.\n\nWe recommend you start by reviewing your squad's strengths and weaknesses, then set up your preferred formation and training regime.\n\nThe upcoming season will be a true test — make us proud.",
+      "actionReview": "Review Squad",
+      "actionThank": "Thank the Board"
+    },
+    "schedule": {
+      "subject": "Season Schedule Released",
+      "body0": "The {{league}} schedule has been released. The season kicks off on {{start}}.\n\nReview the fixture list and ensure your squad is ready for the challenges ahead. Pre-season preparation will be crucial.",
+      "body1": "Fixture list confirmed! The {{league}} season begins on {{start}}.\n\nStudy the opening fixtures carefully — a strong start can set the tone for the whole campaign. Make sure your key players are match-fit.",
+      "actionView": "View Fixtures"
+    },
+    "preMatch": {
+      "subject": "Upcoming: vs {{opponent}} ({{venue}})",
+      "body0": "Your {{venue}} match against {{opponent}} is coming up on {{matchDate}}.\n\nMatchday {{matchday}} of the Premier Division. Make sure your starting XI is in good shape and your tactics are set.\n\nMake the most of playing at {{venue}}.",
+      "body1": "Reminder: you face {{opponent}} {{venue}} on {{matchDate}}.\n\nThis is Matchday {{matchday}} — review your squad fitness and consider any tactical adjustments.",
+      "actionTactics": "Set Tactics",
+      "actionScout": "Scout Opponent",
+      "body0Home": "Your home match against {{opponent}} is coming up on {{matchDate}}.\n\nMatchday {{matchday}} of the Premier Division. Make sure your starting XI is in good shape and your tactics are set.\n\nHome advantage could be key in this one.",
+      "body0Away": "Your away match against {{opponent}} is coming up on {{matchDate}}.\n\nMatchday {{matchday}} of the Premier Division. Make sure your starting XI is in good shape and your tactics are set.\n\nMatching their intensity away from home could be key in this one.",
+      "body1Home": "Reminder: you face {{opponent}} at home in 3 days ({{matchDate}}).\n\nThis is Matchday {{matchday}} — review your squad fitness and consider any tactical adjustments. The fans will be behind you at home.",
+      "body1Away": "Reminder: you face {{opponent}} away in 3 days ({{matchDate}}).\n\nThis is Matchday {{matchday}} — review your squad fitness and consider any tactical adjustments. Away form will be tested — pack your strongest lineup."
+    },
+    "matchResult": {
+      "subject": {
+        "victory": "Victory: {{home}} {{homeGoals}} - {{awayGoals}} {{away}}",
+        "defeat": "Defeat: {{home}} {{homeGoals}} - {{awayGoals}} {{away}}",
+        "draw": "Draw: {{home}} {{homeGoals}} - {{awayGoals}} {{away}}"
+      },
+      "body": {
+        "victory0": "Full time: {{home}} {{homeGoals}} - {{awayGoals}} {{away}}.\n\nAn excellent result! The team put in a strong performance. Matchday {{matchday}} — keep this momentum going.",
+        "victory1": "Final whistle: {{home}} {{homeGoals}} - {{awayGoals}} {{away}}.\n\nThree points in the bag! The lads showed great character out there. Matchday {{matchday}} complete.",
+        "defeat0": "Full time: {{home}} {{homeGoals}} - {{awayGoals}} {{away}}.\n\nA disappointing result. We'll need to regroup and work on the areas that let us down. Matchday {{matchday}} — there's still time to turn things around.",
+        "defeat1": "Final score: {{home}} {{homeGoals}} - {{awayGoals}} {{away}}.\n\nNot the result we wanted. Matchday {{matchday}} — the board will want to see improvement. Review what went wrong and prepare for the next challenge.",
+        "draw": "Full time: {{home}} {{homeGoals}} - {{awayGoals}} {{away}}.\n\nA point earned in Matchday {{matchday}}. Depending on results elsewhere, this could be valuable. The team fought hard but couldn't find a winner."
+      },
+      "actionStandings": "View Standings"
+    },
+    "staffAdvice": {
+      "subject": "Staff Report — Coaching Vacancies",
+      "body": "Boss, I've had a look at the staff situation at {{team}} and wanted to flag a few things:\n\n• A good Coach will significantly improve training effectiveness — your players will develop faster.\n• A qualified Physio helps with injury prevention and speeds up recovery between matches.\n• Our Scouts can help identify transfer targets and assess opponents.\n\nI'd strongly recommend filling any vacancies before the season starts. You can find available staff in the Staff section.\n\nCheck it out when you get a chance.",
+      "actionView": "View Staff"
+    },
+    "boardExpect": {
+      "subject": "{{team}} — Season Objectives",
+      "body": "The board has set the following expectations for this season:\n\n• Finish in the top half of the table\n• Maintain financial stability\n• Develop young talent from the academy\n\nMeeting these objectives will strengthen your position. Failure to meet minimum expectations may result in a review of your tenure.\n\nWe trust in your abilities.",
+      "actionAccept": "Accept Objectives"
+    },
+    "boardObjectives": {
+      "subject": "Season {{season}} — Board Objectives",
+      "body": "The board has set the following objectives for this season:\n\n1. Finish in the top {{expectedPos}}\n2. Win at least {{winTarget}} matches\n3. Score at least {{goalsTarget}} goals\n4. Keep wage spending at or below {{financeTarget}}% of the budget\n\nMeeting these targets will improve the board's confidence in your management. Failure to meet expectations may result in reduced budgets or further consequences."
+    },
+    "financeCritical": {
+      "subject": "URGENT: Club in Debt",
+      "body": "The club is currently {{amount}} in debt. This is an unsustainable situation.\n\nThe board demands immediate action to address the financial crisis. Consider selling players, reducing staff, or finding alternative income.\n\nFailure to resolve this may have serious consequences for your position."
+    },
+    "financeWarning": {
+      "subject": "Financial Warning — Low Reserves",
+      "body": "Our financial reserves are running low. At the current burn rate ({{weeklyWages}}/week in wages), we have approximately {{weeksLeft}} weeks of funding remaining.\n\nI'd recommend reviewing the wage bill and exploring ways to boost income."
+    },
+    "wageOverBudget": {
+      "subject": "Wage Bill Exceeds Budget",
+      "body": "Our annual wage bill ({{annualWages}}) currently exceeds the allocated wage budget ({{wageBudget}}).\n\nWhile we can sustain this in the short term, the board would prefer to see the wage bill brought under control."
+    },
+    "financeBoardPressure": {
+      "subject": "Board Review — Financial Pressure",
+      "bodyWarning": "The board remains concerned about the club's finances. Confidence in your management has fallen by {{penalty}} points this week.\n\nYou need to improve the wage position and short-term cash outlook before patience wears thinner.",
+      "bodyCritical": "The board has reviewed the club's worsening financial position and confidence in your management has fallen by {{penalty}} points this week.\n\nCash reserves and wage commitments are now in a critical state. Immediate corrective action is expected."
+    },
+    "marketingCampaign": {
+      "subject": "Marketing Campaign Report",
+      "body": "The commercial push has finished with gross sales of {{grossRevenue}}. After {{campaignCost}} in campaign costs, the club banks {{netIncome}} in fresh income.\n\nThe commercial team will need {{days}} days before launching another campaign."
+    },
+    "seasonPayout": {
+      "subject": "Season {{season}} Prize Money Awarded",
+      "body": "The board has confirmed a prize payout of {{amount}} for your {{position}}-place league finish. The amount has been added to the club balance.",
+      "ledgerDescription": "Season {{season}} prize money for {{position}}{{suffix}} place"
+    },
+    "seasonReview": {
+      "subject": "Season {{season}} Review",
+      "body": {
+        "champion": "Congratulations! {{team}} are league champions! What an incredible achievement.\n\nThe board is absolutely delighted with your performance. You finished on {{points}} points.\n\nWe look forward to defending the title next season.",
+        "topFour": "A solid season for {{team}}. You finished in {{position}}{{suffix}} place with {{points}} points.\n\nThe board is satisfied with the campaign. Let's push for the title next season.",
+        "midTable": "{{team}} finished the season in {{position}}{{suffix}} place with {{points}} points.\n\nA mid-table finish. The board expects improvement next season. We need to be more competitive.",
+        "lowerHalf": "A disappointing season for {{team}}. Finishing {{position}}{{suffix}} with only {{points}} points is below expectations.\n\nThe board is concerned. Significant improvement will be needed next season, or your position may come under review."
+      }
+    },
+    "promotion": {
+      "subject": "Promoted to the {{division}}!",
+      "body": "Congratulations! The club has earned promotion and will play in the {{division}} in Season {{season}}.\n\nThe board is thrilled with this achievement. Let's make sure we are ready for the step up."
+    },
+    "relegation": {
+      "subject": "Relegated to the {{division}}",
+      "body": "The club has been relegated and will play in the {{division}} in Season {{season}}.\n\nThe board is deeply disappointed. An immediate push for promotion is expected."
+    },
+    "worldCupChampion": {
+      "subject": "{{nation}} win the {{year}} World Cup!",
+      "body": "{{nation}} have been crowned world champions at the {{year}} World Cup.\n\nA generation of players will be remembered for this triumph."
+    },
+    "newSeasonSchedule": {
+      "subject": "Season {{season}} — New Schedule Released",
+      "body": "The schedule for Season {{season}} has been released! The new campaign kicks off in 4 weeks.\n\nUse this break to assess your squad, make any necessary changes, and prepare for the challenges ahead.\n\nGood luck!"
+    },
+    "fitness": {
+      "critical": {
+        "subject": "URGENT: Squad Fitness Crisis",
+        "body": {
+          "intense": "Boss, we have a serious fitness crisis. {{criticalCount}} players are in critical condition and at risk of injury:\n\n{{players}}\n\nAverage squad fitness is at {{avgCondition}}%. With the current Intense schedule (6 days training), the squad is being pushed too hard. Switching to a Balanced schedule would give them recovery time.\n\nIf we push them further without rest, injuries are inevitable.",
+          "balanced": "Boss, we have a serious fitness crisis. {{criticalCount}} players are in critical condition and at risk of injury:\n\n{{players}}\n\nAverage squad fitness is at {{avgCondition}}%. Even on a Balanced schedule, the squad needs attention. Consider switching to a Light schedule temporarily.\n\nIf we push them further without rest, injuries are inevitable.",
+          "light": "Boss, we have a serious fitness crisis. {{criticalCount}} players are in critical condition and at risk of injury:\n\n{{players}}\n\nAverage squad fitness is at {{avgCondition}}%. The squad is already on a Light schedule — the issue may be high training intensity. Consider reducing intensity.\n\nIf we push them further without rest, injuries are inevitable."
+        }
+      },
+      "warning": {
+        "subject": "Squad Fitness Warning",
+        "body": {
+          "intense": "Boss, the squad is looking tired. Average fitness is {{avgCondition}}% and {{exhaustedCount}} players are below 40% condition.\n\nSwitching to a Balanced schedule would give the squad more recovery time.\n\nWe should consider giving the lads some rest before the next match.",
+          "balanced": "Boss, the squad is looking tired. Average fitness is {{avgCondition}}% and {{exhaustedCount}} players are below 40% condition.\n\nA Light schedule for a few days could help the squad bounce back.\n\nWe should consider giving the lads some rest before the next match.",
+          "light": "Boss, the squad is looking tired. Average fitness is {{avgCondition}}% and {{exhaustedCount}} players are below 40% condition.\n\nThe squad is already on a Light schedule, so recovery should come naturally. Just keep an eye on any particularly exhausted players.\n\nWe should consider giving the lads some rest before the next match."
+        }
+      },
+      "actionAdjust": "Adjust Training"
+    },
+    "event": {
+      "ack": "Understood",
+      "respond": "Respond"
+    },
+    "action": {
+      "viewFinances": "View Finances"
+    },
+    "playerEvent": {
+      "respond": "Respond",
+      "options": {
+        "moraleCrisis": {
+          "encourage": {
+            "label": "Encourage them",
+            "description": "Show empathy and encourage the player to keep working hard."
+          },
+          "promiseTime": {
+            "label": "Promise more playing time",
+            "description": "Tell them they'll get their chance — bigger morale boost but sets expectations."
+          },
+          "workHarder": {
+            "label": "Tell them to work harder",
+            "description": "Tough love approach — could backfire or motivate them."
+          }
+        },
+        "benchComplaint": {
+          "explain": {
+            "label": "Explain the situation",
+            "description": "Calmly explain squad competition and rotation. Steady morale boost."
+          },
+          "promiseChance": {
+            "label": "Promise them a chance soon",
+            "description": "They'll be happier but will expect to start in upcoming matches."
+          },
+          "proveYourself": {
+            "label": "Tell them to prove themselves",
+            "description": "Challenge them to earn their place. Risky — could motivate or frustrate."
+          }
+        },
+        "happyPlayer": {
+          "praiseBack": {
+            "label": "Return the praise",
+            "description": "Tell them how much you value their contribution."
+          },
+          "stayProfessional": {
+            "label": "Stay professional",
+            "description": "Acknowledge their form but keep things measured."
+          },
+          "higherExpectations": {
+            "label": "Set higher expectations",
+            "description": "Challenge them to reach an even higher level. Could push or pressure."
+          }
+        },
+        "contractConcern": {
+          "reassure": {
+            "label": "Reassure them about renewal",
+            "description": "Tell them you want them to stay. Big morale boost."
+          },
+          "noncommittal": {
+            "label": "Be noncommittal",
+            "description": "Keep your options open. Player may become unsettled."
+          },
+          "noRenewal": {
+            "label": "Tell them you won't renew",
+            "description": "Honest but brutal. Morale will tank."
+          }
+        }
+      },
+      "effects": {
+        "moraleCrisis": {
+          "encourage": {
+            "positive": "Player feels a bit better. Morale {{delta}}",
+            "negative": "Player doesn't buy it. Morale {{delta}}"
+          },
+          "promiseTime": "Player is reassured by the promise. Morale {{delta}}. They'll expect to start soon.",
+          "workHarder": {
+            "positive": "Player accepts the challenge. Morale {{delta}}",
+            "negative": "Player is offended by the tough love. Morale {{delta}}"
+          }
+        },
+        "benchComplaint": {
+          "explain": {
+            "positive": "Player grudgingly accepts. Morale {{delta}}",
+            "negative": "Player isn't convinced. Morale {{delta}}"
+          },
+          "promiseChance": "Player is excited about the opportunity. Morale {{delta}}. They expect to start next match.",
+          "proveYourself": {
+            "positive": "Player is fired up to prove their worth. Morale {{delta}}",
+            "negative": "Player feels dismissed and insulted. Morale {{delta}}"
+          }
+        },
+        "happyPlayer": {
+          "praiseBack": "Player beams at the praise. Morale {{delta}}",
+          "stayProfessional": {
+            "positive": "Player nods professionally. Morale {{delta}}",
+            "negative": "Player wanted more warmth. Morale {{delta}}"
+          },
+          "higherExpectations": {
+            "positive": "Player rises to the challenge. Morale {{delta}}",
+            "negative": "Player feels the pressure is unfair. Morale {{delta}}"
+          }
+        },
+        "contractConcern": {
+          "reassure": "Player is reassured about their future. Morale {{delta}}",
+          "noncommittal": {
+            "positive": "Player grudgingly accepts for now. Morale {{delta}}",
+            "negative": "Player is unsettled and unhappy. Morale {{delta}}"
+          },
+          "noRenewal": "Player is devastated. Morale {{delta}}. They may affect the dressing room.",
+          "noRenewalWithDressingRoom": "Player is devastated. Morale {{delta}}. They may affect the dressing room. The dressing room mood dips — {{affected}} teammates lose morale."
+        }
+      }
+    },
+    "sponsor": {
+      "subject": "Sponsorship Offer — {{sponsor}}",
+      "body": "Good news, boss! {{sponsor}} has expressed interest in becoming a sponsor of {{team}}.\n\nThey are offering a weekly payment of {{amount}} over the next 12 weeks in exchange for advertising space at the training ground.\n\nThis seems like a reasonable deal, but it is your call.",
+      "options": {
+        "accept": {
+          "label": "Accept the deal",
+          "description": "Receive {{amount}} in sponsorship income."
+        },
+        "decline": {
+          "label": "Decline politely",
+          "description": "Turn down the offer. No financial impact."
+        }
+      },
+      "effects": {
+        "accepted": "Sponsorship deal signed! You will receive {{amount}}/week for 12 weeks.",
+        "declined": "Sponsorship declined."
+      }
+    },
+    "trainingInjury": {
+      "subject": "Injury — {{player}} ({{injury}})",
+      "body0": "Bad news from the training ground. {{player}} has picked up a {{injury}} during today's session.\n\nThe medical team estimates {{days}} days on the sidelines. We'll monitor the recovery closely.",
+      "body1": "Unfortunately, {{player}} went down in training today with a {{injury}}.\n\nInitial assessment: out for approximately {{days}} days. We'll keep you updated on their progress."
+    },
+    "mediaPositive": {
+      "subject": "Positive Press — {{player}}",
+      "body": "The local papers are running a very positive piece on {{player}} today.\n\nThey are highlighting their excellent recent form and commitment to {{team}}. This kind of coverage is great for the player's confidence and the club's image."
+    },
+    "mediaNegative": {
+      "subject": "Negative Press — {{player}}",
+      "body": "Some unflattering coverage of {{player}} appeared in the tabloids today.\n\nJournalists are questioning their form and commitment to {{team}}. This could affect the player's morale — you might want to have a word."
+    },
+    "intlCallup": {
+      "subject": "International Call-Up — {{player}}",
+      "body": "{{player}} has been called up to the {{nationality}} national team for an upcoming international window.\n\nThis is a great honor for the player and reflects well on the club. They'll be in good spirits when they return, though keep an eye on their fatigue levels."
+    },
+    "community": {
+      "subject0": "Community Open Day",
+      "subject1": "Youth Coaching Session",
+      "subject2": "Charity Match Announcement",
+      "body0": "{{team}} hosted a community open day at the training ground today.\n\nFans got to meet the players and watch a training session. The atmosphere was fantastic and it's done wonders for team spirit.",
+      "body1": "Several first-team players from {{team}} volunteered for a youth coaching session at a local school.\n\nGreat PR for the club, and the players seem energized by the experience.",
+      "body2": "The club has organized a charity initiative in partnership with a local foundation.\n\n{{team}} continues to build strong ties with the community. The board is pleased with the positive image."
+    },
+    "moodReport": {
+      "subject": "Dressing Room Report — Mood: {{mood}}",
+      "body": "Here is your weekly dressing room report:\n\n• Overall mood: {{mood}} (avg morale: {{avgMorale}})\n• Players in high spirits (80+): {{highCount}}\n• Players with low morale (<40): {{lowCount}}\n• Total squad: {{total}}"
+    },
+    "boardConfidence": {
+      "subject": "Board Meeting — Results Under Scrutiny",
+      "body0": "The board has called an urgent meeting. Three consecutive defeats have raised serious concerns about the team's direction.\n\n\"We need to see improvement quickly. The fans are restless and results must change.\"\n\nHow do you respond?",
+      "body1": "After a string of poor results, the chairman has summoned you for a difficult conversation.\n\n\"We backed you with resources and time. The results simply aren't good enough. What's your plan?\"\n\nChoose your response carefully.",
+      "options": {
+        "reassureBoard": {
+          "label": "Reassure them with a plan",
+          "description": "Present a clear strategy for turning things around. Buys you time."
+        },
+        "acceptPressure": {
+          "label": "Accept responsibility",
+          "description": "Own the poor results. The board respects honesty."
+        },
+        "blameCircumstances": {
+          "label": "Point to injuries and bad luck",
+          "description": "Deflect blame to external factors. May or may not convince them."
+        }
+      },
+      "effects": {
+        "reassureBoard": "You reassured the board. They'll give you more time for now.",
+        "acceptPressure": "You acknowledged the pressure. The board appreciates your honesty.",
+        "blameCircumstances": "The board isn't entirely convinced by excuses, but they'll wait and see."
+      }
+    },
+    "fanPetition": {
+      "subject0": "Fan Petition — More Attacking Football",
+      "subject1": "Fan Petition — Give Youth a Chance",
+      "subject2": "Fan Open Letter — Transparency",
+      "body0": "A group of {{team}} supporters has organized a petition calling for more attacking football.\n\n\"We pay good money to watch exciting football. We want to see the team go forward and entertain us!\"\n\nOver 500 signatures so far. How do you respond?",
+      "body1": "Supporters of {{team}} have started a campaign urging you to give more opportunities to young players from the academy.\n\n\"The future of our club depends on developing homegrown talent. Stop overlooking the kids!\"\n\nIt's getting traction on social media. What's your response?",
+      "body2": "An open letter from the {{team}} Supporters Trust has been published, asking for more transparency from the management.\n\n\"We want to understand the club's vision. Where are we heading? What's the long-term plan?\"\n\nThe local press is covering it. How do you handle this?",
+      "options": {
+        "listenFans": {
+          "label": "Engage with the fans",
+          "description": "Meet with fan representatives and listen to their concerns. Good for morale."
+        },
+        "ignoreFans": {
+          "label": "Focus on football",
+          "description": "Politely decline — football decisions stay in the dressing room."
+        },
+        "addressPublicly": {
+          "label": "Make a public statement",
+          "description": "Address the petition in a press conference. Transparent and proactive."
+        }
+      },
+      "effects": {
+        "listenFans": "You engaged with the fans. Squad morale improved slightly.",
+        "ignoreFans": "You decided to focus on football matters. The fans are a little disappointed.",
+        "addressPublicly": "Your public address was well received. Fan confidence is up."
+      }
+    },
+    "rivalInterest": {
+      "subject": "Transfer Rumour — {{player}} linked with {{rival}}",
+      "body0": "We've received word that {{rival}} have been making enquiries about {{player}}.\n\nTheir scouts were spotted at our last few matches, and our sources suggest they may approach with a formal offer soon.\n\nHow would you like us to respond if they make contact?",
+      "body1": "The press are reporting that {{player}} is a target for {{rival}}.\n\nAccording to sources, the player has attracted attention after their recent performances. No formal bid yet, but it's only a matter of time.\n\nWhat's your stance?",
+      "options": {
+        "notForSale": {
+          "label": "Not for sale",
+          "description": "Make it clear the player is going nowhere. Boosts their morale."
+        },
+        "openToOffers": {
+          "label": "Open to offers",
+          "description": "Signal willingness to negotiate. Player may become unsettled."
+        },
+        "noComment": {
+          "label": "No comment",
+          "description": "Stay quiet and let things play out. Neutral stance."
+        }
+      },
+      "effects": {
+        "notForSale": "You made it clear the player is not for sale. They're feeling valued.",
+        "openToOffers": "You indicated you'd listen to offers. The player is unsettled.",
+        "noComment": "No comment. The rumour mill continues..."
+      }
+    },
+    "moraleCrisis": {
+      "subject": "{{player}} — Morale Crisis",
+      "body0": "Boss, {{player}} has asked for a private meeting. They seem really down lately and want to talk about their situation at the club.\n\nTheir morale is at {{morale}} — you should address this before it affects the dressing room.",
+      "body1": "{{player}} has been looking dejected in training. They've requested a chat with you about their current state of mind.\n\nMorale: {{morale}}. How you handle this could make or break their confidence."
+    },
+    "benchComplaint": {
+      "subject": "{{player}} — Wants More Game Time",
+      "body0": "Boss, {{player}} has come to see you. They're frustrated about their lack of game time in recent matches and want to know what they need to do to get back in the team.\n\n\"I feel like I've been training well, but I'm not getting a chance to show it on the pitch.\"",
+      "body1": "{{player}} knocked on your office door looking unhappy. They haven't featured in the last few matches and want answers.\n\n\"I came to this club to play football. If I'm not in your plans, I'd rather you tell me straight.\""
+    },
+    "happyPlayer": {
+      "subject": "{{player}} — Feeling Great",
+      "body0": "{{player}} stopped by your office with a big smile. They're feeling great about their form and the team's direction.\n\n\"Just wanted to say I'm really enjoying my football right now, boss. The mood in the dressing room is fantastic.\"",
+      "body1": "Your assistant mentions that {{player}} has been in excellent spirits lately. They approached you after training.\n\n\"Boss, I'm loving every minute here. Keep things going like this and I'll run through walls for you.\""
+    },
+    "contractConcern": {
+      "subject": "{{player}} — Contract Running Down",
+      "body0": "{{player}} has approached you regarding their contract situation. With only {{days}} days remaining on their deal, they want to know where they stand.\n\n\"Boss, my contract is running down. I need to know if I'm part of your plans going forward or if I should start looking elsewhere.\"",
+      "body1": "Your assistant flags that {{player}}'s contract expires in roughly {{months}} month(s). The player has been asking around the dressing room about their future.\n\nIt might be wise to have a conversation before they become unsettled — or before other clubs start circling."
+    },
+    "takeoverContractReview": {
+      "subject": "Assistant Manager - Contract Review",
+      "bodyNoneUrgent": "Your assistant has reviewed the squad contracts after your arrival. {{totalExpiring}} player(s) are due to come up for renewal this season, but none require an immediate decision today.\n\nStart mapping out who you want to keep so the situation stays under control.",
+      "bodyUrgent": "Your assistant has reviewed the squad contracts after your arrival. {{totalExpiring}} player(s) are due to come up for renewal this season, and {{urgentContracts}} already need attention inside the next six months.\n\nYou do not need to solve everything at once, but these cases should be near the top of your early workload.",
+      "bodyFinalMonth": "Your assistant has reviewed the squad contracts after your arrival. {{totalExpiring}} player(s) are due to come up for renewal this season, {{urgentContracts}} need attention inside the next six months, and {{finalMonthContracts}} are already in the final month.\n\nStabilize the urgent cases first, then work through the wider renewal list in stages.",
+      "actionReview": "Review Squad Contracts"
+    },
+    "contractExpired": {
+      "subject": "{{player}} Leaves on a Free",
+      "body": "{{player}} has left {{team}} after their contract expired. The player is now a free agent."
+    },
+    "contractTerminated": {
+      "subject": "{{player}} Released",
+      "body": "{{player}} has been released by {{team}}. The club paid {{severance}} in remaining wages as severance.",
+      "ledgerDescription": "Contract termination severance paid to {{player}}"
+    },
+    "freeAgentSigned": {
+      "subject": "{{player}} Signs for {{team}}",
+      "body": "{{player}} has joined {{team}} as a free agent on a {{years}}-year contract."
+    },
+    "delegatedRenewals": {
+      "subject": "Assistant Report — Contract Renewals",
+      "body": "Boss, I went through our renewal list at {{team}}. {{successes}} completed, {{stalled}} still pending, {{failures}} failed.",
+      "case": {
+        "successful": "Completed: {{player}} agreed to {{years}} year(s) on {{wage}}/wk.",
+        "stalled": "Still difficult: {{player}} — {{detail}}",
+        "failed": "Failed: {{player}} — {{detail}}"
+      },
+      "notes": {
+        "managerBlocked": "You told me not to reopen contract talks yet.",
+        "completed": "I was able to close this one without needing you to step in.",
+        "beyondLimits": "Their camp want around {{wage}}/wk for {{years}} years, which is beyond the delegation limits.",
+        "boardWagePolicy": "Board wage policy blocks this renewal. Keep annual wages near {{budget}} while we recover.",
+        "prefersManager": "They would listen, but they still want about {{wage}}/wk for {{years}} years and prefer to hear from you directly.",
+        "relationshipBlocked": "They are not willing to commit through me under the current relationship and contract situation."
+      }
+    },
+    "youthRecruitmentReport": {
+      "subject": "Scout Report — Youth Recruitment",
+      "bodyAny": "{{scout}} has completed the latest youth recruitment search for {{team}}. I found {{count}} prospects in the {{regionLabel}} market with a {{objectiveLabel}} profile.\n\nReview the attached cards and decide who should join the academy.",
+      "bodyTargeted": "{{scout}} has completed the latest youth recruitment search for {{team}}. I found {{count}} prospects in the {{regionLabel}} market with a {{objectiveLabel}} profile, focused on {{targetLabel}}.\n\nReview the attached cards and decide who should join the academy."
+    },
+    "youthRecruitment": {
+      "option": {
+        "sign": {
+          "label": "Sign to academy",
+          "description": "Offer this prospect a youth contract and add them to the academy."
+        },
+        "shortlist": {
+          "label": "Shortlist",
+          "description": "Keep this prospect under consideration and move them into a separate shortlist message."
+        },
+        "discard": {
+          "label": "Discard",
+          "description": "Pass on this prospect and remove them from the report."
+        }
+      },
+      "effect": {
+        "sign": "{{player}} signed a youth contract and joined your academy.",
+        "shortlist": "{{player}} was added to your youth shortlist.",
+        "discard": "{{player}} was removed from the youth recruitment report."
+      }
+    },
+    "youthRecruitmentShortlist": {
+      "subject": "Youth prospect shortlisted",
+      "body": "{{player}} has been moved to your youth shortlist. You can review them again later before making a final decision."
+    },
+    "scoutReport": {
+      "subject": "Scout Report: {{player}}",
+      "body": "Your scout {{scout}} has completed their assessment of {{player}}. Full report available in the scouting section."
+    },
+    "boardWarning": {
+      "subject": "Board Concern — Performance Review",
+      "body": "The board is growing increasingly concerned with recent results at {{team}}. Your position will come under serious review if there is no improvement in the near future."
+    },
+    "boardFinalWarning": {
+      "subject": "Final Warning — Immediate Improvement Required",
+      "body": "This is your final warning. The board at {{team}} has lost patience with the current run of results. Unless there is an immediate and significant improvement, we will have no choice but to consider your position."
+    },
+    "boardFired": {
+      "subject": "Notice of Dismissal — {{team}}",
+      "body": "The board of directors at {{team}} has decided to relieve you of your duties as manager, effective immediately. We thank you for your service and wish you well in your future career."
+    },
+    "jobOffer": {
+      "subject": "Managerial Vacancy — {{team}}",
+      "body": "The board at {{team}} ({{city}}) is looking for a new manager to lead the club forward. Last season finish: {{league_position}}.\n\nAfter reviewing your credentials, we believe you could be the right fit. Would you be interested in taking on this challenge?",
+      "accept": "Accept the position",
+      "decline": "Decline the offer",
+      "effects": {
+        "accepted": "You have been appointed manager of {{team}}",
+        "declined": "You declined the offer from {{team}}",
+        "alreadyEmployed": "You are already employed and cannot accept the offer from {{team}}",
+        "unavailable": "The offer from {{team}} is no longer available because the position has been filled",
+        "failed": "Could not accept the offer from {{team}}"
+      },
+      "acceptDescription": "Join {{team}} as their new manager",
+      "declineDescription": "Continue looking for other opportunities"
+    },
+    "jobOfferExpired": {
+      "subject": "Position Filled — {{team}}",
+      "body": "The vacancy at {{team}} has now been filled, so this offer is no longer available."
+    },
+    "jobHired": {
+      "subject": "Welcome to {{team}}",
+      "body": "The board of directors at {{team}} is delighted to welcome you as the new manager. We look forward to working with you and achieving great things together."
+    },
+    "jobRejection": {
+      "subject": "Application Update — {{team}}",
+      "body": "Thank you for your interest in the managerial position at {{team}}. After careful consideration, we have decided to pursue other candidates. We wish you the best in your future career."
+    },
+    "transferComplete": {
+      "subject": "Transfer Complete: {{player}}",
+      "body": "The transfer of {{player}} has been completed for a fee of {{fee}}.\n\nThe player has joined the squad and is available for selection."
+    },
+    "transferOffer": {
+      "subject": "Incoming Offer for {{player}}",
+      "body": "{{team}} have submitted an offer of {{fee}} for {{player}}. Review the bid in the Transfers tab to accept or reject it.",
+      "actionReview": "Review Offer"
+    },
+    "transferInterest": {
+      "subject": "Transfer interest in {{player}}",
+      "body": "Clubs with active bids for {{player}}: {{n}}. Latest enquiry: {{team}} ({{fee}}). Review the offers in the Transfers tab to respond.",
+      "actionReview": "Review Offers"
+    }
+  },
+  "news": {
+    "matchReport": {
+      "headline": {
+        "homeWin": {
+          "0": "{{home}} {{homeGoals}} - {{awayGoals}} {{away}}: Hosts Triumph",
+          "1": "{{home}} Edge Past {{away}} in Matchday {{matchday}}",
+          "2": "Clinical {{home}} See Off {{away}}"
+        },
+        "awayWin": {
+          "0": "{{home}} {{homeGoals}} - {{awayGoals}} {{away}}: Visitors Strike",
+          "1": "{{away}} Stun {{home}} on the Road",
+          "2": "Away Day Delight for {{away}}"
+        },
+        "draw": {
+          "0": "{{home}} {{homeGoals}} - {{awayGoals}} {{away}}: Honours Even",
+          "1": "{{home}} and {{away}} Share the Spoils",
+          "2": "Stalemate at {{home}}'s Ground"
+        }
+      },
+      "body0": "In Matchday {{matchday}} action, the match ended {{home}} {{homeGoals}} - {{awayGoals}} {{away}}. The result could have implications on the league standings as the season progresses.\n\nGoals: {{scorers}}",
+      "body1": "The match ended {{home}} {{homeGoals}} - {{awayGoals}} {{away}} in a Matchday {{matchday}} clash. Both sides gave their all in an engaging contest.\n\nGoals: {{scorers}}",
+      "body2": "Matchday {{matchday}} delivered another exciting encounter as {{home}} faced {{away}} ({{homeGoals}}-{{awayGoals}}). The fans were treated to a competitive fixture.\n\nGoals: {{scorers}}",
+      "body0.noScorers": "In Matchday {{matchday}} action, the match ended {{home}} {{homeGoals}} - {{awayGoals}} {{away}}. The result could have implications on the league standings as the season progresses.",
+      "body1.noScorers": "The match ended {{home}} {{homeGoals}} - {{awayGoals}} {{away}} in a Matchday {{matchday}} clash. Both sides gave their all in an engaging contest.",
+      "body2.noScorers": "Matchday {{matchday}} delivered another exciting encounter as {{home}} faced {{away}} ({{homeGoals}}-{{awayGoals}}). The fans were treated to a competitive fixture.",
+      "scorer": "{{player}} ({{minute}}', {{team}})",
+      "scorersSection": "\n\nGoals: {{scorers}}",
+      "reportFriendly": {
+        "title": "{{home}} {{homeGoals}} - {{awayGoals}} {{away}}: Friendly report",
+        "body": "In friendly action, {{home}} {{homeGoals}} - {{awayGoals}} {{away}}. Both sides used the fixture to build sharpness before the competitive campaign.{{scorersSection}}"
+      },
+      "reportPreseason": {
+        "title": "{{home}} {{homeGoals}} - {{awayGoals}} {{away}}: Preseason tournament report",
+        "body": "In preseason tournament action, {{home}} {{homeGoals}} - {{awayGoals}} {{away}}. Both sides used the fixture to build sharpness before the competitive campaign.{{scorersSection}}"
+      }
+    },
+    "roundup": {
+      "headline0": "Matchday {{matchday}} Round-Up: {{totalGoals}} Goals in Action-Packed Day",
+      "headline1": "Premier Division Matchday {{matchday}}: All the Results",
+      "headline2": "Goals Galore in Matchday {{matchday}} Action",
+      "body": "Matchday {{matchday}} is in the books. Here are the full results:\n\n{{results}}\n\n{{totalGoals}} goals scored across {{matchCount}} matches.{{biggestWinnerLine}}",
+      "resultLine": "  {{home}} {{homeGoals}} - {{awayGoals}} {{away}}",
+      "biggestWinnerLine": " {{biggestWinner}} recorded the biggest win of the day."
+    },
+    "standings": {
+      "headline0": "{{leader}} Lead the Way After Matchday {{matchday}}",
+      "headline1": "Premier Division Table: {{leader}} on Top",
+      "headline2": "Standings Update — Matchday {{matchday}}",
+      "body": "After Matchday {{matchday}}, {{leader}} sit at the top of the Premier Division table.\n\nStandings:\n{{standings}}",
+      "entry": "  {{rank}}. {{team}} — {{points}} pts (GD: {{goalDifference}})"
+    },
+    "seasonPreview": {
+      "headline0": "Season Preview: {{teamCount}} Teams Battle for Glory",
+      "headline1": "Premier Division Season Set to Begin",
+      "headline2": "Can {{favourite}} Claim the Title? Season Preview",
+      "body": "The Premier Division is set to kick off with {{teamCount}} teams vying for the title.\n\nPre-season predictions have {{favourite}} as the early favourites, but {{darkHorse}} could be the dark horse to watch this campaign.\n\nWith new managers taking the reins at some clubs, this season promises to be one of the most competitive in recent memory. Every point will matter as the race for the title heats up.\n\nTeams: {{teamList}}"
+    },
+    "managerialChange": {
+      "headline": "{{team}} sack {{manager}}",
+      "body": "{{team}} have dismissed {{manager}} after a damaging run of results, leaving the club searching for a new manager."
+    },
+    "managerialAppointment": {
+      "headline": "{{team}} appoint {{manager}}",
+      "body": "{{team}} have appointed {{manager}} as their new manager after moving quickly to fill the vacancy at the club."
+    },
+    "majorTransfer": {
+      "headline": "{{player}} Completes Move to {{toTeam}}",
+      "body": "{{toTeam}} have completed the signing of {{player}} from {{fromTeam}} for {{fee}}."
+    },
+    "transferRoundup": {
+      "headline": "Transfer Roundup — Week of {{weekStart}}",
+      "body": "The transfer market stayed busy this week. {{transferCount}} completed deal(s) stood out across the division.\n\n{{deals}}",
+      "dealLine": "  {{player}}: {{fromTeam}} -> {{toTeam}} ({{fee}})"
+    },
+    "worldCupQualifying": {
+      "headline": "Road to the {{year}} World Cup Begins",
+      "body": "{{nations}} nations begin their campaign to qualify for the {{year}} World Cup, contested across the international windows this season."
+    },
+    "worldCupKickoff": {
+      "headline": "The {{year}} World Cup Begins",
+      "body": "{{nations}} nations have gathered for the {{year}} World Cup. Football stops for nothing else this summer as the world's best chase the greatest prize in the game."
+    },
+    "worldCupChampion": {
+      "headline": "{{nation}} Are World Champions",
+      "body": "{{nation}} have won the {{year}} World Cup, etching their names into football history. A nation celebrates a triumph that will be remembered for generations."
+    },
+    "seasonAwards": {
+      "headline": "Season {{season}} Awards",
+      "bodyBoth": "Season {{season}} concluded with {{goldenBootWinner}} ({{goldenBootTeam}}) lifting the Golden Boot with {{goldenBootGoals}} goals. Player of the Year went to {{potyWinner}} ({{potyTeam}}) with an average rating of {{potyRating}}.",
+      "bodyGoldenBootOnly": "Season {{season}} closed with {{goldenBootWinner}} ({{goldenBootTeam}}) crowned top scorer with {{goldenBootGoals}} goals.",
+      "bodyPotyOnly": "Season {{season}} ended with {{potyWinner}} ({{potyTeam}}) named Player of the Year, posting an average rating of {{potyRating}}."
+    },
+    "weeklyDigest": {
+      "headline": "Weekly Digest — Week of {{weekStart}}",
+      "bodyNoTopScorer": "The latest weekly digest is here. {{leader}} lead the table, and {{storylineCount}} storyline(s) are shaping the division this week.",
+      "bodyWithTopScorer": "The latest weekly digest is here. {{leader}} lead the table, while {{topScorer}} heads the scoring charts with {{topScorerGoals}} goal(s). {{storylineCount}} storyline(s) are shaping the division this week."
+    },
+    "preseasonDigest": {
+      "headline": "Preseason Digest — Week of {{weekStart}}",
+      "bodyNoResults": "The latest preseason digest is here. Training camps, selection decisions, and transfer business continue across the division as clubs prepare for opening day.{{unbeatenLine}}",
+      "bodyWithResults": "The latest preseason digest is here. {{resultCount}} friendly result(s) were played across the division this week, producing {{totalGoals}} goal(s).\n\nResults:\n{{results}}{{unbeatenLine}}",
+      "resultLine": "  {{home}} {{homeGoals}} - {{awayGoals}} {{away}}",
+      "unbeatenLine": {
+        "one": "\n\n{{team}} remain unbeaten in preseason.",
+        "two": "\n\n{{first}} and {{second}} remain unbeaten in preseason.",
+        "multiple": "\n\n{{teams}} remain unbeaten in preseason."
+      }
+    },
+    "storyline": {
+      "titleRace": {
+        "headline": "Title Race Tightens — {{leader}} Lead {{challenger}} by {{gap}} Point(s)",
+        "body": "{{leader}} remain in front, but {{challenger}} are only {{gap}} point(s) behind as the title race takes shape."
+      },
+      "unbeatenStreak": {
+        "headline": "{{team}} Extend Unbeaten Run to {{runLength}}",
+        "body": "{{team}} have gone {{runLength}} match(es) without defeat and are building real momentum."
+      }
+    },
+    "transferRumour": {
+      "headline0": "{{player}} Attracting Interest from Several Clubs",
+      "headline1": "Clubs Circle as {{player}}'s Future Remains Uncertain",
+      "headline2": "{{player}} Linked with Move Away from {{team}}",
+      "body0": "Sources close to the situation suggest that {{player}} could be on the move, with multiple clubs reportedly monitoring the {{team}} player. {{team}} have not commented publicly, but the speculation is unlikely to die down soon.",
+      "body1": "{{player}} is understood to have attracted attention from clubs across the division. The {{team}} star has been one of the standout performers this season, and it is believed that offers could materialise before the window closes.",
+      "body2": "Transfer whispers are growing louder around {{player}}, with the {{team}} player said to be weighing their options. Agent talks are rumoured to have taken place, though nothing has been confirmed."
+    },
+    "injuryNews": {
+      "headline0": "{{player}} Injury Blow for {{team}}",
+      "headline1": "{{player}} Set for Spell on the Sidelines",
+      "headline2": "{{weeksOut}} week(s) — {{team}} Sweating on Key Player",
+      "body0Days": "{{team}} have confirmed that {{player}} has picked up an injury and is expected to be sidelined for {{daysOut}} day(s). The club will assess the situation before providing a further update.",
+      "body0Weeks": "{{team}} have confirmed that {{player}} has picked up an injury and is expected to be sidelined for around {{weeksOut}} week(s). The club will assess the situation before providing a further update.",
+      "body1Days": "{{player}} suffered a setback in training, with the {{team}} player ruled out for {{daysOut}} day(s). The absence will be a significant blow as the season reaches a critical stage.",
+      "body1Weeks": "{{player}} suffered a setback in training, with the {{team}} player ruled out for around {{weeksOut}} week(s). The absence will be a significant blow as the season reaches a critical stage."
+    },
+    "pressConference": {
+      "headlineManagerQuote": "{{team}} Manager: {{quote}}",
+      "headlinePressConf": "Press Conference: \"{{quote}}\" — {{team}} boss",
+      "headlinePostMatch": "Post-Match: {{team}} on {{result}}",
+      "bodyMultiple": "Speaking after the {{result}} result, the {{team}} manager addressed the press.\n\n{{quotes}}\n\nThe conference covered the result, tactical approach, and what lies ahead for the team.",
+      "bodySingle": "The {{team}} manager spoke briefly after the {{result}} result.\n\n\"{{quote}}\"",
+      "bodyNone": "The {{team}} manager declined to speak at length after the {{result}} result."
+    }
+  }
+}

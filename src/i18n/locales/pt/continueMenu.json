@@ -1,0 +1,12 @@
+{
+  "goToField": "Ir para o Campo",
+  "goToFieldDesc": "Controlo total do jogo",
+  "watchSpectator": "Ver como Espetador",
+  "watchSpectatorDesc": "Ver o jogo sem controlos",
+  "delegateAssistant": "Delegar ao Assistente",
+  "delegateAssistantDesc": "A IA trata de tudo",
+  "skipToMatchDay": "Avançar para o Dia de Jogo",
+  "skipToMatchDayDesc": "Avançar até ao próximo jogo",
+  "matchDayTitle": "Dia de Jogo",
+  "delegateWarning": "O teu assistente vai gerir o jogo. Não poderás intervir."
+}

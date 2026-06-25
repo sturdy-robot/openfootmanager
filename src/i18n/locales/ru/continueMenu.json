@@ -1,0 +1,12 @@
+{
+  "goToField": "Перейти на поле",
+  "goToFieldDesc": "Полный контроль матча (по умолчанию)",
+  "watchSpectator": "Смотреть как зритель",
+  "watchSpectatorDesc": "Следить за матчем без управления",
+  "delegateAssistant": "Передать ассистенту",
+  "delegateAssistantDesc": "ИИ мгновенно возьмёт всё на себя",
+  "skipToMatchDay": "Перейти к матчу",
+  "skipToMatchDayDesc": "Быстро перейти к следующей игре",
+  "matchDayTitle": "День матча",
+  "delegateWarning": "Ассистент проведёт матч. Вмешаться в процесс не получится."
+}

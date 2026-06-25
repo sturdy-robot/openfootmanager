@@ -1,0 +1,16 @@
+{
+  "attentionRequired": "需要关注",
+  "resolveBeforeContinuing": "请在继续前解决这些问题",
+  "goTo": "前往",
+  "reviewIssues": "查看问题",
+  "continueAnyway": "仍然继续",
+  "blockers": {
+    "injuredXi": "首发十一人中有{{count}}名伤员:{{players}}",
+    "incompleteXi": "首发十一人中仅有{{count}}名健康球员——请设置您的阵容",
+    "squadSizeCrisis": "阵中仅有{{count}}名签约球员——请在比赛日前完成引援",
+    "plannedContractExitCrisis": "计划中的合同离队将使球队仅剩{{healthyPlayers}}名健康球员和{{goalkeepers}}名门将:{{players}}",
+    "urgentMessages": "{{count}}条紧急未读消息",
+    "keyContractRisk": "阵容规划中的关键球员合同风险:{{players}}",
+    "contractWageRisk": "{{amount}}的工资与高风险合同绑定——请审查您的薪资预算"
+  }
+}

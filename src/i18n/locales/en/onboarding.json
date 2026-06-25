@@ -1,0 +1,14 @@
+{
+  "title": "Getting Started",
+  "description": "Complete these steps to prepare your team for the upcoming season. Staff are especially important — they boost training and recovery.",
+  "reviewSquad": "Review your squad",
+  "reviewSquadDesc": "Check player stats, condition, and traits",
+  "hireStaff": "Hire coaching staff",
+  "hireStaffDesc": "Staff boost training quality and recovery — hire a Coach and Physio",
+  "setTactics": "Set your formation & tactics",
+  "setTacticsDesc": "Choose a formation and play style that fits your squad",
+  "configTraining": "Configure training",
+  "configTrainingDesc": "Pick a focus and schedule to develop your players",
+  "readMessages": "Read your messages",
+  "readMessagesDesc": "Important info from the board and staff awaits"
+}

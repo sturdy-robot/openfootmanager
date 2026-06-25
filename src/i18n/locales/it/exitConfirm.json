@@ -1,0 +1,8 @@
+{
+  "title": "Uscire al menu principale?",
+  "message": "La tua partita verrà salvata automaticamente prima di tornare al menu principale.",
+  "cancel": "Annulla",
+  "saveExit": "Salva ed esci",
+  "savingTitle": "Salvataggio della partita...",
+  "savingMessage": "Attendi mentre salviamo i tuoi progressi e torniamo al menu principale."
+}

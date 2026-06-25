@@ -1,0 +1,22 @@
+{
+  "formationFit": "Adattamento alla formazione",
+  "autoSelect": "Seleziona automaticamente il miglior XI",
+  "selecting": "Selezione in corso...",
+  "startingXI": "XI titolare",
+  "substitutes": "Riserve",
+  "opponent": "Avversario",
+  "nPlayers": "{{count}} giocatori",
+  "nAvailable": "{{count}} disponibili",
+  "noBench": "Nessuna riserva disponibile.",
+  "cancelSwap": "Annulla",
+  "swapHint": "Seleziona una riserva con cui scambiare",
+  "setPieces": "Piazzati e capitano",
+  "lineup": "Formazione",
+  "startMatch": "Inizia partita",
+  "captain": "Capitano",
+  "penaltyTaker": "Rigorista",
+  "freeKickTaker": "Battitore punizioni",
+  "cornerTaker": "Battitore angoli",
+  "fit": "IDO",
+  "keyStats": "Statistiche chiave"
+}
