@@ -173,6 +173,7 @@
     "digestFired": "Você foi demitido.",
     "digestContinueAnyway": "Continuar mesmo assim",
     "digestStop": "Parar simulação",
+    "digestStopping": "Parando…",
     "digestStopped": "Simulação parada",
     "digestError": "Erro de simulação"
   },

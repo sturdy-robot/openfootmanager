@@ -173,6 +173,7 @@
     "digestFired": "Sie wurden entlassen.",
     "digestContinueAnyway": "Trotzdem fortfahren",
     "digestStop": "Simulation stoppen",
+    "digestStopping": "Wird gestoppt…",
     "digestStopped": "Simulation gestoppt",
     "digestError": "Simulationsfehler"
   },

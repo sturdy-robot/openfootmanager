@@ -39,6 +39,7 @@ interface DashboardOverlaysProps {
   digestStopReason?: DigestStopReason | null;
   isDigestVisible?: boolean;
   isDigestRunning?: boolean;
+  isDigestAborting?: boolean;
   onDigestViewBlockers?: (blockers: BlockerData[]) => void;
   onDigestContinueAfterBlocker?: () => void;
   onDismissDigest?: () => void;
@@ -70,6 +71,7 @@ export default function DashboardOverlays({
   digestStopReason,
   isDigestVisible,
   isDigestRunning,
+  isDigestAborting,
   onDigestViewBlockers,
   onDigestContinueAfterBlocker,
   onDismissDigest,
@@ -81,6 +83,7 @@ export default function DashboardOverlays({
         <DashboardSimulatingModal
           digestEntries={digestEntries}
           isDigestRunning={isDigestRunning}
+          isDigestAborting={isDigestAborting}
           stopReason={digestStopReason}
           onStop={onDigestStop}
           onDismiss={onDismissDigest}

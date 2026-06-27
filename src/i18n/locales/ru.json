@@ -173,6 +173,7 @@
     "digestFired": "Вас уволили.",
     "digestContinueAnyway": "Продолжить в любом случае",
     "digestStop": "Остановить симуляцию",
+    "digestStopping": "Остановка…",
     "digestStopped": "Симуляция остановлена",
     "digestError": "Ошибка симуляции"
   },

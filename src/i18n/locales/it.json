@@ -173,6 +173,7 @@
     "digestFired": "Sei stato licenziato.",
     "digestContinueAnyway": "Continua comunque",
     "digestStop": "Ferma simulazione",
+    "digestStopping": "Arresto in corso…",
     "digestStopped": "Simulazione fermata",
     "digestError": "Errore di simulazione"
   },

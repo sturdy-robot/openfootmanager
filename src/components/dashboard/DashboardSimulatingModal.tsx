@@ -24,6 +24,7 @@ interface DashboardSimulatingModalProps {
   // Digest-mode props (optional — omit for a plain single-advance spinner)
   digestEntries?: DigestEntry[];
   isDigestRunning?: boolean;
+  isDigestAborting?: boolean;
   stopReason?: DigestStopReason | null;
   onStop?: () => void;
   onDismiss?: () => void;
@@ -208,6 +209,7 @@ function DigestDayRow({ entry }: { entry: DigestEntry }): JSX.Element {
 export default function DashboardSimulatingModal({
   digestEntries,
   isDigestRunning,
+  isDigestAborting,
   stopReason,
   onStop,
   onDismiss,
@@ -267,10 +269,15 @@ export default function DashboardSimulatingModal({
             <button
               type="button"
               onClick={onStop}
-              className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-navy-600 dark:text-gray-300 dark:hover:bg-navy-700"
+              disabled={isDigestAborting}
+              className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-navy-600 dark:text-gray-300 dark:hover:bg-navy-700"
             >
-              <XCircle className="h-3.5 w-3.5" />
-              {t("dashboard.digestStop")}
+              {isDigestAborting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <XCircle className="h-3.5 w-3.5" />
+              )}
+              {isDigestAborting ? t("dashboard.digestStopping") : t("dashboard.digestStop")}
             </button>
           )}
         </div>

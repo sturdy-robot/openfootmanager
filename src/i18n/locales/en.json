@@ -173,6 +173,7 @@
     "digestFired": "You have been dismissed.",
     "digestContinueAnyway": "Continue Anyway",
     "digestStop": "Stop Simulation",
+    "digestStopping": "Stopping…",
     "digestStopped": "Simulation stopped",
     "digestError": "Simulation error"
   },
