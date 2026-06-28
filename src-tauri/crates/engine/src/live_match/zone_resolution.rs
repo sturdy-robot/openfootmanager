@@ -443,6 +443,7 @@ mod event_detail_tests {
             name: id.to_string(),
             formation: "4-4-2".to_string(),
             play_style: PlayStyle::Balanced,
+            tactics_phase: Default::default(),
             players: vec![
                 make_player(&format!("{id}_gk"), Position::Goalkeeper),
                 make_player(&format!("{id}_d1"), Position::Defender),

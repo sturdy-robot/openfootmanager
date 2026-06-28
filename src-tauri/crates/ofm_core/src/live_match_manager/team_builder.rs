@@ -78,11 +78,15 @@ pub(super) fn build_team_with_bench(game: &Game, team_id: &str) -> (TeamData, Ve
     });
     let bench = bench_domain.into_iter().map(|p| convert_player(p)).collect();
 
+    let tactics_phase = team
+        .map(|t| domain_to_engine_tactics_phase(&t.tactics_phase))
+        .unwrap_or_default();
     let team_data = TeamData {
         id: team_id.to_string(),
         name,
         formation,
         play_style,
+        tactics_phase,
         players: starting_xi,
     };
 
@@ -332,6 +336,62 @@ pub(crate) fn domain_to_engine_role(role: &domain::team::PlayerRole) -> EnginePl
         domain::team::PlayerRole::False9 => EnginePlayerRole::False9,
         domain::team::PlayerRole::PressingForward => EnginePlayerRole::PressingForward,
         domain::team::PlayerRole::CompleteForward => EnginePlayerRole::CompleteForward,
+    }
+}
+
+/// Map the domain phase-blueprint settings onto the engine's independent
+/// `TacticsPhase`. A domain team left on its defaults maps to the engine's
+/// neutral default, so default-tactic matches simulate identically.
+pub(crate) fn domain_to_engine_tactics_phase(
+    phase: &domain::team::TacticsPhaseSettings,
+) -> engine::TacticsPhase {
+    use domain::team as d;
+    engine::TacticsPhase {
+        build_up_style: match phase.build_up_style {
+            d::BuildUpStyle::Short => engine::BuildUpStyle::Short,
+            d::BuildUpStyle::Mixed => engine::BuildUpStyle::Mixed,
+            d::BuildUpStyle::Long => engine::BuildUpStyle::Long,
+        },
+        width: match phase.width {
+            d::PitchWidth::Narrow => engine::Width::Narrow,
+            d::PitchWidth::Normal => engine::Width::Normal,
+            d::PitchWidth::Wide => engine::Width::Wide,
+        },
+        tempo: match phase.tempo {
+            d::Tempo::Patient => engine::Tempo::Patient,
+            d::Tempo::Direct => engine::Tempo::Direct,
+        },
+        defensive_line: match phase.defensive_line {
+            d::DefensiveLine::VeryLow => engine::DefensiveLine::VeryLow,
+            d::DefensiveLine::Low => engine::DefensiveLine::Low,
+            d::DefensiveLine::Medium => engine::DefensiveLine::Medium,
+            d::DefensiveLine::High => engine::DefensiveLine::High,
+        },
+        pressing_intensity: match phase.pressing_intensity {
+            d::PressingIntensity::Passive => engine::PressingIntensity::Passive,
+            d::PressingIntensity::Medium => engine::PressingIntensity::Medium,
+            d::PressingIntensity::Aggressive => engine::PressingIntensity::Aggressive,
+        },
+        defensive_shape: match phase.defensive_shape {
+            d::DefensiveShape::Stretched => engine::DefensiveShape::Stretched,
+            d::DefensiveShape::Normal => engine::DefensiveShape::Normal,
+            d::DefensiveShape::Compact => engine::DefensiveShape::Compact,
+        },
+        marking_style: match phase.marking_style {
+            d::MarkingStyle::Zonal => engine::MarkingStyle::Zonal,
+            d::MarkingStyle::Mixed => engine::MarkingStyle::Mixed,
+            d::MarkingStyle::ManToMan => engine::MarkingStyle::ManToMan,
+        },
+        counter_press_duration: match phase.counter_press_duration {
+            d::CounterPressDuration::None => engine::CounterPressDuration::None,
+            d::CounterPressDuration::Short => engine::CounterPressDuration::Short,
+            d::CounterPressDuration::Long => engine::CounterPressDuration::Long,
+        },
+        break_speed: match phase.break_speed {
+            d::BreakSpeed::Slow => engine::BreakSpeed::Slow,
+            d::BreakSpeed::Medium => engine::BreakSpeed::Medium,
+            d::BreakSpeed::Fast => engine::BreakSpeed::Fast,
+        },
     }
 }
 

@@ -319,6 +319,7 @@ mod commentary_detail_tests {
             name: id.to_string(),
             formation: "4-4-2".to_string(),
             play_style: PlayStyle::Balanced,
+            tactics_phase: Default::default(),
             players: vec![
                 make_test_player(&format!("{}_gk", id), Position::Goalkeeper),
                 make_test_player(&format!("{}_d1", id), Position::Defender),

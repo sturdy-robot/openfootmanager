@@ -27,6 +27,105 @@ pub enum PlayStyle {
 }
 
 // ---------------------------------------------------------------------------
+// TacticsPhase — the 9 phase-blueprint knobs the engine consumes.
+//
+// These mirror `domain::team::TacticsPhaseSettings` but are kept independent so
+// the engine stays free of a domain dependency (same arrangement as `PlayStyle`
+// / `PlayerRole`). The `#[default]` variant of every enum is the *neutral*
+// option: the modifier helpers return ×1.0 / no extra RNG roll for it, so a team
+// left on its defaults simulates exactly as it did before phase consumption
+// existed. The defaults deliberately match the domain defaults.
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum BuildUpStyle {
+    Short,
+    #[default]
+    Mixed,
+    Long,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum Width {
+    Narrow,
+    #[default]
+    Normal,
+    Wide,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum Tempo {
+    Patient,
+    #[default]
+    Direct,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum DefensiveLine {
+    VeryLow,
+    Low,
+    #[default]
+    Medium,
+    High,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum PressingIntensity {
+    Passive,
+    #[default]
+    Medium,
+    Aggressive,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum DefensiveShape {
+    Stretched,
+    #[default]
+    Normal,
+    Compact,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum MarkingStyle {
+    #[default]
+    Zonal,
+    Mixed,
+    ManToMan,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum CounterPressDuration {
+    #[default]
+    None,
+    Short,
+    Long,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum BreakSpeed {
+    Slow,
+    #[default]
+    Medium,
+    Fast,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct TacticsPhase {
+    // With ball
+    pub build_up_style: BuildUpStyle,
+    pub width: Width,
+    pub tempo: Tempo,
+    // Without ball
+    pub defensive_line: DefensiveLine,
+    pub pressing_intensity: PressingIntensity,
+    pub defensive_shape: DefensiveShape,
+    pub marking_style: MarkingStyle,
+    // Transitions
+    pub counter_press_duration: CounterPressDuration,
+    pub break_speed: BreakSpeed,
+}
+
+// ---------------------------------------------------------------------------
 // PlayerRole — mirrors domain::team::PlayerRole, kept independent
 // ---------------------------------------------------------------------------
 
@@ -170,6 +269,10 @@ pub struct TeamData {
     pub name: String,
     pub formation: String,
     pub play_style: PlayStyle,
+    /// The team's phase-blueprint tactical settings. Defaults to a neutral
+    /// blueprint that leaves simulation behaviour unchanged.
+    #[serde(default)]
+    pub tactics_phase: TacticsPhase,
     pub players: Vec<PlayerData>,
 }
 

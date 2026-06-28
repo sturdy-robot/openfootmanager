@@ -500,6 +500,7 @@ fn build_team(id: &str, avg_ovr: u8, play_style: PlayStyle, formation: &str, rng
         name: format!("{} FC", id),
         formation: formation.to_string(),
         play_style,
+        tactics_phase: Default::default(),
         players,
     }
 }

@@ -1,6 +1,6 @@
 mod team_builder;
 pub use team_builder::auto_select_set_pieces;
-pub(crate) use team_builder::domain_to_engine_role;
+pub(crate) use team_builder::{domain_to_engine_role, domain_to_engine_tactics_phase};
 use team_builder::build_team_with_bench;
 
 use rand::SeedableRng;

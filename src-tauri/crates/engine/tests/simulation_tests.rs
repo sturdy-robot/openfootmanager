@@ -44,6 +44,7 @@ fn make_team(id: &str, name: &str, skill: u8, play_style: PlayStyle) -> TeamData
         name: name.to_string(),
         formation: "4-4-2".to_string(),
         play_style,
+        tactics_phase: Default::default(),
         players: vec![
             make_player(&format!("{id}_gk1"), "GK1", Position::Goalkeeper, skill),
             make_player(&format!("{id}_def1"), "DEF1", Position::Defender, skill),
@@ -922,6 +923,7 @@ fn minimal_team_doesnt_crash() {
         name: "Minimal FC".to_string(),
         formation: "1-1-1-1".to_string(),
         play_style: PlayStyle::Balanced,
+        tactics_phase: Default::default(),
         players: vec![
             make_player("gk", "GK", Position::Goalkeeper, 50),
             make_player("def", "DEF", Position::Defender, 50),

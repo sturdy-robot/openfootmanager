@@ -30,6 +30,7 @@ pub fn build_team(
         name: name.to_string(),
         formation: formation.to_string(),
         play_style,
+        tactics_phase: Default::default(),
         players,
     }
 }
@@ -107,5 +108,6 @@ fn make_player(
         reflexes: biased(base, gk_off, rng),
         aerial: noise(base, rng),
         traits: vec![],
+        role: engine::PlayerRole::default(),
     }
 }

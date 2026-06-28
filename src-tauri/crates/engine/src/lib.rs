@@ -15,4 +15,8 @@ pub use live_match::{
     SubstitutionRecord,
 };
 pub use report::{GoalDetail, MatchReport, PlayerMatchStats, TeamStats};
-pub use types::{MatchConfig, PlayStyle, PlayerData, PlayerRole, Position, Side, TeamData, Zone};
+pub use types::{
+    BreakSpeed, BuildUpStyle, CounterPressDuration, DefensiveLine, DefensiveShape, MarkingStyle,
+    MatchConfig, PlayStyle, PlayerData, PlayerRole, Position, PressingIntensity, Side, TacticsPhase,
+    TeamData, Tempo, Width, Zone,
+};

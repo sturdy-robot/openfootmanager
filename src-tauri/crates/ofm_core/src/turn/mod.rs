@@ -5,7 +5,7 @@ mod round_summary;
 
 use crate::board_objectives;
 use crate::game::Game;
-use crate::live_match_manager::domain_to_engine_role;
+use crate::live_match_manager::{domain_to_engine_role, domain_to_engine_tactics_phase};
 use crate::player_events;
 use crate::random_events;
 use crate::scouting;
@@ -409,11 +409,15 @@ fn build_engine_team(game: &Game, team_id: &str) -> engine::TeamData {
         })
         .collect();
 
+    let tactics_phase = team
+        .map(|t| domain_to_engine_tactics_phase(&t.tactics_phase))
+        .unwrap_or_default();
     engine::TeamData {
         id: team_id.to_string(),
         name,
         formation,
         play_style,
+        tactics_phase,
         players,
     }
 }
