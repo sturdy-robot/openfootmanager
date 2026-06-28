@@ -1,7 +1,10 @@
 use rand::{Rng, RngExt};
 
 use crate::event::{EventType, MatchEvent};
-use crate::shared::{PlayStylePhase, TraitContext, home_mod, play_style_modifier, trait_bonus};
+use crate::shared::{
+    PlayStylePhase, TraitContext, defensive_shape_modifier, home_mod, marking_modifier,
+    play_style_modifier, tempo_progression_modifier, trait_bonus, width_attack_modifier,
+};
 use crate::types::{Position, Side, Zone};
 
 use super::MatchContext;
@@ -105,8 +108,14 @@ fn resolve_midfield<R: Rng>(
         PlayStylePhase::Midfield,
         false,
     );
-    let att_eff = att_rating * att_mod * home_mod(att_side, ctx.config);
-    let def_eff = def_rating * def_mod * home_mod(def_side, ctx.config);
+    let att_eff = att_rating
+        * att_mod
+        * home_mod(att_side, ctx.config)
+        * tempo_progression_modifier(ctx.team(att_side).tactics_phase);
+    let def_eff = def_rating
+        * def_mod
+        * home_mod(def_side, ctx.config)
+        * marking_modifier(ctx.team(def_side).tactics_phase);
     let success = att_eff / (att_eff + def_eff);
 
     if rng.random_range(0.0..1.0f64) < success {
@@ -170,8 +179,14 @@ fn resolve_attacking_third<R: Rng>(
         PlayStylePhase::Defense,
         false,
     );
-    let att_eff = att_rating * att_mod * home_mod(att_side, ctx.config);
-    let def_eff = def_rating * def_mod * home_mod(def_side, ctx.config);
+    let att_eff = att_rating
+        * att_mod
+        * home_mod(att_side, ctx.config)
+        * width_attack_modifier(ctx.team(att_side).tactics_phase);
+    let def_eff = def_rating
+        * def_mod
+        * home_mod(def_side, ctx.config)
+        * defensive_shape_modifier(ctx.team(def_side).tactics_phase);
     let success = att_eff / (att_eff + def_eff);
     let zone = Zone::attacking_third(att_side);
 

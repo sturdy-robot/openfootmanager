@@ -1,7 +1,11 @@
 use rand::{Rng, RngExt};
 
 use crate::event::{EventDetail, EventType, MatchEvent};
-use crate::shared::{PlayStylePhase, PlayerSnap, TraitContext, play_style_modifier, role_attribute_modifier, trait_bonus};
+use crate::shared::{
+    PlayStylePhase, PlayerSnap, TraitContext, defensive_shape_modifier, marking_modifier,
+    play_style_modifier, role_attribute_modifier, tempo_progression_modifier, trait_bonus,
+    width_attack_modifier,
+};
 use crate::types::{Position, Side, Zone};
 
 use super::LiveMatchState;
@@ -78,6 +82,8 @@ impl LiveMatchState {
         rng: &mut R,
     ) -> Vec<MatchEvent> {
         let mut events = Vec::new();
+        let att_phase = self.team_ref(att_side).tactics_phase;
+        let def_phase = self.team_ref(def_side).tactics_phase;
         let attacker = self.snap_player(att_side, Position::Midfielder, rng);
         let defender = self.snap_player(def_side, Position::Midfielder, rng);
 
@@ -106,8 +112,14 @@ impl LiveMatchState {
             PlayStylePhase::Midfield,
             false,
         ) * role_attribute_modifier(defender.role, PlayStylePhase::Defense);
-        let att_eff = att_rating * att_mod * crate::shared::home_mod(att_side, &self.config);
-        let def_eff = def_rating * def_mod * crate::shared::home_mod(def_side, &self.config);
+        let att_eff = att_rating
+            * att_mod
+            * crate::shared::home_mod(att_side, &self.config)
+            * tempo_progression_modifier(att_phase);
+        let def_eff = def_rating
+            * def_mod
+            * crate::shared::home_mod(def_side, &self.config)
+            * marking_modifier(def_phase);
         let success = att_eff / (att_eff + def_eff);
 
         if rng.random_range(0.0..1.0f64) < success {
@@ -146,6 +158,8 @@ impl LiveMatchState {
         rng: &mut R,
     ) -> Vec<MatchEvent> {
         let mut events = Vec::new();
+        let att_phase = self.team_ref(att_side).tactics_phase;
+        let def_phase = self.team_ref(def_side).tactics_phase;
         let attacker = self.snap_player(att_side, Position::Forward, rng);
         let defender = self.snap_player(def_side, Position::Defender, rng);
 
@@ -174,8 +188,14 @@ impl LiveMatchState {
             PlayStylePhase::Defense,
             false,
         ) * role_attribute_modifier(defender.role, PlayStylePhase::Defense);
-        let att_eff = att_rating * att_mod * crate::shared::home_mod(att_side, &self.config);
-        let def_eff = def_rating * def_mod * crate::shared::home_mod(def_side, &self.config);
+        let att_eff = att_rating
+            * att_mod
+            * crate::shared::home_mod(att_side, &self.config)
+            * width_attack_modifier(att_phase);
+        let def_eff = def_rating
+            * def_mod
+            * crate::shared::home_mod(def_side, &self.config)
+            * defensive_shape_modifier(def_phase);
         let success = att_eff / (att_eff + def_eff);
         let zone = Zone::attacking_third(att_side);
 
@@ -515,5 +535,247 @@ mod event_detail_tests {
             saw_any_goal,
             "No goal was scored in 500 seeds; increase seed range or check engine config"
         );
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Phase-blueprint consumption — directional behaviour tests
+//
+// Each test runs two otherwise-identical sides differing in a single phase knob
+// over a band of seeds and asserts the aggregate *outcome* moves the claimed
+// direction. The metric is chosen to match what the knob actually controls:
+//
+//   * "keep / win the ball" knobs (build-up, tempo retention, defensive line,
+//     pressing, counter-press) → home possession share.
+//   * "create / deny a chance" knobs (width, tempo directness, defensive shape,
+//     marking, break speed) → shots for or against.
+//
+// These are behaviour assertions, not implementation assertions: they would
+// still pass if the internal multipliers were re-tuned, as long as the
+// direction holds. Magnitudes are subtle, so we aggregate over many matches.
+// ---------------------------------------------------------------------------
+#[cfg(test)]
+mod phase_consumption_tests {
+    use rand::SeedableRng;
+    use rand::rngs::StdRng;
+
+    use crate::event::{EventType, MatchEvent};
+    use crate::live_match::LiveMatchState;
+    use crate::types::{
+        BreakSpeed, BuildUpStyle, CounterPressDuration, DefensiveLine, DefensiveShape, MarkingStyle,
+        MatchConfig, PlayStyle, PlayerData, Position, PressingIntensity, Side, TacticsPhase,
+        TeamData, Tempo, Width,
+    };
+
+    const SEEDS: u64 = 200;
+    const SHOTS: [EventType; 4] = [
+        EventType::Goal,
+        EventType::ShotSaved,
+        EventType::ShotBlocked,
+        EventType::ShotOffTarget,
+    ];
+
+    /// Aggregate outcome of a band of matches.
+    #[derive(Default, Clone, Copy)]
+    struct Totals {
+        home_possession: usize,
+        away_possession: usize,
+        home_shots: usize,
+        away_shots: usize,
+    }
+
+    fn mk_player(id: &str, pos: Position) -> PlayerData {
+        PlayerData {
+            id: id.to_string(),
+            name: id.to_string(),
+            position: pos,
+            ovr: 70,
+            condition: 90,
+            fitness: 75,
+            pace: 70,
+            stamina: 70,
+            strength: 70,
+            agility: 70,
+            passing: 70,
+            shooting: 70,
+            tackling: 70,
+            dribbling: 70,
+            defending: 70,
+            positioning: 70,
+            vision: 70,
+            decisions: 70,
+            composure: 70,
+            aggression: 70,
+            teamwork: 70,
+            leadership: 70,
+            handling: 70,
+            reflexes: 70,
+            aerial: 70,
+            traits: vec![],
+            role: crate::types::PlayerRole::Standard,
+        }
+    }
+
+    fn mk_team(id: &str) -> TeamData {
+        TeamData {
+            id: id.to_string(),
+            name: id.to_string(),
+            formation: "4-4-2".to_string(),
+            play_style: PlayStyle::Balanced,
+            tactics_phase: TacticsPhase::default(),
+            players: vec![
+                mk_player(&format!("{id}_gk"), Position::Goalkeeper),
+                mk_player(&format!("{id}_d1"), Position::Defender),
+                mk_player(&format!("{id}_d2"), Position::Defender),
+                mk_player(&format!("{id}_d3"), Position::Defender),
+                mk_player(&format!("{id}_d4"), Position::Defender),
+                mk_player(&format!("{id}_m1"), Position::Midfielder),
+                mk_player(&format!("{id}_m2"), Position::Midfielder),
+                mk_player(&format!("{id}_m3"), Position::Midfielder),
+                mk_player(&format!("{id}_m4"), Position::Midfielder),
+                mk_player(&format!("{id}_f1"), Position::Forward),
+                mk_player(&format!("{id}_f2"), Position::Forward),
+            ],
+        }
+    }
+
+    fn shots(events: &[MatchEvent], side: Side) -> usize {
+        events
+            .iter()
+            .filter(|e| e.side == side && SHOTS.contains(&e.event_type))
+            .count()
+    }
+
+    /// Play one full match, tallying per-minute possession and total shots.
+    fn play(home_phase: TacticsPhase, away_phase: TacticsPhase, seed: u64) -> Totals {
+        let mut home = mk_team("home");
+        let mut away = mk_team("away");
+        home.tactics_phase = home_phase;
+        away.tactics_phase = away_phase;
+        let mut state =
+            LiveMatchState::new(home, away, MatchConfig::default(), vec![], vec![], false);
+        let mut rng = StdRng::seed_from_u64(seed);
+        let mut events = Vec::new();
+        let mut t = Totals::default();
+        loop {
+            let r = state.step_minute(&mut rng);
+            match r.possession {
+                Side::Home => t.home_possession += 1,
+                Side::Away => t.away_possession += 1,
+            }
+            events.extend(r.events.iter().cloned());
+            if r.is_finished {
+                break;
+            }
+        }
+        t.home_shots = shots(&events, Side::Home);
+        t.away_shots = shots(&events, Side::Away);
+        t
+    }
+
+    /// Sum a metric over the seed band, with `home` carrying the phase under
+    /// test and `away` always neutral.
+    fn band(home: TacticsPhase, metric: impl Fn(&Totals) -> usize) -> usize {
+        let neutral = TacticsPhase::default();
+        (0..SEEDS).map(|s| metric(&play(home, neutral, s))).sum()
+    }
+
+    fn with<F: FnOnce(&mut TacticsPhase)>(f: F) -> TacticsPhase {
+        let mut p = TacticsPhase::default();
+        f(&mut p);
+        p
+    }
+
+    /// The neutral default must be a true no-op: a default-vs-default match must
+    /// be perfectly reproducible (phase consumption never perturbs the RNG
+    /// stream at neutral).
+    #[test]
+    fn neutral_phase_is_deterministic_baseline() {
+        let n = TacticsPhase::default();
+        for seed in 0..20 {
+            let a = play(n, n, seed);
+            let b = play(n, n, seed);
+            assert_eq!(
+                (a.home_possession, a.home_shots, a.away_shots),
+                (b.home_possession, b.home_shots, b.away_shots),
+                "seed {seed}: neutral run not reproducible"
+            );
+        }
+    }
+
+    // --- Keep / win the ball → possession share ---
+
+    #[test]
+    fn short_build_up_keeps_more_possession_than_long() {
+        let short = band(with(|p| p.build_up_style = BuildUpStyle::Short), |t| t.home_possession);
+        let long = band(with(|p| p.build_up_style = BuildUpStyle::Long), |t| t.home_possession);
+        assert!(short > long, "Short build-up should hold the ball more than Long: {short} vs {long}");
+    }
+
+    #[test]
+    fn patient_tempo_keeps_more_possession_than_direct() {
+        let patient = band(with(|p| p.tempo = Tempo::Patient), |t| t.home_possession);
+        let direct = band(with(|p| p.tempo = Tempo::Direct), |t| t.home_possession);
+        assert!(patient > direct, "Patient tempo should hold the ball more than Direct: {patient} vs {direct}");
+    }
+
+    #[test]
+    fn high_line_wins_the_ball_back_more_than_low() {
+        let high = band(with(|p| p.defensive_line = DefensiveLine::High), |t| t.home_possession);
+        let low = band(with(|p| p.defensive_line = DefensiveLine::VeryLow), |t| t.home_possession);
+        assert!(high > low, "A high line should recover possession more than a very low one: {high} vs {low}");
+    }
+
+    #[test]
+    fn aggressive_press_wins_the_ball_back_more_than_passive() {
+        let aggressive =
+            band(with(|p| p.pressing_intensity = PressingIntensity::Aggressive), |t| t.home_possession);
+        let passive =
+            band(with(|p| p.pressing_intensity = PressingIntensity::Passive), |t| t.home_possession);
+        assert!(aggressive > passive, "Aggressive pressing should win the ball back more than passive: {aggressive} vs {passive}");
+    }
+
+    #[test]
+    fn long_counter_press_keeps_more_possession_than_none() {
+        let long = band(with(|p| p.counter_press_duration = CounterPressDuration::Long), |t| t.home_possession);
+        let none = band(with(|p| p.counter_press_duration = CounterPressDuration::None), |t| t.home_possession);
+        assert!(long > none, "A long counter-press should regain possession more than none: {long} vs {none}");
+    }
+
+    // --- Create / deny a chance → shots ---
+
+    #[test]
+    fn wide_creates_more_chances_than_narrow() {
+        let wide = band(with(|p| p.width = Width::Wide), |t| t.home_shots);
+        let narrow = band(with(|p| p.width = Width::Narrow), |t| t.home_shots);
+        assert!(wide > narrow, "Wide should create more chances than Narrow: {wide} vs {narrow}");
+    }
+
+    #[test]
+    fn direct_tempo_shoots_more_than_patient() {
+        let direct = band(with(|p| p.tempo = Tempo::Direct), |t| t.home_shots);
+        let patient = band(with(|p| p.tempo = Tempo::Patient), |t| t.home_shots);
+        assert!(direct > patient, "Direct tempo should produce more shots than Patient: {direct} vs {patient}");
+    }
+
+    #[test]
+    fn compact_shape_concedes_fewer_chances_than_stretched() {
+        let compact = band(with(|p| p.defensive_shape = DefensiveShape::Compact), |t| t.away_shots);
+        let stretched = band(with(|p| p.defensive_shape = DefensiveShape::Stretched), |t| t.away_shots);
+        assert!(compact < stretched, "A compact shape should concede fewer chances than a stretched one: {compact} vs {stretched}");
+    }
+
+    #[test]
+    fn man_marking_concedes_fewer_chances_than_zonal() {
+        let man = band(with(|p| p.marking_style = MarkingStyle::ManToMan), |t| t.away_shots);
+        let zonal = band(with(|p| p.marking_style = MarkingStyle::Zonal), |t| t.away_shots);
+        assert!(man < zonal, "Man-marking should deny more midfield progression (fewer chances conceded) than zonal: {man} vs {zonal}");
+    }
+
+    #[test]
+    fn fast_break_creates_more_chances_than_slow() {
+        let fast = band(with(|p| p.break_speed = BreakSpeed::Fast), |t| t.home_shots);
+        let slow = band(with(|p| p.break_speed = BreakSpeed::Slow), |t| t.home_shots);
+        assert!(fast > slow, "Fast breaks should turn turnovers into chances more than slow ones: {fast} vs {slow}");
     }
 }

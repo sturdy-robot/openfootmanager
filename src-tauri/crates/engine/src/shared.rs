@@ -1,4 +1,8 @@
-use crate::types::{MatchConfig, PlayStyle, PlayerData, PlayerRole, Side};
+use crate::types::{
+    BreakSpeed, BuildUpStyle, CounterPressDuration, DefensiveLine, DefensiveShape, MarkingStyle,
+    MatchConfig, PlayStyle, PlayerData, PlayerRole, PressingIntensity, Side, TacticsPhase, Tempo,
+    Width,
+};
 
 // ---------------------------------------------------------------------------
 // PlayerSnap — lightweight snapshot of a player to avoid borrow conflicts
@@ -194,6 +198,151 @@ pub(crate) fn play_style_modifier(
         (PlayStyle::HighPress, PlayStylePhase::Press) => 1.20,
         (PlayStyle::HighPress, PlayStylePhase::Defense) => 0.95,
         _ => 1.0,
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Phase-blueprint modifiers
+//
+// Each function maps one `TacticsPhase` knob onto a rating multiplier or an
+// event probability. The neutral (#[default]) option of every knob returns
+// ×1.0 — and, for the probabilistic transition knobs, 0.0 — so a team on its
+// defaults leaves simulation behaviour (and the RNG stream) unchanged.
+//
+// Hook placement matters: the engine resets the ball to Midfield on every
+// minute's possession contest and never visits the deep build-up zone, so the
+// "keep / win the ball" knobs are routed through that per-minute contest
+// (`retain = mid_att / (mid_att + mid_def)`) — multiplying the rating, not
+// adding a draw, so neutral stays byte-identical. The "create / prevent a
+// chance" knobs live in the per-action midfield / attacking-third resolvers
+// that actually fire. Magnitudes are deliberately subtle and are the tunable
+// surface (see PHASE_MAGNITUDES in the consumption tests).
+// ---------------------------------------------------------------------------
+
+// --- Possession contest: keep the ball (attacking side) ---
+
+/// Build-up style scales how securely the team keeps possession. Short plays it
+/// safe and retains; Long is more direct and concedes the ball more readily.
+pub(crate) fn build_up_retention_modifier(phase: TacticsPhase) -> f64 {
+    match phase.build_up_style {
+        BuildUpStyle::Short => 1.05,
+        BuildUpStyle::Mixed => 1.0,
+        BuildUpStyle::Long => 0.95,
+    }
+}
+
+/// Tempo's possession side: Patient circulates and holds the ball; Direct moves
+/// it on faster at a slightly higher risk of losing it.
+pub(crate) fn tempo_retention_modifier(phase: TacticsPhase) -> f64 {
+    match phase.tempo {
+        Tempo::Patient => 1.03,
+        Tempo::Direct => 1.0,
+    }
+}
+
+/// Combined attacking-side multiplier applied to the possessing team's weight in
+/// the per-minute possession contest.
+pub(crate) fn possession_attack_modifier(phase: TacticsPhase) -> f64 {
+    build_up_retention_modifier(phase) * tempo_retention_modifier(phase)
+}
+
+// --- Possession contest: win the ball back (defending side) ---
+
+/// Defensive line height: a higher line wins the ball back more readily (at the
+/// cost, conceptually, of space in behind — not modelled in v1).
+pub(crate) fn defensive_line_press_modifier(phase: TacticsPhase) -> f64 {
+    match phase.defensive_line {
+        DefensiveLine::VeryLow => 0.95,
+        DefensiveLine::Low => 0.975,
+        DefensiveLine::Medium => 1.0,
+        DefensiveLine::High => 1.05,
+    }
+}
+
+/// Pressing intensity: harder pressing wins the ball back more often.
+pub(crate) fn pressing_press_modifier(phase: TacticsPhase) -> f64 {
+    match phase.pressing_intensity {
+        PressingIntensity::Passive => 0.96,
+        PressingIntensity::Medium => 1.0,
+        PressingIntensity::Aggressive => 1.06,
+    }
+}
+
+/// Combined defending-side multiplier applied to the pressing team's weight in
+/// the per-minute possession contest.
+pub(crate) fn possession_defense_modifier(phase: TacticsPhase) -> f64 {
+    defensive_line_press_modifier(phase) * pressing_press_modifier(phase)
+}
+
+/// Pressing intensity also scales how fast the team tires (cost of pressing).
+/// Applies only to the live engine, which tracks in-match condition.
+pub(crate) fn pressing_fatigue_modifier(phase: TacticsPhase) -> f64 {
+    match phase.pressing_intensity {
+        PressingIntensity::Passive => 0.95,
+        PressingIntensity::Medium => 1.0,
+        PressingIntensity::Aggressive => 1.08,
+    }
+}
+
+// --- Per-action resolvers: create / deny chances ---
+
+/// Tempo's progression side: Direct breaks lines through midfield faster,
+/// Patient is more measured. Pairs with `tempo_retention_modifier` so Patient
+/// trades quicker progression for more secure possession.
+pub(crate) fn tempo_progression_modifier(phase: TacticsPhase) -> f64 {
+    match phase.tempo {
+        Tempo::Direct => 1.0,
+        Tempo::Patient => 0.96,
+    }
+}
+
+/// Marking style scales how tightly the team denies midfield progression.
+pub(crate) fn marking_modifier(phase: TacticsPhase) -> f64 {
+    match phase.marking_style {
+        MarkingStyle::Zonal => 1.0,
+        MarkingStyle::Mixed => 1.02,
+        MarkingStyle::ManToMan => 1.04,
+    }
+}
+
+/// Width scales chance creation in the attacking third.
+pub(crate) fn width_attack_modifier(phase: TacticsPhase) -> f64 {
+    match phase.width {
+        Width::Wide => 1.04,
+        Width::Normal => 1.0,
+        Width::Narrow => 0.96,
+    }
+}
+
+/// Defensive shape scales how hard it is to create chances against the team.
+pub(crate) fn defensive_shape_modifier(phase: TacticsPhase) -> f64 {
+    match phase.defensive_shape {
+        DefensiveShape::Stretched => 0.96,
+        DefensiveShape::Normal => 1.0,
+        DefensiveShape::Compact => 1.04,
+    }
+}
+
+// --- Transitions: applied at the per-minute possession flip ---
+
+/// Counter-press duration: chance for the side that just lost the ball to win
+/// it straight back. None ⇒ no roll (neutral, RNG-safe).
+pub(crate) fn counter_press_rewin_chance(phase: TacticsPhase) -> f64 {
+    match phase.counter_press_duration {
+        CounterPressDuration::None => 0.0,
+        CounterPressDuration::Short => 0.06,
+        CounterPressDuration::Long => 0.12,
+    }
+}
+
+/// Break speed: chance for the side that just won the ball to spring a fast
+/// counter straight into its attacking third instead of resetting to midfield.
+/// Neutral (Medium/Slow) ⇒ no roll; only Fast enables counters in v1.
+pub(crate) fn break_speed_counter_chance(phase: TacticsPhase) -> f64 {
+    match phase.break_speed {
+        BreakSpeed::Slow => 0.0,
+        BreakSpeed::Medium => 0.0,
+        BreakSpeed::Fast => 0.10,
     }
 }
 

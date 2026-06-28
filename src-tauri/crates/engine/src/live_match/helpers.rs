@@ -1,7 +1,11 @@
+use std::collections::{HashMap, HashSet};
+
 use rand::{Rng, RngExt};
 
 use crate::event::{DangerBand, FoulSeverity, GoalContext, SaveQuality};
-use crate::shared::{PlayStylePhase, PlayerSnap, home_mod, play_style_modifier};
+use crate::shared::{
+    PlayStylePhase, PlayerSnap, home_mod, play_style_modifier, pressing_fatigue_modifier,
+};
 use crate::types::{PlayerData, Position, Side, TeamData};
 
 use super::{LiveMatchState, SetPieceTakers};
@@ -12,10 +16,23 @@ use super::{LiveMatchState, SetPieceTakers};
 
 impl LiveMatchState {
     pub(super) fn deplete_stamina_tick(&mut self) {
-        let fatigue_rate = self.config.fatigue_per_minute;
-        // Iterate over all on-pitch players
-        for p in self.home.players.iter().chain(self.away.players.iter()) {
-            if self.sent_off.contains(&p.id) {
+        let base_rate = self.config.fatigue_per_minute;
+        // Aggressive pressing tires a side faster; passive pressing conserves
+        // energy. Neutral (Medium) is ×1.0, so default sides are unaffected.
+        let home_rate = base_rate * pressing_fatigue_modifier(self.home.tactics_phase);
+        let away_rate = base_rate * pressing_fatigue_modifier(self.away.tactics_phase);
+        Self::deplete_team(&self.home, home_rate, &self.sent_off, &mut self.player_conditions);
+        Self::deplete_team(&self.away, away_rate, &self.sent_off, &mut self.player_conditions);
+    }
+
+    fn deplete_team(
+        team: &TeamData,
+        fatigue_rate: f64,
+        sent_off: &HashSet<String>,
+        conditions: &mut HashMap<String, f64>,
+    ) {
+        for p in &team.players {
+            if sent_off.contains(&p.id) {
                 continue;
             }
             let stamina_factor = p.stamina as f64 / 100.0;
@@ -24,7 +41,7 @@ impl LiveMatchState {
             // Fitness scales the base depletion more aggressively (unfit players tire much faster).
             let depletion =
                 fatigue_rate * (1.0 - stamina_factor * 0.5) * (1.3 - fitness_factor * 0.6);
-            if let Some(cond) = self.player_conditions.get_mut(&p.id) {
+            if let Some(cond) = conditions.get_mut(&p.id) {
                 *cond = (*cond - depletion).max(5.0);
             }
         }

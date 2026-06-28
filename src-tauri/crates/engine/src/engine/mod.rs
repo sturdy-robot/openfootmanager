@@ -5,7 +5,10 @@ use rand::{Rng, RngExt};
 
 use crate::event::{EventType, MatchEvent};
 use crate::report::MatchReport;
-use crate::shared::PlayerSnap;
+use crate::shared::{
+    PlayerSnap, break_speed_counter_chance, counter_press_rewin_chance, possession_attack_modifier,
+    possession_defense_modifier,
+};
 use crate::types::{MatchConfig, PlayerData, Position, Side, TeamData, Zone};
 
 // ---------------------------------------------------------------------------
@@ -195,14 +198,29 @@ fn simulate_minute<R: Rng>(ctx: &mut MatchContext, minute: u8, rng: &mut R) {
         resolution::resolve_action(ctx, minute, rng);
     }
 
-    // Possession contest via midfield battle
+    // Possession contest via midfield battle. Phase blueprints adjust the
+    // contest weights here (see the live engine for the rationale). Neutral
+    // modifiers are ×1.0 and transition rolls only fire for non-neutral knobs,
+    // so default sides reproduce the pre-phase engine exactly.
     let poss_side = ctx.possession;
     let def_side = poss_side.opposite();
-    let mid_att = resolution::effective_midfield(ctx, poss_side);
-    let mid_def = resolution::effective_midfield(ctx, def_side);
+    let poss_phase = ctx.team(poss_side).tactics_phase;
+    let def_phase = ctx.team(def_side).tactics_phase;
+    let mid_att = resolution::effective_midfield(ctx, poss_side) * possession_attack_modifier(poss_phase);
+    let mid_def = resolution::effective_midfield(ctx, def_side) * possession_defense_modifier(def_phase);
     let retain = mid_att / (mid_att + mid_def);
     if rng.random_range(0.0..1.0f64) > retain {
-        ctx.possession = def_side;
-        ctx.ball_zone = Zone::Midfield;
+        let rewin = counter_press_rewin_chance(poss_phase);
+        if rewin > 0.0 && rng.random_range(0.0..1.0f64) < rewin {
+            // Counter-press wins the ball straight back; nothing changes.
+        } else {
+            ctx.possession = def_side;
+            let breakaway = break_speed_counter_chance(def_phase);
+            if breakaway > 0.0 && rng.random_range(0.0..1.0f64) < breakaway {
+                ctx.ball_zone = Zone::attacking_third(def_side);
+            } else {
+                ctx.ball_zone = Zone::Midfield;
+            }
+        }
     }
 }

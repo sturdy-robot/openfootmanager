@@ -1,6 +1,10 @@
 use rand::{Rng, RngExt};
 
 use crate::event::{EventType, MatchEvent};
+use crate::shared::{
+    break_speed_counter_chance, counter_press_rewin_chance, possession_attack_modifier,
+    possession_defense_modifier,
+};
 use crate::types::{Side, Zone};
 
 use super::{LiveMatchState, MatchPhase, MinuteResult};
@@ -173,15 +177,35 @@ impl LiveMatchState {
             minute_events.extend(new_events);
         }
 
-        // Possession contest
+        // Possession contest. Phase blueprints adjust the contest weights here
+        // (the deep build-up zone is essentially never visited, so this
+        // per-minute battle is where "keep / win the ball" tactics live). The
+        // random draw stays unconditional, and neutral modifiers are ×1.0, so a
+        // default-vs-default match is byte-identical to the pre-phase engine.
         let poss_side = self.possession;
         let def_side = poss_side.opposite();
-        let mid_att = self.effective_midfield(poss_side);
-        let mid_def = self.effective_midfield(def_side);
+        let poss_phase = self.team_ref(poss_side).tactics_phase;
+        let def_phase = self.team_ref(def_side).tactics_phase;
+        let mid_att = self.effective_midfield(poss_side) * possession_attack_modifier(poss_phase);
+        let mid_def = self.effective_midfield(def_side) * possession_defense_modifier(def_phase);
         let retain = mid_att / (mid_att + mid_def);
         if rng.random_range(0.0..1.0f64) > retain {
-            self.possession = def_side;
-            self.ball_zone = Zone::Midfield;
+            // The possessing side is losing the ball. Counter-press: they may
+            // win it straight back (None ⇒ no roll, keeping neutral identical).
+            let rewin = counter_press_rewin_chance(poss_phase);
+            if rewin > 0.0 && rng.random_range(0.0..1.0f64) < rewin {
+                // Ball won straight back; possession and zone unchanged.
+            } else {
+                self.possession = def_side;
+                // Break speed: the side that just won it may spring a fast
+                // counter into the final third instead of resetting to midfield.
+                let breakaway = break_speed_counter_chance(def_phase);
+                if breakaway > 0.0 && rng.random_range(0.0..1.0f64) < breakaway {
+                    self.ball_zone = Zone::attacking_third(def_side);
+                } else {
+                    self.ball_zone = Zone::Midfield;
+                }
+            }
         }
 
         // Record ball zone for AI zone-pressure tracking (cap at 10)
