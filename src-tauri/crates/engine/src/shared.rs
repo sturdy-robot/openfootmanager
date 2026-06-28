@@ -292,7 +292,7 @@ pub(crate) fn pressing_fatigue_modifier(phase: TacticsPhase) -> f64 {
 pub(crate) fn tempo_progression_modifier(phase: TacticsPhase) -> f64 {
     match phase.tempo {
         Tempo::Direct => 1.0,
-        Tempo::Patient => 0.96,
+        Tempo::Patient => 0.92,
     }
 }
 
@@ -300,8 +300,8 @@ pub(crate) fn tempo_progression_modifier(phase: TacticsPhase) -> f64 {
 pub(crate) fn marking_modifier(phase: TacticsPhase) -> f64 {
     match phase.marking_style {
         MarkingStyle::Zonal => 1.0,
-        MarkingStyle::Mixed => 1.02,
-        MarkingStyle::ManToMan => 1.04,
+        MarkingStyle::Mixed => 1.03,
+        MarkingStyle::ManToMan => 1.06,
     }
 }
 
@@ -317,9 +317,9 @@ pub(crate) fn width_attack_modifier(phase: TacticsPhase) -> f64 {
 /// Defensive shape scales how hard it is to create chances against the team.
 pub(crate) fn defensive_shape_modifier(phase: TacticsPhase) -> f64 {
     match phase.defensive_shape {
-        DefensiveShape::Stretched => 0.96,
+        DefensiveShape::Stretched => 0.93,
         DefensiveShape::Normal => 1.0,
-        DefensiveShape::Compact => 1.04,
+        DefensiveShape::Compact => 1.07,
     }
 }
 
