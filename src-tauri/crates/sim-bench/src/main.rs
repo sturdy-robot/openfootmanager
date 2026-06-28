@@ -69,6 +69,12 @@ struct Cli {
     #[arg(long)]
     bench: bool,
 
+    /// Phase-blueprint sweep: for every tactics_phase knob, run `--games`
+    /// matches with that option on the home side (away neutral) and tabulate
+    /// possession %, shots for/against and goals. Tuning aid for phase magnitudes.
+    #[arg(long)]
+    phase_sweep: bool,
+
     // ── MatchConfig overrides ────────────────────────────────────────────────
     #[arg(long, help = "Home advantage multiplier (default 1.08)")]
     home_advantage: Option<f64>,
@@ -161,6 +167,11 @@ fn main() {
 
     if cli.bench {
         run_bench(&config, cli.games, cli.seed);
+        return;
+    }
+
+    if cli.phase_sweep {
+        run_phase_sweep(&config, cli.games, cli.seed);
         return;
     }
 
@@ -299,4 +310,83 @@ fn run_bench(config: &MatchConfig, games: u32, seed: Option<u64>) {
     println!("  Latency p95     : {}µs", p95.as_micros());
     println!("  Latency p99     : {}µs", p99.as_micros());
     println!("{}", sep.bright_cyan());
+}
+
+/// Tabulate the effect of every tactics_phase knob. For each option we run
+/// `games` matches with that option applied to an otherwise-neutral home side
+/// against a fully-neutral away side, and report the home side's average
+/// possession %, shots for, shots against and goals. Reading the `Neutral` row
+/// as the baseline, each option's row shows how far that knob moves the game —
+/// the data used to tune the multipliers in `engine::shared`.
+fn run_phase_sweep(config: &MatchConfig, games: u32, seed: Option<u64>) {
+    use engine::{
+        BreakSpeed, BuildUpStyle, CounterPressDuration, DefensiveLine, DefensiveShape, MarkingStyle,
+        PressingIntensity, TacticsPhase, Tempo, Width,
+    };
+
+    let base = seed.unwrap_or(42);
+    let mut team_rng = StdRng::seed_from_u64(base.wrapping_add(0xDEAD_BEEF));
+    let base_home = build_team("home", "Home FC", 70, PlayStyle::Balanced, "4-4-2", &mut team_rng);
+    let away = build_team("away", "Away FC", 70, PlayStyle::Balanced, "4-4-2", &mut team_rng);
+
+    let n = TacticsPhase::default();
+    let variants: Vec<(&str, &str, TacticsPhase)> = vec![
+        ("baseline", "Neutral", n),
+        ("build_up", "Short", TacticsPhase { build_up_style: BuildUpStyle::Short, ..n }),
+        ("build_up", "Long", TacticsPhase { build_up_style: BuildUpStyle::Long, ..n }),
+        ("width", "Narrow", TacticsPhase { width: Width::Narrow, ..n }),
+        ("width", "Wide", TacticsPhase { width: Width::Wide, ..n }),
+        ("tempo", "Patient", TacticsPhase { tempo: Tempo::Patient, ..n }),
+        ("tempo", "Direct", TacticsPhase { tempo: Tempo::Direct, ..n }),
+        ("def_line", "VeryLow", TacticsPhase { defensive_line: DefensiveLine::VeryLow, ..n }),
+        ("def_line", "High", TacticsPhase { defensive_line: DefensiveLine::High, ..n }),
+        ("press", "Passive", TacticsPhase { pressing_intensity: PressingIntensity::Passive, ..n }),
+        ("press", "Aggressive", TacticsPhase { pressing_intensity: PressingIntensity::Aggressive, ..n }),
+        ("shape", "Stretched", TacticsPhase { defensive_shape: DefensiveShape::Stretched, ..n }),
+        ("shape", "Compact", TacticsPhase { defensive_shape: DefensiveShape::Compact, ..n }),
+        ("marking", "Zonal", TacticsPhase { marking_style: MarkingStyle::Zonal, ..n }),
+        ("marking", "ManToMan", TacticsPhase { marking_style: MarkingStyle::ManToMan, ..n }),
+        ("counter_press", "None", TacticsPhase { counter_press_duration: CounterPressDuration::None, ..n }),
+        ("counter_press", "Long", TacticsPhase { counter_press_duration: CounterPressDuration::Long, ..n }),
+        ("break_speed", "Slow", TacticsPhase { break_speed: BreakSpeed::Slow, ..n }),
+        ("break_speed", "Fast", TacticsPhase { break_speed: BreakSpeed::Fast, ..n }),
+    ];
+
+    eprintln!("Phase sweep: {games} games per option (seed: {base})…");
+    let sep = "─".repeat(64);
+    println!("{sep}");
+    println!(
+        "{:<14} {:<11} {:>7} {:>8} {:>8} {:>6} {:>6}",
+        "knob", "option", "poss%", "shotsF", "shotsA", "GF", "GA"
+    );
+    println!("{sep}");
+
+    for (knob, opt, phase) in variants {
+        let mut home = base_home.clone();
+        home.tactics_phase = phase;
+        let (mut poss, mut sf, mut sa, mut gf, mut ga) = (0.0f64, 0u64, 0u64, 0u64, 0u64);
+        for i in 0..games {
+            let mut rng = StdRng::seed_from_u64(base.wrapping_add(i as u64));
+            let r = simulate_with_rng(&home, &away, config, &mut rng);
+            let ticks =
+                (r.home_stats.possession_ticks + r.away_stats.possession_ticks).max(1) as f64;
+            poss += r.home_stats.possession_ticks as f64 / ticks;
+            sf += r.home_stats.shots as u64;
+            sa += r.away_stats.shots as u64;
+            gf += r.home_goals as u64;
+            ga += r.away_goals as u64;
+        }
+        let g = games as f64;
+        println!(
+            "{:<14} {:<11} {:>6.1}% {:>8.2} {:>8.2} {:>6.2} {:>6.2}",
+            knob,
+            opt,
+            100.0 * poss / g,
+            sf as f64 / g,
+            sa as f64 / g,
+            gf as f64 / g,
+            ga as f64 / g,
+        );
+    }
+    println!("{sep}");
 }
