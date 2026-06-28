@@ -148,6 +148,45 @@ These modifiers are applied to the relevant team rating during action resolution
 
 ---
 
+## Phase Blueprint (tactics_phase)
+
+On top of the play style, each team carries a `tactics_phase` blueprint of nine
+finer dials (`engine::TacticsPhase`, mirrored from `domain::team::TacticsPhaseSettings`).
+Every dial has a neutral default that multiplies by ×1.0 (and, for the
+probabilistic transition dials, rolls nothing), so a team on its defaults
+simulates **byte-identically** to the pre-blueprint engine — the neutrality test
+suite depends on this.
+
+Hook placement follows what the engine actually executes. The deep build-up zone
+is essentially never visited, so the "keep / win the ball" dials are applied in
+the **per-minute possession contest** (`retain = mid_att / (mid_att + mid_def)`),
+multiplying the contest weights rather than adding a draw. The "create / deny a
+chance" dials are applied in the midfield and attacking-third resolvers.
+
+| Dial | Hook | Effect |
+|---|---|---|
+| Build-up (Short/Long) | possession contest, att weight | retain the ball more / less |
+| Tempo — retention (Patient) | possession contest, att weight | hold possession longer |
+| Defensive line (High/Low) | possession contest, def weight | win the ball back higher / deeper |
+| Pressing (Aggressive/Passive) | possession contest, def weight + stamina | win it back more / less, tire faster / slower |
+| Counter-press (None→Long) | possession contest, on flip | losing side may win the ball straight back |
+| Break speed (Slow→Fast) | possession contest, on flip | winning side may spring a counter into the final third |
+| Tempo — directness (Direct) | midfield resolver, att | break lines through midfield faster |
+| Marking (Zonal→ManToMan) | midfield resolver, def | deny midfield progression more tightly |
+| Width (Narrow/Wide) | attacking-third resolver, att | create more / fewer chances |
+| Defensive shape (Stretched/Compact) | attacking-third resolver, def | concede more / fewer chances |
+
+Both the live engine (`live_match/`) and the batch engine (`engine/`) consume the
+blueprint identically, so AI matchday results and the user's watched match agree.
+In-match stamina cost from pressing applies only to the live engine, which tracks
+per-minute condition.
+
+Magnitudes are intentionally subtle and live in `engine::shared`. They are tuned
+empirically with `cargo run -p sim-bench -- --phase-sweep`, which tabulates each
+dial's effect on possession %, shots and goals against a neutral opponent.
+
+---
+
 ## Home Advantage
 
 The home team receives a configurable multiplier (default **1.08**, i.e. 8% boost) applied to all their ratings during action resolution. This models the effect of playing at home — crowd support, familiarity with the pitch, etc.

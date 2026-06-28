@@ -115,6 +115,38 @@ Your play style affects how the team behaves during matches:
 
 Choose a style that suits your squad's strengths. A team full of fast forwards may thrive on Counter, while a midfield-heavy squad might prefer Possession.
 
+### Phase Blueprint
+
+Below the play style you'll find the **Phase Blueprint** — a finer set of dials that shape *how* your team plays in three moments of the game: when you have the ball, when you don't, and in the seconds right after possession changes hands. The same blueprint is available on the pre-match screen so you can tweak it for a specific opponent.
+
+Every dial has a sensible middle setting; leaving the whole blueprint untouched plays a balanced game. Pushing a dial trades one quality for another, so pick the few that match your players and your game plan rather than maxing everything.
+
+**With the ball**
+
+| Dial | What it does |
+|------|--------------|
+| **Build-up** | *Short* keeps possession safer and patient at the back; *Long* is more direct and gives the ball away a little more often. |
+| **Width** | *Wide* stretches play and creates more chances; *Narrow* plays through the middle and creates fewer. |
+| **Tempo** | *Patient* circulates the ball and holds possession longer; *Direct* moves it forward more quickly. |
+
+**Without the ball**
+
+| Dial | What it does |
+|------|--------------|
+| **Defensive line** | A *high* line wins the ball back higher up the pitch; a *low* line sits deeper and is more cautious. |
+| **Pressing** | *Aggressive* pressing wins the ball back more often but tires your players faster; *passive* conserves energy. |
+| **Defensive shape** | *Compact* makes you harder to create chances against; *stretched* covers more ground but concedes more. |
+| **Marking** | *Man-to-man* denies opponents more tightly in midfield; *zonal* holds position. |
+
+**Transitions**
+
+| Dial | What it does |
+|------|--------------|
+| **Counter-press** | How hard you chase the ball straight after losing it. A *long* counter-press wins possession back more often. |
+| **Break speed** | How quickly you attack after winning the ball. *Fast* turns turnovers into quick chances; *slow* is more measured. |
+
+These dials are deliberately subtle on their own, but their effect adds up across a match and a season. As a starting point: a possession side might pick Short build-up, Patient tempo and a long counter-press; a counter-attacking side might pick Direct tempo, a compact shape and fast breaks.
+
 ---
 
 ## Training
