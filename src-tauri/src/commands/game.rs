@@ -1,4 +1,4 @@
-use log::info;
+use log::{info, warn};
 use std::sync::Arc;
 use tauri::{Manager as TauriManager, State};
 
@@ -261,6 +261,7 @@ fn load_world_data_from_package_ids(
     packages_dir: &std::path::Path,
     package_ids: &[String],
     opening_year: Option<u32>,
+    asset_root: Option<&std::path::Path>,
 ) -> Result<
     (
         ofm_core::generator::WorldData,
@@ -275,9 +276,25 @@ fn load_world_data_from_package_ids(
         // joining into a filesystem path under packages_dir.
         crate::commands::world::validate_package_id(id)?;
         let path = packages_dir.join(format!("{id}.ofm"));
-        let (pkg, errors) = ofm_core::generator::load_world_package_from_ofm(&path);
+        let (mut pkg, errors) = ofm_core::generator::load_world_package_from_ofm(&path);
         if !errors.is_empty() {
             return Err(first_package_error_message(&errors));
+        }
+        // Land this package's artwork somewhere the webview can read it, and
+        // stamp the package id onto every asset path. Both must happen before
+        // the merge below, which collapses the manifests and would otherwise
+        // lose which package a club's badge came from. Extraction failure is
+        // not fatal — the world still plays, clubs just keep generated crests.
+        if let Some(root) = asset_root {
+            let package_assets = root.join(id);
+            match ofm_core::generator::extract_package_assets(&path, &package_assets) {
+                Ok(skipped) if !skipped.is_empty() => {
+                    warn!("[assets] {id}: {} asset entries skipped", skipped.len());
+                }
+                Err(err) => warn!("[assets] {id}: extraction failed: {err}"),
+                _ => {}
+            }
+            ofm_core::generator::qualify_package_asset_paths(&mut pkg, id);
         }
         let version = pkg
             .meta
@@ -1726,7 +1743,13 @@ pub async fn start_new_game(
             // The career start year wins over the package's declared `baseYear`:
             // squads must be aged against the clock the player actually gets.
             let opening_year = u32::try_from(startup_options.start_year).ok();
-            load_world_data_from_package_ids(&packages_dir, ids, opening_year)?
+            let asset_root = crate::commands::world::package_assets_dir(&app_handle).ok();
+            load_world_data_from_package_ids(
+                &packages_dir,
+                ids,
+                opening_year,
+                asset_root.as_deref(),
+            )?
         } else {
             (load_world_data(world_source.as_deref())?, vec![])
         };
