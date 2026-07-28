@@ -200,6 +200,7 @@ pub(super) fn generate_random_player_from_def(
     team_id: &str,
     index: usize,
     nationality: &str,
+    opening_year: u32,
     names_def: &NamesDefinition,
     rng: &mut impl Rng,
 ) -> Player {
@@ -229,7 +230,7 @@ pub(super) fn generate_random_player_from_def(
     } else {
         rng.random_range(17..36)
     };
-    let birth_year = 2026 - age;
+    let birth_year = opening_year - age;
     let birth_month = rng.random_range(1..13);
     let birth_day = rng.random_range(1..29);
     let dob = format!("{:04}-{:02}-{:02}", birth_year, birth_month, birth_day);
@@ -295,7 +296,7 @@ pub(super) fn generate_random_player_from_def(
 
     // For initial market-value sizing, use a temporary simple attribute average.
     // The accurate position-weighted OVR is computed by refresh_player_derived() below.
-    let current_year: u32 = 2026;
+    let current_year: u32 = opening_year;
 
     let approx_ovr = (attributes.pace as u32
         + attributes.stamina as u32
@@ -333,7 +334,7 @@ pub(super) fn generate_random_player_from_def(
     } else {
         2
     };
-    let contract_end = format!("{}-06-30", 2026 + contract_years);
+    let contract_end = format!("{}-06-30", opening_year + contract_years);
 
     let mut player = Player::new(
         p_id,
@@ -407,12 +408,13 @@ pub(super) fn generate_random_staff_from_def(
     team_id: &str,
     role: StaffRole,
     nationality: &str,
+    opening_year: u32,
     names_def: &NamesDefinition,
     rng: &mut impl Rng,
 ) -> Staff {
     let (first_name, last_name) = pick_name_from_def(nationality, names_def, rng);
     let age = rng.random_range(30..60);
-    let birth_year = 2026 - age;
+    let birth_year = opening_year - age;
     let dob = format!(
         "{:04}-{:02}-{:02}",
         birth_year,
@@ -463,12 +465,13 @@ pub(super) fn generate_random_staff_from_def(
 pub(super) fn generate_random_staff_unattached_from_def(
     role: StaffRole,
     nationality: &str,
+    opening_year: u32,
     names_def: &NamesDefinition,
     rng: &mut impl Rng,
 ) -> Staff {
     let (first_name, last_name) = pick_name_from_def(nationality, names_def, rng);
     let age = rng.random_range(28..55);
-    let birth_year = 2026 - age;
+    let birth_year = opening_year - age;
     let dob = format!(
         "{:04}-{:02}-{:02}",
         birth_year,
@@ -504,6 +507,7 @@ pub(super) fn generate_random_staff_unattached_from_def(
 pub(super) fn generate_staff_from_authored_def(
     def: &super::package::StaffDef,
     team_id: Option<&str>,
+    opening_year: u32,
     names_def: &NamesDefinition,
     rng: &mut impl Rng,
 ) -> Staff {
@@ -521,7 +525,7 @@ pub(super) fn generate_staff_from_authored_def(
         def.last_name.clone()
     };
 
-    let current_year: u32 = 2026;
+    let current_year: u32 = opening_year;
     let birth_year = if let Some(dob) = &def.date_of_birth {
         dob.split('-').next().and_then(|y| y.parse::<u32>().ok()).unwrap_or(current_year - 40)
     } else if let Some(age) = def.age {
@@ -537,6 +541,7 @@ pub(super) fn generate_staff_from_authored_def(
             team_id.unwrap_or(""),
             def.role.clone(),
             nationality,
+            opening_year,
             names_def,
             rng,
         )
@@ -647,15 +652,19 @@ fn resolve_def_name(
     }
 }
 
-fn resolve_birth_year(def: &super::package::PlayerDef, rng: &mut impl Rng) -> u32 {
+fn resolve_birth_year(
+    def: &super::package::PlayerDef,
+    opening_year: u32,
+    rng: &mut impl Rng,
+) -> u32 {
     if let Some(dob) = &def.date_of_birth {
         dob.get(0..4)
             .and_then(|year| year.parse::<u32>().ok())
-            .unwrap_or(2026 - 24)
+            .unwrap_or(opening_year - 24)
     } else if let Some(age) = def.age {
-        2026u32.saturating_sub(age)
+        opening_year.saturating_sub(age)
     } else {
-        2026 - rng.random_range(18..34)
+        opening_year - rng.random_range(18..34)
     }
 }
 
@@ -666,6 +675,7 @@ fn resolve_birth_year(def: &super::package::PlayerDef, rng: &mut impl Rng) -> u3
 pub(super) fn generate_player_from_def(
     def: &super::package::PlayerDef,
     team_id: &str,
+    opening_year: u32,
     names_def: &NamesDefinition,
     rng: &mut impl Rng,
 ) -> Player {
@@ -678,8 +688,8 @@ pub(super) fn generate_player_from_def(
         last_name
     };
 
-    let current_year: u32 = 2026;
-    let birth_year = resolve_birth_year(def, rng);
+    let current_year: u32 = opening_year;
+    let birth_year = resolve_birth_year(def, opening_year, rng);
     let dob = def
         .date_of_birth
         .clone()
@@ -719,7 +729,7 @@ pub(super) fn generate_player_from_def(
     } else {
         rng.random_range(1..4)
     };
-    let contract_end = format!("{}-06-30", 2026 + contract_years);
+    let contract_end = format!("{}-06-30", opening_year + contract_years);
 
     let id = if def.id.is_empty() {
         Uuid::new_v4().to_string()

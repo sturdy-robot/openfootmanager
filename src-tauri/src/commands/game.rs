@@ -30,7 +30,7 @@ fn load_world_data_from_package(dir: &str) -> Result<ofm_core::generator::WorldD
     if !errors.is_empty() {
         return Err(first_package_error_message(&errors));
     }
-    ofm_core::generator::build_world_from_package(&package)
+    ofm_core::generator::build_world_from_package(&package, None)
 }
 
 /// Surface the first concrete validation error (e.g. *which* country is unknown)
@@ -260,6 +260,7 @@ fn load_world_data(world_source: Option<&str>) -> Result<ofm_core::generator::Wo
 fn load_world_data_from_package_ids(
     packages_dir: &std::path::Path,
     package_ids: &[String],
+    opening_year: Option<u32>,
 ) -> Result<
     (
         ofm_core::generator::WorldData,
@@ -295,7 +296,7 @@ fn load_world_data_from_package_ids(
     if !errors.is_empty() {
         return Err(first_package_error_message(&errors));
     }
-    let world = ofm_core::generator::build_world_from_package(&merged)?;
+    let world = ofm_core::generator::build_world_from_package(&merged, opening_year)?;
     if world.teams.is_empty() {
         return Err("be.error.package.noDatabasePackage".to_string());
     }
@@ -1667,7 +1668,7 @@ pub fn inspect_world_package(path: String) -> Result<WorldPackageInspection, Str
         });
     }
 
-    let world = ofm_core::generator::build_world_from_package(&package)?;
+    let world = ofm_core::generator::build_world_from_package(&package, None)?;
     let name = if world.name.trim().is_empty() {
         fallback_name
     } else {
@@ -1722,7 +1723,10 @@ pub async fn start_new_game(
                 .app_data_dir()
                 .map_err(|e| e.to_string())?
                 .join("packages");
-            load_world_data_from_package_ids(&packages_dir, ids)?
+            // The career start year wins over the package's declared `baseYear`:
+            // squads must be aged against the clock the player actually gets.
+            let opening_year = u32::try_from(startup_options.start_year).ok();
+            load_world_data_from_package_ids(&packages_dir, ids, opening_year)?
         } else {
             (load_world_data(world_source.as_deref())?, vec![])
         };
@@ -1742,7 +1746,12 @@ pub async fn start_new_game(
     let is_non_random = package_ids.as_deref().is_some_and(|ids| !ids.is_empty())
         || matches!(world_source.as_deref(), Some(source) if source != "random");
     if is_non_random {
-        ofm_core::generator::normalize_imported_world_for_career_start(&mut world);
+        // Staff generated to fill an imported world are aged against the year the
+        // career actually opens in, so a historical world does not get a backroom
+        // team born decades after the season it models.
+        let opening_year = u32::try_from(clock.start_date.year())
+            .unwrap_or_else(|_| ofm_core::generator::default_opening_year());
+        ofm_core::generator::normalize_imported_world_for_career_start(&mut world, opening_year);
     }
     let reference_date = clock.current_date.date_naive();
     let age = age_on_date(birth_date, reference_date);
@@ -1966,7 +1975,15 @@ pub fn bootstrap_game_for_mcp(
     let mut world = load_world_data_from_path(world_path)?;
 
     // Normalize imported world for career start (same as start_new_game does for non-random imports)
-    ofm_core::generator::normalize_imported_world_for_career_start(&mut world);
+    let bootstrap_opening_year = normalize_startup_options(None)
+        .ok()
+        .and_then(|options| game_clock_for_world(&options, &world.metadata).ok())
+        .and_then(|clock| u32::try_from(clock.start_date.year()).ok())
+        .unwrap_or_else(ofm_core::generator::default_opening_year);
+    ofm_core::generator::normalize_imported_world_for_career_start(
+        &mut world,
+        bootstrap_opening_year,
+    );
 
     // Step 2: Find the existing user manager in the world data.
     // HistoricalSnapshot exports include the user manager (id "mgr_user") already
@@ -3156,17 +3173,17 @@ competitions:
             players.push(make_player(
                 format!("{}-def-youth", team.id),
                 domain::player::Position::Defender,
-                "2008-01-01",
+                "2014-01-01",
             ));
             players.push(make_player(
                 format!("{}-mid-youth", team.id),
                 domain::player::Position::Midfielder,
-                "2007-01-01",
+                "2013-01-01",
             ));
             players.push(make_player(
                 format!("{}-fwd-youth", team.id),
                 domain::player::Position::Forward,
-                "2006-01-01",
+                "2012-01-01",
             ));
             for index in 0..8 {
                 players.push(make_player(
@@ -3796,7 +3813,10 @@ competitions:
             history_depth_years: DEFAULT_GENERATED_HISTORY_DEPTH_YEARS,
         };
         let mut world = make_imported_baseline_world_without_staff();
-        ofm_core::generator::normalize_imported_world_for_career_start(&mut world);
+        ofm_core::generator::normalize_imported_world_for_career_start(
+            &mut world,
+            startup_options.start_year as u32,
+        );
         let clock = game_clock_for_world(&startup_options, &world.metadata).unwrap();
 
         let (game, stats_state) =
@@ -3858,7 +3878,10 @@ competitions:
             history_depth_years: DEFAULT_GENERATED_HISTORY_DEPTH_YEARS,
         };
         let mut world = make_imported_baseline_world_without_staff();
-        ofm_core::generator::normalize_imported_world_for_career_start(&mut world);
+        ofm_core::generator::normalize_imported_world_for_career_start(
+            &mut world,
+            startup_options.start_year as u32,
+        );
         let clock = game_clock_for_world(&startup_options, &world.metadata).unwrap();
         let (mut game, stats_state) =
             build_game_from_world_data(clock, manager, &startup_options, world);
@@ -3952,7 +3975,10 @@ competitions:
         let original_news_len = world.news.len();
         let original_season = world.league.as_ref().map(|league| league.season);
         let original_awards = world.world_history.season_awards.len();
-        ofm_core::generator::normalize_imported_world_for_career_start(&mut world);
+        ofm_core::generator::normalize_imported_world_for_career_start(
+            &mut world,
+            startup_options.start_year as u32,
+        );
         let clock = game_clock_for_world(&startup_options, &world.metadata).unwrap();
 
         let (game, stats_state) =
@@ -4216,7 +4242,10 @@ competitions:
             history_depth_years: DEFAULT_GENERATED_HISTORY_DEPTH_YEARS,
         };
         let mut world = make_imported_baseline_world_without_staff();
-        ofm_core::generator::normalize_imported_world_for_career_start(&mut world);
+        ofm_core::generator::normalize_imported_world_for_career_start(
+            &mut world,
+            startup_options.start_year as u32,
+        );
         let clock = game_clock_for_world(&startup_options, &world.metadata).unwrap();
         let manager = domain::manager::Manager::new(
             "mgr-user".to_string(),
