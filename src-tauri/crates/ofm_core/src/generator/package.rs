@@ -1408,7 +1408,7 @@ mod tests {
         assert!(errors.is_empty(), "package should load: {errors:?}");
         qualify_package_asset_paths(&mut package, "badge-pkg");
 
-        let world = crate::generator::build_world_from_package(&package).expect("world builds");
+        let world = crate::generator::build_world_from_package(&package, None).expect("world builds");
         let logo = world
             .teams
             .iter()
