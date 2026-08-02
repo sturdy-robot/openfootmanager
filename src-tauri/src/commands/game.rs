@@ -2816,6 +2816,7 @@ competitions:
             competition: FixtureCompetition::League,
             status: domain::league::FixtureStatus::Scheduled,
             result: None,
+            ..Default::default()
         });
         game.competitions = vec![league];
 

@@ -237,6 +237,7 @@ fn process_day_simulates_due_national_team_fixture() {
         competition: FixtureCompetition::InternationalNation,
         status: FixtureStatus::Scheduled,
         result: None,
+        ..Default::default()
     });
     let mut away = NationalTeam::new("nt-bra".into(), "Brazil".into(), "BRA".into(), None);
     away.squad_player_ids = away_squad;
@@ -286,6 +287,7 @@ fn process_day_routes_world_cup_fixtures_to_the_national_team_engine() {
         competition: FixtureCompetition::InternationalNation,
         status: FixtureStatus::Scheduled,
         result: None,
+        ..Default::default()
     });
     cup.knockout_rounds.push(KnockoutRoundState {
         id: "wc-round-1".to_string(),
@@ -1971,4 +1973,75 @@ fn build_round_summary_ignores_non_competitive_matchday_zero_fixtures() {
     let summary = turn::build_round_summary(&game, 0, &previous_round_standings());
 
     assert!(summary.is_none());
+}
+
+// ---------------------------------------------------------------------------
+// Match reproducibility — the foundation match replay is built on
+// ---------------------------------------------------------------------------
+
+#[test]
+fn a_simulated_fixture_records_its_seed_and_engine_version() {
+    let mut game = make_game_with_match();
+    assert_eq!(game.league.as_ref().unwrap().fixtures[0].seed, 0);
+
+    turn::process_day(&mut game);
+
+    let fixture = &game.league.as_ref().unwrap().fixtures[0];
+    assert_eq!(fixture.status, FixtureStatus::Completed);
+    assert_ne!(
+        fixture.seed, 0,
+        "a simulated fixture must record the seed it was simulated with, or the \
+         match can never be replayed"
+    );
+    assert_eq!(fixture.engine_version, engine::ENGINE_VERSION);
+}
+
+#[test]
+fn the_same_fixture_simulates_to_the_same_result_every_time() {
+    // Replay works by re-simulating from the stored seed, so a fixture must
+    // produce the same match each time it is run. This drives the real turn
+    // path rather than the engine directly, to catch entropy leaking in
+    // anywhere between the fixture and the simulation.
+    fn play() -> (u8, u8) {
+        let mut game = make_game_with_match();
+        turn::process_day(&mut game);
+        let result = game.league.as_ref().unwrap().fixtures[0]
+            .result
+            .clone()
+            .expect("fixture should have a result");
+        (result.home_goals, result.away_goals)
+    }
+
+    let first = play();
+    for attempt in 1..8 {
+        assert_eq!(
+            play(),
+            first,
+            "simulation {attempt} diverged; the match path is not reproducible"
+        );
+    }
+}
+
+#[test]
+fn fixtures_with_different_ids_do_not_all_play_out_the_same() {
+    // The fallback seed is derived from the fixture id, so distinct fixtures
+    // must not collapse onto one shared scoreline.
+    let mut seen = std::collections::HashSet::new();
+    for index in 0..12 {
+        let mut game = make_game_with_match();
+        if let Some(league) = game.league.as_mut() {
+            league.fixtures[0].id = format!("fixture-{index}");
+        }
+        turn::process_day(&mut game);
+        let result = game.league.as_ref().unwrap().fixtures[0]
+            .result
+            .clone()
+            .expect("fixture should have a result");
+        seen.insert((result.home_goals, result.away_goals));
+    }
+    assert!(
+        seen.len() > 1,
+        "every fixture produced the same scoreline {seen:?} — seeds are not \
+         varying with the fixture id"
+    );
 }

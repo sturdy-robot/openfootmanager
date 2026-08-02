@@ -11,11 +11,105 @@ use std::collections::HashSet;
 
 use crate::game::Game;
 
-use domain::league::StandingEntry;
+use domain::league::{
+    ReplayCommand, ReplayCommandKind, ReplayInput, ReplayLineup, StandingEntry,
+};
 use domain::manager::Manager;
 use domain::team::MatchRoles;
 use engine::ai::{self, AiPersonality, AiProfile};
 use engine::{LiveMatchState, MatchCommand, MatchConfig, MatchSnapshot, MinuteResult, Side};
+
+/// Translate an engine command into its stored replay form.
+///
+/// Returns `None` for commands that carry no replay meaning. Kept exhaustive
+/// (no wildcard arm) so a new `MatchCommand` variant fails to compile here
+/// rather than being silently dropped from replays.
+fn to_replay_command(cmd: &MatchCommand) -> Option<ReplayCommandKind> {
+    let home = |side: &Side| *side == Side::Home;
+    Some(match cmd {
+        MatchCommand::Substitute {
+            side,
+            player_off_id,
+            player_on_id,
+        } => ReplayCommandKind::Substitute {
+            home: home(side),
+            player_off_id: player_off_id.clone(),
+            player_on_id: player_on_id.clone(),
+        },
+        MatchCommand::PreMatchSwap {
+            side,
+            player_off_id,
+            player_on_id,
+        } => ReplayCommandKind::PreMatchSwap {
+            home: home(side),
+            player_off_id: player_off_id.clone(),
+            player_on_id: player_on_id.clone(),
+        },
+        MatchCommand::ChangeFormation { side, formation } => ReplayCommandKind::ChangeFormation {
+            home: home(side),
+            formation: formation.clone(),
+        },
+        MatchCommand::ChangePlayStyle { side, play_style } => ReplayCommandKind::ChangePlayStyle {
+            home: home(side),
+            play_style: format!("{play_style:?}"),
+        },
+        MatchCommand::ChangePlayerRole {
+            side,
+            player_id,
+            role,
+        } => ReplayCommandKind::ChangePlayerRole {
+            home: home(side),
+            player_id: player_id.clone(),
+            role: team_builder::engine_to_domain_role(*role),
+        },
+        MatchCommand::SetFreeKickTaker { side, player_id } => {
+            ReplayCommandKind::SetFreeKickTaker {
+                home: home(side),
+                player_id: player_id.clone(),
+            }
+        }
+        MatchCommand::SetCornerTaker { side, player_id } => ReplayCommandKind::SetCornerTaker {
+            home: home(side),
+            player_id: player_id.clone(),
+        },
+        MatchCommand::SetPenaltyTaker { side, player_id } => ReplayCommandKind::SetPenaltyTaker {
+            home: home(side),
+            player_id: player_id.clone(),
+        },
+        MatchCommand::SetCaptain { side, player_id } => ReplayCommandKind::SetCaptain {
+            home: home(side),
+            player_id: player_id.clone(),
+        },
+    })
+}
+
+/// Capture how one side lines up at kick-off.
+fn capture_lineup(game: &Game, team_id: &str, xi: &engine::TeamData, bench: &[engine::PlayerData]) -> ReplayLineup {
+    let team = game.teams.iter().find(|team| team.id == team_id);
+    ReplayLineup {
+        formation: xi.formation.clone(),
+        starting_xi_ids: xi.players.iter().map(|p| p.id.clone()).collect(),
+        bench_ids: bench.iter().map(|p| p.id.clone()).collect(),
+        player_roles: team
+            .map(|team| {
+                team.player_roles
+                    .iter()
+                    .map(|(id, role)| (id.clone(), role.clone()))
+                    .collect()
+            })
+            .unwrap_or_default(),
+        tactics: team
+            .map(|team| team.tactics_phase.clone())
+            .unwrap_or_default(),
+        // Condition at kick-off, which is not recoverable from a later save.
+        conditions: xi
+            .players
+            .iter()
+            .chain(bench.iter())
+            .map(|p| (p.id.clone(), p.condition))
+            .collect(),
+    }
+}
 
 const LIVE_MATCH_NO_LEAGUE_ERROR: &str = "be.error.liveMatch.noLeague";
 const LIVE_MATCH_FIXTURE_NOT_FOUND_ERROR: &str = "be.error.liveMatch.fixtureNotFound";
@@ -97,6 +191,17 @@ pub enum MatchMode {
 pub struct LiveMatchSession {
     pub match_state: LiveMatchState,
     pub rng: StdRng,
+    /// Seed this match's RNG was created from, stored so the fixture can be
+    /// re-simulated later to replay the match.
+    pub seed: u64,
+    /// User commands in the order they were applied, with the minute they were
+    /// applied at. Only the human's decisions are recorded: AI decisions are
+    /// drawn from `rng` and so are reproduced by the seed alone.
+    pub recorded_commands: Vec<ReplayCommand>,
+    /// How each side lined up at kick-off. Captured rather than re-derived,
+    /// because condition, injuries and personnel all move on afterwards.
+    pub kickoff_home: ReplayLineup,
+    pub kickoff_away: ReplayLineup,
     pub mode: MatchMode,
     /// Index into the fixtures of the competition identified by
     /// `competition_id` — NOT necessarily into `game.league`, which
@@ -159,8 +264,33 @@ impl LiveMatchSession {
         self.match_state.snapshot()
     }
 
+    /// Apply a user command.
+    ///
+    /// This is the funnel for *human* decisions only — the in-match AI calls
+    /// `match_state.apply_command` directly (see `apply_ai_decisions`), which is
+    /// what lets replay capture record the user's inputs without also recording
+    /// decisions the seed already reproduces.
     pub fn apply_command(&mut self, cmd: MatchCommand) -> Result<(), String> {
+        // Record only commands the engine accepted; a rejected command changed
+        // nothing, so replaying it would diverge from what actually happened.
+        if let Some(command) = to_replay_command(&cmd) {
+            self.match_state.apply_command(cmd)?;
+            self.recorded_commands.push(ReplayCommand {
+                minute: self.match_state.minute(),
+                command,
+            });
+            return Ok(());
+        }
         self.match_state.apply_command(cmd)
+    }
+
+    /// The inputs needed to replay this match, for storing on the fixture.
+    pub fn replay_input(&self) -> ReplayInput {
+        ReplayInput {
+            home: self.kickoff_home.clone(),
+            away: self.kickoff_away.clone(),
+            commands: self.recorded_commands.clone(),
+        }
     }
 
     pub fn is_finished(&self) -> bool {
@@ -205,10 +335,13 @@ pub fn create_live_match(
 
     let home_team_id = fixture.home_team_id.clone();
     let away_team_id = fixture.away_team_id.clone();
+    let seed = fixture.simulation_seed();
 
     // Build engine TeamData (starting XI = first 11 players by position)
     let (home_xi, home_bench) = build_team_with_bench(game, &home_team_id);
     let (away_xi, away_bench) = build_team_with_bench(game, &away_team_id);
+    let kickoff_home = capture_lineup(game, &home_team_id, &home_xi, &home_bench);
+    let kickoff_away = capture_lineup(game, &away_team_id, &away_xi, &away_bench);
     let home_starter_ids = home_xi
         .players
         .iter()
@@ -297,7 +430,13 @@ pub fn create_live_match(
 
     Ok(LiveMatchSession {
         match_state,
-        rng: StdRng::from_rng(&mut rand::rng()),
+        // Seeded from the fixture rather than thread entropy, so the match can
+        // be re-simulated later and replayed exactly as it was played.
+        rng: StdRng::seed_from_u64(seed),
+        seed,
+        recorded_commands: Vec::new(),
+        kickoff_home,
+        kickoff_away,
         mode,
         fixture_index,
         competition_id: league.id.clone(),

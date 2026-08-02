@@ -419,6 +419,7 @@ mod tests {
                     competition: FixtureCompetition::League,
                     status: FixtureStatus::Scheduled,
                     result: None,
+                    ..Default::default()
                 },
                 Fixture {
                     id: "fix2".to_string(),
@@ -430,6 +431,7 @@ mod tests {
                     competition: FixtureCompetition::League,
                     status: FixtureStatus::Scheduled,
                     result: None,
+                    ..Default::default()
                 },
             ],
             standings: vec![
@@ -670,6 +672,7 @@ mod tests {
                 competition: FixtureCompetition::Cup,
                 status: FixtureStatus::Scheduled,
                 result: None,
+                ..Default::default()
             }],
             standings: vec![],
             knockout_rounds: vec![KnockoutRoundState {

@@ -156,6 +156,7 @@ mod tests {
                 competition: FixtureCompetition::Cup,
                 status: FixtureStatus::Scheduled,
                 result: None,
+                ..Default::default()
             }],
             knockout_rounds: vec![KnockoutRoundState {
                 id: "round-1".to_string(),

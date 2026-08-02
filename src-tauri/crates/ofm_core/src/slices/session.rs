@@ -229,6 +229,7 @@ mod tests {
             competition: FixtureCompetition::default(),
             status,
             result: None,
+            ..Default::default()
         }
     }
 

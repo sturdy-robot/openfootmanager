@@ -189,6 +189,16 @@ pub fn load_league(conn: &Connection) -> Result<Option<League>, String> {
                 competition: parse_fixture_competition(&competition_str),
                 status: parse_fixture_status(&status_str),
                 result: result_json.and_then(|j| serde_json::from_str(&j).ok()),
+                // The legacy `fixtures` table has no seed, engine-version or
+                // replay columns, and deliberately gains none: `game.league` is
+                // a derived mirror of a competition (see
+                // `Game::sync_legacy_league`), and competitions persist their
+                // fixtures as JSON, which does carry those fields. This loader
+                // is only authoritative for saves old enough to predate
+                // competitions entirely; those fixtures have no seed to keep,
+                // and `Fixture::simulation_seed` derives a stable one from the
+                // fixture id.
+                ..Default::default()
             })
         })
         .map_err(|_| GAME_PERSISTENCE_LOAD_ERROR.to_string())?;

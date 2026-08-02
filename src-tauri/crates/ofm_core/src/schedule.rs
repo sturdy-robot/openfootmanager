@@ -111,6 +111,7 @@ pub fn build_round_robin_fixtures_with(
                     competition: fixture_competition.clone(),
                     status: FixtureStatus::Scheduled,
                     result: None,
+                    ..Default::default()
                 });
             }
             matchday += 1;
@@ -281,6 +282,7 @@ pub fn seed_knockout_round(
             competition: fixture_competition.clone(),
             status: FixtureStatus::Scheduled,
             result: None,
+            ..Default::default()
         });
     }
     cup.knockout_rounds.push(KnockoutRoundState {
@@ -427,6 +429,7 @@ pub fn generate_preseason_friendlies(
                 competition: FixtureCompetition::Friendly,
                 status: FixtureStatus::Scheduled,
                 result: None,
+                ..Default::default()
             });
         }
 
@@ -958,6 +961,7 @@ mod tests {
             competition: FixtureCompetition::Cup,
             status: FixtureStatus::Scheduled,
             result: None,
+            ..Default::default()
         });
 
         let mut competitions = vec![league, cup];

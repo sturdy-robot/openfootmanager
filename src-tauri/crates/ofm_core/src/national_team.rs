@@ -103,6 +103,7 @@ pub fn schedule_national_team_friendlies(
                 competition: FixtureCompetition::InternationalNation,
                 status: FixtureStatus::Scheduled,
                 result: None,
+                ..Default::default()
             };
             national_teams[*home_idx].fixtures.push(fixture);
         }
@@ -585,6 +586,7 @@ mod tests {
             competition: FixtureCompetition::InternationalNation,
             status: FixtureStatus::Scheduled,
             result: None,
+            ..Default::default()
         });
         let away = make_national_team("nt-bra", "BRA", &["p2"]);
         game.national_teams = vec![home, away];
@@ -615,6 +617,7 @@ mod tests {
             competition: FixtureCompetition::InternationalNation,
             status: FixtureStatus::Scheduled,
             result: None,
+            ..Default::default()
         });
         game.national_teams = vec![home, make_national_team("nt-bra", "BRA", &["p2"])];
 
