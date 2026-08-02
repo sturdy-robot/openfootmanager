@@ -372,7 +372,7 @@ impl Default for MatchConfig {
             shot_accuracy_base: 0.30,
             goal_conversion_base: 0.36,
             fatigue_per_minute: 0.20,
-            foul_probability: 0.40,
+            foul_probability: 0.134,
             yellow_card_probability: 0.11,
             red_card_probability: 0.04,
             penalty_probability: 0.50,

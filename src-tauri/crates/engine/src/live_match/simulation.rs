@@ -169,13 +169,9 @@ impl LiveMatchState {
         // Deplete stamina for all on-pitch players
         self.deplete_stamina_tick();
 
-        // Simulate 1-3 actions per minute
-        let mut minute_events = Vec::new();
-        let actions = rng.random_range(1..=3u8);
-        for _ in 0..actions {
-            let new_events = self.resolve_action(minute, rng);
-            minute_events.extend(new_events);
-        }
+        // Play the minute out as spells of possession rather than a couple of
+        // isolated incidents; see `possession.rs`.
+        let mut minute_events = self.play_possession_chain(minute, rng);
 
         // Possession contest. Tempo (retention) and pressing (ball-winning)
         // weight the battle here; neutral dials are ×1.0 and the transition

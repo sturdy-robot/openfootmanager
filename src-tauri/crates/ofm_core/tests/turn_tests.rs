@@ -729,15 +729,20 @@ fn simulate_other_matches_settles_knockout_draws_with_shootout() {
     // the home team. The full-engine sim path must resolve level knockout
     // ties with a simulated shootout.
     let mut saw_draw = false;
-    for _attempt in 0..200 {
+    for attempt in 0..200 {
         let mut game = make_game_with_match();
+        // A fixture's seed is derived from its id, so every attempt needs its
+        // own id or all two hundred replay the same match and the loop can
+        // never find a draw.
+        let fixture_id = format!("cup-final-{attempt}");
         {
             let league = game.league.as_mut().unwrap();
+            league.fixtures[0].id = fixture_id.clone();
             league.fixtures[0].competition = FixtureCompetition::Cup;
             league.knockout_rounds = vec![KnockoutRoundState {
                 id: "round-1".to_string(),
                 name: "Final".to_string(),
-                fixture_ids: vec!["fix1".to_string()],
+                fixture_ids: vec![fixture_id],
                 bye_team_ids: Vec::new(),
                 completed: false,
             }];

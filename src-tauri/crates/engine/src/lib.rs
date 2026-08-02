@@ -4,6 +4,7 @@ pub mod engine;
 pub mod event;
 pub mod live_match;
 pub mod report;
+pub mod sim;
 pub(crate) mod shared;
 pub mod traits;
 pub mod types;
@@ -18,7 +19,7 @@ pub mod types;
 ///
 /// Do **not** bump it for changes that cannot affect a simulated match, such as
 /// documentation, renames, or new APIs no simulation path calls.
-pub const ENGINE_VERSION: u32 = 2;
+pub const ENGINE_VERSION: u32 = 3;
 
 // Re-export key types for convenience
 pub use engine::simulate;

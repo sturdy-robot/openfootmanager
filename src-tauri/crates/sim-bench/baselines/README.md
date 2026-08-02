@@ -58,3 +58,26 @@ side plays, not just how often it wins. Before the rework they mostly do not.
   default, and every default modifier is exactly 1.0 by construction.
 - Only two dials do visible work: `width` moves crosses (8.3 → 13.6), and
   `counter_press Long` moves possession (51.6% → 54.4%).
+
+## After the possession chain: `post-chain.json`, `post-chain-sweeps.json`
+
+Same commands as above with `post-chain` filenames. Recorded once the engine
+played each minute out as spells of possession rather than one to three
+isolated actions.
+
+What moved, and what deliberately did not:
+
+| | pre | post |
+| --- | --- | --- |
+| Midfielder passes per 90 | 5.7 | 21.8 |
+| Midfielder touches per 90 | 11.7 | 44.0 |
+| Defender touches per 90 | 3.3 | 6.7 |
+| Goals per game | 3.46 | 3.43 |
+| Shots per game | 23.5 | 22.9 |
+
+Chance creation is unchanged; involvement is not. That is the whole point of
+the stage — the calibration held while the ball actually got passed around.
+
+Forwards still finish on zero passes, and roles are still flat. Neither is
+addressed by the chain: both come from *who* is chosen to act, which is
+uniform within a position until weighted actor selection lands.

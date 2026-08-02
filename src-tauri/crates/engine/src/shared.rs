@@ -280,9 +280,9 @@ pub(crate) fn tactics_foul_modifier(tactics: &TacticsConfig) -> f64 {
 /// Cross attempt probability based on the attacking team's pitch width setting.
 pub(crate) fn tactics_cross_probability(tactics: &TacticsConfig) -> f64 {
     match tactics.width {
-        TacticsPitchWidth::Wide => 0.72,
-        TacticsPitchWidth::Narrow => 0.45,
-        TacticsPitchWidth::Normal => 0.60,
+        TacticsPitchWidth::Wide => 0.38,
+        TacticsPitchWidth::Narrow => 0.23,
+        TacticsPitchWidth::Normal => 0.32,
     }
 }
 

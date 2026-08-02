@@ -1,5 +1,6 @@
 use rand::{Rng, RngExt};
 
+use crate::sim::state::Band;
 use crate::event::{EventDetail, EventType, MatchEvent};
 use crate::shared::{
     PlayStylePhase, PlayerSnap, TraitContext, play_style_modifier, role_attribute_modifier,
@@ -14,6 +15,27 @@ use super::helpers::{danger_band, foul_severity, save_quality};
 // ---------------------------------------------------------------------------
 // Action resolution
 // ---------------------------------------------------------------------------
+
+/// How much more likely a defender is to concede a foul, by where they are
+/// defending.
+///
+/// Fouls are not spread evenly over the pitch: a defender under pressure near
+/// his own box commits far more of them than one closing down in midfield,
+/// which is why so many dangerous free kicks are conceded in the final third.
+/// A flat rate leaves free-kick goals undersupplied, and the more the ball is
+/// circulated in midfield the worse that gets.
+///
+/// The band is read from the *fouling* side's point of view, so `OwnThird` is
+/// the defender's own third — the attacking side's dangerous territory.
+fn foul_pressure(band: Band) -> f64 {
+    match band {
+        Band::OwnBox => 1.35,
+        Band::OwnThird => 1.30,
+        Band::Middle => 0.95,
+        Band::FinalThird => 0.80,
+        Band::OppBox => 0.80,
+    }
+}
 
 impl LiveMatchState {
     pub(super) fn resolve_action<R: Rng + ?Sized>(&mut self, minute: u8, rng: &mut R) -> Vec<MatchEvent> {
@@ -262,7 +284,7 @@ impl LiveMatchState {
                 self.ball_zone = zone;
                 return events;
             }
-            if rng.random_range(0.0..1.0f64) < 0.25 {
+            if rng.random_range(0.0..1.0f64) < 0.13 {
                 let evt = MatchEvent::new(minute, EventType::Corner, att_side, zone);
                 self.events.push(evt.clone());
                 events.push(evt);
@@ -423,7 +445,8 @@ impl LiveMatchState {
         let foul_chance = self.config.foul_probability
             * (0.6 + aggression_mod * 0.8)
             * trait_bonus(fouler, TraitContext::Foul)
-            * tactics_mod;
+            * tactics_mod
+            * foul_pressure(Band::from_zone(zone, fouling_side));
         if rng.random_range(0.0..1.0f64) >= foul_chance {
             return events;
         }

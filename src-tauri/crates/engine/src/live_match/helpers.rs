@@ -65,27 +65,52 @@ impl LiveMatchState {
         rng: &mut R,
     ) -> PlayerSnap {
         let team = self.team_ref(side);
-        let available: Vec<&PlayerData> = team
+
+        // Counted and then indexed rather than collected into a `Vec`.
+        //
+        // This runs twice per action, and the possession chain resolves
+        // hundreds of actions a match, so the two heap allocations this used to
+        // make were the single largest cost in the simulation. Dismissals are
+        // rare enough that checking the empty set first avoids ~22 string
+        // hashes per call in almost every match.
+        //
+        // The draw is still a single `random_range` over the same pool size, so
+        // a given seed picks exactly the same player as before.
+        let dismissals = &self.sent_off;
+        let eligible = |player: &PlayerData| {
+            dismissals.is_empty() || !dismissals.contains(&player.id)
+        };
+
+        let in_position = team
             .players
             .iter()
-            .filter(|p| !self.sent_off.contains(&p.id))
-            .collect();
+            .filter(|player| eligible(player) && player.position == preferred)
+            .count();
 
-        let candidates: Vec<&PlayerData> = available
-            .iter()
-            .filter(|p| p.position == preferred)
-            .copied()
-            .collect();
-
-        let pool = if candidates.is_empty() {
-            &available
+        // Fall back to any available player only when nobody plays the
+        // preferred position — an eleven reduced by dismissals, say.
+        let pool_size = if in_position > 0 {
+            in_position
         } else {
-            &candidates
+            team.players.iter().filter(|player| eligible(player)).count()
         };
-        if pool.is_empty() {
+        if pool_size == 0 {
             return PlayerSnap::from(&team.players[0]);
         }
-        PlayerSnap::from(pool[rng.random_range(0..pool.len())])
+
+        let index = rng.random_range(0..pool_size);
+        let chosen = if in_position > 0 {
+            team.players
+                .iter()
+                .filter(|player| eligible(player) && player.position == preferred)
+                .nth(index)
+        } else {
+            team.players.iter().filter(|player| eligible(player)).nth(index)
+        };
+        match chosen {
+            Some(player) => PlayerSnap::from(player),
+            None => PlayerSnap::from(&team.players[0]),
+        }
     }
 
     pub(super) fn snap_player_by_id(&self, player_id: &str, side: Side) -> PlayerSnap {
