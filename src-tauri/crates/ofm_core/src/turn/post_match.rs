@@ -571,11 +571,20 @@ fn update_post_match_morale(
             if ps.red_cards > 0 {
                 individual_delta -= 8;
             }
-            // Poor rating lowers morale
-            if ps.rating < 5.5 {
-                individual_delta -= 3;
-            } else if ps.rating > 7.5 {
-                individual_delta += 2;
+            // Performance moves morale — but only for players who actually
+            // played. An unused substitute has no performance to judge, and
+            // his rating is zero, which used to read as a bad game.
+            //
+            // This rule was previously dead in the other direction too:
+            // ratings were never assigned, so every player scored 0.0, every
+            // appearance cost three morale, and the reward branch below could
+            // never fire.
+            if ps.minutes_played > 0 {
+                if ps.rating < 5.5 {
+                    individual_delta -= 3;
+                } else if ps.rating > 7.5 {
+                    individual_delta += 2;
+                }
             }
         }
 

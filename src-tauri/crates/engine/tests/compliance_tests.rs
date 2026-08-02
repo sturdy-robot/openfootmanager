@@ -219,7 +219,7 @@ fn golden_report_is_unchanged() {
     let actual = hasher.finish();
 
     // Pinned behaviour fingerprint. See the doc comment before changing.
-    const GOLDEN: u64 = 0x5c94_5785_5377_8db6;
+    const GOLDEN: u64 = 0x9c28_cf1c_31c7_6639;
 
     assert_eq!(
         actual, GOLDEN,
@@ -263,12 +263,57 @@ fn golden_report_is_unchanged_with_instructions() {
     let actual = hasher.finish();
 
     // Pinned behaviour fingerprint. See `golden_report_is_unchanged`.
-    const GOLDEN_WITH_INSTRUCTIONS: u64 = 0x7917_2a0c_cc49_d9f6;
+    const GOLDEN_WITH_INSTRUCTIONS: u64 = 0xe9e8_20c5_d9fa_1d87;
 
     assert_eq!(
         actual, GOLDEN_WITH_INSTRUCTIONS,
         "instructed-team behaviour changed (fingerprint {actual:#x}). If this \
          was intentional, bump the engine version stamp and set \
          GOLDEN_WITH_INSTRUCTIONS to {actual:#x}."
+    );
+}
+
+/// Ratings must actually discriminate.
+///
+/// A scale where everybody lands on the base mark is no more useful than the
+/// zero it replaced, so this pins the shape of the distribution rather than
+/// just its bounds.
+#[test]
+fn ratings_spread_across_the_scale() {
+    use engine::traits::InstantEngine;
+    use rand::SeedableRng;
+    use rand::rngs::StdRng;
+
+    let setup = setup(false);
+    let mut all: Vec<f32> = Vec::new();
+    for offset in 0..120 {
+        let mut rng = StdRng::seed_from_u64(SEED + offset);
+        let report = DefaultEngine.simulate(&setup, &mut rng);
+        all.extend(
+            report
+                .player_stats
+                .values()
+                .filter(|stats| stats.minutes_played > 0)
+                .map(|stats| stats.rating),
+        );
+    }
+    assert!(!all.is_empty(), "no rated players");
+
+    all.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    let low = all[all.len() / 20];
+    let high = all[all.len() * 19 / 20];
+    let mean = all.iter().sum::<f32>() / all.len() as f32;
+
+    assert!(
+        high - low > 0.8,
+        "ratings barely differ: 5th percentile {low:.2}, 95th {high:.2}"
+    );
+    assert!(
+        (5.0..=7.5).contains(&mean),
+        "the average performance should sit near the middle of the scale, got {mean:.2}"
+    );
+    assert!(
+        all.iter().any(|rating| *rating > 7.5),
+        "nobody ever has a good game, so the morale reward is unreachable"
     );
 }

@@ -400,6 +400,10 @@ impl LiveMatchState {
             self.current_minute,
             tracked_player_ids,
         );
+        let home_ids: Vec<String> = self.home.players.iter().map(|p| p.id.clone()).collect();
+        let away_ids: Vec<String> = self.away.players.iter().map(|p| p.id.clone()).collect();
+        report.assign_ratings(&home_ids, &away_ids);
+
         if self.penalty_state.home_taken > 0 || self.penalty_state.away_taken > 0 {
             report.home_penalties = Some(self.penalty_state.home_scored);
             report.away_penalties = Some(self.penalty_state.away_scored);

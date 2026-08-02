@@ -60,6 +60,91 @@ pub struct PlayerMatchStats {
     pub rating: f32,
 }
 
+
+// ---------------------------------------------------------------------------
+// Match ratings
+// ---------------------------------------------------------------------------
+
+/// A player who did nothing notable rates here.
+const BASE_RATING: f32 = 6.0;
+
+impl MatchReport {
+    /// Score every player's performance out of ten.
+    ///
+    /// `PlayerMatchStats::rating` was never assigned anywhere in the engine. It
+    /// stayed at zero for every player in every save, which meant `avg_rating`
+    /// was permanently zero and the morale rule keyed on it — "a rating below
+    /// 5.5 costs morale" — fired after every appearance by everyone, while its
+    /// reward branch was unreachable. The only real ratings in the product were
+    /// computed in the frontend and never reached the backend.
+    ///
+    /// Contributions are scaled by minutes played, so a substitute who came on
+    /// for ten minutes is judged on ten minutes rather than being dragged to
+    /// the base by a full match's worth of expectations.
+    pub fn assign_ratings(&mut self, home_player_ids: &[String], away_player_ids: &[String]) {
+        let home_result = match self.home_goals.cmp(&self.away_goals) {
+            std::cmp::Ordering::Greater => 0.3,
+            std::cmp::Ordering::Less => -0.3,
+            std::cmp::Ordering::Equal => 0.0,
+        };
+
+        for (id, stats) in self.player_stats.iter_mut() {
+            let result_bonus = if home_player_ids.iter().any(|player| player == id) {
+                home_result
+            } else if away_player_ids.iter().any(|player| player == id) {
+                -home_result
+            } else {
+                0.0
+            };
+            stats.rating = rate(stats, result_bonus);
+        }
+    }
+}
+
+/// Turn one player's match into a mark out of ten.
+///
+/// Deliberately built from rates rather than raw totals: the possession chain
+/// produces far more passes and duels than the old model, and a rating keyed on
+/// totals would drift every time event volume changed.
+fn rate(stats: &PlayerMatchStats, result_bonus: f32) -> f32 {
+    if stats.minutes_played == 0 {
+        return 0.0;
+    }
+    // A full match is the yardstick; a short appearance is judged on its own
+    // length rather than against ninety minutes of expectations.
+    let share = (stats.minutes_played as f32 / 90.0).clamp(0.15, 1.2);
+
+    let mut score = 0.0f32;
+
+    // Decisive contributions, which are not scaled — a goal is a goal whether
+    // it came in the first minute or the last.
+    score += stats.goals as f32 * 1.0;
+    score += stats.assists as f32 * 0.7;
+
+    // Attacking work.
+    score += stats.shots_on_target as f32 * 0.12;
+    score += (stats.shots.saturating_sub(stats.shots_on_target)) as f32 * -0.04;
+
+    // Defensive work.
+    score += stats.tackles_won as f32 * 0.05;
+    score += stats.interceptions as f32 * 0.05;
+
+    // Passing is judged on accuracy against a competent baseline, weighted by
+    // how much of it the player actually did. Volume alone is not merit.
+    if stats.passes_attempted > 0 {
+        let accuracy = stats.passes_completed as f32 / stats.passes_attempted as f32;
+        let involvement = (stats.passes_attempted as f32 / (18.0 * share)).clamp(0.0, 2.0);
+        score += (accuracy - 0.78) * 3.0 * involvement;
+    }
+
+    // Discipline.
+    score -= stats.fouls_committed as f32 * 0.06;
+    score -= stats.yellow_cards as f32 * 0.35;
+    score -= stats.red_cards as f32 * 1.5;
+
+    (BASE_RATING + score * share.min(1.0) + result_bonus * share).clamp(1.0, 10.0)
+}
+
 // ---------------------------------------------------------------------------
 // GoalSource — how a goal was created (distinct from event.rs GoalContext which tracks narrative)
 // ---------------------------------------------------------------------------
@@ -448,5 +533,87 @@ mod tests {
         );
         // In-match penalties still count.
         assert_eq!(report.goals[1].goal_source, GoalSource::Penalty);
+    }
+}
+
+#[cfg(test)]
+mod rating_tests {
+    use super::*;
+
+    fn stats(minutes: u8) -> PlayerMatchStats {
+        PlayerMatchStats {
+            minutes_played: minutes,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn an_anonymous_full_match_rates_around_the_base() {
+        let rating = rate(&stats(90), 0.0);
+        assert!(
+            (5.9..=6.1).contains(&rating),
+            "expected a quiet game to rate near {BASE_RATING}, got {rating}"
+        );
+    }
+
+    #[test]
+    fn a_player_who_did_not_play_has_no_rating() {
+        // Zero rather than a made-up mark: the morale rule keys on this, and an
+        // unused substitute must not be judged as having played badly.
+        assert_eq!(rate(&stats(0), 0.0), 0.0);
+    }
+
+    #[test]
+    fn scoring_raises_the_mark() {
+        let mut scorer = stats(90);
+        scorer.goals = 2;
+        assert!(rate(&scorer, 0.0) > rate(&stats(90), 0.0) + 1.5);
+    }
+
+    #[test]
+    fn a_sending_off_ruins_it() {
+        let mut sent_off = stats(60);
+        sent_off.red_cards = 1;
+        sent_off.fouls_committed = 3;
+        assert!(rate(&sent_off, 0.0) < 5.0, "{}", rate(&sent_off, 0.0));
+    }
+
+    #[test]
+    fn accurate_passing_beats_sloppy_passing() {
+        let mut tidy = stats(90);
+        tidy.passes_attempted = 60;
+        tidy.passes_completed = 56;
+        let mut wasteful = stats(90);
+        wasteful.passes_attempted = 60;
+        wasteful.passes_completed = 38;
+        assert!(rate(&tidy, 0.0) > rate(&wasteful, 0.0));
+    }
+
+    #[test]
+    fn a_short_appearance_stays_close_to_the_base() {
+        // Ten minutes should not produce a nine or a three.
+        let mut cameo = stats(10);
+        cameo.passes_attempted = 4;
+        cameo.passes_completed = 4;
+        let rating = rate(&cameo, 0.3);
+        assert!((5.0..=7.5).contains(&rating), "{rating}");
+    }
+
+    #[test]
+    fn ratings_stay_inside_the_scale() {
+        let mut heroic = stats(90);
+        heroic.goals = 5;
+        heroic.assists = 4;
+        heroic.passes_attempted = 90;
+        heroic.passes_completed = 90;
+        let mut dreadful = stats(90);
+        dreadful.red_cards = 1;
+        dreadful.fouls_committed = 12;
+        dreadful.yellow_cards = 2;
+        dreadful.passes_attempted = 40;
+        dreadful.passes_completed = 5;
+        for rating in [rate(&heroic, 0.3), rate(&dreadful, -0.3)] {
+            assert!((1.0..=10.0).contains(&rating), "{rating}");
+        }
     }
 }
