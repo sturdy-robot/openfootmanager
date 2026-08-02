@@ -523,6 +523,40 @@ pub fn auto_select_set_pieces(
     (captain, penalty, free_kick, corner)
 }
 
+/// The inverse of [`domain_to_engine_role`], for recording a role change
+/// back into domain terms during replay capture.
+pub(crate) fn engine_to_domain_role(role: EnginePlayerRole) -> domain::team::PlayerRole {
+    match role {
+        EnginePlayerRole::Standard => domain::team::PlayerRole::Standard,
+        EnginePlayerRole::BallPlayingKeeper => domain::team::PlayerRole::BallPlayingKeeper,
+        EnginePlayerRole::SweeperKeeper => domain::team::PlayerRole::SweeperKeeper,
+        EnginePlayerRole::Stopper => domain::team::PlayerRole::Stopper,
+        EnginePlayerRole::CoverCB => domain::team::PlayerRole::CoverCB,
+        EnginePlayerRole::BallPlayingCB => domain::team::PlayerRole::BallPlayingCB,
+        EnginePlayerRole::AttackingFB => domain::team::PlayerRole::AttackingFB,
+        EnginePlayerRole::DefensiveFB => domain::team::PlayerRole::DefensiveFB,
+        EnginePlayerRole::InvertedFB => domain::team::PlayerRole::InvertedFB,
+        EnginePlayerRole::WingBack => domain::team::PlayerRole::WingBack,
+        EnginePlayerRole::AnchorMan => domain::team::PlayerRole::AnchorMan,
+        EnginePlayerRole::BallWinner => domain::team::PlayerRole::BallWinner,
+        EnginePlayerRole::DeepLyingPlaymaker => domain::team::PlayerRole::DeepLyingPlaymaker,
+        EnginePlayerRole::BoxToBox => domain::team::PlayerRole::BoxToBox,
+        EnginePlayerRole::Carrilero => domain::team::PlayerRole::Carrilero,
+        EnginePlayerRole::Mezzala => domain::team::PlayerRole::Mezzala,
+        EnginePlayerRole::AdvancedPlaymaker => domain::team::PlayerRole::AdvancedPlaymaker,
+        EnginePlayerRole::ShadowStriker => domain::team::PlayerRole::ShadowStriker,
+        EnginePlayerRole::WideForward => domain::team::PlayerRole::WideForward,
+        EnginePlayerRole::InsideForward => domain::team::PlayerRole::InsideForward,
+        EnginePlayerRole::InvertedWinger => domain::team::PlayerRole::InvertedWinger,
+        EnginePlayerRole::Poacher => domain::team::PlayerRole::Poacher,
+        EnginePlayerRole::TargetMan => domain::team::PlayerRole::TargetMan,
+        EnginePlayerRole::DeepLyingForward => domain::team::PlayerRole::DeepLyingForward,
+        EnginePlayerRole::False9 => domain::team::PlayerRole::False9,
+        EnginePlayerRole::PressingForward => domain::team::PlayerRole::PressingForward,
+        EnginePlayerRole::CompleteForward => domain::team::PlayerRole::CompleteForward,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

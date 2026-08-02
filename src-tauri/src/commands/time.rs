@@ -633,6 +633,7 @@ mod tests {
                 competition: FixtureCompetition::League,
                 status: FixtureStatus::Scheduled,
                 result: None,
+                ..Default::default()
             }],
             standings: vec![
                 domain::league::StandingEntry::new("team1".to_string()),
@@ -687,6 +688,7 @@ mod tests {
                 competition: FixtureCompetition::League,
                 status: FixtureStatus::Scheduled,
                 result: None,
+                ..Default::default()
             }],
             standings: vec![
                 domain::league::StandingEntry::new("team1".to_string()),
@@ -720,6 +722,7 @@ mod tests {
                 competition: FixtureCompetition::League,
                 status: FixtureStatus::Scheduled,
                 result: None,
+                ..Default::default()
             }],
             ..domain::league::League::default()
         }];
@@ -1275,6 +1278,7 @@ mod tests {
                     competition: FixtureCompetition::League,
                     status: FixtureStatus::Scheduled,
                     result: None,
+                    ..Default::default()
                 },
                 Fixture {
                     id: "fix2".to_string(),
@@ -1286,6 +1290,7 @@ mod tests {
                     competition: FixtureCompetition::League,
                     status: domain::league::FixtureStatus::Scheduled,
                     result: None,
+                    ..Default::default()
                 },
             ],
             standings: vec![

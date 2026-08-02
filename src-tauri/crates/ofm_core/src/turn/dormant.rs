@@ -113,6 +113,7 @@ mod tests {
                 competition: FixtureCompetition::League,
                 status: FixtureStatus::Scheduled,
                 result: None,
+                ..Default::default()
             }],
             standings: vec![
                 StandingEntry::new("home".to_string()),

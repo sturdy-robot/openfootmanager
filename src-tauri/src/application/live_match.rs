@@ -34,6 +34,10 @@ pub fn finish_live_match(state: &StateManager) -> Result<FinishLiveMatchResponse
     let home_team_id = session.home_team_id.clone();
     let away_team_id = session.away_team_id.clone();
 
+    // Capture the replay inputs before `into_report` consumes the match state.
+    let seed = session.seed;
+    let replay = session.replay_input();
+
     let report = session.match_state.into_report();
     info!(
         "[cmd] finish_live_match: fixture_index={}, competition_id={}, home_team_id={}, away_team_id={}, events= {}",
@@ -85,6 +89,18 @@ pub fn finish_live_match(state: &StateManager) -> Result<FinishLiveMatchResponse
                     &report,
                     &mut |capture| captures.push(capture),
                 );
+
+                // Record what this match can be re-simulated from, so it can be
+                // watched back later. The seed reproduces the simulation and
+                // every AI decision; only the user's own commands have to be
+                // stored, because those are the inputs the seed cannot derive.
+                if let Some(league) = game.league.as_mut() {
+                    if let Some(fixture) = league.fixtures.get_mut(fixture_index) {
+                        fixture.seed = seed;
+                        fixture.engine_version = engine::ENGINE_VERSION;
+                        fixture.replay = Some(replay.clone());
+                    }
+                }
 
                 // apply_match_report_with_capture mutates the legacy `game.league`
                 // mirror (fixture status, fixture.result, standings). The modern

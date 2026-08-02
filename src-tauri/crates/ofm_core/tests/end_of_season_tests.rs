@@ -597,6 +597,7 @@ fn process_end_of_season_reschedules_national_team_windows() {
         competition: FixtureCompetition::InternationalNation,
         status: FixtureStatus::Completed,
         result: None,
+        ..Default::default()
     });
     let mut nt_b = NationalTeam::new("nt-b".into(), "B".into(), "BBB".into(), None);
     nt_b.squad_player_ids = vec!["p2".into()];

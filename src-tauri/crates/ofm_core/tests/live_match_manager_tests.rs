@@ -6,6 +6,7 @@ use domain::team::Team;
 use ofm_core::clock::GameClock;
 use ofm_core::game::Game;
 use ofm_core::live_match_manager::{self, MatchMode};
+use rand::Rng as _;
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -705,4 +706,118 @@ fn extra_time_flag_passed_through() {
     // Just verify it doesn't crash with extra_time=true
     let session = live_match_manager::create_live_match(&game, 0, MatchMode::Instant, true);
     assert!(session.is_ok());
+}
+
+// ---------------------------------------------------------------------------
+// Live-match reproducibility — what match replay re-simulates from
+// ---------------------------------------------------------------------------
+
+/// Play a live match to full time, optionally issuing a user command partway
+/// through, and return a fingerprint of the resulting event stream.
+fn play_live(user_command: Option<(u8, engine::MatchCommand)>) -> Vec<String> {
+    let game = make_game_with_fixture();
+    let mut session =
+        live_match_manager::create_live_match(&game, 0, MatchMode::Live, false).unwrap();
+
+    while !session.is_finished() {
+        session.step();
+        if let Some((minute, ref cmd)) = user_command
+            && session.match_state.minute() == minute
+        {
+            let _ = session.apply_command(cmd.clone());
+        }
+    }
+
+    session
+        .match_state
+        .snapshot()
+        .events
+        .iter()
+        .map(|event| {
+            format!(
+                "{}|{:?}|{:?}|{}",
+                event.minute,
+                event.event_type,
+                event.side,
+                event.player_id.as_deref().unwrap_or("-")
+            )
+        })
+        .collect()
+}
+
+#[test]
+fn a_live_match_replays_identically_from_the_same_fixture() {
+    // Replay re-simulates from the stored seed, so the same fixture must
+    // produce the same match every time it is played.
+    let first = play_live(None);
+    assert!(!first.is_empty(), "the match produced no events");
+    for attempt in 1..5 {
+        assert_eq!(
+            play_live(None),
+            first,
+            "live simulation {attempt} diverged; replay would show a different match"
+        );
+    }
+}
+
+#[test]
+fn a_match_with_a_user_command_replays_identically() {
+    // This is exactly what replay does: re-simulate from the stored seed and
+    // feed the recorded user commands back at the minutes they were issued.
+    // The result has to be the same match every time, commands included.
+    let game = make_game_with_fixture();
+    let session = live_match_manager::create_live_match(&game, 0, MatchMode::Live, false).unwrap();
+    let side = session.user_side.unwrap_or(engine::Side::Home);
+    let on = session.match_state.bench(side)[0].id.clone();
+    let off = session.match_state.snapshot().home_team.players[10].id.clone();
+    drop(session);
+
+    let substitution = (
+        60,
+        engine::MatchCommand::Substitute {
+            side,
+            player_off_id: off,
+            player_on_id: on.clone(),
+        },
+    );
+
+    let first = play_live(Some(substitution.clone()));
+    for attempt in 1..5 {
+        assert_eq!(
+            play_live(Some(substitution.clone())),
+            first,
+            "replay {attempt} of a match with a user command diverged"
+        );
+    }
+
+    // Guard against the assertion above passing vacuously: the substitution has
+    // to have actually been applied, or this only re-tests the no-command case.
+    assert!(
+        first.iter().any(|line| line.contains("Substitution")),
+        "the substitution was never applied, so this proves nothing"
+    );
+}
+
+#[test]
+fn the_user_and_ai_draw_from_separate_random_streams() {
+    // Replay stays correct with a single shared generator, because it reproduces
+    // the same seed *and* the same commands. The streams are split for
+    // robustness rather than correctness: it keeps the simulation aligned when
+    // the AI's draw count shifts, which is what makes a paired A/B comparison
+    // (same seed, one thing changed) meaningful rather than noise.
+    let game = make_game_with_fixture();
+    let session = live_match_manager::create_live_match(&game, 0, MatchMode::Live, false).unwrap();
+    assert_ne!(
+        session.seed, 0,
+        "the session must be seeded from the fixture"
+    );
+
+    let mut session = session;
+    let simulation_draws: Vec<u64> = (0..8).map(|_| session.rng.next_u64()).collect();
+    let ai_draws: Vec<u64> = (0..8).map(|_| session.ai_rng.next_u64()).collect();
+    assert_ne!(
+        simulation_draws, ai_draws,
+        "the AI and simulation streams are identical, so AI draws still shift \
+         the simulation"
+    );
 }

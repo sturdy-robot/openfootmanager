@@ -245,6 +245,137 @@ pub struct Fixture {
     pub competition: FixtureCompetition,
     pub status: FixtureStatus,
     pub result: Option<MatchResult>,
+    /// Random seed for this fixture's simulation, so the match can be
+    /// reproduced exactly. Zero means "never assigned" — saves written before
+    /// seeds existed deserialize this way, and callers fall back to
+    /// [`Fixture::simulation_seed`], which derives a stable seed from the
+    /// fixture id rather than requiring a data migration.
+    pub seed: u64,
+    /// The engine behaviour version that produced this fixture's result.
+    /// A stored replay can only be re-simulated by an engine reporting the
+    /// same version; on a mismatch the match is still readable from
+    /// [`MatchResult`], it just cannot be watched back.
+    pub engine_version: u32,
+    /// Inputs needed to re-simulate this match for replay.
+    ///
+    /// Only recorded for matches the user actually played, because only human
+    /// decisions are true inputs — AI decisions are drawn from the match RNG
+    /// and so are reproduced by the seed alone.
+    pub replay: Option<ReplayInput>,
+}
+
+impl Fixture {
+    /// The seed to simulate this fixture with.
+    ///
+    /// Falls back to a value derived from the fixture id when no seed was
+    /// stored, so fixtures from older saves still simulate reproducibly.
+    pub fn simulation_seed(&self) -> u64 {
+        if self.seed != 0 {
+            return self.seed;
+        }
+        derive_seed(&self.id)
+    }
+}
+
+/// A stable 64-bit hash of `input` (FNV-1a).
+///
+/// Deliberately hand-rolled rather than using `DefaultHasher`, whose output is
+/// explicitly not guaranteed to be stable across Rust releases. A seed that has
+/// to reproduce the same match years from now cannot depend on that.
+pub fn derive_seed(input: &str) -> u64 {
+    const OFFSET_BASIS: u64 = 0xcbf2_9ce4_8422_2325;
+    const PRIME: u64 = 0x0000_0100_0000_01b3;
+
+    let mut hash = OFFSET_BASIS;
+    for byte in input.as_bytes() {
+        hash ^= *byte as u64;
+        hash = hash.wrapping_mul(PRIME);
+    }
+    // Zero is the "unassigned" sentinel, so never return it.
+    if hash == 0 { OFFSET_BASIS } else { hash }
+}
+
+/// Everything needed to replay a match by re-simulating it.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct ReplayInput {
+    pub home: ReplayLineup,
+    pub away: ReplayLineup,
+    /// User commands in the order they were applied.
+    pub commands: Vec<ReplayCommand>,
+}
+
+/// One side as it lined up at kick-off.
+///
+/// Stored rather than re-derived, because squad condition, injuries and
+/// personnel all change over a season — a later save cannot reconstruct who
+/// actually started, or how fresh they were.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(default)]
+pub struct ReplayLineup {
+    pub formation: String,
+    pub starting_xi_ids: Vec<String>,
+    pub bench_ids: Vec<String>,
+    /// Player id → role, for players whose role was not the default.
+    pub player_roles: Vec<(String, crate::team::PlayerRole)>,
+    pub tactics: crate::team::TacticsPhaseSettings,
+    /// Player id → condition at kick-off (0–100).
+    pub conditions: Vec<(String, u8)>,
+}
+
+/// A user command, tagged with when it was applied.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReplayCommand {
+    pub minute: u8,
+    pub command: ReplayCommandKind,
+}
+
+/// The user-issuable subset of the engine's match commands.
+///
+/// Mirrored in `domain` rather than reused from `engine`, for the same reason
+/// [`crate::team::PlayerRole`] is: `domain` sits below `engine` and must not
+/// depend on it.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ReplayCommandKind {
+    Substitute {
+        home: bool,
+        player_off_id: String,
+        player_on_id: String,
+    },
+    PreMatchSwap {
+        home: bool,
+        player_off_id: String,
+        player_on_id: String,
+    },
+    ChangeFormation {
+        home: bool,
+        formation: String,
+    },
+    ChangePlayStyle {
+        home: bool,
+        play_style: crate::team::PlayStyle,
+    },
+    ChangePlayerRole {
+        home: bool,
+        player_id: String,
+        role: crate::team::PlayerRole,
+    },
+    SetFreeKickTaker {
+        home: bool,
+        player_id: String,
+    },
+    SetCornerTaker {
+        home: bool,
+        player_id: String,
+    },
+    SetPenaltyTaker {
+        home: bool,
+        player_id: String,
+    },
+    SetCaptain {
+        home: bool,
+        player_id: String,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -284,6 +415,62 @@ impl MatchResult {
             (Some(home), Some(away)) if self.home_goals == self.away_goals => home >= away,
             _ => self.home_goals >= self.away_goals,
         }
+    }
+}
+
+#[cfg(test)]
+mod fixture_seed_tests {
+    use super::{Fixture, derive_seed};
+
+    fn fixture(id: &str, seed: u64) -> Fixture {
+        Fixture {
+            id: id.to_string(),
+            seed,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn a_stored_seed_is_used_verbatim() {
+        assert_eq!(fixture("abc", 42).simulation_seed(), 42);
+    }
+
+    #[test]
+    fn a_missing_seed_falls_back_to_a_stable_value_derived_from_the_id() {
+        // Saves written before seeds existed deserialize with `seed: 0`. They
+        // must still simulate reproducibly, without a data migration.
+        let legacy = fixture("fixture-abc", 0);
+        assert_eq!(legacy.simulation_seed(), legacy.simulation_seed());
+        assert_eq!(legacy.simulation_seed(), derive_seed("fixture-abc"));
+    }
+
+    #[test]
+    fn different_fixtures_get_different_seeds() {
+        assert_ne!(
+            fixture("fixture-a", 0).simulation_seed(),
+            fixture("fixture-b", 0).simulation_seed()
+        );
+    }
+
+    #[test]
+    fn derived_seeds_are_never_the_unassigned_sentinel() {
+        // Zero means "no seed stored", so deriving it would loop back into the
+        // fallback every time.
+        for id in ["", "a", "fixture-1", "0", "\u{1f600}"] {
+            assert_ne!(derive_seed(id), 0, "derive_seed({id:?}) returned 0");
+        }
+    }
+
+    /// Pins the hash so stored seeds keep meaning the same thing.
+    ///
+    /// `derive_seed` is a hand-rolled FNV-1a precisely because
+    /// `DefaultHasher` is not guaranteed stable across Rust releases, and a
+    /// seed has to reproduce the same match years from now. If this test
+    /// fails, the algorithm changed and every legacy fixture would replay a
+    /// different match.
+    #[test]
+    fn derive_seed_is_pinned() {
+        assert_eq!(derive_seed("fixture-1"), 0x6f1e_f43d_b638_8654);
     }
 }
 
@@ -497,6 +684,9 @@ impl Default for Fixture {
             competition: FixtureCompetition::League,
             status: FixtureStatus::Scheduled,
             result: None,
+            seed: 0,
+            engine_version: 0,
+            replay: None,
         }
     }
 }

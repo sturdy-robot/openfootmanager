@@ -16,6 +16,8 @@ use domain::league::FixtureStatus;
 use domain::player::Position as DomainPosition;
 use domain::stats::StatsState;
 use log::{debug, info};
+use rand::SeedableRng;
+use rand::rngs::StdRng;
 
 // Re-export public items
 pub use news::generate_matchday_news;
@@ -482,30 +484,40 @@ fn simulate_single_match_with_capture<F>(game: &mut Game, idx: usize, on_capture
 where
     F: FnMut(StatsState),
 {
-    let (home_team_id, away_team_id, is_knockout) = {
+    let (home_team_id, away_team_id, is_knockout, seed) = {
         let league = game.league.as_ref().unwrap();
         let f = &league.fixtures[idx];
         (
             f.home_team_id.clone(),
             f.away_team_id.clone(),
             league.is_knockout_fixture(&f.id),
+            f.simulation_seed(),
         )
     };
+
+    // Record the seed and engine version on the fixture so the match can be
+    // reproduced later. `simulation_seed` derives a stable value for fixtures
+    // saved before seeds existed, so this also backfills older saves.
+    if let Some(league) = game.league.as_mut() {
+        league.fixtures[idx].seed = seed;
+        league.fixtures[idx].engine_version = engine::ENGINE_VERSION;
+    }
 
     let home_data = build_engine_team(game, &home_team_id);
     let away_data = build_engine_team(game, &away_team_id);
     let config = engine::MatchConfig::default();
-    let mut report = engine::simulate(&home_data, &away_data, &config);
+    // Seeded rather than drawn from thread entropy, so re-simulating this
+    // fixture reproduces the same match.
+    let mut rng = StdRng::seed_from_u64(seed);
+    let mut report = engine::simulate_with_rng(&home_data, &away_data, &config, &mut rng);
     // A level knockout tie must produce a winner: resolve it with a simulated
     // shootout so the home side no longer advances by default on a draw.
     if is_knockout && report.home_goals == report.away_goals {
         let home_strength = crate::catchup::club_strength(&game.players, &home_team_id);
         let away_strength = crate::catchup::club_strength(&game.players, &away_team_id);
-        let (home_pens, away_pens) = crate::national_team::simulate_shootout(
-            home_strength,
-            away_strength,
-            &mut rand::rng(),
-        );
+        // Continues the fixture's seeded stream, so the shootout replays too.
+        let (home_pens, away_pens) =
+            crate::national_team::simulate_shootout(home_strength, away_strength, &mut rng);
         report.home_penalties = Some(home_pens);
         report.away_penalties = Some(away_pens);
     }

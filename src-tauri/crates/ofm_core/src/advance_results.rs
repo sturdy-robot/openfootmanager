@@ -168,6 +168,7 @@ mod tests {
                 home_penalties: None,
                 away_penalties: None,
             }),
+            ..Default::default()
         }
     }
 
@@ -260,6 +261,7 @@ mod tests {
                 home_penalties: None,
                 away_penalties: None,
             }),
+            ..Default::default()
         }
     }
 

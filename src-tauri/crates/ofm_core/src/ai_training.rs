@@ -617,6 +617,7 @@ mod tests {
             competition: FixtureCompetition::League,
             status: FixtureStatus::Scheduled,
             result: None,
+            ..Default::default()
         };
         let fix2 = Fixture {
             id: "f2".to_string(),
@@ -628,6 +629,7 @@ mod tests {
             competition: FixtureCompetition::League,
             status: FixtureStatus::Scheduled,
             result: None,
+            ..Default::default()
         };
         let team_ids = vec!["ai".to_string()];
         let mut league = League::new("league1".to_string(), "Test".to_string(), 1, &team_ids);

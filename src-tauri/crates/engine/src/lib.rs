@@ -8,6 +8,18 @@ pub(crate) mod shared;
 pub mod traits;
 pub mod types;
 
+/// The engine's behaviour version.
+///
+/// Bump this whenever a change alters what the engine simulates for a given
+/// seed and inputs — new or reweighted probabilities, a different draw order, a
+/// changed event stream. Stored alongside each fixture so a replay knows
+/// whether the running engine can still reproduce it: on a mismatch the match
+/// stays readable from its stored result, it just cannot be watched back.
+///
+/// Do **not** bump it for changes that cannot affect a simulated match, such as
+/// documentation, renames, or new APIs no simulation path calls.
+pub const ENGINE_VERSION: u32 = 1;
+
 // Re-export key types for convenience
 pub use engine::simulate;
 pub use engine::simulate_with_rng;
