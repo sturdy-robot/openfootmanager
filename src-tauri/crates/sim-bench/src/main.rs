@@ -100,22 +100,22 @@ struct Cli {
     #[arg(long, help = "Home advantage multiplier (default 1.08)")]
     home_advantage: Option<f64>,
 
-    #[arg(long, help = "Base shot-on-target probability (default 0.45)")]
+    #[arg(long, help = "Base shot-on-target probability (default 0.30)")]
     shot_accuracy_base: Option<f64>,
 
-    #[arg(long, help = "Base goal conversion probability (default 0.30)")]
+    #[arg(long, help = "Base goal conversion probability (default 0.36)")]
     goal_conversion_base: Option<f64>,
 
-    #[arg(long, help = "Per-action foul probability (default 0.12)")]
+    #[arg(long, help = "Per-action foul probability (default 0.40)")]
     foul_probability: Option<f64>,
 
-    #[arg(long, help = "Yellow card probability per foul (default 0.30)")]
+    #[arg(long, help = "Yellow card probability per foul (default 0.11)")]
     yellow_card_probability: Option<f64>,
 
     #[arg(long, help = "Direct red / escalation probability (default 0.04)")]
     red_card_probability: Option<f64>,
 
-    #[arg(long, help = "Penalty probability for box foul (default 0.08)")]
+    #[arg(long, help = "Penalty probability for a box foul (default 0.50)")]
     penalty_probability: Option<f64>,
 
     #[arg(long, help = "Injury probability per foul (default 0.03)")]

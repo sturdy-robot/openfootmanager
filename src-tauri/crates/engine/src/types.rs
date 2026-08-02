@@ -360,7 +360,16 @@ impl Default for MatchConfig {
     fn default() -> Self {
         Self {
             home_advantage: 1.08,
-            shot_accuracy_base: 0.35,
+            // Calibrated against the effective shooting skill the engine
+            // actually produces, which is a fatigue-adjusted rating rather than
+            // the raw attribute. When the two engines were merged onto the live
+            // core's per-player fatigue model, effective skill rose (the old
+            // batch model multiplied by team-mean condition, ~0.90 falling to
+            // 0.70; the live model uses 0.6 + 0.4·condition, ~0.96 falling to
+            // ~0.89), which pushed shots on target to 47% — outside the 32–45%
+            // real-football band. This constant moved with the scale it is
+            // calibrated against.
+            shot_accuracy_base: 0.30,
             goal_conversion_base: 0.36,
             fatigue_per_minute: 0.20,
             foul_probability: 0.40,
