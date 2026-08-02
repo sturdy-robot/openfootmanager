@@ -234,6 +234,13 @@ impl MatchReport {
                 }
                 EventType::PenaltyMiss => {
                     stats.shots += 1;
+                    // A missed penalty is still a shot, so it has to land in one
+                    // of the outcome buckets or `shots` stops equalling
+                    // on-target + off-target + blocked. The engine resolves a
+                    // penalty with a single conversion roll and does not yet
+                    // distinguish "saved" from "wide", so it counts as off
+                    // target; splitting the two needs a penalty outcome chain.
+                    stats.shots_off_target += 1;
                     stats.penalties += 1;
                     if !pid.is_empty() {
                         let ps = player_stats.entry(pid.to_string()).or_default();
