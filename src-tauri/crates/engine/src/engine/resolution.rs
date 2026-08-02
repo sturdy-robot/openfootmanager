@@ -17,7 +17,7 @@ use super::snap_player;
 // Action resolution per zone
 // ---------------------------------------------------------------------------
 
-pub(super) fn resolve_action<R: Rng>(ctx: &mut MatchContext, minute: u8, rng: &mut R) {
+pub(super) fn resolve_action<R: Rng + ?Sized>(ctx: &mut MatchContext, minute: u8, rng: &mut R) {
     let att_side = ctx.possession;
     let def_side = att_side.opposite();
     let zone = ctx.ball_zone;
@@ -38,7 +38,7 @@ pub(super) fn resolve_action<R: Rng>(ctx: &mut MatchContext, minute: u8, rng: &m
 // Zone-specific resolution
 // ---------------------------------------------------------------------------
 
-fn resolve_buildup<R: Rng>(
+fn resolve_buildup<R: Rng + ?Sized>(
     ctx: &mut MatchContext,
     minute: u8,
     att_side: Side,
@@ -77,7 +77,7 @@ fn resolve_buildup<R: Rng>(
     }
 }
 
-fn resolve_midfield<R: Rng>(
+fn resolve_midfield<R: Rng + ?Sized>(
     ctx: &mut MatchContext,
     minute: u8,
     att_side: Side,
@@ -157,7 +157,7 @@ fn resolve_midfield<R: Rng>(
     }
 }
 
-fn resolve_attacking_third<R: Rng>(
+fn resolve_attacking_third<R: Rng + ?Sized>(
     ctx: &mut MatchContext,
     minute: u8,
     att_side: Side,
@@ -261,7 +261,7 @@ fn resolve_attacking_third<R: Rng>(
     }
 }
 
-fn resolve_shot<R: Rng>(ctx: &mut MatchContext, minute: u8, att_side: Side, rng: &mut R) {
+fn resolve_shot<R: Rng + ?Sized>(ctx: &mut MatchContext, minute: u8, att_side: Side, rng: &mut R) {
     let def_side = att_side.opposite();
     let zone = Zone::attacking_box(att_side);
 

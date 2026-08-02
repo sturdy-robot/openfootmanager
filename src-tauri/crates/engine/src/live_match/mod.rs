@@ -297,7 +297,7 @@ impl LiveMatchState {
     }
 
     /// Step one minute forward. Returns the events that occurred.
-    pub fn step_minute<R: Rng>(&mut self, rng: &mut R) -> MinuteResult {
+    pub fn step_minute<R: Rng + ?Sized>(&mut self, rng: &mut R) -> MinuteResult {
         match self.phase {
             MatchPhase::PreKickOff => self.start_match(rng),
             MatchPhase::FirstHalf => self.play_minute(rng),
@@ -401,6 +401,11 @@ impl LiveMatchState {
     }
 
     /// Current phase
+    /// The event log so far. Grows as the match is stepped.
+    pub fn events(&self) -> &[MatchEvent] {
+        &self.events
+    }
+
     pub fn phase(&self) -> MatchPhase {
         self.phase
     }

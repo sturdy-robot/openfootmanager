@@ -10,7 +10,7 @@ use super::{LiveMatchState, MinuteResult, PenaltyShootoutState};
 // ---------------------------------------------------------------------------
 
 impl LiveMatchState {
-    pub(super) fn play_penalty_round<R: Rng>(&mut self, rng: &mut R) -> MinuteResult {
+    pub(super) fn play_penalty_round<R: Rng + ?Sized>(&mut self, rng: &mut R) -> MinuteResult {
         let minute = self.current_minute;
         let mut events = Vec::new();
 
@@ -105,7 +105,7 @@ impl LiveMatchState {
         self.penalty_state.decided()
     }
 
-    pub(super) fn resolve_in_match_penalty<R: Rng>(
+    pub(super) fn resolve_in_match_penalty<R: Rng + ?Sized>(
         &mut self,
         minute: u8,
         att_side: Side,

@@ -1,9 +1,11 @@
 pub mod ai;
+pub mod compliance;
 pub mod engine;
 pub mod event;
 pub mod live_match;
 pub mod report;
 pub(crate) mod shared;
+pub mod traits;
 pub mod types;
 
 // Re-export key types for convenience
@@ -15,6 +17,9 @@ pub use live_match::{
     PenaltyShootoutSnapshot, SetPieceTakers, SubstitutionRecord,
 };
 pub use report::{GoalDetail, GoalSource, MatchReport, PlayerMatchStats, TeamStats};
+pub use traits::{
+    DEFAULT_ENGINE_ID, DefaultEngine, InstantEngine, LiveEngine, LiveState, MatchSetup,
+};
 pub use types::{
     BreakSpeed, CounterPressDuration, DefensiveLine, DefensiveShape, MarkingStyle, MatchConfig,
     PlayStyle, PlayerData, PlayerRole, Position, PressingIntensity, Side, TacticsBuildUpStyle,

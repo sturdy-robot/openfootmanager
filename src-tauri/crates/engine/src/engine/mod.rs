@@ -19,7 +19,7 @@ pub fn simulate(home: &TeamData, away: &TeamData, config: &MatchConfig) -> Match
 }
 
 /// Simulate with an explicit RNG (useful for deterministic tests).
-pub fn simulate_with_rng<R: Rng>(
+pub fn simulate_with_rng<R: Rng + ?Sized>(
     home: &TeamData,
     away: &TeamData,
     config: &MatchConfig,
@@ -162,7 +162,7 @@ impl<'a> MatchContext<'a> {
 
 /// Pick a random player from a side, preferring a given position, and return
 /// a snapshot so we don't hold a borrow on the context.
-fn snap_player<R: Rng>(
+fn snap_player<R: Rng + ?Sized>(
     ctx: &MatchContext,
     side: Side,
     preferred: Position,
@@ -197,7 +197,7 @@ fn snap_player<R: Rng>(
 // Minute simulation
 // ---------------------------------------------------------------------------
 
-fn simulate_minute<R: Rng>(ctx: &mut MatchContext, minute: u8, rng: &mut R) {
+fn simulate_minute<R: Rng + ?Sized>(ctx: &mut MatchContext, minute: u8, rng: &mut R) {
     match ctx.possession {
         Side::Home => ctx.home_possession_ticks += 1,
         Side::Away => ctx.away_possession_ticks += 1,

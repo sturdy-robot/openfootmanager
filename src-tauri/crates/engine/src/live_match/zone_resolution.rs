@@ -16,7 +16,7 @@ use super::helpers::{danger_band, foul_severity, save_quality};
 // ---------------------------------------------------------------------------
 
 impl LiveMatchState {
-    pub(super) fn resolve_action<R: Rng>(&mut self, minute: u8, rng: &mut R) -> Vec<MatchEvent> {
+    pub(super) fn resolve_action<R: Rng + ?Sized>(&mut self, minute: u8, rng: &mut R) -> Vec<MatchEvent> {
         let att_side = self.possession;
         let def_side = att_side.opposite();
         let zone = self.ball_zone;
@@ -32,7 +32,7 @@ impl LiveMatchState {
         }
     }
 
-    fn resolve_buildup<R: Rng>(
+    fn resolve_buildup<R: Rng + ?Sized>(
         &mut self,
         minute: u8,
         att_side: Side,
@@ -75,7 +75,7 @@ impl LiveMatchState {
         events
     }
 
-    fn resolve_midfield<R: Rng>(
+    fn resolve_midfield<R: Rng + ?Sized>(
         &mut self,
         minute: u8,
         att_side: Side,
@@ -154,7 +154,7 @@ impl LiveMatchState {
         events
     }
 
-    fn resolve_attacking_third<R: Rng>(
+    fn resolve_attacking_third<R: Rng + ?Sized>(
         &mut self,
         minute: u8,
         att_side: Side,
@@ -277,7 +277,7 @@ impl LiveMatchState {
         events
     }
 
-    fn resolve_shot<R: Rng>(&mut self, minute: u8, att_side: Side, rng: &mut R) -> Vec<MatchEvent> {
+    fn resolve_shot<R: Rng + ?Sized>(&mut self, minute: u8, att_side: Side, rng: &mut R) -> Vec<MatchEvent> {
         let mut events = Vec::new();
         let def_side = att_side.opposite();
         let zone = Zone::attacking_box(att_side);
@@ -407,7 +407,7 @@ impl LiveMatchState {
     // Mirrors `engine::fouls::maybe_foul` — foul resolution needs the full context
     // (who, whom, where, when, tactics, RNG), so the argument count is inherent.
     #[allow(clippy::too_many_arguments)]
-    pub(super) fn maybe_foul<R: Rng>(
+    pub(super) fn maybe_foul<R: Rng + ?Sized>(
         &mut self,
         minute: u8,
         fouling_side: Side,
@@ -466,7 +466,7 @@ impl LiveMatchState {
         events
     }
 
-    pub(super) fn maybe_card<R: Rng>(
+    pub(super) fn maybe_card<R: Rng + ?Sized>(
         &mut self,
         minute: u8,
         side: Side,

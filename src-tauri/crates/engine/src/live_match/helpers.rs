@@ -58,7 +58,7 @@ impl LiveMatchState {
     // Player selection helpers
     // -----------------------------------------------------------------------
 
-    pub(super) fn snap_player<R: Rng>(
+    pub(super) fn snap_player<R: Rng + ?Sized>(
         &self,
         side: Side,
         preferred: Position,
@@ -97,7 +97,7 @@ impl LiveMatchState {
         }
     }
 
-    pub(super) fn pick_penalty_taker<R: Rng>(&self, side: Side, rng: &mut R) -> PlayerSnap {
+    pub(super) fn pick_penalty_taker<R: Rng + ?Sized>(&self, side: Side, rng: &mut R) -> PlayerSnap {
         // Use designated taker if set
         if let Some(ref id) = self.set_pieces_ref(side).penalty_taker {
             let team = self.team_ref(side);

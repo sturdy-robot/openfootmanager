@@ -15,7 +15,7 @@ use super::snap_player;
 // with which side's tactics, and the RNG. Grouping them into a struct would only
 // move the argument list to the call site.
 #[allow(clippy::too_many_arguments)]
-pub(super) fn maybe_foul<R: Rng>(
+pub(super) fn maybe_foul<R: Rng + ?Sized>(
     ctx: &mut MatchContext,
     minute: u8,
     fouling_side: Side,
@@ -65,7 +65,7 @@ pub(super) fn maybe_foul<R: Rng>(
     true
 }
 
-pub(super) fn maybe_card<R: Rng>(
+pub(super) fn maybe_card<R: Rng + ?Sized>(
     ctx: &mut MatchContext,
     minute: u8,
     side: Side,
@@ -104,7 +104,7 @@ pub(super) fn maybe_card<R: Rng>(
     }
 }
 
-pub(super) fn resolve_penalty<R: Rng>(ctx: &mut MatchContext, minute: u8, att_side: Side, rng: &mut R) {
+pub(super) fn resolve_penalty<R: Rng + ?Sized>(ctx: &mut MatchContext, minute: u8, att_side: Side, rng: &mut R) {
     let taker = snap_player(ctx, att_side, Position::Forward, rng);
     let gk = snap_player(ctx, att_side.opposite(), Position::Goalkeeper, rng);
 

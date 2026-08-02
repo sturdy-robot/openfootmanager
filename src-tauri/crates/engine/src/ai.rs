@@ -47,7 +47,7 @@ impl Default for AiProfile {
 
 /// Evaluate the current match state and return any commands the AI wants to
 /// execute. Should be called after each `step_minute` for AI-controlled sides.
-pub fn ai_decide<R: Rng>(
+pub fn ai_decide<R: Rng + ?Sized>(
     match_state: &LiveMatchState,
     side: Side,
     profile: &AiProfile,
@@ -92,7 +92,7 @@ pub fn ai_decide<R: Rng>(
 // Substitution logic
 // ---------------------------------------------------------------------------
 
-fn consider_substitution<R: Rng>(
+fn consider_substitution<R: Rng + ?Sized>(
     match_state: &LiveMatchState,
     side: Side,
     profile: &AiProfile,
@@ -284,7 +284,7 @@ fn find_best_bench_replacement<'a>(
 // Tactical change logic
 // ---------------------------------------------------------------------------
 
-fn consider_tactic_change<R: Rng>(
+fn consider_tactic_change<R: Rng + ?Sized>(
     match_state: &LiveMatchState,
     side: Side,
     profile: &AiProfile,
