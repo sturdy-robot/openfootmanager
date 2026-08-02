@@ -105,7 +105,7 @@ impl ComplianceReport {
 /// Run every invariant against `engine`, simulating `matches` fixtures from
 /// `setup`. `matches` should be at least a few hundred for the discipline and
 /// shootout checks to see enough rare events to be meaningful.
-pub fn run_all<E: InstantEngine>(
+pub fn run_all<E: InstantEngine + ?Sized>(
     engine: &E,
     setup: &MatchSetup,
     matches: u32,
@@ -132,7 +132,7 @@ pub fn run_all<E: InstantEngine>(
 /// The determinism check, isolated so callers can run it on its own — for
 /// example across two processes, which is the case that catches
 /// order-dependent `HashMap` iteration.
-pub fn check_determinism<E: InstantEngine>(
+pub fn check_determinism<E: InstantEngine + ?Sized>(
     engine: &E,
     setup: &MatchSetup,
     seed: u64,

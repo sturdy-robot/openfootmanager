@@ -84,6 +84,18 @@ struct Cli {
     #[arg(long)]
     sweeps: bool,
 
+    /// Check the engine against the compliance suite: determinism, report and
+    /// event agreement, discipline, substitution legality, shootout
+    /// resolution. Any engine must satisfy these to be usable by the game.
+    #[arg(long)]
+    compliance: bool,
+
+    /// Which engine to drive. Every mode goes through the `InstantEngine`
+    /// contract, so a replacement engine is benchable and checkable by name
+    /// without touching this tool.
+    #[arg(long, default_value = engine::DEFAULT_ENGINE_ID)]
+    engine: String,
+
     // ── MatchConfig overrides ────────────────────────────────────────────────
     #[arg(long, help = "Home advantage multiplier (default 1.08)")]
     home_advantage: Option<f64>,
@@ -108,6 +120,24 @@ struct Cli {
 
     #[arg(long, help = "Injury probability per foul (default 0.03)")]
     injury_probability: Option<f64>,
+
+    #[arg(long, help = "Per-minute fatigue factor (default 0.20)")]
+    fatigue_per_minute: Option<f64>,
+
+    #[arg(long, help = "Maximum stoppage minutes per half (default 4)")]
+    stoppage_time_max: Option<u8>,
+}
+
+/// Resolve an engine by id.
+///
+/// The registry exists so this tool never hard-codes which engine it drives:
+/// a replacement implements `InstantEngine`, gets an id here, and is
+/// immediately benchable and compliance-checkable.
+fn engine_by_id(id: &str) -> Option<Box<dyn engine::InstantEngine>> {
+    match id {
+        engine::DEFAULT_ENGINE_ID => Some(Box::new(engine::DefaultEngine)),
+        _ => None,
+    }
 }
 
 #[derive(Clone, Copy, ValueEnum, Debug)]
@@ -173,6 +203,22 @@ fn main() {
     if let Some(v) = cli.injury_probability {
         config.injury_probability = v;
     }
+    if let Some(v) = cli.fatigue_per_minute {
+        config.fatigue_per_minute = v;
+    }
+    if let Some(v) = cli.stoppage_time_max {
+        config.stoppage_time_max = v;
+    }
+
+    let Some(active_engine) = engine_by_id(&cli.engine) else {
+        eprintln!("Unknown engine {:?}. Known: {}", cli.engine, engine::DEFAULT_ENGINE_ID);
+        std::process::exit(2);
+    };
+
+    if cli.compliance {
+        run_compliance(active_engine.as_ref(), &config, &cli);
+        return;
+    }
 
     if cli.bench {
         run_bench(&config, cli.games, cli.seed);
@@ -216,16 +262,24 @@ fn main() {
         &mut team_rng,
     );
 
-    eprintln!("Simulating {} games (seed: {})…", cli.games, base_seed);
+    eprintln!(
+        "Simulating {} games with engine {:?} (seed: {})…",
+        cli.games,
+        active_engine.id(),
+        base_seed
+    );
 
+    // Driven through the engine contract rather than a direct call, so any
+    // engine registered in `engine_by_id` can be benchmarked unchanged.
+    let setup = engine::MatchSetup::league(home, away, config.clone());
     let start = Instant::now();
     let mut bench_stats = BenchStats::default();
 
     for i in 0..cli.games {
         let game_seed = base_seed.wrapping_add(i as u64);
         let mut rng = StdRng::seed_from_u64(game_seed);
-        let report = simulate_with_rng(&home, &away, &config, &mut rng);
-        bench_stats.add(&report, &home, &away);
+        let report = active_engine.simulate(&setup, &mut rng);
+        bench_stats.add(&report, &setup.home, &setup.away);
     }
 
     bench_stats.total_time_secs = start.elapsed().as_secs_f64();
@@ -297,6 +351,65 @@ fn main() {
         }
         std::process::exit(1);
     }
+}
+
+fn run_compliance(active: &dyn engine::InstantEngine, config: &MatchConfig, cli: &Cli) {
+    let base_seed = cli.seed.unwrap_or(42);
+    let mut team_rng = StdRng::seed_from_u64(base_seed.wrapping_add(0xDEAD_BEEF));
+    let home = build_team(
+        "home",
+        "Home FC",
+        70,
+        PlayStyle::Balanced,
+        "4-4-2",
+        &mut team_rng,
+    );
+    let away = build_team(
+        "away",
+        "Away FC",
+        70,
+        PlayStyle::Balanced,
+        "4-4-2",
+        &mut team_rng,
+    );
+    let setup = engine::MatchSetup::league(home, away, config.clone());
+
+    eprintln!(
+        "Checking engine {:?} over {} matches (seed: {base_seed})…",
+        active.id(),
+        cli.games
+    );
+    let report = engine::compliance::run_all(active, &setup, cli.games, base_seed);
+
+    if report.passed() {
+        println!(
+            "{} engine {:?} passed all invariants over {} matches",
+            "✓".green().bold(),
+            report.engine_id,
+            report.matches_checked
+        );
+        return;
+    }
+
+    let grouped = report.by_invariant();
+    let mut names: Vec<&str> = grouped.keys().map(|invariant| invariant.name()).collect();
+    names.sort();
+    println!(
+        "{} engine {:?} failed compliance over {} matches",
+        "✗".red().bold(),
+        report.engine_id,
+        report.matches_checked
+    );
+    for (invariant, violations) in &grouped {
+        println!("\n  {} — {} violation(s)", invariant.name().bold(), violations.len());
+        for violation in violations.iter().take(5) {
+            println!("    {}", violation.detail);
+        }
+        if violations.len() > 5 {
+            println!("    … and {} more", violations.len() - 5);
+        }
+    }
+    std::process::exit(1);
 }
 
 /// How little spread on a sweep's key metric counts as "this does not reach the
