@@ -1,3 +1,4 @@
+use engine::Slot;
 use engine::{PlayerData, PlayerRole, PlayStyle, Position, TacticsConfig, TeamData};
 use rand::{Rng, RngExt};
 
@@ -130,6 +131,36 @@ fn parse_formation(formation: &str) -> (u8, u8, u8, bool) {
     (result.0, result.1, result.2, false)
 }
 
+/// The slot a player of this position and index occupies within the shape.
+///
+/// Without this the bench builds every squad with `slot: None`, so the deployed
+/// slot — the thing that makes a 4-3-3 play differently from a 3-5-2 beyond
+/// counting bodies — would never be exercised by a single benchmark.
+fn slot_for(position: Position, idx: u8, total: u8) -> Slot {
+    let wide_left = idx == 0;
+    let wide_right = total > 1 && idx == total - 1;
+    match position {
+        Position::Goalkeeper => Slot::Goalkeeper,
+        // A back four is left-back, two centre-halves, right-back; a back
+        // three is all centre-halves.
+        Position::Defender if total >= 4 && wide_left => Slot::LeftBack,
+        Position::Defender if total >= 4 && wide_right => Slot::RightBack,
+        Position::Defender if total == 5 && (idx == 1 || idx == 3) => Slot::LeftWingBack,
+        Position::Defender => Slot::CenterBack,
+        // Five across the middle puts a man wide on each side; a flat three or
+        // four holds, runs and creates through the centre.
+        Position::Midfielder if total >= 4 && wide_left => Slot::LeftMidfielder,
+        Position::Midfielder if total >= 4 && wide_right => Slot::RightMidfielder,
+        Position::Midfielder if idx == 0 => Slot::DefensiveMidfielder,
+        Position::Midfielder if total >= 3 && idx + 1 == total => Slot::AttackingMidfielder,
+        Position::Midfielder => Slot::CentralMidfielder,
+        // A front three is winger, striker, winger.
+        Position::Forward if total >= 3 && wide_left => Slot::LeftWinger,
+        Position::Forward if total >= 3 && wide_right => Slot::RightWinger,
+        Position::Forward => Slot::Striker,
+    }
+}
+
 fn make_player(
     team_id: &str,
     pos_label: &str,
@@ -184,6 +215,7 @@ fn make_player(
         reflexes: biased(base, gk_off, rng),
         aerial: noise(base, rng),
         traits: vec![],
+        slot: Some(slot_for(position, idx, total_in_position)),
         role,
     }
 }

@@ -577,6 +577,7 @@ mod event_detail_tests {
             reflexes: 70,
             aerial: 70,
             traits: vec![],
+            slot: None,
             role: crate::types::PlayerRole::Standard,
         }
     }

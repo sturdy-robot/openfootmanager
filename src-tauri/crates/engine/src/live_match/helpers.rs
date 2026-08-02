@@ -233,9 +233,9 @@ impl LiveMatchState {
             return 0.0;
         }
         let placement = if need.is_defensive() {
-            roles::off_ball_weight(player.position, player.role, band)
+            roles::off_ball_weight(player.position, player.slot, player.role, band)
         } else {
-            roles::on_ball_weight(player.position, player.role, band)
+            roles::on_ball_weight(player.position, player.slot, player.role, band)
         };
         if placement <= 0.0 {
             return 0.0;
@@ -548,6 +548,7 @@ mod commentary_detail_tests {
             reflexes: 70,
             aerial: 70,
             traits: vec![],
+            slot: None,
             role: crate::types::PlayerRole::Standard,
         }
     }

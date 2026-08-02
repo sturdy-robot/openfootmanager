@@ -617,6 +617,7 @@ fn make_player(
         reflexes: biased(base, gk_off, rng),
         aerial: noise(base, rng),
         traits: vec![],
+        slot: None,
         role: {
             let choices: &[PlayerRole] = match position {
                 Position::Goalkeeper => &[

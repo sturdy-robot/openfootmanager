@@ -7,11 +7,15 @@
 
 use engine::compliance;
 use engine::traits::{DefaultEngine, MatchSetup};
-use engine::types::{MatchConfig, PlayStyle, PlayerData, PlayerRole, Position, TeamData};
+use engine::types::{MatchConfig, PlayStyle, PlayerData, PlayerRole, Position, Slot, TeamData};
 
 const SEED: u64 = 0xDEC0_DE01;
 
 fn player(id: &str, position: Position, rating: u8) -> PlayerData {
+    player_in(id, position, None, rating)
+}
+
+fn player_in(id: &str, position: Position, slot: Option<Slot>, rating: u8) -> PlayerData {
     PlayerData {
         id: id.to_string(),
         name: format!("Player {id}"),
@@ -39,21 +43,56 @@ fn player(id: &str, position: Position, rating: u8) -> PlayerData {
         reflexes: rating,
         aerial: rating,
         traits: Vec::new(),
+        slot,
         role: PlayerRole::Standard,
     }
 }
 
 /// A 4-4-2 with a given base rating, plus a seven-player bench.
 fn team(id: &str, rating: u8) -> (TeamData, Vec<PlayerData>) {
-    let mut players = vec![player(&format!("{id}-gk"), Position::Goalkeeper, rating)];
-    for index in 0..4 {
-        players.push(player(&format!("{id}-d{index}"), Position::Defender, rating));
+    // A real 4-4-2, deployed slots and all, so the golden reports cover the
+    // slot-aware selection path rather than only the coarse-position fallback.
+    const BACK_FOUR: [Slot; 4] = [
+        Slot::LeftBack,
+        Slot::CenterBack,
+        Slot::CenterBack,
+        Slot::RightBack,
+    ];
+    const MIDFIELD_FOUR: [Slot; 4] = [
+        Slot::LeftMidfielder,
+        Slot::CentralMidfielder,
+        Slot::DefensiveMidfielder,
+        Slot::RightMidfielder,
+    ];
+    let mut players = vec![player_in(
+        &format!("{id}-gk"),
+        Position::Goalkeeper,
+        Some(Slot::Goalkeeper),
+        rating,
+    )];
+    for (index, slot) in BACK_FOUR.iter().enumerate() {
+        players.push(player_in(
+            &format!("{id}-d{index}"),
+            Position::Defender,
+            Some(*slot),
+            rating,
+        ));
     }
-    for index in 0..4 {
-        players.push(player(&format!("{id}-m{index}"), Position::Midfielder, rating));
+    for (index, slot) in MIDFIELD_FOUR.iter().enumerate() {
+        players.push(player_in(
+            &format!("{id}-m{index}"),
+            Position::Midfielder,
+            Some(*slot),
+            rating,
+        ));
     }
     for index in 0..2 {
-        players.push(player(&format!("{id}-f{index}"), Position::Forward, rating));
+        players.push(player_in(
+            &format!("{id}-f{index}"),
+            Position::Forward,
+            Some(Slot::Striker),
+            rating,
+        ));
     }
 
     let mut bench = vec![player(&format!("{id}-bgk"), Position::Goalkeeper, rating - 5)];
@@ -180,7 +219,7 @@ fn golden_report_is_unchanged() {
     let actual = hasher.finish();
 
     // Pinned behaviour fingerprint. See the doc comment before changing.
-    const GOLDEN: u64 = 0x9e58_4b34_b06a_9135;
+    const GOLDEN: u64 = 0x5c94_5785_5377_8db6;
 
     assert_eq!(
         actual, GOLDEN,
@@ -224,7 +263,7 @@ fn golden_report_is_unchanged_with_instructions() {
     let actual = hasher.finish();
 
     // Pinned behaviour fingerprint. See `golden_report_is_unchanged`.
-    const GOLDEN_WITH_INSTRUCTIONS: u64 = 0xe0af_0895_0a1c_80fd;
+    const GOLDEN_WITH_INSTRUCTIONS: u64 = 0x7917_2a0c_cc49_d9f6;
 
     assert_eq!(
         actual, GOLDEN_WITH_INSTRUCTIONS,

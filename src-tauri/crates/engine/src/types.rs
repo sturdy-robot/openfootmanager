@@ -70,6 +70,58 @@ pub enum PlayerRole {
     CompleteForward,
 }
 
+
+// ---------------------------------------------------------------------------
+// Slot — the granular position a player is deployed in
+// ---------------------------------------------------------------------------
+
+/// Where a player is actually deployed, as opposed to which quarter of the
+/// pitch he belongs to.
+///
+/// [`Position`] has four buckets, which is too coarse to tell a holding
+/// midfielder from an attacking one, or a wing-back from a centre-half. The
+/// granular slot is derived from the formation and the starting eleven's order,
+/// and was already being computed at the domain boundary and thrown away — so a
+/// 4-3-3 and a 3-5-2 differed only in how many players landed in each bucket.
+///
+/// Mirrors `domain::player::Position`'s granular variants. The engine keeps its
+/// own copy rather than depending on `domain`; `ofm_core` maps between them, as
+/// it does for [`PlayerRole`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum Slot {
+    Goalkeeper,
+    RightBack,
+    CenterBack,
+    LeftBack,
+    RightWingBack,
+    LeftWingBack,
+    DefensiveMidfielder,
+    CentralMidfielder,
+    AttackingMidfielder,
+    RightMidfielder,
+    LeftMidfielder,
+    RightWinger,
+    LeftWinger,
+    Striker,
+}
+
+impl Slot {
+    /// The coarse bucket this slot belongs to.
+    pub fn position(self) -> Position {
+        match self {
+            Slot::Goalkeeper => Position::Goalkeeper,
+            Slot::RightBack | Slot::CenterBack | Slot::LeftBack => Position::Defender,
+            Slot::RightWingBack | Slot::LeftWingBack => Position::Defender,
+            Slot::DefensiveMidfielder
+            | Slot::CentralMidfielder
+            | Slot::AttackingMidfielder
+            | Slot::RightMidfielder
+            | Slot::LeftMidfielder => Position::Midfielder,
+            Slot::RightWinger | Slot::LeftWinger | Slot::Striker => Position::Forward,
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // PlayerData — a snapshot of a player for engine consumption
 // ---------------------------------------------------------------------------
@@ -127,6 +179,12 @@ pub struct PlayerData {
 
     #[serde(default)]
     pub role: PlayerRole,
+
+    /// The granular slot this player is deployed in, when known. Falls back to
+    /// [`PlayerData::position`] for bench players and for saves written before
+    /// slots were carried across the boundary.
+    #[serde(default)]
+    pub slot: Option<Slot>,
 }
 
 fn default_engine_attr() -> u8 {

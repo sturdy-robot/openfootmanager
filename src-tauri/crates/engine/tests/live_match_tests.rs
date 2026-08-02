@@ -39,6 +39,7 @@ fn make_player(id: &str, name: &str, pos: Position, skill: u8) -> PlayerData {
         reflexes: skill,
         aerial: skill,
         traits: vec![],
+        slot: None,
         role: PlayerRole::Standard,
     }
 }
@@ -1310,6 +1311,7 @@ fn make_player_with_traits(
         reflexes: skill,
         aerial: skill,
         traits: traits.iter().map(|t| t.to_string()).collect(),
+        slot: None,
         role: PlayerRole::Standard,
     }
 }

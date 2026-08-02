@@ -38,7 +38,7 @@ fn mk(id: &str, pos: Position) -> PlayerData {
         pace: 70, stamina: 70, strength: 70, agility: 70, passing: 70, shooting: 70,
         tackling: 70, dribbling: 70, defending: 70, positioning: 70, vision: 70,
         decisions: 70, composure: 70, aggression: 70, teamwork: 70, leadership: 70,
-        handling: 70, reflexes: 70, aerial: 70, traits: vec![], role: PlayerRole::Standard,
+        handling: 70, reflexes: 70, aerial: 70, traits: vec![], role: PlayerRole::Standard, slot: None,
     }
 }
 

@@ -19,7 +19,7 @@ pub mod types;
 ///
 /// Do **not** bump it for changes that cannot affect a simulated match, such as
 /// documentation, renames, or new APIs no simulation path calls.
-pub const ENGINE_VERSION: u32 = 5;
+pub const ENGINE_VERSION: u32 = 6;
 
 // Re-export key types for convenience
 pub use engine::simulate;
@@ -37,5 +37,5 @@ pub use traits::{
 pub use types::{
     BreakSpeed, CounterPressDuration, DefensiveLine, DefensiveShape, MarkingStyle, MatchConfig,
     PlayStyle, PlayerData, PlayerRole, Position, PressingIntensity, Side, TacticsBuildUpStyle,
-    TacticsConfig, TacticsPitchWidth, Tempo, TeamData, Zone,
+    Slot, TacticsConfig, TacticsPitchWidth, Tempo, TeamData, Zone,
 };

@@ -3,6 +3,7 @@ use crate::player_rating::{
     effective_rating_for_assignment, formation_slots, natural_ovr, positional_fit_for_assignment,
 };
 use domain::player::Position as DomainPosition;
+use engine::Slot as EngineSlot;
 use engine::{
     BreakSpeed, CounterPressDuration, DefensiveLine, DefensiveShape, MarkingStyle, PlayStyle,
     PlayerData, PlayerRole as EnginePlayerRole, Position, PressingIntensity, TacticsBuildUpStyle,
@@ -429,6 +430,10 @@ fn to_engine_player(
         DomainPosition::Forward => Position::Forward,
         _ => Position::Midfielder,
     };
+    // The granular slot the formation put this player in. Previously computed
+    // here and discarded by `to_group_position`, which left the engine unable
+    // to tell a holding midfielder from an attacking one.
+    let slot = deployed.and_then(to_engine_slot);
 
     PlayerData {
         id: p.id.clone(),
@@ -458,7 +463,36 @@ fn to_engine_player(
         aerial: p.attributes.aerial,
         traits: p.traits.iter().map(|t| format!("{:?}", t)).collect(),
         role,
+        slot,
     }
+}
+
+/// Map a granular domain position onto the engine's own slot type.
+///
+/// Returns `None` for the four coarse buckets: those carry no more information
+/// than `PlayerData::position` already does, so there is nothing to gain by
+/// pretending otherwise.
+fn to_engine_slot(position: &DomainPosition) -> Option<EngineSlot> {
+    Some(match position {
+        DomainPosition::Goalkeeper => EngineSlot::Goalkeeper,
+        DomainPosition::RightBack => EngineSlot::RightBack,
+        DomainPosition::CenterBack => EngineSlot::CenterBack,
+        DomainPosition::LeftBack => EngineSlot::LeftBack,
+        DomainPosition::RightWingBack => EngineSlot::RightWingBack,
+        DomainPosition::LeftWingBack => EngineSlot::LeftWingBack,
+        DomainPosition::DefensiveMidfielder => EngineSlot::DefensiveMidfielder,
+        DomainPosition::CentralMidfielder => EngineSlot::CentralMidfielder,
+        DomainPosition::AttackingMidfielder => EngineSlot::AttackingMidfielder,
+        DomainPosition::RightMidfielder => EngineSlot::RightMidfielder,
+        DomainPosition::LeftMidfielder => EngineSlot::LeftMidfielder,
+        DomainPosition::RightWinger => EngineSlot::RightWinger,
+        DomainPosition::LeftWinger => EngineSlot::LeftWinger,
+        DomainPosition::Striker => EngineSlot::Striker,
+        // Coarse buckets: no slot-level detail to carry.
+        DomainPosition::Defender | DomainPosition::Midfielder | DomainPosition::Forward => {
+            return None;
+        }
+    })
 }
 
 /// Auto-select set-piece takers from a set of player IDs.
