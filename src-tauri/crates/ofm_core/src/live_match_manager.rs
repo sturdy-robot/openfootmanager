@@ -51,7 +51,14 @@ fn to_replay_command(cmd: &MatchCommand) -> Option<ReplayCommandKind> {
         },
         MatchCommand::ChangePlayStyle { side, play_style } => ReplayCommandKind::ChangePlayStyle {
             home: home(side),
-            play_style: format!("{play_style:?}"),
+            play_style: match play_style {
+                engine::PlayStyle::Balanced => domain::team::PlayStyle::Balanced,
+                engine::PlayStyle::Attacking => domain::team::PlayStyle::Attacking,
+                engine::PlayStyle::Defensive => domain::team::PlayStyle::Defensive,
+                engine::PlayStyle::Possession => domain::team::PlayStyle::Possession,
+                engine::PlayStyle::Counter => domain::team::PlayStyle::Counter,
+                engine::PlayStyle::HighPress => domain::team::PlayStyle::HighPress,
+            },
         },
         MatchCommand::ChangePlayerRole {
             side,
@@ -110,6 +117,13 @@ fn capture_lineup(game: &Game, team_id: &str, xi: &engine::TeamData, bench: &[en
             .collect(),
     }
 }
+
+/// Offset that derives the AI's random stream from the fixture seed.
+///
+/// Changing it changes every AI decision for a given seed, so it is engine
+/// behaviour: treat it as pinned, and bump `engine::ENGINE_VERSION` if it ever
+/// has to move.
+const AI_STREAM_SALT: u64 = 0xA15E_EDA1_5EED;
 
 const LIVE_MATCH_NO_LEAGUE_ERROR: &str = "be.error.liveMatch.noLeague";
 const LIVE_MATCH_FIXTURE_NOT_FOUND_ERROR: &str = "be.error.liveMatch.fixtureNotFound";
@@ -190,7 +204,17 @@ pub enum MatchMode {
 
 pub struct LiveMatchSession {
     pub match_state: LiveMatchState,
+    /// The simulation stream: everything the match engine itself draws.
+    ///
+    /// Deliberately separate from `ai_rng`. With one shared generator, a user
+    /// substitution changes how many draws the AI consumes, which shifts every
+    /// subsequent simulation draw — so a replay would reconstruct a *different*
+    /// match while presenting it as history. Splitting the streams by concern
+    /// keeps the simulation aligned no matter what the user does.
     pub rng: StdRng,
+    /// The in-match AI's stream, seeded independently from the same fixture
+    /// seed.
+    pub ai_rng: StdRng,
     /// Seed this match's RNG was created from, stored so the fixture can be
     /// re-simulated later to replay the match.
     pub seed: u64,
@@ -298,9 +322,17 @@ impl LiveMatchSession {
     }
 
     fn apply_ai_decisions(&mut self) {
+        // Drawn from `ai_rng`, not `rng`: see the field comments. The AI's draw
+        // count varies with what the user has done, so it must not be able to
+        // shift the simulation stream.
         // AI for home team (if not user-controlled)
         if self.user_side != Some(Side::Home) {
-            let cmds = ai::ai_decide(&self.match_state, Side::Home, &self.ai_home, &mut self.rng);
+            let cmds = ai::ai_decide(
+                &self.match_state,
+                Side::Home,
+                &self.ai_home,
+                &mut self.ai_rng,
+            );
             for cmd in cmds {
                 let _ = self.match_state.apply_command(cmd);
             }
@@ -308,7 +340,12 @@ impl LiveMatchSession {
 
         // AI for away team (if not user-controlled)
         if self.user_side != Some(Side::Away) {
-            let cmds = ai::ai_decide(&self.match_state, Side::Away, &self.ai_away, &mut self.rng);
+            let cmds = ai::ai_decide(
+                &self.match_state,
+                Side::Away,
+                &self.ai_away,
+                &mut self.ai_rng,
+            );
             for cmd in cmds {
                 let _ = self.match_state.apply_command(cmd);
             }
@@ -431,8 +468,10 @@ pub fn create_live_match(
     Ok(LiveMatchSession {
         match_state,
         // Seeded from the fixture rather than thread entropy, so the match can
-        // be re-simulated later and replayed exactly as it was played.
+        // be re-simulated later and replayed exactly as it was played. The two
+        // streams are derived from the same seed but kept independent.
         rng: StdRng::seed_from_u64(seed),
+        ai_rng: StdRng::seed_from_u64(seed ^ AI_STREAM_SALT),
         seed,
         recorded_commands: Vec::new(),
         kickoff_home,

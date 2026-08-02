@@ -353,7 +353,7 @@ pub enum ReplayCommandKind {
     },
     ChangePlayStyle {
         home: bool,
-        play_style: String,
+        play_style: crate::team::PlayStyle,
     },
     ChangePlayerRole {
         home: bool,
