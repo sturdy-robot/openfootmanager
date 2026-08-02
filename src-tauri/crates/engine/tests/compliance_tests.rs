@@ -180,7 +180,7 @@ fn golden_report_is_unchanged() {
     let actual = hasher.finish();
 
     // Pinned behaviour fingerprint. See the doc comment before changing.
-    const GOLDEN: u64 = 0x943b_02b3_308d_102b;
+    const GOLDEN: u64 = 0x9e58_4b34_b06a_9135;
 
     assert_eq!(
         actual, GOLDEN,

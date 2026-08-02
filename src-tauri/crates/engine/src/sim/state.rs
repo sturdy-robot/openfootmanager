@@ -67,6 +67,27 @@ impl Band {
         }
     }
 
+
+    /// Position in a per-band table, deep to advanced.
+    pub fn index(self) -> usize {
+        match self {
+            Band::OwnBox => 0,
+            Band::OwnThird => 1,
+            Band::Middle => 2,
+            Band::FinalThird => 3,
+            Band::OppBox => 4,
+        }
+    }
+
+    /// Every band, deep to advanced. Index order matches [`Band::index`].
+    pub const ALL: [Band; 5] = [
+        Band::OwnBox,
+        Band::OwnThird,
+        Band::Middle,
+        Band::FinalThird,
+        Band::OppBox,
+    ];
+
     /// Read an absolute zone from `attacker`'s point of view.
     pub fn from_zone(zone: Zone, attacker: Side) -> Band {
         let band = match zone {

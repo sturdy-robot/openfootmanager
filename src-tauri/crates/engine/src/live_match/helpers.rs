@@ -7,11 +7,85 @@ use crate::shared::{
 };
 use crate::types::{PlayerData, Position, Side, TeamData};
 
+use std::collections::HashSet;
+
+use crate::sim::roles;
+use crate::sim::state::Band;
+
 use super::{LiveMatchState, SetPieceTakers};
 
 // ---------------------------------------------------------------------------
 // Stamina system
 // ---------------------------------------------------------------------------
+
+
+/// What the engine is asking a player to do, which decides both who is a
+/// plausible choice and which attributes matter.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum Need {
+    /// Play the ball out from deep.
+    BuildUp,
+    /// Carry or move the ball through midfield.
+    Progress,
+    /// Beat a man in the final third.
+    TakeOn,
+    /// Have a shot.
+    Shoot,
+    /// Win the ball back.
+    Defend,
+    /// Keep goal.
+    Keep,
+}
+
+impl Need {
+    fn is_defensive(self) -> bool {
+        matches!(self, Need::Defend)
+    }
+
+    /// The composite the engine cares about for this job, 0–100.
+    ///
+    /// Summed directly rather than through an array and a closure: this runs
+    /// for every plausible player on every action.
+    #[inline]
+    fn fitness(self, p: &PlayerData) -> f64 {
+        let total: u32 = match self {
+            Need::BuildUp => {
+                p.passing as u32 + p.vision as u32 + p.composure as u32 + p.teamwork as u32
+            }
+            Need::Progress => {
+                p.passing as u32 + p.vision as u32 + p.dribbling as u32 + p.decisions as u32
+            }
+            Need::TakeOn => {
+                p.dribbling as u32 + p.pace as u32 + p.agility as u32 + p.composure as u32
+            }
+            Need::Shoot => {
+                p.shooting as u32 + p.composure as u32 + p.decisions as u32 + p.positioning as u32
+            }
+            Need::Defend => {
+                p.tackling as u32 + p.positioning as u32 + p.defending as u32 + p.decisions as u32
+            }
+            Need::Keep => {
+                p.handling as u32 + p.reflexes as u32 + p.positioning as u32 + p.aerial as u32
+            }
+        };
+        total as f64 * 0.25
+    }
+
+    /// Position to fall back on if weighting cannot pick anybody.
+    fn fallback_position(self) -> Position {
+        match self {
+            Need::BuildUp => Position::Defender,
+            Need::Progress => Position::Midfielder,
+            Need::TakeOn | Need::Shoot => Position::Forward,
+            Need::Defend => Position::Defender,
+            Need::Keep => Position::Goalkeeper,
+        }
+    }
+}
+
+/// Upper bound on how many players are weighted for one selection. A matchday
+/// eleven plus room to spare; anyone past this simply is not considered.
+const MAX_WEIGHTED_SQUAD: usize = 24;
 
 impl LiveMatchState {
     pub(super) fn deplete_stamina_tick(&mut self) {
@@ -40,6 +114,30 @@ impl LiveMatchState {
                 *cond = (*cond - depletion).max(5.0);
             }
         }
+        self.refresh_selection_conditions();
+    }
+
+    /// Snapshot each side's conditions into selection weights.
+    ///
+    /// Done once a minute so `selection_weight` is a slice index rather than a
+    /// hash of the player's id, which it would otherwise perform for every
+    /// player on every action.
+    fn refresh_selection_conditions(&mut self) {
+        for (players, weights) in [
+            (&self.home.players, &mut self.home_selection_condition),
+            (&self.away.players, &mut self.away_selection_condition),
+        ] {
+            weights.clear();
+            weights.extend(players.iter().map(|player| {
+                let condition = self
+                    .player_conditions
+                    .get(&player.id)
+                    .copied()
+                    .unwrap_or(player.condition as f64)
+                    / 100.0;
+                0.55 + 0.45 * condition
+            }));
+        }
     }
 
     /// Adjust a skill value based on the player's current in-match condition.
@@ -57,6 +155,109 @@ impl LiveMatchState {
     // -----------------------------------------------------------------------
     // Player selection helpers
     // -----------------------------------------------------------------------
+
+    /// Choose who is on the ball, or who contests it, in a given band.
+    ///
+    /// Replaces picking uniformly from whoever plays a position. Two things
+    /// were wrong with that. It made a position a hard gate — build-up only
+    /// ever sampled defenders and midfield only midfielders, so a forward could
+    /// not touch the ball outside the final third and finished matches with no
+    /// passes. And it meant a player's quality had no bearing on how often he
+    /// was involved: a 90-rated striker took exactly as many shots as a
+    /// 55-rated one, so his shooting only ever showed up in conversion.
+    ///
+    /// Weight combines where the player's position and role put him, how much
+    /// that role wants the ball, how suited he is to what is being asked, and
+    /// how fresh he is. Quality now compounds across hundreds of actions
+    /// instead of applying once.
+    pub(super) fn pick_actor<R: Rng + ?Sized>(
+        &self,
+        side: Side,
+        band: Band,
+        need: Need,
+        rng: &mut R,
+    ) -> PlayerSnap {
+        let team = self.team_ref(side);
+        let dismissals = &self.sent_off;
+
+        // Weights are computed once into a stack buffer rather than twice over
+        // the squad. This runs twice per action and the possession chain
+        // resolves hundreds of actions a match, so a second pass is not free.
+        let mut weights = [0.0f64; MAX_WEIGHTED_SQUAD];
+        let counted = team.players.len().min(MAX_WEIGHTED_SQUAD);
+        let mut total = 0.0f64;
+        for (index, player) in team.players.iter().take(counted).enumerate() {
+            let weight = self.selection_weight(index, player, side, band, need, dismissals);
+            weights[index] = weight;
+            total += weight;
+        }
+
+        if total <= 0.0 {
+            // Nobody is a plausible choice — an eleven reduced to nothing in
+            // this band. Fall back to the old uniform behaviour so play
+            // continues rather than stalling.
+            return self.snap_player(side, need.fallback_position(), rng);
+        }
+
+        let mut roll = rng.random_range(0.0..total);
+        for (index, player) in team.players.iter().take(counted).enumerate() {
+            roll -= weights[index];
+            if roll <= 0.0 {
+                return PlayerSnap::from(player);
+            }
+        }
+        // Floating-point drift only; the last eligible player is the answer.
+        let last = team
+            .players
+            .iter()
+            .take(counted)
+            .enumerate()
+            .rev()
+            .find(|(index, _)| weights[*index] > 0.0)
+            .map(|(_, player)| player)
+            .unwrap_or(&team.players[0]);
+        PlayerSnap::from(last)
+    }
+
+    #[inline]
+    fn selection_weight(
+        &self,
+        index: usize,
+        player: &PlayerData,
+        side: Side,
+        band: Band,
+        need: Need,
+        dismissals: &HashSet<String>,
+    ) -> f64 {
+        if !dismissals.is_empty() && dismissals.contains(&player.id) {
+            return 0.0;
+        }
+        let placement = if need.is_defensive() {
+            roles::off_ball_weight(player.position, player.role, band)
+        } else {
+            roles::on_ball_weight(player.position, player.role, band)
+        };
+        if placement <= 0.0 {
+            return 0.0;
+        }
+        // Suitability is deliberately super-linear: a clearly better player
+        // should be picked noticeably more often, not marginally. Squared
+        // rather than an arbitrary fractional power — the shape is what
+        // matters, and `powf` is far too expensive to run for every player on
+        // every action.
+        let relative = need.fitness(player) / 50.0;
+        let suitability = relative * relative;
+        // A substitution can leave the cache a minute stale; a neutral weight
+        // is the right answer until it is refreshed.
+        let condition = match side {
+            Side::Home => &self.home_selection_condition,
+            Side::Away => &self.away_selection_condition,
+        }
+        .get(index)
+        .copied()
+        .unwrap_or(1.0);
+        placement * suitability * condition
+    }
 
     pub(super) fn snap_player<R: Rng + ?Sized>(
         &self,

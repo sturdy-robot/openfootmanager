@@ -239,6 +239,13 @@ pub struct LiveMatchState {
     // Per-minute stamina depletion tracking (player_id → current effective condition)
     player_conditions: HashMap<String, f64>,
 
+    // Condition as a selection weight, aligned with each side's `players`
+    // order and refreshed once a minute. Reading it from `player_conditions`
+    // instead meant hashing a player id for every player on every action,
+    // which cost close to 40% of a simulated match.
+    home_selection_condition: Vec<f64>,
+    away_selection_condition: Vec<f64>,
+
     // Penalty shootout state
     penalty_state: PenaltyShootoutState,
 
@@ -257,6 +264,8 @@ impl LiveMatchState {
         away_bench: Vec<PlayerData>,
         allows_extra_time: bool,
     ) -> Self {
+        let home_len = home.players.len();
+        let away_len = away.players.len();
         // Initialize player conditions from their condition attribute
         let mut player_conditions = HashMap::new();
         for p in home.players.iter().chain(away.players.iter()) {
@@ -291,6 +300,8 @@ impl LiveMatchState {
             second_half_stoppage: 0,
             et_first_half_stoppage: 0,
             et_second_half_stoppage: 0,
+            home_selection_condition: vec![1.0; home_len],
+            away_selection_condition: vec![1.0; away_len],
             player_conditions,
             penalty_state: PenaltyShootoutState::default(),
             recent_zones: VecDeque::with_capacity(10),

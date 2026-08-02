@@ -370,7 +370,11 @@ impl Default for MatchConfig {
             // real-football band. This constant moved with the scale it is
             // calibrated against.
             shot_accuracy_base: 0.30,
-            goal_conversion_base: 0.36,
+            // Recalibrated when actor selection became weighted. The engine
+            // now puts its best finisher on the end of a chance rather than a
+            // random forward, and its actual keeper in goal, so the same base
+            // produced a markedly higher conversion rate.
+            goal_conversion_base: 0.29,
             fatigue_per_minute: 0.20,
             foul_probability: 0.134,
             yellow_card_probability: 0.11,

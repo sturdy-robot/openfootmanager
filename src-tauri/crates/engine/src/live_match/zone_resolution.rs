@@ -7,10 +7,10 @@ use crate::shared::{
     tactics_buildup_mod, tactics_cross_probability, tactics_defensive_conversion_mod,
     tactics_foul_modifier, tactics_shape_modifier, tactics_tempo_progression, trait_bonus,
 };
-use crate::types::{Position, Side, Zone};
+use crate::types::{Side, Zone};
 
 use super::LiveMatchState;
-use super::helpers::{danger_band, foul_severity, save_quality};
+use super::helpers::{Need, danger_band, foul_severity, save_quality};
 
 // ---------------------------------------------------------------------------
 // Action resolution
@@ -62,7 +62,7 @@ impl LiveMatchState {
         rng: &mut R,
     ) -> Vec<MatchEvent> {
         let mut events = Vec::new();
-        let passer = self.snap_player(att_side, Position::Defender, rng);
+        let passer = self.pick_actor(att_side, Band::OwnThird, Need::BuildUp, rng);
         let pass_skill = self.condition_adjusted_skill(
             &passer.id,
             (passer.passing as f64
@@ -83,7 +83,7 @@ impl LiveMatchState {
             events.push(evt);
             self.ball_zone = Zone::Midfield;
         } else {
-            let interceptor = self.snap_player(def_side, Position::Midfielder, rng);
+            let interceptor = self.pick_actor(def_side, Band::FinalThird, Need::Defend, rng);
             let evt1 = MatchEvent::new(minute, EventType::PassIntercepted, att_side, ball_zone)
                 .with_player(&passer.id);
             let evt2 = MatchEvent::new(minute, EventType::Interception, def_side, ball_zone)
@@ -105,8 +105,8 @@ impl LiveMatchState {
         rng: &mut R,
     ) -> Vec<MatchEvent> {
         let mut events = Vec::new();
-        let attacker = self.snap_player(att_side, Position::Midfielder, rng);
-        let defender = self.snap_player(def_side, Position::Midfielder, rng);
+        let attacker = self.pick_actor(att_side, Band::Middle, Need::Progress, rng);
+        let defender = self.pick_actor(def_side, Band::Middle, Need::Defend, rng);
 
         let att_raw = (attacker.dribbling as f64
             + attacker.passing as f64
@@ -184,8 +184,8 @@ impl LiveMatchState {
         rng: &mut R,
     ) -> Vec<MatchEvent> {
         let mut events = Vec::new();
-        let attacker = self.snap_player(att_side, Position::Forward, rng);
-        let defender = self.snap_player(def_side, Position::Defender, rng);
+        let attacker = self.pick_actor(att_side, Band::FinalThird, Need::TakeOn, rng);
+        let defender = self.pick_actor(def_side, Band::OwnThird, Need::Defend, rng);
 
         let att_raw = (attacker.dribbling as f64
             + attacker.pace as f64
@@ -232,8 +232,8 @@ impl LiveMatchState {
                     .with_player(&winger_id);
                 self.events.push(cross_evt.clone());
                 events.push(cross_evt);
-                let header = self.snap_player(att_side, Position::Forward, rng);
-                let def_header = self.snap_player(def_side, Position::Defender, rng);
+                let header = self.pick_actor(att_side, Band::OppBox, Need::Shoot, rng);
+                let def_header = self.pick_actor(def_side, Band::OwnBox, Need::Defend, rng);
                 let aerial_att = header.aerial as f64;
                 let aerial_def = def_header.aerial as f64;
                 let aerial_win = aerial_att / (aerial_att + aerial_def);
@@ -306,8 +306,8 @@ impl LiveMatchState {
 
         // Box foul rate fixed at 3.6% per shot — independent of foul_probability (which tunes outfield fouls)
         if rng.random_range(0.0..1.0f64) < 0.036 {
-            let fouler = self.snap_player(def_side, Position::Defender, rng);
-            let fouled = self.snap_player(att_side, Position::Forward, rng);
+            let fouler = self.pick_actor(def_side, Band::OwnBox, Need::Defend, rng);
+            let fouled = self.pick_actor(att_side, Band::OppBox, Need::Shoot, rng);
             let foul_evt = MatchEvent::new(minute, EventType::Foul, def_side, zone)
                 .with_player(&fouler.id)
                 .with_secondary(&fouled.id)
@@ -335,9 +335,9 @@ impl LiveMatchState {
             // Foul but no penalty: advantage played, shot continues
         }
 
-        let shooter = self.snap_player(att_side, Position::Forward, rng);
-        let assister = self.snap_player(att_side, Position::Midfielder, rng);
-        let goalkeeper = self.snap_player(def_side, Position::Goalkeeper, rng);
+        let shooter = self.pick_actor(att_side, Band::OppBox, Need::Shoot, rng);
+        let assister = self.pick_actor(att_side, Band::FinalThird, Need::Progress, rng);
+        let goalkeeper = self.pick_actor(def_side, Band::OwnBox, Need::Keep, rng);
 
         let shoot_raw =
             (shooter.shooting as f64 + shooter.composure as f64 + shooter.decisions as f64) / 3.0;

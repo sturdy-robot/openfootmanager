@@ -263,10 +263,6 @@ pub const KNOWN_FAILING: &[(&str, &str)] = &[
     ("Clean sheets (home)", "follows from goals/game being high"),
     ("Clean sheets (away)", "follows from goals/game being high"),
     ("Both teams scored", "follows from goals/game being high"),
-    (
-        "Forwards with 0 passes %",
-        "forwards are never selected in build-up; fixed by role-weighted actor selection",
-    ),
 ];
 
 fn known_failure_reason(label: &str) -> Option<&'static str> {
