@@ -338,8 +338,12 @@ fn main() {
     if targets::run_failed(&json_summary.targets) {
         for verdict in &json_summary.targets {
             if verdict.unexpected_pass {
+                // Not a regression: this is what the engine rework is for.
+                // Several of these are expected to start passing together.
                 eprintln!(
-                    "{}: now within {:.2}–{:.2} — remove it from targets::KNOWN_FAILING",
+                    "{}: now within {:.2}–{:.2}. This is the intended outcome of the \
+                     engine work, not a failure — delete its entry from \
+                     targets::KNOWN_FAILING and re-run.",
                     verdict.label, verdict.low, verdict.high
                 );
             } else if !verdict.passed && verdict.known_failure.is_none() {
@@ -560,9 +564,16 @@ fn run_phase_sweep(config: &MatchConfig, cli: &Cli) {
     ];
 
     eprintln!("Phase sweep: {games} games per option (seed: {base})…");
-    let sep = "─".repeat(64);
+    // The event-mix columns are the ones that say whether a dial changes *how*
+    // a side plays rather than only how often it wins. A tactic that shifts
+    // possession by a point but leaves the pass/cross/dribble mix untouched has
+    // not really been applied to the football.
+    let sep = "─".repeat(96);
     println!("{sep}");
-    println!("{:<14} {:<11} {:>7} {:>8} {:>8} {:>6} {:>6}", "dial", "option", "poss%", "shotsF", "shotsA", "GF", "GA");
+    println!(
+        "{:<14} {:<11} {:>6} {:>7} {:>7} {:>5} {:>5} {:>8} {:>7} {:>8} {:>7}",
+        "dial", "option", "poss%", "shotsF", "shotsA", "GF", "GA", "passes", "crosses", "dribbles", "tackles",
+    );
     println!("{sep}");
 
     for (dial, opt, tactics) in variants {
@@ -574,6 +585,8 @@ fn run_phase_sweep(config: &MatchConfig, cli: &Cli) {
             "away", "Away FC", cli.away_rating, away_style, &cli.away_formation, &mut team_rng,
         );
         let (mut poss, mut sf, mut sa, mut gf, mut ga) = (0.0f64, 0u64, 0u64, 0u64, 0u64);
+        // Home-side event mix: what the dial actually changed about the play.
+        let (mut passes, mut crosses, mut dribbles, mut tackles) = (0u64, 0u64, 0u64, 0u64);
         for i in 0..games {
             let mut rng = StdRng::seed_from_u64(base.wrapping_add(i as u64));
             let r = simulate_with_rng(&home, &away, config, &mut rng);
@@ -583,11 +596,35 @@ fn run_phase_sweep(config: &MatchConfig, cli: &Cli) {
             sa += r.away_stats.shots as u64;
             gf += r.home_goals as u64;
             ga += r.away_goals as u64;
+            passes += r.home_stats.passes_completed as u64;
+            tackles += r.home_stats.tackles as u64;
+            crosses += r
+                .events
+                .iter()
+                .filter(|e| e.side == engine::Side::Home && e.event_type == engine::EventType::Cross)
+                .count() as u64;
+            dribbles += r
+                .events
+                .iter()
+                .filter(|e| {
+                    e.side == engine::Side::Home && e.event_type == engine::EventType::Dribble
+                })
+                .count() as u64;
         }
         let g = games as f64;
         println!(
-            "{:<14} {:<11} {:>6.1}% {:>8.2} {:>8.2} {:>6.2} {:>6.2}",
-            dial, opt, 100.0 * poss / g, sf as f64 / g, sa as f64 / g, gf as f64 / g, ga as f64 / g,
+            "{:<14} {:<11} {:>5.1}% {:>7.2} {:>7.2} {:>5.2} {:>5.2} {:>8.1} {:>7.1} {:>8.1} {:>7.1}",
+            dial,
+            opt,
+            100.0 * poss / g,
+            sf as f64 / g,
+            sa as f64 / g,
+            gf as f64 / g,
+            ga as f64 / g,
+            passes as f64 / g,
+            crosses as f64 / g,
+            dribbles as f64 / g,
+            tackles as f64 / g,
         );
     }
     println!("{sep}");

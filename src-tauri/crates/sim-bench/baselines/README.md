@@ -38,3 +38,23 @@ are what the rework is meant to change:
 
 Regenerate a matching pair after an engine change and diff them. Anything that
 moves should be something the change intended to move.
+
+## Tactics: `pre-overhaul-phase-sweep.txt`
+
+```sh
+cargo run -p sim-bench --release -- --phase-sweep -n 2000 --seed 20260802 \
+  > crates/sim-bench/baselines/pre-overhaul-phase-sweep.txt
+```
+
+The event-mix columns are the point: they show whether a dial changes *how* a
+side plays, not just how often it wins. Before the rework they mostly do not.
+
+- Completed passes range from 25.2 to 26.9 across all twenty dial settings — a
+  6% spread for every tactical choice in the game combined.
+- `build_up Short` vs `Long`, the dial named for how a team builds play, moves
+  passes by 1.5% and nothing else.
+- Four arms are *identical* to the baseline row — `marking Zonal`,
+  `counter_press None`, `tempo Direct`, `break_speed Slow` — because each is the
+  default, and every default modifier is exactly 1.0 by construction.
+- Only two dials do visible work: `width` moves crosses (8.3 → 13.6), and
+  `counter_press Long` moves possession (51.6% → 54.4%).
