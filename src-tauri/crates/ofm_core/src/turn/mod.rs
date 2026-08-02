@@ -5,7 +5,7 @@ mod round_summary;
 
 use crate::board_objectives;
 use crate::game::Game;
-use crate::live_match_manager::{domain_to_engine_role, domain_to_engine_tactics};
+use crate::live_match_manager::build_team_with_bench;
 use crate::player_events;
 use crate::random_events;
 use crate::scouting;
@@ -13,7 +13,6 @@ use crate::training;
 use crate::transfers;
 use chrono::Datelike;
 use domain::league::FixtureStatus;
-use domain::player::Position as DomainPosition;
 use domain::stats::StatsState;
 use log::{debug, info};
 use rand::SeedableRng;
@@ -352,88 +351,6 @@ mod tests {
 // Domain → Engine type conversion
 // ---------------------------------------------------------------------------
 
-fn build_engine_team(game: &Game, team_id: &str) -> engine::TeamData {
-    let team = game.teams.iter().find(|t| t.id == team_id);
-    let player_roles = team.map(|t| &t.player_roles);
-    let (name, formation, play_style, tactics) = match team {
-        Some(t) => (
-            t.name.clone(),
-            t.formation.clone(),
-            match t.play_style {
-                domain::team::PlayStyle::Attacking => engine::PlayStyle::Attacking,
-                domain::team::PlayStyle::Defensive => engine::PlayStyle::Defensive,
-                domain::team::PlayStyle::Possession => engine::PlayStyle::Possession,
-                domain::team::PlayStyle::Counter => engine::PlayStyle::Counter,
-                domain::team::PlayStyle::HighPress => engine::PlayStyle::HighPress,
-                _ => engine::PlayStyle::Balanced,
-            },
-            domain_to_engine_tactics(&t.tactics_phase),
-        ),
-        None => (
-            "Unknown".into(),
-            "4-4-2".into(),
-            engine::PlayStyle::Balanced,
-            engine::TacticsConfig::default(),
-        ),
-    };
-
-    let players: Vec<engine::PlayerData> = game
-        .players
-        .iter()
-        .filter(|p| p.team_id.as_deref() == Some(team_id))
-        .map(|p| {
-            let pos = match p.position.to_group_position() {
-                DomainPosition::Goalkeeper => engine::Position::Goalkeeper,
-                DomainPosition::Defender => engine::Position::Defender,
-                DomainPosition::Midfielder => engine::Position::Midfielder,
-                DomainPosition::Forward => engine::Position::Forward,
-                _ => engine::Position::Midfielder,
-            };
-            engine::PlayerData {
-                id: p.id.clone(),
-                name: p.match_name.clone(),
-                position: pos,
-                ovr: p.ovr,
-                condition: p.condition,
-                fitness: p.fitness,
-                pace: p.attributes.pace,
-                stamina: p.attributes.stamina,
-                strength: p.attributes.strength,
-                agility: p.attributes.agility,
-                passing: p.attributes.passing,
-                shooting: p.attributes.shooting,
-                tackling: p.attributes.tackling,
-                dribbling: p.attributes.dribbling,
-                defending: p.attributes.defending,
-                positioning: p.attributes.positioning,
-                vision: p.attributes.vision,
-                decisions: p.attributes.decisions,
-                composure: p.attributes.composure,
-                aggression: p.attributes.aggression,
-                teamwork: p.attributes.teamwork,
-                leadership: p.attributes.leadership,
-                handling: p.attributes.handling,
-                reflexes: p.attributes.reflexes,
-                aerial: p.attributes.aerial,
-                traits: p.traits.iter().map(|t| format!("{:?}", t)).collect(),
-                role: player_roles
-                    .and_then(|roles| roles.get(&p.id))
-                    .map(domain_to_engine_role)
-                    .unwrap_or(engine::PlayerRole::Standard),
-            }
-        })
-        .collect();
-
-    engine::TeamData {
-        id: team_id.to_string(),
-        name,
-        formation,
-        play_style,
-        players,
-        tactics,
-    }
-}
-
 // ---------------------------------------------------------------------------
 // Matchday simulation using the engine crate
 // ---------------------------------------------------------------------------
@@ -503,13 +420,22 @@ where
         league.fixtures[idx].engine_version = engine::ENGINE_VERSION;
     }
 
-    let home_data = build_engine_team(game, &home_team_id);
-    let away_data = build_engine_team(game, &away_team_id);
-    let config = engine::MatchConfig::default();
+    // Benches and dugouts, so an unattended fixture is managed the same way a
+    // watched one is. Without them nobody ever makes a substitution: players
+    // tire for ninety minutes and are never replaced, which contradicts the
+    // fatigue model the same match is running.
+    let (home_data, home_bench) = build_team_with_bench(game, &home_team_id);
+    let (away_data, away_bench) = build_team_with_bench(game, &away_team_id);
+    let setup = engine::MatchSetup::league(home_data, away_data, engine::MatchConfig::default())
+        .with_benches(home_bench, away_bench)
+        .with_managers(
+            crate::live_match_manager::ai_profile_for(game, &home_team_id),
+            crate::live_match_manager::ai_profile_for(game, &away_team_id),
+        );
     // Seeded rather than drawn from thread entropy, so re-simulating this
     // fixture reproduces the same match.
     let mut rng = StdRng::seed_from_u64(seed);
-    let mut report = engine::simulate_with_rng(&home_data, &away_data, &config, &mut rng);
+    let mut report = engine::simulate_setup(&setup, &mut rng);
     // A level knockout tie must produce a winner: resolve it with a simulated
     // shootout so the home side no longer advances by default on a draw.
     if is_knockout && report.home_goals == report.away_goals {

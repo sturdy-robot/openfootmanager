@@ -22,6 +22,7 @@
 
 use rand::Rng;
 
+use crate::ai::AiProfile;
 use crate::event::MatchEvent;
 use crate::live_match::{MatchCommand, MatchPhase, MatchSnapshot, MinuteResult};
 use crate::report::MatchReport;
@@ -38,10 +39,18 @@ pub struct MatchSetup {
     pub away_bench: Vec<PlayerData>,
     /// Knockout ties go to extra time and, if still level, a shootout.
     pub allows_extra_time: bool,
+    /// The dugouts. `None` means nobody is managing that side during the
+    /// match — no substitutions, no tactical changes — which is what a bare
+    /// engine benchmark wants and what an unattended fixture used to get.
+    pub home_manager: Option<AiProfile>,
+    pub away_manager: Option<AiProfile>,
 }
 
 impl MatchSetup {
-    /// A league fixture: benches empty, no extra time.
+    /// A bare fixture: no benches, no dugouts, no extra time.
+    ///
+    /// Useful for measuring the engine in isolation. A real fixture should
+    /// carry benches and managers, or nobody ever makes a substitution.
     pub fn league(home: TeamData, away: TeamData, config: MatchConfig) -> Self {
         Self {
             home,
@@ -50,7 +59,23 @@ impl MatchSetup {
             home_bench: Vec::new(),
             away_bench: Vec::new(),
             allows_extra_time: false,
+            home_manager: None,
+            away_manager: None,
         }
+    }
+
+    /// Put a manager in each dugout.
+    pub fn with_managers(mut self, home: AiProfile, away: AiProfile) -> Self {
+        self.home_manager = Some(home);
+        self.away_manager = Some(away);
+        self
+    }
+
+    /// Give each side a bench to pick substitutes from.
+    pub fn with_benches(mut self, home: Vec<PlayerData>, away: Vec<PlayerData>) -> Self {
+        self.home_bench = home;
+        self.away_bench = away;
+        self
     }
 }
 

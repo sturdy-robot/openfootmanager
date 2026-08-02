@@ -2045,3 +2045,58 @@ fn fixtures_with_different_ids_do_not_all_play_out_the_same() {
          varying with the fixture id"
     );
 }
+
+#[test]
+fn league_fixtures_are_managed_from_the_dugout() {
+    // An unattended fixture used to have nobody in the dugout: players tired
+    // for ninety minutes and were never replaced, while the same match ran a
+    // fatigue model. Substitutions in a simulated league match are the visible
+    // proof that both sides are now being managed.
+    let mut substitutions = 0;
+    let mut fixtures = 0;
+
+    for round in 0..12 {
+        let mut game = make_game_with_match();
+        // `make_squad` builds exactly a starting eleven, so both sides would
+        // have an empty bench and could not substitute whatever the dugout
+        // wanted. Give each team some depth to pick from.
+        for (team_id, prefix) in [("team1", "t1"), ("team2", "t2")] {
+            for index in 0..5 {
+                let position = match index {
+                    0 => Position::Goalkeeper,
+                    1 | 2 => Position::Defender,
+                    3 => Position::Midfielder,
+                    _ => Position::Forward,
+                };
+                game.players.push(make_player(
+                    &format!("{prefix}_sub{index}"),
+                    &format!("{prefix} Sub{index}"),
+                    team_id,
+                    position,
+                ));
+            }
+        }
+        if let Some(league) = game.league.as_mut() {
+            league.fixtures[0].id = format!("managed-{round}");
+        }
+        turn::process_day(&mut game);
+
+        let result = game.league.as_ref().unwrap().fixtures[0]
+            .result
+            .clone()
+            .expect("fixture should have a result");
+        let report = result.report.expect("fixture should carry a compact report");
+        fixtures += 1;
+        substitutions += report
+            .events
+            .iter()
+            .filter(|event| event.event_type == "Substitution")
+            .count();
+    }
+
+    assert!(
+        substitutions > 0,
+        "no substitutions across {fixtures} simulated league fixtures — the \
+         dugouts are not being applied"
+    );
+}

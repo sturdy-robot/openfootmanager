@@ -93,14 +93,10 @@ fn team(id: &str, rating: u8) -> (TeamData, Vec<PlayerData>) {
 fn setup(allows_extra_time: bool) -> MatchSetup {
     let (home, home_bench) = team("home", 70);
     let (away, away_bench) = team("away", 70);
-    MatchSetup {
-        home,
-        away,
-        config: MatchConfig::default(),
-        home_bench,
-        away_bench,
-        allows_extra_time,
-    }
+    let mut setup = MatchSetup::league(home, away, MatchConfig::default())
+        .with_benches(home_bench, away_bench);
+    setup.allows_extra_time = allows_extra_time;
+    setup
 }
 
 /// Format violations so a failure names the invariant and shows examples,

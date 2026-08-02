@@ -1,8 +1,6 @@
 mod team_builder;
 pub use team_builder::auto_select_set_pieces;
-use team_builder::build_team_with_bench;
-pub(crate) use team_builder::domain_to_engine_role;
-pub(crate) use team_builder::domain_to_engine_tactics;
+pub(crate) use team_builder::build_team_with_bench;
 
 use rand::SeedableRng;
 use rand::rngs::StdRng;
@@ -440,30 +438,8 @@ pub fn create_live_match(
         }
     });
 
-    // Build AI profiles from team reputation
-    let home_rep = game
-        .teams
-        .iter()
-        .find(|t| t.id == home_team_id)
-        .map(|t| t.reputation)
-        .unwrap_or(500);
-    let away_rep = game
-        .teams
-        .iter()
-        .find(|t| t.id == away_team_id)
-        .map(|t| t.reputation)
-        .unwrap_or(500);
-
-    let ai_home = AiProfile {
-        reputation: home_rep,
-        experience: (home_rep / 10).min(100) as u8,
-        personality: derive_personality(home_rep, manager_for_team(game, &home_team_id)),
-    };
-    let ai_away = AiProfile {
-        reputation: away_rep,
-        experience: (away_rep / 10).min(100) as u8,
-        personality: derive_personality(away_rep, manager_for_team(game, &away_team_id)),
-    };
+    let ai_home = ai_profile_for(game, &home_team_id);
+    let ai_away = ai_profile_for(game, &away_team_id);
 
     Ok(LiveMatchSession {
         match_state,
@@ -502,7 +478,26 @@ fn manager_for_team<'a>(game: &'a Game, team_id: &str) -> Option<&'a Manager> {
         .or_else(|| (game.manager.id == manager_id).then_some(&game.manager))
 }
 
+/// The dugout profile for a club: how sophisticated its in-match decisions are.
+///
+/// Shared by the watched match and by unattended fixtures, so a club manages
+/// itself the same way whether or not the player is looking.
+pub(crate) fn ai_profile_for(game: &Game, team_id: &str) -> AiProfile {
+    let reputation = game
+        .teams
+        .iter()
+        .find(|team| team.id == team_id)
+        .map(|team| team.reputation)
+        .unwrap_or(500);
+    AiProfile {
+        reputation,
+        experience: (reputation / 10).min(100) as u8,
+        personality: derive_personality(reputation, manager_for_team(game, team_id)),
+    }
+}
+
 /// Derive an AI personality from reputation and career statistics.
+///
 /// - Visionary: high reputation (700+) with substantial matches managed (50+)
 /// - Reactive: moderate reputation with a winning record (win rate ≥ 55 %)
 /// - Pragmatist: default

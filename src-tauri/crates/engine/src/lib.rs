@@ -22,6 +22,7 @@ pub const ENGINE_VERSION: u32 = 2;
 
 // Re-export key types for convenience
 pub use engine::simulate;
+pub use engine::simulate_setup;
 pub use engine::simulate_with_rng;
 pub use event::{EventType, MatchEvent};
 pub use live_match::{
