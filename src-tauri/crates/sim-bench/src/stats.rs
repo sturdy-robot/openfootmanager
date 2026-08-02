@@ -1,7 +1,134 @@
 use std::collections::HashMap;
 
-use engine::{EventType, GoalSource, MatchReport};
+use engine::{EventType, GoalSource, MatchReport, Position, TeamData};
 use serde::Serialize;
+
+/// Involvement totals for one coarse position, summed over every appearance.
+///
+/// Team-level aggregates cannot answer "is this player type actually playing
+/// football?" — a forward who finishes on zero passes is invisible in a shots
+/// total. These are the counters that make that measurable.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct PositionTotals {
+    pub appearances: u64,
+    pub minutes: u64,
+    pub passes_attempted: u64,
+    pub passes_completed: u64,
+    pub shots: u64,
+    pub tackles: u64,
+    pub interceptions: u64,
+    pub goals: u64,
+    pub assists: u64,
+}
+
+impl PositionTotals {
+    /// Rate per 90 minutes played, the standard way football stats are compared
+    /// across players with different minutes.
+    fn per_90(&self, total: u64) -> f64 {
+        if self.minutes == 0 {
+            return 0.0;
+        }
+        total as f64 / self.minutes as f64 * 90.0
+    }
+
+    pub fn passes_per_90(&self) -> f64 {
+        self.per_90(self.passes_attempted)
+    }
+    pub fn shots_per_90(&self) -> f64 {
+        self.per_90(self.shots)
+    }
+    pub fn tackles_per_90(&self) -> f64 {
+        self.per_90(self.tackles)
+    }
+    pub fn interceptions_per_90(&self) -> f64 {
+        self.per_90(self.interceptions)
+    }
+    pub fn goals_per_90(&self) -> f64 {
+        self.per_90(self.goals)
+    }
+    pub fn assists_per_90(&self) -> f64 {
+        self.per_90(self.assists)
+    }
+    /// Every counted action, as a proxy for how involved the position is.
+    pub fn touches_per_90(&self) -> f64 {
+        self.per_90(
+            self.passes_attempted + self.shots + self.tackles + self.interceptions,
+        )
+    }
+}
+
+/// The four coarse positions, in report order.
+pub const POSITIONS: [(Position, &str); 4] = [
+    (Position::Goalkeeper, "Goalkeeper"),
+    (Position::Defender, "Defender"),
+    (Position::Midfielder, "Midfielder"),
+    (Position::Forward, "Forward"),
+];
+
+fn position_index(position: Position) -> usize {
+    match position {
+        Position::Goalkeeper => 0,
+        Position::Defender => 1,
+        Position::Midfielder => 2,
+        Position::Forward => 3,
+    }
+}
+
+/// Per-position involvement across every simulated match.
+#[derive(Debug, Clone, Default)]
+pub struct PositionStats {
+    totals: [PositionTotals; 4],
+    /// Forward appearances, and how many of them logged no pass at all.
+    forwards_played: u64,
+    forwards_with_zero_passes: u64,
+}
+
+impl PositionStats {
+    pub fn get(&self, position: Position) -> &PositionTotals {
+        &self.totals[position_index(position)]
+    }
+
+    /// Share of forward appearances that ended without a single pass attempted.
+    pub fn forwards_with_zero_passes_pct(&self) -> f64 {
+        if self.forwards_played == 0 {
+            return 0.0;
+        }
+        self.forwards_with_zero_passes as f64 / self.forwards_played as f64 * 100.0
+    }
+
+    fn add_match(&mut self, report: &MatchReport, teams: [&TeamData; 2]) {
+        for team in teams {
+            for player in &team.players {
+                let Some(stats) = report.player_stats.get(&player.id) else {
+                    continue;
+                };
+                // Unused substitutes would otherwise drag every per-90 rate
+                // toward zero and count as "a forward with no passes".
+                if stats.minutes_played == 0 {
+                    continue;
+                }
+
+                let totals = &mut self.totals[position_index(player.position)];
+                totals.appearances += 1;
+                totals.minutes += stats.minutes_played as u64;
+                totals.passes_attempted += stats.passes_attempted as u64;
+                totals.passes_completed += stats.passes_completed as u64;
+                totals.shots += stats.shots as u64;
+                totals.tackles += stats.tackles_won as u64;
+                totals.interceptions += stats.interceptions as u64;
+                totals.goals += stats.goals as u64;
+                totals.assists += stats.assists as u64;
+
+                if player.position == Position::Forward {
+                    self.forwards_played += 1;
+                    if stats.passes_attempted == 0 {
+                        self.forwards_with_zero_passes += 1;
+                    }
+                }
+            }
+        }
+    }
+}
 
 /// Aggregated statistics across N simulated matches.
 #[derive(Default)]
@@ -66,6 +193,9 @@ pub struct BenchStats {
     // Goals-per-game frequency histogram: total_goals_in_game → count_of_games
     pub goals_per_game_hist: HashMap<u8, u32>,
 
+    // Per-position involvement
+    pub positions: PositionStats,
+
     pub total_time_secs: f64,
 }
 
@@ -88,7 +218,12 @@ impl BenchStats {
         self.per_game_u32(value) * 100.0
     }
 
-    pub fn add(&mut self, report: &MatchReport) {
+    /// Fold one simulated match into the totals.
+    ///
+    /// The teams are needed to attribute each player's stats to a position;
+    /// `MatchReport` keys player stats by id alone.
+    pub fn add(&mut self, report: &MatchReport, home: &TeamData, away: &TeamData) {
+        self.positions.add_match(report, [home, away]);
         self.games += 1;
 
         let hg = report.home_goals;
@@ -292,6 +427,13 @@ impl BenchStats {
         list
     }
 
+    pub fn tackles_pg(&self) -> f64 {
+        self.per_game_u64(self.tackles)
+    }
+    pub fn interceptions_pg(&self) -> f64 {
+        self.per_game_u64(self.interceptions)
+    }
+
     /// Serialisable summary for JSON output.
     pub fn to_json(&self, goal_conversion_base: f64) -> JsonSummary {
         JsonSummary {
@@ -344,6 +486,29 @@ impl BenchStats {
                 away_avg_pct: 100.0 - self.avg_home_possession(),
                 pass_accuracy_pct: self.pass_accuracy_pct(),
             },
+            defending: DefendingJson {
+                tackles_per_game: self.tackles_pg(),
+                interceptions_per_game: self.interceptions_pg(),
+            },
+            positions: POSITIONS
+                .iter()
+                .map(|(position, label)| {
+                    let totals = self.positions.get(*position);
+                    PositionJson {
+                        position: label,
+                        appearances: totals.appearances,
+                        passes_per_90: totals.passes_per_90(),
+                        shots_per_90: totals.shots_per_90(),
+                        tackles_per_90: totals.tackles_per_90(),
+                        interceptions_per_90: totals.interceptions_per_90(),
+                        goals_per_90: totals.goals_per_90(),
+                        assists_per_90: totals.assists_per_90(),
+                        touches_per_90: totals.touches_per_90(),
+                    }
+                })
+                .collect(),
+            forwards_with_zero_passes_pct: self.positions.forwards_with_zero_passes_pct(),
+            targets: crate::targets::evaluate(self),
             performance: PerfJson {
                 total_time_secs: self.total_time_secs,
                 games_per_sec: self.games_per_sec(),
@@ -362,7 +527,33 @@ pub struct JsonSummary {
     pub set_pieces: SetPiecesJson,
     pub goal_sources: GoalSourcesJson,
     pub possession: PossessionJson,
+    pub defending: DefendingJson,
+    /// Involvement by position — what team totals cannot show.
+    pub positions: Vec<PositionJson>,
+    pub forwards_with_zero_passes_pct: f64,
+    /// Calibration verdicts, so a caller can act on them without re-encoding
+    /// the bands.
+    pub targets: Vec<crate::targets::TargetVerdict>,
     pub performance: PerfJson,
+}
+
+#[derive(Serialize)]
+pub struct DefendingJson {
+    pub tackles_per_game: f64,
+    pub interceptions_per_game: f64,
+}
+
+#[derive(Serialize)]
+pub struct PositionJson {
+    pub position: &'static str,
+    pub appearances: u64,
+    pub passes_per_90: f64,
+    pub shots_per_90: f64,
+    pub tackles_per_90: f64,
+    pub interceptions_per_90: f64,
+    pub goals_per_90: f64,
+    pub assists_per_90: f64,
+    pub touches_per_90: f64,
 }
 
 #[derive(Serialize)]

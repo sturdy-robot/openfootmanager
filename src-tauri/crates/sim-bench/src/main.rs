@@ -1,6 +1,7 @@
 mod builder;
 mod html;
 mod stats;
+mod targets;
 mod terminal;
 
 use std::path::PathBuf;
@@ -211,7 +212,7 @@ fn main() {
         let game_seed = base_seed.wrapping_add(i as u64);
         let mut rng = StdRng::seed_from_u64(game_seed);
         let report = simulate_with_rng(&home, &away, &config, &mut rng);
-        bench_stats.add(&report);
+        bench_stats.add(&report, &home, &away);
     }
 
     bench_stats.total_time_secs = start.elapsed().as_secs_f64();
@@ -262,6 +263,26 @@ fn main() {
     } else if !cli.verbose {
         // Default mode: JSON to stdout
         println!("{json}");
+    }
+
+    // Exit non-zero when the run is off-target, so CI can gate on it. Metrics
+    // listed in `targets::KNOWN_FAILING` are excused; one that starts passing
+    // is not, because that is the signal to remove it from the list.
+    if targets::run_failed(&json_summary.targets) {
+        for verdict in &json_summary.targets {
+            if verdict.unexpected_pass {
+                eprintln!(
+                    "{}: now within {:.2}–{:.2} — remove it from targets::KNOWN_FAILING",
+                    verdict.label, verdict.low, verdict.high
+                );
+            } else if !verdict.passed && verdict.known_failure.is_none() {
+                eprintln!(
+                    "{}: {:.2} is outside {:.2}–{:.2}",
+                    verdict.label, verdict.value, verdict.low, verdict.high
+                );
+            }
+        }
+        std::process::exit(1);
     }
 }
 
