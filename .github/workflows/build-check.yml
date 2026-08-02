@@ -109,6 +109,18 @@ jobs:
       - name: Check backend compilation
         run: cargo check --manifest-path src-tauri/Cargo.toml --workspace
 
+      # The match engine's calibration gate. `ofm-sim-bench` exits non-zero when
+      # a metric falls outside its real-football band in `sim-bench/src/targets.rs`.
+      # Bands the engine is known to miss are listed there as `KNOWN_FAILING`
+      # with a reason and do not fail the build — but a listed metric that
+      # starts passing does, which is the prompt to remove its entry.
+      #
+      # Release build: the debug profile is `opt-level = 1` and a meaningful
+      # sample would take minutes. 2000 games is enough to keep the per-game
+      # rates stable without dominating the job.
+      - name: Match engine calibration
+        run: cargo run --manifest-path src-tauri/Cargo.toml -p sim-bench --release -- -n 2000 --seed 20260802
+
       # Clippy is a hard gate: any warning fails the build. Run the same command
       # locally before pushing (or use the /preflight skill).
       - name: Clippy

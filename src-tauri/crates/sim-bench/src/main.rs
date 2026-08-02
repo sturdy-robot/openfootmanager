@@ -1,6 +1,7 @@
 mod builder;
 mod html;
 mod stats;
+mod sweeps;
 mod targets;
 mod terminal;
 
@@ -75,6 +76,13 @@ struct Cli {
     /// shots for/against and goals. Tuning aid for the dial magnitudes.
     #[arg(long)]
     phase_sweep: bool,
+
+    /// Player-impact sweeps: hold both teams fixed, change one thing about one
+    /// player (an attribute, their role, their traits) and report what that
+    /// player then does per 90. Answers "does an individual player matter?",
+    /// which team totals cannot.
+    #[arg(long)]
+    sweeps: bool,
 
     // ── MatchConfig overrides ────────────────────────────────────────────────
     #[arg(long, help = "Home advantage multiplier (default 1.08)")]
@@ -173,6 +181,11 @@ fn main() {
 
     if cli.phase_sweep {
         run_phase_sweep(&config, &cli);
+        return;
+    }
+
+    if cli.sweeps {
+        run_player_sweeps(&config, &cli);
         return;
     }
 
@@ -283,6 +296,59 @@ fn main() {
             }
         }
         std::process::exit(1);
+    }
+}
+
+/// How little spread on a sweep's key metric counts as "this does not reach the
+/// simulation". A 50→90 attribute swing moving the outcome by under 10% is not
+/// a player mattering.
+const FLAT_SPREAD: f64 = 1.10;
+
+fn run_player_sweeps(config: &MatchConfig, cli: &Cli) {
+    let base_seed = cli.seed.unwrap_or(42);
+    eprintln!(
+        "Running player-impact sweeps: {} games per arm (seed: {base_seed})…",
+        cli.games
+    );
+
+    let results = sweeps::run_all(config, cli.games, base_seed);
+
+    for sweep in &results {
+        println!("\n{}  [{}]", sweep.dimension.bold(), sweep.key_metric);
+        println!(
+            "  {:<22} {:>9} {:>9} {:>9} {:>9} {:>9}",
+            "arm", "goals/90", "assists", "shots/90", "passes/90", "touches"
+        );
+        for arm in &sweep.arms {
+            println!(
+                "  {:<22} {:>9.3} {:>9.3} {:>9.2} {:>9.2} {:>9.2}",
+                arm.arm,
+                arm.subject_goals_per_90,
+                arm.subject_assists_per_90,
+                arm.subject_shots_per_90,
+                arm.subject_passes_per_90,
+                arm.subject_touches_per_90,
+            );
+        }
+
+        let spread = sweep.spread();
+        let verdict = if spread.is_infinite() {
+            "responds (from zero)".green().to_string()
+        } else if spread >= FLAT_SPREAD {
+            format!("responds ({spread:.2}x)").green().to_string()
+        } else {
+            format!("FLAT ({spread:.2}x) — barely reaches the simulation")
+                .red()
+                .bold()
+                .to_string()
+        };
+        println!("  → {verdict}");
+    }
+
+    if let Some(ref out_path) = cli.out {
+        let json = serde_json::to_string_pretty(&results).expect("JSON serialization failed");
+        std::fs::write(out_path, json).expect("Failed to write JSON");
+        eprintln!("Sweep JSON → {}", out_path.display());
     }
 }
 
