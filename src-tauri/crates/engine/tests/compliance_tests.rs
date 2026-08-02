@@ -188,3 +188,48 @@ fn golden_report_is_unchanged() {
          intentional, bump the engine version stamp and set GOLDEN to {actual:#x}."
     );
 }
+
+/// A second golden, for a side that has actually been given instructions.
+///
+/// `golden_report_is_unchanged` runs two default line-ups, which is a real
+/// blind spot: a change that only affects non-neutral tactics leaves it
+/// passing. Exactly that happened when the tactics dials were moved onto ball
+/// retention — default matches were bit-identical while every instructed side
+/// played differently.
+#[test]
+fn golden_report_is_unchanged_with_instructions() {
+    use rand::SeedableRng;
+    use rand::rngs::StdRng;
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+
+    use engine::traits::InstantEngine;
+    use engine::types::{
+        DefensiveShape, PressingIntensity, TacticsBuildUpStyle, TacticsPitchWidth, Tempo,
+    };
+
+    let mut setup = setup(false);
+    setup.home.tactics.tempo = Tempo::Patient;
+    setup.home.tactics.build_up_style = TacticsBuildUpStyle::Short;
+    setup.home.tactics.width = TacticsPitchWidth::Wide;
+    setup.away.tactics.defensive_shape = DefensiveShape::Compact;
+    setup.away.tactics.pressing_intensity = PressingIntensity::Aggressive;
+    setup.away.tactics.build_up_style = TacticsBuildUpStyle::Long;
+
+    let mut rng = StdRng::seed_from_u64(SEED);
+    let result = DefaultEngine.simulate(&setup, &mut rng);
+
+    let mut hasher = DefaultHasher::new();
+    compliance::fingerprint(&result).hash(&mut hasher);
+    let actual = hasher.finish();
+
+    // Pinned behaviour fingerprint. See `golden_report_is_unchanged`.
+    const GOLDEN_WITH_INSTRUCTIONS: u64 = 0xe0af_0895_0a1c_80fd;
+
+    assert_eq!(
+        actual, GOLDEN_WITH_INSTRUCTIONS,
+        "instructed-team behaviour changed (fingerprint {actual:#x}). If this \
+         was intentional, bump the engine version stamp and set \
+         GOLDEN_WITH_INSTRUCTIONS to {actual:#x}."
+    );
+}
