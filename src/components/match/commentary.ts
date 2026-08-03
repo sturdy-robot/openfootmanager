@@ -7,6 +7,7 @@ import type {
   SaveQuality,
   FoulSeverity,
   GoalContext,
+  ShotTechnique,
 } from "./types";
 import { getPlayerName } from "./helpers";
 
@@ -87,9 +88,39 @@ function hashEvent(evt: MatchEvent, ordinal: number): number {
  * Map an event's truthful detail to a commentary sub-key (camelCase to match
  * the i18n keys). Returns null when the base key should be used.
  */
+/**
+ * How a shot was struck, as a commentary sub-key — or null when it was struck
+ * the ordinary way and has nothing to add.
+ *
+ * Technique lines *replace* the ones keyed on danger, save quality or goal
+ * context rather than combining with them. Crossing six techniques with four
+ * goal contexts would be twenty-four keys in eleven locales for the Goal event
+ * alone, and a commentator does not say both things anyway: an overhead kick is
+ * an overhead kick before it is a consolation.
+ */
+function techniqueVariant(technique: ShotTechnique | undefined): string | null {
+  switch (technique) {
+    case "Header":
+      return "header";
+    case "Volley":
+      return "volley";
+    case "Curler":
+      return "curler";
+    case "Backheel":
+      return "backheel";
+    case "BicycleKick":
+      return "bicycleKick";
+    default:
+      // `Simple`, or an older feed that carries no technique at all.
+      return null;
+  }
+}
+
 function detailVariant(detail: EventDetail | null | undefined): string | null {
   if (!detail) return null;
   if ("Shot" in detail) {
+    const technique = techniqueVariant(detail.Shot.technique);
+    if (technique) return technique;
     const map: Record<DangerBand, string> = {
       Speculative: "speculative",
       Decent: "decent",
@@ -98,6 +129,8 @@ function detailVariant(detail: EventDetail | null | undefined): string | null {
     return map[detail.Shot.danger] ?? null;
   }
   if ("Save" in detail) {
+    const technique = techniqueVariant(detail.Save.technique);
+    if (technique) return technique;
     const map: Record<SaveQuality, string> = {
       Routine: "routine",
       Strong: "strong",
@@ -115,6 +148,8 @@ function detailVariant(detail: EventDetail | null | undefined): string | null {
     return val !== undefined ? val : null;
   }
   if ("Goal" in detail) {
+    const technique = techniqueVariant(detail.Goal.technique);
+    if (technique) return technique;
     const map: Record<GoalContext, string> = {
       Opener: "opener",
       Equaliser: "equaliser",

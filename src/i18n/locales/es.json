@@ -2301,6 +2301,41 @@
             "0": "¡{{player}} completa el hat-trick! ¡Increíble!",
             "1": "¡Tres goles de {{player}} — qué tarde tan memorable!"
           }
+        },
+        "header": {
+          "headline": "¡GOL!",
+          "lines": {
+            "0": "¡{{player}} salta más alto y la manda dentro de cabeza!",
+            "1": "¡Qué cabezazo de {{player}}!"
+          }
+        },
+        "volley": {
+          "headline": "¡GOL!",
+          "lines": {
+            "0": "¡{{player}} la golpea de primeras — imparable!",
+            "1": "¡Qué volea de {{player}}!"
+          }
+        },
+        "curler": {
+          "headline": "¡GOL!",
+          "lines": {
+            "0": "¡{{player}} la rosca lejos del portero!",
+            "1": "¡{{player}} la pone en la escuadra!"
+          }
+        },
+        "backheel": {
+          "headline": "¡GOL!",
+          "lines": {
+            "0": "¡{{player}} marca de tacón — qué atrevimiento!",
+            "1": "¡De tacón! ¡{{player}} no perdona!"
+          }
+        },
+        "bicycleKick": {
+          "headline": "¡QUÉ GOLAZO!",
+          "lines": {
+            "0": "¡{{player}} marca de chilena!",
+            "1": "¡Chilena de {{player}} — extraordinario!"
+          }
         }
       },
       "PenaltyGoal": {
@@ -2350,6 +2385,41 @@
             "0": "¡Increíble! ¡El portero saca el disparo de {{player}} de manera milagrosa!",
             "1": "¡Parada de clase mundial para negarle un gol cantado a {{player}}!"
           }
+        },
+        "header": {
+          "headline": "¡PARADA!",
+          "lines": {
+            "0": "El cabezazo de {{player}} se queda en manos del portero.",
+            "1": "El portero despeja el cabezazo de {{player}}."
+          }
+        },
+        "volley": {
+          "headline": "¡PARADA!",
+          "lines": {
+            "0": "{{player}} vuelea directo al portero.",
+            "1": "Gran parada a la volea de {{player}}."
+          }
+        },
+        "curler": {
+          "headline": "¡PARADA!",
+          "lines": {
+            "0": "{{player}} la rosca y el portero llega.",
+            "1": "Iba a la escuadra — ¡y la saca el portero!"
+          }
+        },
+        "backheel": {
+          "headline": "¡PARADA!",
+          "lines": {
+            "0": "{{player}} lo intenta de tacón y el portero lo lee.",
+            "1": "Atrevido {{player}}, pero el portero responde."
+          }
+        },
+        "bicycleKick": {
+          "headline": "¡PARADA!",
+          "lines": {
+            "0": "¡Chilena de {{player}} — y menuda parada!",
+            "1": "¡{{player}} se tira la chilena y el portero hace un milagro!"
+          }
         }
       },
       "ShotOffTarget": {
@@ -2377,6 +2447,41 @@
           "lines": {
             "0": "¡{{player}} tenía que haber marcado — increíblemente se va fuera!",
             "1": "¡Una ocasión clarísima se pierde para el {{team}}! {{player}} no podrá creerlo."
+          }
+        },
+        "header": {
+          "headline": "FUERA",
+          "lines": {
+            "0": "{{player}} cabecea fuera.",
+            "1": "{{player}} llega de cabeza pero la manda junto al palo."
+          }
+        },
+        "volley": {
+          "headline": "FUERA",
+          "lines": {
+            "0": "{{player}} vuelea por encima del larguero.",
+            "1": "{{player}} la coge de primeras y se va arriba."
+          }
+        },
+        "curler": {
+          "headline": "FUERA",
+          "lines": {
+            "0": "{{player}} la rosca rozando el palo.",
+            "1": "¡Por poco! {{player}} la pone al lado de la escuadra."
+          }
+        },
+        "backheel": {
+          "headline": "FUERA",
+          "lines": {
+            "0": "{{player}} lo intenta de tacón y se va fuera.",
+            "1": "El invento de {{player}} se marcha por la línea de fondo."
+          }
+        },
+        "bicycleKick": {
+          "headline": "FUERA",
+          "lines": {
+            "0": "{{player}} prueba la chilena y no encuentra portería.",
+            "1": "{{player}} busca lo espectacular y encuentra la grada."
           }
         }
       },

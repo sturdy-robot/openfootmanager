@@ -157,6 +157,14 @@ pub fn print_report(stats: &BenchStats, cfg: &RunConfig) {
     metric("  xA/game          ", stats.xa_pg(), 2);
     metric("  xT/game          ", stats.xt_pg(), 2);
     metric("  km per player    ", stats.distance_per_player(), 2);
+
+    // Per hundred matches, because the interesting ones are rare and a
+    // per-match figure would round them all to zero.
+    let techniques = stats.goal_techniques_per_100();
+    println!("{}", "  Goals by technique (per 100 matches)".dimmed());
+    for (label, count) in crate::stats::TECHNIQUE_LABELS.iter().zip(techniques) {
+        println!("    {label:<9} {count:>7.1}");
+    }
     let diff = stats.gpg() - xg;
     let diff_label = if diff >= 0.0 {
         format!("{:+.2} (overperforming)", diff).green().to_string()

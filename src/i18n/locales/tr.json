@@ -2303,6 +2303,41 @@
             "0": "{{player}} hat-trick'ini tamamlıyor! Şapka çıkartılır!",
             "1": "{{player}} üç golle sahne alıyor — ne büyük gün!"
           }
+        },
+        "header": {
+          "headline": "GOOOL!",
+          "lines": {
+            "0": "{{player}} en yükseğe çıkıyor ve kafayla ağlara gönderiyor!",
+            "1": "{{player}}'dan müthiş bir kafa vuruşu!"
+          }
+        },
+        "volley": {
+          "headline": "GOOOL!",
+          "lines": {
+            "0": "{{player}} ilk dokunuşta vuruyor — kurtarışı yok!",
+            "1": "{{player}}'dan nefis bir vole!"
+          }
+        },
+        "curler": {
+          "headline": "GOOOL!",
+          "lines": {
+            "0": "{{player}} topu kaleciden uzağa kıvırıyor!",
+            "1": "{{player}} topu uzak köşeye yerleştiriyor!"
+          }
+        },
+        "backheel": {
+          "headline": "GOOOL!",
+          "lines": {
+            "0": "{{player}} topuğuyla atıyor — ne cüret!",
+            "1": "Topuk! {{player}} affetmiyor!"
+          }
+        },
+        "bicycleKick": {
+          "headline": "NE GOL AMA!",
+          "lines": {
+            "0": "{{player}} röveşata ile golü buluyor!",
+            "1": "{{player}}'dan röveşata — olağanüstü!"
+          }
         }
       },
       "PenaltyGoal": {
@@ -2352,6 +2387,41 @@
             "0": "İnanılmaz! Kaleci {{player}}'ın vuruşunu bir şekilde çıkarıyor!",
             "1": "{{player}}'ı kesin bir golden eden dünya standartlarında kurtarış!"
           }
+        },
+        "header": {
+          "headline": "KURTARIŞ!",
+          "lines": {
+            "0": "{{player}}'ın kafa vuruşu kalecide kalıyor.",
+            "1": "Kaleci {{player}}'ın kafa vuruşunu çeliyor."
+          }
+        },
+        "volley": {
+          "headline": "KURTARIŞ!",
+          "lines": {
+            "0": "{{player}} voleyi kalecinin kucağına gönderiyor.",
+            "1": "{{player}}'ın volesinde harika bir kurtarış."
+          }
+        },
+        "curler": {
+          "headline": "KURTARIŞ!",
+          "lines": {
+            "0": "{{player}} topu kıvırıyor ama kaleci yetişiyor.",
+            "1": "Köşeye gidiyordu — kaleci çıkardı!"
+          }
+        },
+        "backheel": {
+          "headline": "KURTARIŞ!",
+          "lines": {
+            "0": "{{player}} topukla deniyor, kaleci okuyor.",
+            "1": "{{player}}'dan cesur bir deneme, ama kurtarıldı."
+          }
+        },
+        "bicycleKick": {
+          "headline": "KURTARIŞ!",
+          "lines": {
+            "0": "{{player}}'dan röveşata — ve müthiş bir kurtarış!",
+            "1": "{{player}} röveşatayı deniyor, kaleci mucize yaratıyor!"
+          }
         }
       },
       "ShotOffTarget": {
@@ -2379,6 +2449,41 @@
           "lines": {
             "0": "{{player}} orada golü bulmalıydı — acı verecek kadar az farkla dışarı!",
             "1": "{{team}} adına altın değerinde bir fırsat harcanıyor! {{player}} kendine kızacak."
+          }
+        },
+        "header": {
+          "headline": "AUT",
+          "lines": {
+            "0": "{{player}} kafayı auta gönderiyor.",
+            "1": "{{player}} kafayla dokunuyor ama top direğin yanından çıkıyor."
+          }
+        },
+        "volley": {
+          "headline": "AUT",
+          "lines": {
+            "0": "{{player}} voleyi üstten auta gönderiyor.",
+            "1": "{{player}} topu ilk dokunuşta vuruyor ve çok yukarıdan çıkarıyor."
+          }
+        },
+        "curler": {
+          "headline": "AUT",
+          "lines": {
+            "0": "{{player}} topu direğin hemen yanından kıvırıyor.",
+            "1": "Kıl payı! {{player}} topu santimlerle dışarı gönderiyor."
+          }
+        },
+        "backheel": {
+          "headline": "AUT",
+          "lines": {
+            "0": "{{player}} topukla deniyor ve topu auta gönderiyor.",
+            "1": "{{player}}'ın doğaçlaması taca gidiyor."
+          }
+        },
+        "bicycleKick": {
+          "headline": "AUT",
+          "lines": {
+            "0": "{{player}} röveşatayı deniyor ama isabet ettiremiyor.",
+            "1": "{{player}} gösteriyi arıyor, tribünleri buluyor."
           }
         }
       },

@@ -269,6 +269,11 @@ pub struct LiveMatchState {
 
     // Rolling window of the last 10 ball_zone values (oldest first)
     recent_zones: VecDeque<Zone>,
+
+    /// A corner has been won and not yet played out. The next shot in the box
+    /// is a delivery attacked in the air rather than a ball played into
+    /// somebody's feet — which is what makes a corner produce headers.
+    awaiting_set_piece: bool,
 }
 
 impl LiveMatchState {
@@ -321,6 +326,7 @@ impl LiveMatchState {
             away_metrics,
             penalty_state: PenaltyShootoutState::default(),
             recent_zones: VecDeque::with_capacity(10),
+            awaiting_set_piece: false,
         }
     }
 

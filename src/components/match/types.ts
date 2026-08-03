@@ -8,11 +8,27 @@ export type FoulSeverity = "Soft" | "Hard" | "Reckless";
 export type GoalContext = "Opener" | "Equaliser" | "Extends" | "Consolation";
 
 // Serde externally-tagged representation of the Rust EventDetail enum.
+/**
+ * How a shot was struck. `Simple` is by far the most common and is the one the
+ * commentary does not remark on — a tap-in is described by what it meant, not
+ * by how it was hit.
+ *
+ * Optional on the wire: the engine defaults it, but a feed rendered across a
+ * version change may not carry it.
+ */
+export type ShotTechnique =
+  | "Simple"
+  | "Header"
+  | "Volley"
+  | "Curler"
+  | "Backheel"
+  | "BicycleKick";
+
 export type EventDetail =
-  | { Shot: { danger: DangerBand } }
-  | { Save: { quality: SaveQuality } }
+  | { Shot: { danger: DangerBand; technique?: ShotTechnique } }
+  | { Save: { quality: SaveQuality; technique?: ShotTechnique } }
   | { Foul: { severity: FoulSeverity } }
-  | { Goal: { context: GoalContext } };
+  | { Goal: { context: GoalContext; technique?: ShotTechnique } };
 
 export interface MatchEvent {
   minute: number;

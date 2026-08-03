@@ -157,6 +157,8 @@ pub struct BenchStats {
     pub shots_on_target: u64,
     /// The advanced numbers, summed across every match in the run.
     pub xg: f64,
+    /// Goals by how they were struck, in `TECHNIQUE_LABELS` order.
+    pub goal_techniques: [u64; 6],
     pub xa: f64,
     pub xt: f64,
     pub distance_km: f64,
@@ -266,6 +268,11 @@ impl BenchStats {
 
         self.total_shots += (hs.shots + aw.shots) as u64;
         self.xg += (hs.xg + aw.xg) as f64;
+        for event in &report.events {
+            if let Some(engine::EventDetail::Goal { technique, .. }) = event.detail {
+                self.goal_techniques[technique_index(technique)] += 1;
+            }
+        }
         for stats in report.player_stats.values() {
             self.xa += stats.xa as f64;
             self.xt += stats.xt as f64;
@@ -370,6 +377,19 @@ impl BenchStats {
     /// it could not be wrong about anything because it contained no model. The
     /// real figure comes from the engine, which values every chance by where it
     /// was struck from and how it was made, with an average finisher.
+    /// Goals per hundred matches by technique, which is the figure that says
+    /// whether the spectacular is rare enough to stay spectacular.
+    pub fn goal_techniques_per_100(&self) -> [f64; 6] {
+        let mut out = [0.0; 6];
+        if self.games == 0 {
+            return out;
+        }
+        for (slot, count) in out.iter_mut().zip(self.goal_techniques) {
+            *slot = count as f64 * 100.0 / self.games as f64;
+        }
+        out
+    }
+
     pub fn xg_pg(&self) -> f64 {
         self.per_game(self.xg)
     }
@@ -678,5 +698,27 @@ fn goal_bucket(minute: u8) -> usize {
         61..=75 => 4,
         76..=90 => 5,
         _ => 6,
+    }
+}
+
+/// The technique names, in the order the counters are stored.
+pub const TECHNIQUE_LABELS: [&str; 6] = [
+    "Simple",
+    "Header",
+    "Volley",
+    "Curler",
+    "Backheel",
+    "Bicycle",
+];
+
+fn technique_index(technique: engine::ShotTechnique) -> usize {
+    use engine::ShotTechnique as T;
+    match technique {
+        T::Simple => 0,
+        T::Header => 1,
+        T::Volley => 2,
+        T::Curler => 3,
+        T::Backheel => 4,
+        T::BicycleKick => 5,
     }
 }

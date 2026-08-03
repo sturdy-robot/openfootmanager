@@ -1,6 +1,6 @@
 use rand::{Rng, RngExt};
 
-use crate::event::{EventDetail, EventType, MatchEvent};
+use crate::event::{EventDetail, EventType, MatchEvent, ShotTechnique};
 use crate::shared::{
     PlayStylePhase, PlayerSnap, TraitContext, role_attribute_modifier,
     tactics_defensive_conversion_mod, tactics_foul_modifier, tactics_shape_modifier, trait_bonus,
@@ -124,7 +124,7 @@ impl ShotOrigin {
             ShotOrigin::EdgeOfBox => (0.86, 0.40),
             ShotOrigin::LongRange => (0.66, 0.16),
             ShotOrigin::FromCross => (0.92, 0.80),
-            ShotOrigin::SetPiece => (0.88, 0.80),
+            ShotOrigin::SetPiece => (0.88, 0.94),
         }
     }
 
@@ -148,6 +148,120 @@ impl ShotOrigin {
             band.to_zone(att_side)
         }
     }
+}
+
+/// Every technique, so the weighting table and the selection cannot disagree
+/// about which ones exist.
+const TECHNIQUES: [ShotTechnique; 6] = [
+    ShotTechnique::Simple,
+    ShotTechnique::Header,
+    ShotTechnique::Volley,
+    ShotTechnique::Curler,
+    ShotTechnique::Backheel,
+    ShotTechnique::BicycleKick,
+];
+
+/// How likely each technique is, before the player is considered.
+///
+/// Overwhelmingly weighted toward a simple finish, because football is. An
+/// overhead kick is a handful of goals across a whole league in a season, not
+/// one a match — the moment they turn up every week the novelty dies and it
+/// stops reading as football.
+///
+/// What the ball is doing when it arrives decides most of this. A cross is met
+/// with the head or on the volley; nobody heads a ball played into their feet
+/// at the edge of the box.
+fn technique_weights(origin: ShotOrigin) -> [f64; 6] {
+    use ShotOrigin::*;
+    match origin {
+        //          Simple Header Volley Curler Backheel Bicycle
+        InsideBox => [86.0, 2.0, 6.0, 3.0, 2.0, 1.0],
+        EdgeOfBox => [74.0, 0.0, 12.0, 13.0, 0.6, 0.4],
+        LongRange => [72.0, 0.0, 10.0, 18.0, 0.0, 0.0],
+        // A ball in the air, met first time.
+        FromCross => [26.0, 52.0, 15.0, 1.0, 2.0, 4.0],
+        // A delivery into a crowded box: headers, and scrambles.
+        SetPiece => [34.0, 58.0, 5.0, 1.0, 1.5, 0.5],
+    }
+}
+
+/// How much a player's ability changes his willingness to try something.
+///
+/// A simple finish is available to everybody, so it does not scale. Everything
+/// else does — and not all of it at the same rate. Meeting a cross well is
+/// something a good header of the ball does more often than a poor one, but
+/// attempting an overhead kick at all is a different order of thing: ordinary
+/// players simply do not, and that is why the ones who do are worth watching.
+///
+/// So the demanding techniques carry a steeper exponent. Without it the effect
+/// washes out in the normalisation: raising every flair technique together
+/// leaves their shares of the total almost unchanged, and a gifted player ends
+/// up attempting barely more of the spectacular than an ordinary one.
+///
+/// This is also where two attributes that were doing very little start to
+/// matter. `aerial` decides whether a target man attacks a cross, and `agility`
+/// decides who is capable of the spectacular at all.
+fn technique_flair(technique: ShotTechnique, shooter: &PlayerSnap) -> f64 {
+    /// Technique a good player executes better than a poor one.
+    const PRACTISED: i32 = 2;
+    /// Technique most players never attempt.
+    const AUDACIOUS: i32 = 3;
+
+    let scaled = |attribute: f64, exponent: i32| (attribute / 70.0).powi(exponent);
+    let pair = |a: u8, b: u8| (a as f64 + b as f64) / 2.0;
+
+    match technique {
+        ShotTechnique::Simple => 1.0,
+        ShotTechnique::Header => scaled(shooter.aerial as f64, PRACTISED),
+        ShotTechnique::Volley => scaled(pair(shooter.agility, shooter.composure), PRACTISED),
+        ShotTechnique::Curler => scaled(pair(shooter.shooting, shooter.composure), PRACTISED),
+        ShotTechnique::Backheel => scaled(pair(shooter.agility, shooter.decisions), AUDACIOUS),
+        ShotTechnique::BicycleKick => scaled(pair(shooter.agility, shooter.aerial), AUDACIOUS),
+    }
+}
+
+/// How a technique flatters or spoils the attempt, as multipliers on hitting
+/// the target and on beating the keeper once it is on target.
+///
+/// The hard ones are hard: an overhead kick mostly ends up nowhere near the
+/// goal. But the ones that do arrive tend to beat the keeper, because he is not
+/// expecting them — which is why they are worth watching and worth a sentence.
+fn technique_quality(technique: ShotTechnique) -> (f64, f64) {
+    match technique {
+        //                              accuracy conversion
+        ShotTechnique::Simple => (1.00, 1.00),
+        ShotTechnique::Header => (0.94, 0.72),
+        ShotTechnique::Volley => (0.78, 1.02),
+        ShotTechnique::Curler => (0.96, 1.12),
+        ShotTechnique::Backheel => (0.66, 0.92),
+        ShotTechnique::BicycleKick => (0.40, 1.10),
+    }
+}
+
+/// Choose how this shot is struck.
+fn choose_technique<R: Rng + ?Sized>(
+    origin: ShotOrigin,
+    shooter: &PlayerSnap,
+    rng: &mut R,
+) -> ShotTechnique {
+    let base = technique_weights(origin);
+    let mut weights = [0.0f64; 6];
+    let mut total = 0.0;
+    for (index, technique) in TECHNIQUES.into_iter().enumerate() {
+        weights[index] = base[index] * technique_flair(technique, shooter);
+        total += weights[index];
+    }
+    if total <= 0.0 {
+        return ShotTechnique::Simple;
+    }
+    let mut roll = rng.random_range(0.0..total);
+    for (index, technique) in TECHNIQUES.into_iter().enumerate() {
+        roll -= weights[index];
+        if roll <= 0.0 {
+            return technique;
+        }
+    }
+    ShotTechnique::Simple
 }
 
 impl LiveMatchState {
@@ -181,6 +295,9 @@ impl LiveMatchState {
         );
 
         let actor_index = actor.index;
+        // Taken before the action runs. The action may itself win a corner, and
+        // clearing afterwards would cancel the very flag it had just set.
+        let set_piece_pending = std::mem::take(&mut self.awaiting_set_piece);
         let events = match action {
             Action::ShortPass => self.resolve_pass(
                 minute,
@@ -213,7 +330,16 @@ impl LiveMatchState {
             Action::TakeOn => self.resolve_take_on(minute, att_side, def_side, band, &actor, rng),
             Action::Cross => self.resolve_cross(minute, att_side, def_side, band, &actor, rng),
             Action::Shot => {
-                self.resolve_shot(minute, att_side, ShotOrigin::from_band(band), band, rng)
+                // A corner is swung in and attacked in the air; a ball worked
+                // into the box in open play is not. Without the distinction a
+                // corner produced the same tap-ins as everything else, and
+                // headed goals came out at a third of their real share.
+                let origin = if set_piece_pending && band == Band::OppBox {
+                    ShotOrigin::SetPiece
+                } else {
+                    ShotOrigin::from_band(band)
+                };
+                self.resolve_shot(minute, att_side, origin, band, rng)
             }
         };
 
@@ -298,8 +424,15 @@ impl LiveMatchState {
         // Chance quality scales the finisher's own accuracy rather than
         // replacing it, so a good striker is still a good striker from range —
         // just not as good as he is six yards out.
+        // How the ball is struck is settled here, once, and then decides both
+        // rolls, the expected-goals value and the sentence the commentary
+        // writes. It is one property of the shot, not three.
+        let technique = choose_technique(origin, &shooter, rng);
+        let (technique_accuracy, technique_conversion) = technique_quality(technique);
+
         let accuracy = ((self.config.shot_accuracy_base + (shoot_rating - 50.0) / 200.0)
-            * accuracy_quality)
+            * accuracy_quality
+            * technique_accuracy)
             .clamp(0.05, 0.85);
 
         // Expected goals: what this chance was worth, before anybody rolls for
@@ -322,16 +455,25 @@ impl LiveMatchState {
         // Better finishers than that beat it and worse ones fall short, which
         // is the only reason the number is worth having.
         const REFERENCE_FINISHER: f64 = 84.0;
+        // Technique is in here as well, because it is a property of the chance
+        // and not of the man: a real expected-goals model reads body part and
+        // shot type, which is why a header off a cross is worth less than the
+        // same position struck with the foot. It also means an overhead kick
+        // that goes in is a large overperformance, which is the correct way to
+        // describe scoring one.
         let reference_accuracy = ((self.config.shot_accuracy_base
             + (REFERENCE_FINISHER - 50.0) / 200.0)
-            * accuracy_quality)
+            * accuracy_quality
+            * technique_accuracy)
             .clamp(0.05, 0.85);
         // The skill term drops out: the reference finisher faces a keeper of
         // his own standard, which is what makes this a property of the chance
         // and not of the two men involved in it.
-        let reference_conversion =
-            (self.config.goal_conversion_base * def_line_mod * conversion_quality)
-                .clamp(0.02, 0.70);
+        let reference_conversion = (self.config.goal_conversion_base
+            * def_line_mod
+            * conversion_quality
+            * technique_conversion)
+            .clamp(0.02, 0.70);
         let xg = reference_accuracy * reference_conversion;
         self.metrics_mut(att_side).add_xg(shooter.index, xg);
         // The man who made it gets the same credit: expected assists is the
@@ -341,6 +483,7 @@ impl LiveMatchState {
         if rng.random_range(0.0..1.0f64) > accuracy {
             let detail = EventDetail::Shot {
                 danger: danger_band(shoot_rating),
+                technique,
             };
             if rng.random_range(0.0..1.0f64) < 0.4 {
                 let evt = MatchEvent::new(minute, EventType::ShotBlocked, att_side, zone)
@@ -361,6 +504,8 @@ impl LiveMatchState {
                 // a corner instead.
                 if rng.random_range(0.0..1.0f64) < 0.07 {
                     let corner_evt = MatchEvent::new(minute, EventType::Corner, att_side, zone);
+                    // A corner is a delivery: arm the next shot in the box as one.
+                    self.awaiting_set_piece = true;
                     self.events.push(corner_evt.clone());
                     events.push(corner_evt);
                     self.possession = att_side;
@@ -378,7 +523,8 @@ impl LiveMatchState {
 
         let conversion = ((self.config.goal_conversion_base * def_line_mod
             + (shoot_rating - gk_rating) / 150.0)
-            * conversion_quality)
+            * conversion_quality
+            * technique_conversion)
             .clamp(0.02, 0.70);
 
         if rng.random_range(0.0..1.0f64) < conversion {
@@ -386,7 +532,7 @@ impl LiveMatchState {
             let evt = MatchEvent::new(minute, EventType::Goal, att_side, zone)
                 .with_player(shooter.id.clone())
                 .with_secondary(assister.id.clone())
-                .with_detail(EventDetail::Goal { context });
+                .with_detail(EventDetail::Goal { context, technique });
             self.events.push(evt.clone());
             events.push(evt);
             self.add_goal(att_side);
@@ -397,12 +543,15 @@ impl LiveMatchState {
                 .with_player(shooter.id.clone())
                 .with_detail(EventDetail::Save {
                     quality: save_quality(gk_rating),
+                    technique,
                 });
             self.events.push(evt.clone());
             events.push(evt);
             // 40% of saves → corner (keeper parries wide), 60% → goal kick (keeper catches)
             if rng.random_range(0.0..1.0f64) < 0.52 {
                 let corner_evt = MatchEvent::new(minute, EventType::Corner, att_side, zone);
+                // A corner is a delivery: arm the next shot in the box as one.
+                self.awaiting_set_piece = true;
                 self.events.push(corner_evt.clone());
                 events.push(corner_evt);
                 self.possession = att_side;
@@ -620,7 +769,7 @@ impl LiveMatchState {
             self.possession = att_side;
             self.ball_zone = zone;
             if matches!(band, Band::FinalThird | Band::OppBox)
-                && rng.random_range(0.0..1.0f64) < 0.92
+                && rng.random_range(0.0..1.0f64) < 0.96
             {
                 // A free kick in a dangerous area is delivered and attacked
                 // there and then. Merely moving the ball into the box left set
@@ -641,6 +790,8 @@ impl LiveMatchState {
         // A cleared ball in the final third is often a corner.
         if matches!(band, Band::FinalThird | Band::OppBox) && rng.random_range(0.0..1.0f64) < 0.20 {
             let corner = MatchEvent::new(minute, EventType::Corner, att_side, zone);
+            // A corner is a delivery: arm the next shot in the box as one.
+            self.awaiting_set_piece = true;
             self.events.push(corner.clone());
             events.push(corner);
             if rng.random_range(0.0..1.0f64) < 0.18 {
@@ -701,6 +852,8 @@ impl LiveMatchState {
             events.push(clearance);
             if rng.random_range(0.0..1.0f64) < 0.22 {
                 let corner = MatchEvent::new(minute, EventType::Corner, att_side, zone);
+                // A corner is a delivery: arm the next shot in the box as one.
+                self.awaiting_set_piece = true;
                 self.events.push(corner.clone());
                 events.push(corner);
                 if rng.random_range(0.0..1.0f64) < 0.44 {
@@ -948,11 +1101,16 @@ mod event_detail_tests {
             if let Some(first_evt) = first_scoring
                 && first_evt.event_type == EventType::Goal
             {
-                assert_eq!(
-                    first_evt.detail,
-                    Some(EventDetail::Goal {
-                        context: GoalContext::Opener
-                    }),
+                // Matched on the context alone: how the goal was struck varies
+                // by seed and is not what this test is about.
+                assert!(
+                    matches!(
+                        first_evt.detail,
+                        Some(EventDetail::Goal {
+                            context: GoalContext::Opener,
+                            ..
+                        })
+                    ),
                     "seed {seed}: first goal detail should be Opener, got {:?}",
                     first_evt.detail
                 );
@@ -1032,5 +1190,119 @@ mod shot_origin_tests {
             ShotOrigin::EdgeOfBox
         );
         assert_eq!(ShotOrigin::from_band(Band::Middle), ShotOrigin::LongRange);
+    }
+}
+
+#[cfg(test)]
+mod technique_tests {
+    use super::*;
+    use rand::SeedableRng;
+
+    fn shooter(agility: u8, aerial: u8) -> PlayerSnap {
+        let mut snap = PlayerSnap::placeholder();
+        snap.agility = agility;
+        snap.aerial = aerial;
+        snap.composure = 70;
+        snap.decisions = 70;
+        snap.shooting = 70;
+        snap
+    }
+
+    fn distribution(origin: ShotOrigin, snap: &PlayerSnap, n: usize) -> [usize; 6] {
+        let mut rng = rand::rngs::StdRng::seed_from_u64(99);
+        let mut counts = [0usize; 6];
+        for _ in 0..n {
+            let chosen = choose_technique(origin, snap, &mut rng);
+            let index = TECHNIQUES.iter().position(|t| *t == chosen).unwrap();
+            counts[index] += 1;
+        }
+        counts
+    }
+
+    /// Football is mostly ordinary finishes. If the spectacular turns up every
+    /// week it stops being spectacular, and the commentary that describes it
+    /// becomes noise within ten minutes.
+    #[test]
+    fn the_overwhelming_majority_of_shots_are_ordinary() {
+        let counts = distribution(ShotOrigin::InsideBox, &shooter(70, 70), 10_000);
+        let simple = counts[0] as f64 / 10_000.0;
+        assert!(
+            simple > 0.75,
+            "only {:.0}% of box shots were a simple finish",
+            simple * 100.0
+        );
+    }
+
+    /// The point of the feature: a better player tries the harder thing.
+    #[test]
+    fn a_more_gifted_player_attempts_more_of_the_spectacular() {
+        let ordinary = distribution(ShotOrigin::FromCross, &shooter(55, 55), 20_000);
+        let gifted = distribution(ShotOrigin::FromCross, &shooter(92, 92), 20_000);
+
+        let bicycle = TECHNIQUES
+            .iter()
+            .position(|t| *t == ShotTechnique::BicycleKick)
+            .unwrap();
+        assert!(
+            gifted[bicycle] > ordinary[bicycle] * 2,
+            "a gifted player attempted {} overhead kicks against an ordinary \
+             player's {} — ability is barely reaching the choice",
+            gifted[bicycle],
+            ordinary[bicycle]
+        );
+    }
+
+    /// A ball played into a player's feet is not headed, and a ball in the air
+    /// from a cross usually is. Where the chance comes from has to shape this
+    /// or every finish looks the same wherever it happened.
+    #[test]
+    fn how_the_ball_arrives_decides_how_it_is_struck() {
+        let snap = shooter(70, 70);
+        let header = TECHNIQUES
+            .iter()
+            .position(|t| *t == ShotTechnique::Header)
+            .unwrap();
+
+        let crossed = distribution(ShotOrigin::FromCross, &snap, 5_000);
+        let long_range = distribution(ShotOrigin::LongRange, &snap, 5_000);
+
+        assert!(
+            crossed[header] > crossed[0],
+            "a cross should mostly be headed"
+        );
+        assert_eq!(
+            long_range[header], 0,
+            "somebody headed the ball in from distance"
+        );
+    }
+
+    /// The hard ones are hard. An overhead kick that goes in is worth watching
+    /// precisely because most of them end up nowhere near the goal.
+    #[test]
+    fn the_spectacular_is_less_likely_to_be_on_target() {
+        let (simple_accuracy, _) = technique_quality(ShotTechnique::Simple);
+        let (bicycle_accuracy, _) = technique_quality(ShotTechnique::BicycleKick);
+        assert!(bicycle_accuracy < simple_accuracy * 0.6);
+    }
+
+    /// A header is the one common technique that converts *worse* than a
+    /// standard finish, which is why an xG model reads body part at all.
+    #[test]
+    fn a_header_is_a_worse_chance_than_the_same_ball_struck_with_the_foot() {
+        let (_, simple) = technique_quality(ShotTechnique::Simple);
+        let (_, header) = technique_quality(ShotTechnique::Header);
+        assert!(header < simple);
+    }
+
+    /// A simple finish is described by what it meant, not by how it was hit.
+    #[test]
+    fn only_the_notable_techniques_earn_their_own_line() {
+        assert!(!ShotTechnique::Simple.is_notable());
+        for technique in TECHNIQUES
+            .into_iter()
+            .filter(|t| *t != ShotTechnique::Simple)
+        {
+            assert!(technique.is_notable(), "{technique:?} has no line to write");
+        }
     }
 }

@@ -2288,6 +2288,41 @@
             "0": "{{player}} completa la tripletta! Che spettacolo!",
             "1": "Tre gol di {{player}} — che giornata memorabile!"
           }
+        },
+        "header": {
+          "headline": "GOOOL!",
+          "lines": {
+            "0": "{{player}} svetta più in alto di tutti e la mette dentro di testa!",
+            "1": "Che colpo di testa di {{player}}!"
+          }
+        },
+        "volley": {
+          "headline": "GOOOL!",
+          "lines": {
+            "0": "{{player}} la prende al volo — imparabile!",
+            "1": "Che volée di {{player}}!"
+          }
+        },
+        "curler": {
+          "headline": "GOOOL!",
+          "lines": {
+            "0": "{{player}} la piazza a giro lontano dal portiere!",
+            "1": "{{player}} la mette all'incrocio!"
+          }
+        },
+        "backheel": {
+          "headline": "GOOOL!",
+          "lines": {
+            "0": "{{player}} segna di tacco — che sfacciataggine!",
+            "1": "Di tacco! {{player}} non perdona!"
+          }
+        },
+        "bicycleKick": {
+          "headline": "CHE GOL!",
+          "lines": {
+            "0": "{{player}} segna in rovesciata!",
+            "1": "Rovesciata di {{player}} — straordinario!"
+          }
         }
       },
       "PenaltyGoal": {
@@ -2337,6 +2372,41 @@
             "0": "Incredibile! Il portiere riesce a deviare il tiro di {{player}} in modo miracoloso!",
             "1": "Parata di classe mondiale per negare un gol sicuro a {{player}}!"
           }
+        },
+        "header": {
+          "headline": "PARATA!",
+          "lines": {
+            "0": "Il colpo di testa di {{player}} finisce tra le mani del portiere.",
+            "1": "Il portiere devia il colpo di testa di {{player}}."
+          }
+        },
+        "volley": {
+          "headline": "PARATA!",
+          "lines": {
+            "0": "{{player}} la prende al volo ma centra il portiere.",
+            "1": "Bella parata sulla volée di {{player}}."
+          }
+        },
+        "curler": {
+          "headline": "PARATA!",
+          "lines": {
+            "0": "{{player}} la gira verso la porta ma il portiere c'è.",
+            "1": "Andava all'incrocio — e il portiere la toglie!"
+          }
+        },
+        "backheel": {
+          "headline": "PARATA!",
+          "lines": {
+            "0": "{{player}} prova il tacco e il portiere lo legge.",
+            "1": "Sfacciato {{player}}, ma il portiere risponde."
+          }
+        },
+        "bicycleKick": {
+          "headline": "PARATA!",
+          "lines": {
+            "0": "Rovesciata di {{player}} — e che parata!",
+            "1": "{{player}} prova la rovesciata e il portiere fa un miracolo!"
+          }
         }
       },
       "ShotOffTarget": {
@@ -2364,6 +2434,41 @@
           "lines": {
             "0": "{{player}} doveva segnare lì — incredibilmente largo!",
             "1": "Un'occasione d'oro sprecata dal {{team}}! {{player}} non ci crede."
+          }
+        },
+        "header": {
+          "headline": "FUORI",
+          "lines": {
+            "0": "{{player}} colpisce di testa ma finisce fuori.",
+            "1": "{{player}} ci arriva di testa e la manda a lato del palo."
+          }
+        },
+        "volley": {
+          "headline": "FUORI",
+          "lines": {
+            "0": "{{player}} la prende al volo e la spedisce sopra la traversa.",
+            "1": "{{player}} la colpisce al volo e la manda altissima."
+          }
+        },
+        "curler": {
+          "headline": "FUORI",
+          "lines": {
+            "0": "{{player}} la gira di poco a lato del montante.",
+            "1": "Per poco! {{player}} la mette a centimetri dal palo."
+          }
+        },
+        "backheel": {
+          "headline": "FUORI",
+          "lines": {
+            "0": "{{player}} prova il tacco e la manda fuori.",
+            "1": "L'invenzione di {{player}} se ne va sul fondo."
+          }
+        },
+        "bicycleKick": {
+          "headline": "FUORI",
+          "lines": {
+            "0": "{{player}} prova la rovesciata e non trova lo specchio.",
+            "1": "{{player}} cerca la giocata e trova solo la tribuna."
           }
         }
       },

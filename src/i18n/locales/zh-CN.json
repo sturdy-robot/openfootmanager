@@ -2269,6 +2269,41 @@
             "0": "{{player}} 完成帽子戏法！精彩绝伦！",
             "1": "{{player}}三球在身——难忘的一天！"
           }
+        },
+        "header": {
+          "headline": "进球！",
+          "lines": {
+            "0": "{{player}} 高高跃起，头球破门！",
+            "1": "{{player}} 的头球攻门，漂亮！"
+          }
+        },
+        "volley": {
+          "headline": "进球！",
+          "lines": {
+            "0": "{{player}} 凌空抽射，门将毫无办法！",
+            "1": "{{player}} 的凌空抽射，精彩！"
+          }
+        },
+        "curler": {
+          "headline": "进球！",
+          "lines": {
+            "0": "{{player}} 弧线球绕过门将！",
+            "1": "{{player}} 把球送进了远角！"
+          }
+        },
+        "backheel": {
+          "headline": "进球！",
+          "lines": {
+            "0": "{{player}} 用后跟破门——太大胆了！",
+            "1": "后跟磕射！{{player}} 抓住了机会！"
+          }
+        },
+        "bicycleKick": {
+          "headline": "世界波！",
+          "lines": {
+            "0": "{{player}} 倒钩破门！",
+            "1": "{{player}} 的倒钩射门——不可思议！"
+          }
         }
       },
       "PenaltyGoal": {
@@ -2318,6 +2353,41 @@
             "0": "令人难以置信！门将竟然扑出了{{player}}的必进球！",
             "1": "世界级扑救，拒绝了{{player}}的必然进球！"
           }
+        },
+        "header": {
+          "headline": "扑出！",
+          "lines": {
+            "0": "{{player}} 的头球被门将没收。",
+            "1": "门将把 {{player}} 的头球托出。"
+          }
+        },
+        "volley": {
+          "headline": "扑出！",
+          "lines": {
+            "0": "{{player}} 凌空抽射，正中门将。",
+            "1": "门将扑出了 {{player}} 的凌空抽射。"
+          }
+        },
+        "curler": {
+          "headline": "扑出！",
+          "lines": {
+            "0": "{{player}} 打出弧线球，门将及时封堵。",
+            "1": "本来奔着死角去的——被门将扑出！"
+          }
+        },
+        "backheel": {
+          "headline": "扑出！",
+          "lines": {
+            "0": "{{player}} 尝试后跟磕射，被门将看穿。",
+            "1": "{{player}} 玩了个花活，还是被扑出。"
+          }
+        },
+        "bicycleKick": {
+          "headline": "扑出！",
+          "lines": {
+            "0": "{{player}} 倒钩射门——门将神扑！",
+            "1": "{{player}} 使出倒钩，门将不知怎么把球挡了出去！"
+          }
         }
       },
       "ShotOffTarget": {
@@ -2345,6 +2415,41 @@
           "lines": {
             "0": "{{player}}在那里必须得分——令人痛苦地偏出！",
             "1": "{{team}}浪费了一次绝好机会！{{player}}难以置信。"
+          }
+        },
+        "header": {
+          "headline": "偏出",
+          "lines": {
+            "0": "{{player}} 头球偏出。",
+            "1": "{{player}} 顶到了球，但擦着立柱飞出。"
+          }
+        },
+        "volley": {
+          "headline": "偏出",
+          "lines": {
+            "0": "{{player}} 凌空抽射高出横梁。",
+            "1": "{{player}} 一脚抽射，球飞上了看台。"
+          }
+        },
+        "curler": {
+          "headline": "偏出",
+          "lines": {
+            "0": "{{player}} 的弧线球擦柱而出。",
+            "1": "就差一点！{{player}} 的射门偏出毫厘。"
+          }
+        },
+        "backheel": {
+          "headline": "偏出",
+          "lines": {
+            "0": "{{player}} 尝试后跟磕射，球偏出。",
+            "1": "{{player}} 的即兴发挥出了底线。"
+          }
+        },
+        "bicycleKick": {
+          "headline": "偏出",
+          "lines": {
+            "0": "{{player}} 倒钩射门，没有打正。",
+            "1": "{{player}} 想来点精彩的，结果球飞进了看台。"
           }
         }
       },

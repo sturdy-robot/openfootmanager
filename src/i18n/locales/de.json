@@ -2269,6 +2269,41 @@
             "0": "{{player}} schnürt den Hattrick! Hut ab!",
             "1": "Drei Tore von {{player}} — was für ein Tag!"
           }
+        },
+        "header": {
+          "headline": "TOOOR!",
+          "lines": {
+            "0": "{{player}} steigt am höchsten und köpft ein!",
+            "1": "Was für ein Kopfball von {{player}}!"
+          }
+        },
+        "volley": {
+          "headline": "TOOOR!",
+          "lines": {
+            "0": "{{player}} nimmt sie direkt — unhaltbar!",
+            "1": "Was für ein Volleyschuss von {{player}}!"
+          }
+        },
+        "curler": {
+          "headline": "TOOOR!",
+          "lines": {
+            "0": "{{player}} zirkelt sie am Torwart vorbei!",
+            "1": "{{player}} legt sie in den langen Winkel!"
+          }
+        },
+        "backheel": {
+          "headline": "TOOOR!",
+          "lines": {
+            "0": "{{player}} trifft mit der Hacke — was für eine Frechheit!",
+            "1": "Mit der Hacke! {{player}} macht das Ding!"
+          }
+        },
+        "bicycleKick": {
+          "headline": "WAS FÜR EIN TOR!",
+          "lines": {
+            "0": "{{player}} trifft per Fallrückzieher!",
+            "1": "Fallrückzieher von {{player}} — außergewöhnlich!"
+          }
         }
       },
       "PenaltyGoal": {
@@ -2318,6 +2353,41 @@
             "0": "Unglaublich! Der Keeper kratzt den Schuss von {{player}} irgendwie heraus!",
             "1": "Weltklasse-Parade, um {{player}} einen sicheren Treffer zu verwehren!"
           }
+        },
+        "header": {
+          "headline": "GEHALTEN",
+          "lines": {
+            "0": "Der Kopfball von {{player}} bleibt im Torwart hängen.",
+            "1": "Der Keeper kratzt den Kopfball von {{player}} heraus."
+          }
+        },
+        "volley": {
+          "headline": "GEHALTEN",
+          "lines": {
+            "0": "{{player}} nimmt sie direkt, aber genau auf den Torwart.",
+            "1": "Starke Parade gegen den Volleyschuss von {{player}}."
+          }
+        },
+        "curler": {
+          "headline": "GEHALTEN",
+          "lines": {
+            "0": "{{player}} zirkelt sie aufs Tor, aber der Keeper ist da.",
+            "1": "Das ging in den Winkel — und wird gehalten!"
+          }
+        },
+        "backheel": {
+          "headline": "GEHALTEN",
+          "lines": {
+            "0": "{{player}} versucht es mit der Hacke, der Keeper ahnt es.",
+            "1": "Frech von {{player}}, aber gehalten."
+          }
+        },
+        "bicycleKick": {
+          "headline": "GEHALTEN",
+          "lines": {
+            "0": "Fallrückzieher von {{player}} — und was für eine Parade!",
+            "1": "{{player}} zieht den Fallrückzieher durch, der Keeper hält irgendwie!"
+          }
         }
       },
       "ShotOffTarget": {
@@ -2345,6 +2415,41 @@
           "lines": {
             "0": "{{player}} hätte das wirklich treffen müssen — qualvoll knapp vorbei!",
             "1": "Eine große Chance ungenutzt für {{team}}! {{player}} kann es nicht fassen."
+          }
+        },
+        "header": {
+          "headline": "DANEBEN",
+          "lines": {
+            "0": "{{player}} köpft daneben.",
+            "1": "{{player}} kommt mit dem Kopf dran, setzt sie aber neben den Pfosten."
+          }
+        },
+        "volley": {
+          "headline": "DANEBEN",
+          "lines": {
+            "0": "{{player}} nimmt sie direkt und jagt sie über die Latte.",
+            "1": "{{player}} trifft sie voll und schießt weit drüber."
+          }
+        },
+        "curler": {
+          "headline": "DANEBEN",
+          "lines": {
+            "0": "{{player}} zirkelt sie knapp am Pfosten vorbei.",
+            "1": "Ganz knapp! {{player}} setzt sie Zentimeter daneben."
+          }
+        },
+        "backheel": {
+          "headline": "DANEBEN",
+          "lines": {
+            "0": "{{player}} versucht die Hacke und setzt sie daneben.",
+            "1": "Die Improvisation von {{player}} geht ins Toraus."
+          }
+        },
+        "bicycleKick": {
+          "headline": "DANEBEN",
+          "lines": {
+            "0": "{{player}} versucht den Fallrückzieher und verfehlt das Tor.",
+            "1": "{{player}} will das Spektakel und trifft nur die Tribüne."
           }
         }
       },

@@ -19,13 +19,13 @@ pub mod types;
 ///
 /// Do **not** bump it for changes that cannot affect a simulated match, such as
 /// documentation, renames, or new APIs no simulation path calls.
-pub const ENGINE_VERSION: u32 = 15;
+pub const ENGINE_VERSION: u32 = 16;
 
 // Re-export key types for convenience
 pub use engine::simulate;
 pub use engine::simulate_setup;
 pub use engine::simulate_with_rng;
-pub use event::{EventType, MatchEvent};
+pub use event::{EventDetail, EventType, MatchEvent, ShotTechnique};
 pub use live_match::{
     LiveMatchState, MatchCommand, MatchPhase, MatchSnapshot, MinuteResult, PenaltyShootoutSnapshot,
     SetPieceTakers, SubstitutionRecord,

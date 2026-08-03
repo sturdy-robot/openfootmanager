@@ -2303,6 +2303,41 @@
             "0": "{{player}} completes the hat-trick! Take a bow!",
             "1": "Three goals for {{player}} — what a day!"
           }
+        },
+        "header": {
+          "headline": "GOOAL!",
+          "lines": {
+            "0": "{{player}} rises highest and heads it home!",
+            "1": "A towering header from {{player}}!"
+          }
+        },
+        "volley": {
+          "headline": "GOOAL!",
+          "lines": {
+            "0": "{{player}} meets it first time — unstoppable!",
+            "1": "A sweet volley from {{player}}!"
+          }
+        },
+        "curler": {
+          "headline": "GOOAL!",
+          "lines": {
+            "0": "{{player}} bends it beyond the keeper!",
+            "1": "{{player}} curls it into the far corner!"
+          }
+        },
+        "backheel": {
+          "headline": "GOOAL!",
+          "lines": {
+            "0": "{{player}} backheels it in — audacious!",
+            "1": "With the back of his boot! {{player}}!"
+          }
+        },
+        "bicycleKick": {
+          "headline": "WHAT A GOAL!",
+          "lines": {
+            "0": "{{player}} scores with an overhead kick!",
+            "1": "A bicycle kick from {{player}} — extraordinary!"
+          }
         }
       },
       "PenaltyGoal": {
@@ -2352,6 +2387,41 @@
             "0": "Incredible! The keeper somehow claws out {{player}}'s effort!",
             "1": "World-class stop to deny {{player}} a certain goal!"
           }
+        },
+        "header": {
+          "headline": "SAVED",
+          "lines": {
+            "0": "{{player}}'s header is kept out.",
+            "1": "The keeper claws away {{player}}'s header."
+          }
+        },
+        "volley": {
+          "headline": "SAVED",
+          "lines": {
+            "0": "{{player}} volleys it straight at the keeper.",
+            "1": "A fine stop from {{player}}'s volley."
+          }
+        },
+        "curler": {
+          "headline": "SAVED",
+          "lines": {
+            "0": "{{player}} curls it goalwards but the keeper is equal to it.",
+            "1": "Bent towards the corner — and saved!"
+          }
+        },
+        "backheel": {
+          "headline": "SAVED",
+          "lines": {
+            "0": "{{player}} tries the backheel and the keeper reads it.",
+            "1": "Cheeky from {{player}}, but saved."
+          }
+        },
+        "bicycleKick": {
+          "headline": "SAVED",
+          "lines": {
+            "0": "An overhead kick from {{player}} — and a wonderful save!",
+            "1": "{{player}} goes overhead and the keeper somehow keeps it out!"
+          }
         }
       },
       "ShotOffTarget": {
@@ -2379,6 +2449,41 @@
           "lines": {
             "0": "{{player}} really should have scored there — agonisingly wide!",
             "1": "A glorious chance goes begging for {{team}}! {{player}} will be kicking himself."
+          }
+        },
+        "header": {
+          "headline": "OFF TARGET",
+          "lines": {
+            "0": "{{player}} heads it wide.",
+            "1": "{{player}} gets his head to it but glances it past the post."
+          }
+        },
+        "volley": {
+          "headline": "OFF TARGET",
+          "lines": {
+            "0": "{{player}} volleys it over the bar.",
+            "1": "{{player}} catches it first time and skies it."
+          }
+        },
+        "curler": {
+          "headline": "OFF TARGET",
+          "lines": {
+            "0": "{{player}} curls it just past the upright.",
+            "1": "Bent around the wall by {{player}} — inches wide."
+          }
+        },
+        "backheel": {
+          "headline": "OFF TARGET",
+          "lines": {
+            "0": "{{player}} tries a backheel and puts it wide.",
+            "1": "The improvised finish from {{player}} drifts past the post."
+          }
+        },
+        "bicycleKick": {
+          "headline": "OFF TARGET",
+          "lines": {
+            "0": "{{player}} attempts the overhead kick and misses the target.",
+            "1": "{{player}} goes for the spectacular and finds only the stand."
           }
         }
       },

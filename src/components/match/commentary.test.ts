@@ -220,3 +220,62 @@ describe("commentary sampling is per-event, not per-minute", () => {
     }
   });
 });
+
+describe("shot technique commentary", () => {
+  const struck = (technique: string | undefined, context = "Extends"): MatchEvent => ({
+    minute: 30,
+    event_type: "Goal",
+    side: "Home",
+    zone: "AwayBox",
+    player_id: "p1",
+    secondary_player_id: null,
+    detail: { Goal: { context, technique } } as unknown as MatchEvent["detail"],
+  });
+
+  it("describes how a spectacular goal was struck", () => {
+    const line = getCommentary(struck("BicycleKick"), snapshot(), i18n.t.bind(i18n));
+    expect(line).not.toBeNull();
+    expect(line!.line.toLowerCase()).toMatch(/overhead|bicycle/);
+  });
+
+  it("names a header rather than the scoreline it produced", () => {
+    const line = getCommentary(struck("Header"), snapshot(), i18n.t.bind(i18n));
+    expect(line!.line.toLowerCase()).toMatch(/head/);
+  });
+
+  it("leaves an ordinary finish described by what it meant", () => {
+    // A tap-in is an equaliser, not a "simple finish" — the technique must not
+    // displace the context line for the technique everybody uses.
+    const simple = getCommentary(struck("Simple", "Equaliser"), snapshot(), i18n.t.bind(i18n));
+    const none = getCommentary(struck(undefined, "Equaliser"), snapshot(), i18n.t.bind(i18n));
+    expect(simple!.line).toBe(none!.line);
+  });
+
+  it("still reads an event from before techniques existed", () => {
+    const legacy: MatchEvent = {
+      minute: 30,
+      event_type: "Goal",
+      side: "Home",
+      zone: "AwayBox",
+      player_id: "p1",
+      secondary_player_id: null,
+      detail: { Goal: { context: "Opener" } } as unknown as MatchEvent["detail"],
+    };
+    expect(getCommentary(legacy, snapshot(), i18n.t.bind(i18n))).not.toBeNull();
+  });
+
+  it("describes a saved header as a header", () => {
+    const save: MatchEvent = {
+      minute: 30,
+      event_type: "ShotSaved",
+      side: "Home",
+      zone: "AwayBox",
+      player_id: "p1",
+      secondary_player_id: null,
+      detail: {
+        Save: { quality: "Routine", technique: "Header" },
+      } as unknown as MatchEvent["detail"],
+    };
+    expect(getCommentary(save, snapshot(), i18n.t.bind(i18n))!.line.toLowerCase()).toMatch(/head/);
+  });
+});

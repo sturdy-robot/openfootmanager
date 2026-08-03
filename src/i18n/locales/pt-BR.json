@@ -2212,6 +2212,41 @@
             "0": "{{player}} completa o hat-trick! Que espetáculo!",
             "1": "Três gols de {{player}} — que dia histórico!"
           }
+        },
+        "header": {
+          "headline": "GOOOL!",
+          "lines": {
+            "0": "{{player}} sobe mais alto e cabeceia para o gol!",
+            "1": "Que cabeçada de {{player}}!"
+          }
+        },
+        "volley": {
+          "headline": "GOOOL!",
+          "lines": {
+            "0": "{{player}} pega de primeira — impossível defender!",
+            "1": "Que voleio de {{player}}!"
+          }
+        },
+        "curler": {
+          "headline": "GOOOL!",
+          "lines": {
+            "0": "{{player}} coloca a bola no ângulo!",
+            "1": "{{player}} bate colocado e a bola morre no cantinho!"
+          }
+        },
+        "backheel": {
+          "headline": "GOOOL!",
+          "lines": {
+            "0": "{{player}} marca de calcanhar — que ousadia!",
+            "1": "De letra! {{player}} não perdoa!"
+          }
+        },
+        "bicycleKick": {
+          "headline": "QUE GOLAÇO!",
+          "lines": {
+            "0": "{{player}} marca de bicicleta!",
+            "1": "Bicicleta de {{player}} — golaço!"
+          }
         }
       },
       "PenaltyGoal": {
@@ -2261,6 +2296,41 @@
             "0": "Incrível! O goleiro consegue defender o chute de {{player}} de forma miraculosa!",
             "1": "Defesa de classe mundial para negar um gol a {{player}}!"
           }
+        },
+        "header": {
+          "headline": "DEFENDIDO",
+          "lines": {
+            "0": "A cabeçada de {{player}} para nas mãos do goleiro.",
+            "1": "O goleiro espalma a cabeçada de {{player}}."
+          }
+        },
+        "volley": {
+          "headline": "DEFENDIDO",
+          "lines": {
+            "0": "{{player}} pega de primeira e o goleiro defende.",
+            "1": "Grande defesa no voleio de {{player}}."
+          }
+        },
+        "curler": {
+          "headline": "DEFENDIDO",
+          "lines": {
+            "0": "{{player}} bate colocado e o goleiro alcança.",
+            "1": "Ia no ângulo — mas o goleiro defendeu!"
+          }
+        },
+        "backheel": {
+          "headline": "DEFENDIDO",
+          "lines": {
+            "0": "{{player}} tenta de calcanhar e o goleiro adivinha.",
+            "1": "Ousadia de {{player}}, mas o goleiro pegou."
+          }
+        },
+        "bicycleKick": {
+          "headline": "DEFENDIDO",
+          "lines": {
+            "0": "Bicicleta de {{player}} — e que defesa!",
+            "1": "{{player}} tenta a bicicleta e o goleiro faz um milagre!"
+          }
         }
       },
       "ShotOffTarget": {
@@ -2288,6 +2358,41 @@
           "lines": {
             "0": "{{player}} tinha que ter marcado ali — foi para fora de forma agonizante!",
             "1": "Uma chance enorme desperdiçada pelo {{team}}! {{player}} não vai acreditar."
+          }
+        },
+        "header": {
+          "headline": "PARA FORA",
+          "lines": {
+            "0": "{{player}} cabeceia para fora.",
+            "1": "{{player}} testa de cabeça e a bola passa raspando a trave."
+          }
+        },
+        "volley": {
+          "headline": "PARA FORA",
+          "lines": {
+            "0": "{{player}} pega de primeira e manda por cima.",
+            "1": "{{player}} chuta de voleio e a bola vai longe."
+          }
+        },
+        "curler": {
+          "headline": "PARA FORA",
+          "lines": {
+            "0": "{{player}} bate colocado e a bola passa perto.",
+            "1": "Por pouco! {{player}} coloca rente à trave."
+          }
+        },
+        "backheel": {
+          "headline": "PARA FORA",
+          "lines": {
+            "0": "{{player}} tenta de calcanhar e manda para fora.",
+            "1": "A improvisação de {{player}} sai pela linha de fundo."
+          }
+        },
+        "bicycleKick": {
+          "headline": "PARA FORA",
+          "lines": {
+            "0": "{{player}} tenta a bicicleta e não acerta o gol.",
+            "1": "{{player}} vai para a plástica e manda na arquibancada."
           }
         }
       },

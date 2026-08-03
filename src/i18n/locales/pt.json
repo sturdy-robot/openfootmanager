@@ -2269,6 +2269,41 @@
             "0": "{{player}} completa o hat-trick! Grande festa!",
             "1": "Três golos de {{player}} — que tarde extraordinária!"
           }
+        },
+        "header": {
+          "headline": "GOLO!",
+          "lines": {
+            "0": "{{player}} sobe mais alto e cabeceia para o golo!",
+            "1": "Que cabeceamento de {{player}}!"
+          }
+        },
+        "volley": {
+          "headline": "GOLO!",
+          "lines": {
+            "0": "{{player}} remata de primeira — impossível defender!",
+            "1": "Que voleio de {{player}}!"
+          }
+        },
+        "curler": {
+          "headline": "GOLO!",
+          "lines": {
+            "0": "{{player}} coloca a bola no ângulo!",
+            "1": "{{player}} remata colocado e a bola morre no canto!"
+          }
+        },
+        "backheel": {
+          "headline": "GOLO!",
+          "lines": {
+            "0": "{{player}} marca de calcanhar — que ousadia!",
+            "1": "De calcanhar! {{player}} não perdoa!"
+          }
+        },
+        "bicycleKick": {
+          "headline": "QUE GOLAÇO!",
+          "lines": {
+            "0": "{{player}} marca de bicicleta!",
+            "1": "Pontapé de bicicleta de {{player}} — extraordinário!"
+          }
         }
       },
       "PenaltyGoal": {
@@ -2318,6 +2353,41 @@
             "0": "Incrível! O guarda-redes consegue travar o remate de {{player}} de forma milagrosa!",
             "1": "Defesa de classe mundial para negar um golo a {{player}}!"
           }
+        },
+        "header": {
+          "headline": "DEFENDIDO",
+          "lines": {
+            "0": "O cabeceamento de {{player}} para nas mãos do guarda-redes.",
+            "1": "O guarda-redes desvia o cabeceamento de {{player}}."
+          }
+        },
+        "volley": {
+          "headline": "DEFENDIDO",
+          "lines": {
+            "0": "{{player}} remata de primeira e o guarda-redes defende.",
+            "1": "Grande defesa no voleio de {{player}}."
+          }
+        },
+        "curler": {
+          "headline": "DEFENDIDO",
+          "lines": {
+            "0": "{{player}} remata colocado e o guarda-redes chega lá.",
+            "1": "Ia no ângulo — mas o guarda-redes defendeu!"
+          }
+        },
+        "backheel": {
+          "headline": "DEFENDIDO",
+          "lines": {
+            "0": "{{player}} tenta de calcanhar e o guarda-redes adivinha.",
+            "1": "Ousadia de {{player}}, mas foi defendido."
+          }
+        },
+        "bicycleKick": {
+          "headline": "DEFENDIDO",
+          "lines": {
+            "0": "Bicicleta de {{player}} — e que defesa!",
+            "1": "{{player}} tenta a bicicleta e o guarda-redes faz um milagre!"
+          }
         }
       },
       "ShotOffTarget": {
@@ -2345,6 +2415,41 @@
           "lines": {
             "0": "{{player}} tinha mesmo de marcar ali — saiu ao lado de forma agónica!",
             "1": "Uma oportunidade enorme desperdiçada pelo {{team}}! {{player}} não vai acreditar."
+          }
+        },
+        "header": {
+          "headline": "PARA FORA",
+          "lines": {
+            "0": "{{player}} cabeceia para fora.",
+            "1": "{{player}} cabeceia e a bola passa rente ao poste."
+          }
+        },
+        "volley": {
+          "headline": "PARA FORA",
+          "lines": {
+            "0": "{{player}} remata de primeira e manda por cima.",
+            "1": "{{player}} remata de voleio e a bola vai longe."
+          }
+        },
+        "curler": {
+          "headline": "PARA FORA",
+          "lines": {
+            "0": "{{player}} remata colocado e a bola passa perto.",
+            "1": "Por pouco! {{player}} coloca rente ao poste."
+          }
+        },
+        "backheel": {
+          "headline": "PARA FORA",
+          "lines": {
+            "0": "{{player}} tenta de calcanhar e manda para fora.",
+            "1": "A improvisação de {{player}} sai pela linha de fundo."
+          }
+        },
+        "bicycleKick": {
+          "headline": "PARA FORA",
+          "lines": {
+            "0": "{{player}} tenta a bicicleta e falha o alvo.",
+            "1": "{{player}} procura o espetáculo e encontra a bancada."
           }
         }
       },

@@ -2269,6 +2269,41 @@
             "0": "{{player}} complète son hat-trick ! Chapeau bas !",
             "1": "Trois buts pour {{player}} — quelle journée !"
           }
+        },
+        "header": {
+          "headline": "BUT !",
+          "lines": {
+            "0": "{{player}} s'élève et place une tête au fond !",
+            "1": "Quelle tête de {{player}} !"
+          }
+        },
+        "volley": {
+          "headline": "BUT !",
+          "lines": {
+            "0": "{{player}} la reprend de volée — imparable !",
+            "1": "Quelle volée de {{player}} !"
+          }
+        },
+        "curler": {
+          "headline": "BUT !",
+          "lines": {
+            "0": "{{player}} l'enroule hors de portée du gardien !",
+            "1": "{{player}} la met en pleine lucarne !"
+          }
+        },
+        "backheel": {
+          "headline": "BUT !",
+          "lines": {
+            "0": "{{player}} marque d'une talonnade — quel culot !",
+            "1": "Du talon ! {{player}} ne pardonne pas !"
+          }
+        },
+        "bicycleKick": {
+          "headline": "QUEL BUT !",
+          "lines": {
+            "0": "{{player}} marque d'un retourné acrobatique !",
+            "1": "Un ciseau retourné de {{player}} — extraordinaire !"
+          }
         }
       },
       "PenaltyGoal": {
@@ -2318,6 +2353,41 @@
             "0": "Incroyable ! Le gardien détourne le tir de {{player}} de façon miraculeuse !",
             "1": "Un arrêt de classe mondiale pour refuser un but certain à {{player}} !"
           }
+        },
+        "header": {
+          "headline": "ARRÊT !",
+          "lines": {
+            "0": "La tête de {{player}} finit dans les gants du gardien.",
+            "1": "Le gardien détourne la tête de {{player}}."
+          }
+        },
+        "volley": {
+          "headline": "ARRÊT !",
+          "lines": {
+            "0": "{{player}} reprend de volée droit sur le gardien.",
+            "1": "Bel arrêt sur la volée de {{player}}."
+          }
+        },
+        "curler": {
+          "headline": "ARRÊT !",
+          "lines": {
+            "0": "{{player}} l'enroule mais le gardien y va.",
+            "1": "Ça partait en lucarne — et le gardien la sort !"
+          }
+        },
+        "backheel": {
+          "headline": "ARRÊT !",
+          "lines": {
+            "0": "{{player}} tente la talonnade et le gardien la lit.",
+            "1": "Osé de la part de {{player}}, mais c'est arrêté."
+          }
+        },
+        "bicycleKick": {
+          "headline": "ARRÊT !",
+          "lines": {
+            "0": "Retourné de {{player}} — et quel arrêt !",
+            "1": "{{player}} tente le ciseau et le gardien sort un miracle !"
+          }
         }
       },
       "ShotOffTarget": {
@@ -2345,6 +2415,41 @@
           "lines": {
             "0": "{{player}} devait marquer là — ça passe à côté de façon agoniante !",
             "1": "Une occasion en or gâchée par {{team}} ! {{player}} n'en revient pas."
+          }
+        },
+        "header": {
+          "headline": "À CÔTÉ",
+          "lines": {
+            "0": "{{player}} place sa tête à côté.",
+            "1": "{{player}} touche de la tête mais ça frôle le poteau."
+          }
+        },
+        "volley": {
+          "headline": "À CÔTÉ",
+          "lines": {
+            "0": "{{player}} reprend de volée au-dessus de la barre.",
+            "1": "{{player}} la prend de volée et l'envoie au ciel."
+          }
+        },
+        "curler": {
+          "headline": "À CÔTÉ",
+          "lines": {
+            "0": "{{player}} l'enroule juste à côté du montant.",
+            "1": "De peu ! {{player}} la met à quelques centimètres."
+          }
+        },
+        "backheel": {
+          "headline": "À CÔTÉ",
+          "lines": {
+            "0": "{{player}} tente le talon et ça part à côté.",
+            "1": "L'improvisation de {{player}} file en sortie de but."
+          }
+        },
+        "bicycleKick": {
+          "headline": "À CÔTÉ",
+          "lines": {
+            "0": "{{player}} tente le retourné et manque le cadre.",
+            "1": "{{player}} cherche le spectaculaire et trouve les tribunes."
           }
         }
       },

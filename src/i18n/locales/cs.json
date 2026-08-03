@@ -2304,6 +2304,41 @@
             "0": "{{player}} dokončuje hattrick! Klobouk dolů!",
             "1": "Tři góly pro hráče {{player}} — to je den!"
           }
+        },
+        "header": {
+          "headline": "GÓÓÓL!",
+          "lines": {
+            "0": "{{player}} vyskočil nejvýš a hlavou to poslal do sítě!",
+            "1": "Jaká hlavička od {{player}}!"
+          }
+        },
+        "volley": {
+          "headline": "GÓÓÓL!",
+          "lines": {
+            "0": "{{player}} to bere z první — nechytatelné!",
+            "1": "Jaká volej od {{player}}!"
+          }
+        },
+        "curler": {
+          "headline": "GÓÓÓL!",
+          "lines": {
+            "0": "{{player}} to obloukem posílá mimo dosah brankáře!",
+            "1": "{{player}} to křižuje k tyči!"
+          }
+        },
+        "backheel": {
+          "headline": "GÓÓÓL!",
+          "lines": {
+            "0": "{{player}} skóruje patičkou — jaká drzost!",
+            "1": "Patičkou! {{player}} neodpouští!"
+          }
+        },
+        "bicycleKick": {
+          "headline": "TO JE GÓL!",
+          "lines": {
+            "0": "{{player}} skóruje nůžkami!",
+            "1": "Nůžky od {{player}} — něco neuvěřitelného!"
+          }
         }
       },
       "PenaltyGoal": {
@@ -2353,6 +2388,41 @@
             "0": "Neuvěřitelné! Brankář zpackal jasný gól a nějakým způsobem vyškrábl pokus, který vyslal {{player}}!",
             "1": "Zákrok světové třídy, který sebral hráči {{player}} jistý gól!"
           }
+        },
+        "header": {
+          "headline": "ZÁKROK!",
+          "lines": {
+            "0": "Hlavička {{player}} končí v rukavicích brankáře.",
+            "1": "Brankář vyráží hlavičku {{player}}."
+          }
+        },
+        "volley": {
+          "headline": "ZÁKROK!",
+          "lines": {
+            "0": "{{player}} to bere z první, ale míří přímo na brankáře.",
+            "1": "Výborný zákrok po voleji {{player}}."
+          }
+        },
+        "curler": {
+          "headline": "ZÁKROK!",
+          "lines": {
+            "0": "{{player}} to obloukem posílá na branku, ale brankář je tam.",
+            "1": "Šlo to k tyči — a brankář to vytáhl!"
+          }
+        },
+        "backheel": {
+          "headline": "ZÁKROK!",
+          "lines": {
+            "0": "{{player}} zkouší patičku a brankář to přečetl.",
+            "1": "Drzé od {{player}}, ale brankář si poradil."
+          }
+        },
+        "bicycleKick": {
+          "headline": "ZÁKROK!",
+          "lines": {
+            "0": "Nůžky od {{player}} — a jaký zákrok!",
+            "1": "{{player}} jde do nůžek a brankář to nějak vytáhl!"
+          }
         }
       },
       "ShotOffTarget": {
@@ -2380,6 +2450,41 @@
           "lines": {
             "0": "{{player}} tady měl jednoznačně skórovat — míč šel trestuhodně vedle!",
             "1": "Tým {{team}} zahodil stoprocentní šanci! {{player}} si bude nadávat."
+          }
+        },
+        "header": {
+          "headline": "VEDLE",
+          "lines": {
+            "0": "{{player}} hlavičkuje vedle.",
+            "1": "{{player}} se k míči dostal hlavou, ale poslal ho těsně vedle tyče."
+          }
+        },
+        "volley": {
+          "headline": "VEDLE",
+          "lines": {
+            "0": "{{player}} to bere z první a posílá nad břevno.",
+            "1": "{{player}} trefil míč z voleje a poslal ho vysoko nad."
+          }
+        },
+        "curler": {
+          "headline": "VEDLE",
+          "lines": {
+            "0": "{{player}} to obloukem posílá těsně vedle tyče.",
+            "1": "O kousek! {{player}} to poslal centimetry vedle."
+          }
+        },
+        "backheel": {
+          "headline": "VEDLE",
+          "lines": {
+            "0": "{{player}} zkouší patičku a posílá míč vedle.",
+            "1": "Improvizace {{player}} končí za brankovou čarou."
+          }
+        },
+        "bicycleKick": {
+          "headline": "VEDLE",
+          "lines": {
+            "0": "{{player}} zkouší nůžky a míjí branku.",
+            "1": "{{player}} chtěl podívanou a našel jen tribunu."
           }
         }
       },

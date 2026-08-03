@@ -88,10 +88,65 @@ pub enum EventType {
 /// built from it never claims something that was not simulated.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EventDetail {
-    Shot { danger: DangerBand },
-    Save { quality: SaveQuality },
-    Foul { severity: FoulSeverity },
-    Goal { context: GoalContext },
+    Shot {
+        danger: DangerBand,
+        /// How it was struck. Defaulted rather than required so a feed written
+        /// before techniques existed still reads.
+        #[serde(default)]
+        technique: ShotTechnique,
+    },
+    Save {
+        quality: SaveQuality,
+        #[serde(default)]
+        technique: ShotTechnique,
+    },
+    Foul {
+        severity: FoulSeverity,
+    },
+    Goal {
+        context: GoalContext,
+        #[serde(default)]
+        technique: ShotTechnique,
+    },
+}
+
+/// How a shot was struck.
+///
+/// Football does not describe a goal by where it came from alone — it describes
+/// how it was hit. A header, a volley, a curler and an overhead kick are
+/// different events to watch and different sentences to write, and the engine
+/// had no way to tell them apart: every shot was an anonymous attempt.
+///
+/// Kept deliberately short. Each variant is a tuning constant, a translated
+/// line in eleven locales, and one more thing that can be wrong; the ones here
+/// are the ones a commentator would actually name.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum ShotTechnique {
+    /// Side-footed, driven, poked in. The overwhelming majority of shots, and
+    /// the one that earns no special mention.
+    #[default]
+    Simple,
+    /// With the head.
+    Header,
+    /// Struck before the ball comes down.
+    Volley,
+    /// Bent around the keeper with the inside of the foot.
+    Curler,
+    /// Turned in with the back of the boot, facing the wrong way.
+    Backheel,
+    /// Airborne, back to goal.
+    BicycleKick,
+}
+
+impl ShotTechnique {
+    /// Whether this is worth its own line of commentary.
+    ///
+    /// A simple finish is described by what it was — an equaliser, a
+    /// consolation — not by how it was struck. Only the techniques a
+    /// commentator would name interrupt that.
+    pub fn is_notable(self) -> bool {
+        !matches!(self, ShotTechnique::Simple)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -178,13 +233,33 @@ mod tests {
             .with_player("p1")
             .with_detail(EventDetail::Goal {
                 context: GoalContext::Equaliser,
+                technique: ShotTechnique::Volley,
             });
         let json = serde_json::to_string(&evt).unwrap();
         let back: MatchEvent = serde_json::from_str(&json).unwrap();
         assert_eq!(
             back.detail,
             Some(EventDetail::Goal {
-                context: GoalContext::Equaliser
+                context: GoalContext::Equaliser,
+                technique: ShotTechnique::Volley,
+            })
+        );
+    }
+
+    #[test]
+    fn a_goal_recorded_before_techniques_existed_still_reads() {
+        // The match feed is handed across to the frontend, and a session that
+        // outlives a version change should not fail to render a goal because
+        // the engine learned a new way to describe it.
+        let json = r#"{"minute":10,"event_type":"Goal","side":"Home","zone":"AwayBox",
+            "player_id":"p1","secondary_player_id":null,
+            "detail":{"Goal":{"context":"Equaliser"}}}"#;
+        let evt: MatchEvent = serde_json::from_str(json).unwrap();
+        assert_eq!(
+            evt.detail,
+            Some(EventDetail::Goal {
+                context: GoalContext::Equaliser,
+                technique: ShotTechnique::Simple,
             })
         );
     }
