@@ -17,7 +17,7 @@ import {
   renderScorers,
   PlayerRatingsPanel,
 } from "./PostMatchHelpers";
-import { PossessionDonut } from "./PostMatchCharts";
+import { PossessionDonut, XgRaceChart } from "./PostMatchCharts";
 import {
   Trophy,
   TrendingDown,
@@ -678,6 +678,18 @@ export default function PostMatchScreen({
                   label={t("match.corners")}
                   home={countType(homeEvents, "Corner")}
                   away={countType(awayEvents, "Corner")}
+                />
+              </div>
+
+              {/* How the danger built up, which the scoreline cannot say */}
+              <div className="bg-white dark:bg-navy-800 rounded-xl border border-gray-200 dark:border-navy-700 shadow-sm p-4 transition-colors duration-300 min-w-0">
+                <XgRaceChart
+                  events={snapshot.events}
+                  totalMinutes={snapshot.current_minute}
+                  homeTeamName={snapshot.home_team.name}
+                  awayTeamName={snapshot.away_team.name}
+                  homeColor={homeTeamColor}
+                  awayColor={awayTeamColor}
                 />
               </div>
 

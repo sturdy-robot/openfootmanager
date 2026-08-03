@@ -27,7 +27,10 @@
     "worldEditor.staffId",
     "match.statTable.xg",
     "match.statTable.xa",
-    "match.statTable.distance"
+    "match.statTable.distance",
+    "playerProfile.xg",
+    "playerProfile.xa",
+    "playerProfile.xt"
   ],
   "de": [
     "nations.eng",
@@ -259,7 +262,8 @@
     "worldEditor.staffClub",
     "worldEditor.staffSpecialization.Technique",
     "packageBuild.patches",
-    "match.commentary.Corner.headline"
+    "match.commentary.Corner.headline",
+    "playerProfile.distance"
   ],
   "it": [
     "nations.sn",

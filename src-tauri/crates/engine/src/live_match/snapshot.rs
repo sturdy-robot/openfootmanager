@@ -76,6 +76,8 @@ impl LiveMatchState {
             home_set_pieces: self.home_set_pieces.clone(),
             away_set_pieces: self.away_set_pieces.clone(),
             substitutions: self.substitutions.clone(),
+            home_xg: self.home_metrics.team_xg() as f32,
+            away_xg: self.away_metrics.team_xg() as f32,
             allows_extra_time: self.allows_extra_time,
             home_yellows,
             away_yellows,

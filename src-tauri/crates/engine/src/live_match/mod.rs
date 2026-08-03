@@ -150,6 +150,12 @@ pub struct MatchSnapshot {
     pub home_set_pieces: SetPieceTakers,
     pub away_set_pieces: SetPieceTakers,
     pub substitutions: Vec<SubstitutionRecord>,
+    /// Expected goals so far, per side. Summed from the running tallies rather
+    /// than derived from the event log, so it costs nothing to include here.
+    #[serde(default)]
+    pub home_xg: f32,
+    #[serde(default)]
+    pub away_xg: f32,
     pub allows_extra_time: bool,
     pub home_yellows: HashMap<String, u8>,
     pub away_yellows: HashMap<String, u8>,

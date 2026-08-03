@@ -1687,7 +1687,12 @@
     "renewalProjectionWageBill": "Costo salariale settimanale {{before}} → {{after}}",
     "renewalProjectionBudgetUsage": "Utilizzo budget salariale {{before}}% → {{after}}%",
     "renewalProjectionRunway": "Riserva di cassa {{before}} → {{after}}",
-    "ratingTrend": "Tendenza del voto"
+    "ratingTrend": "Tendenza del voto",
+    "xg": "xG",
+    "xa": "xA",
+    "xt": "xT",
+    "distance": "Distanza",
+    "distanceFootnote": "Gol, assist e pericolosità attesi descrivono la qualità delle occasioni. La distanza è stimata dal ruolo e dalla resistenza, non è misurata."
   },
   "teamProfile": {
     "clubInfo": "Informazioni club",
@@ -2717,6 +2722,11 @@
       "assistsFull": "Assist",
       "shotsFull": "Tiri in porta / tiri totali",
       "passesFull": "Passaggi riusciti / tentati"
+    },
+    "charts": {
+      "xgRace": "Gol attesi nel corso della partita",
+      "noChances": "Nessuna delle due squadre ha creato un'occasione da rappresentare.",
+      "xgRaceSummary": "Gol attesi nel corso della partita. {{home}} chiude a {{homeXg}}, {{away}} a {{awayXg}}."
     }
   },
   "notifications": {

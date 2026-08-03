@@ -25,10 +25,11 @@ export type ShotTechnique =
   | "BicycleKick";
 
 export type EventDetail =
-  | { Shot: { danger: DangerBand; technique?: ShotTechnique } }
-  | { Save: { quality: SaveQuality; technique?: ShotTechnique } }
+  /** `xg` is what the chance was worth, valued with a reference finisher. */
+  | { Shot: { danger: DangerBand; technique?: ShotTechnique; xg?: number } }
+  | { Save: { quality: SaveQuality; technique?: ShotTechnique; xg?: number } }
   | { Foul: { severity: FoulSeverity } }
-  | { Goal: { context: GoalContext; technique?: ShotTechnique } };
+  | { Goal: { context: GoalContext; technique?: ShotTechnique; xg?: number } };
 
 export interface MatchEvent {
   minute: number;
@@ -119,6 +120,8 @@ export interface MatchSnapshot {
   home_set_pieces: SetPieceTakers;
   away_set_pieces: SetPieceTakers;
   substitutions: SubstitutionRecord[];
+  home_xg: number;
+  away_xg: number;
   allows_extra_time: boolean;
   home_yellows: Record<string, number>;
   away_yellows: Record<string, number>;

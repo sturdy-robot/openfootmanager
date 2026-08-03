@@ -1668,7 +1668,12 @@
     "renewalProjectionTitle": "Öngörülen finansal etki",
     "renewalProjectionWageBill": "Haftalık maaş yükü {{before}} → {{after}}",
     "renewalProjectionBudgetUsage": "Maaş bütçesi kullanımı %{{before}} → %{{after}}",
-    "renewalProjectionRunway": "Nakit yeterliliği {{before}} → {{after}}"
+    "renewalProjectionRunway": "Nakit yeterliliği {{before}} → {{after}}",
+    "xg": "xG",
+    "xa": "xA",
+    "xt": "xT",
+    "distance": "Mesafe",
+    "distanceFootnote": "Beklenen gol, asist ve tehdit fırsat kalitesini anlatır. Mesafe rol ve dayanıklılıktan tahmin edilir, ölçülmez."
   },
   "teamProfile": {
     "clubInfo": "Kulüp Bilgisi",
@@ -2698,6 +2703,11 @@
       "assistsFull": "Asistler",
       "shotsFull": "İsabetli şut / toplam şut",
       "passesFull": "İsabetli / denenen pas"
+    },
+    "charts": {
+      "xgRace": "Maç boyunca beklenen goller",
+      "noChances": "İki takım da grafiğe değer bir pozisyon üretemedi.",
+      "xgRaceSummary": "Maç boyunca beklenen goller. {{home}} {{homeXg}} ile, {{away}} {{awayXg}} ile bitirdi."
     }
   },
   "endOfSeason": {

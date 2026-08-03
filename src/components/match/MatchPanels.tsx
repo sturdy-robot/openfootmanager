@@ -121,6 +121,15 @@ export function MatchStats({ snapshot }: { snapshot: MatchSnapshot }) {
       homePct: snapshot.home_possession_pct,
     },
     {
+      label: t("match.statTable.xgFull"),
+      home: snapshot.home_xg.toFixed(2),
+      away: snapshot.away_xg.toFixed(2),
+      homePct:
+        snapshot.home_xg + snapshot.away_xg > 0
+          ? (snapshot.home_xg / (snapshot.home_xg + snapshot.away_xg)) * 100
+          : 50,
+    },
+    {
       label: t("match.shots"),
       home:
         ct(homeEvents, "Goal") +

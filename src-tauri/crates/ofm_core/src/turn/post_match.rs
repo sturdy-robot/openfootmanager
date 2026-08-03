@@ -425,6 +425,10 @@ fn apply_player_stats(
             player.stats.tackles_won += ps.tackles_won as u32;
             player.stats.interceptions += ps.interceptions as u32;
             player.stats.fouls_committed += ps.fouls_committed as u32;
+            player.stats.xg += ps.xg;
+            player.stats.xa += ps.xa;
+            player.stats.xt += ps.xt;
+            player.stats.distance_km += ps.distance_km;
 
             // Update average rating (running average)
             if player.stats.appearances == 1 {

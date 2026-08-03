@@ -93,6 +93,8 @@ function makeSnapshot(): MatchSnapshot {
     home_yellows: {},
     away_yellows: {},
     sent_off: [],
+    home_xg: 0,
+    away_xg: 0,
   };
 }
 

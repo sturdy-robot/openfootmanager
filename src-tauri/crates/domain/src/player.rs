@@ -390,6 +390,19 @@ pub struct PlayerSeasonStats {
     pub tackles_won: u32,
     pub interceptions: u32,
     pub fouls_committed: u32,
+    /// Expected goals accumulated across the season: the quality of the chances
+    /// he had. The gap between this and `goals` is his finishing.
+    #[serde(default)]
+    pub xg: f32,
+    /// Expected assists: the quality of the chances he created.
+    #[serde(default)]
+    pub xa: f32,
+    /// Expected threat: the danger he added by moving the ball up the pitch.
+    #[serde(default)]
+    pub xt: f32,
+    /// Kilometres covered. Estimated from role and stamina, not simulated.
+    #[serde(default)]
+    pub distance_km: f32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

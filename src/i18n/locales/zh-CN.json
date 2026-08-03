@@ -1668,7 +1668,12 @@
     "renewalProjectionWageBill": "周薪总支出 {{before}} → {{after}}",
     "renewalProjectionBudgetUsage": "薪资预算占用 {{before}}% → {{after}}%",
     "renewalProjectionRunway": "现金储备 {{before}} → {{after}}",
-    "ratingTrend": "评分趋势"
+    "ratingTrend": "评分趋势",
+    "xg": "xG",
+    "xa": "xA",
+    "xt": "xT",
+    "distance": "跑动距离",
+    "distanceFootnote": "预期进球、助攻与威胁描述的是机会质量。跑动距离根据位置职责与体能推算，并非实测。"
   },
   "teamProfile": {
     "clubInfo": "俱乐部信息",
@@ -2698,6 +2703,11 @@
       "assistsFull": "助攻",
       "shotsFull": "射正 / 总射门",
       "passesFull": "传球成功 / 传球次数"
+    },
+    "charts": {
+      "xgRace": "全场预期进球走势",
+      "noChances": "两队都没有创造出值得记录的机会。",
+      "xgRaceSummary": "全场预期进球走势。{{home}} 最终为 {{homeXg}}，{{away}} 为 {{awayXg}}。"
     }
   },
   "endOfSeason": {

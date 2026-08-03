@@ -1669,7 +1669,12 @@
     "renewalProjectionTitle": "Předpokládaný finanční dopad",
     "renewalProjectionWageBill": "Týdenní mzdové náklady: {{before}} → {{after}}",
     "renewalProjectionBudgetUsage": "Využití platového rozpočtu: {{before}} % → {{after}} %",
-    "renewalProjectionRunway": "Finanční rezerva: {{before}} → {{after}}"
+    "renewalProjectionRunway": "Finanční rezerva: {{before}} → {{after}}",
+    "xg": "xG",
+    "xa": "xA",
+    "xt": "xT",
+    "distance": "Vzdálenost",
+    "distanceFootnote": "Očekávané góly, asistence a hrozba popisují kvalitu šancí. Vzdálenost se odhaduje z role a výdrže, neměří se."
   },
   "teamProfile": {
     "clubInfo": "Informace o klubu",
@@ -2699,6 +2704,11 @@
       "assistsFull": "Asistence",
       "shotsFull": "Střely na bránu / střely celkem",
       "passesFull": "Přesné / celkem přihrávek"
+    },
+    "charts": {
+      "xgRace": "Očekávané góly v průběhu zápasu",
+      "noChances": "Ani jeden tým si nevytvořil šanci, kterou by stálo za to zakreslit.",
+      "xgRaceSummary": "Očekávané góly v průběhu zápasu. {{home}} končí na {{homeXg}}, {{away}} na {{awayXg}}."
     }
   },
   "endOfSeason": {

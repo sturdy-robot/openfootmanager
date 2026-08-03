@@ -1668,7 +1668,12 @@
     "renewalProjectionTitle": "Projected financial impact",
     "renewalProjectionWageBill": "Weekly wage bill {{before}} → {{after}}",
     "renewalProjectionBudgetUsage": "Wage budget use {{before}}% → {{after}}%",
-    "renewalProjectionRunway": "Cash runway {{before}} → {{after}}"
+    "renewalProjectionRunway": "Cash runway {{before}} → {{after}}",
+    "xg": "xG",
+    "xa": "xA",
+    "xt": "xT",
+    "distance": "Distance",
+    "distanceFootnote": "Expected goals, assists and threat describe chance quality. Distance is estimated from role and stamina, not tracked."
   },
   "teamProfile": {
     "clubInfo": "Club Information",
@@ -2698,6 +2703,11 @@
       "assistsFull": "Assists",
       "shotsFull": "Shots on target / total shots",
       "passesFull": "Passes completed / attempted"
+    },
+    "charts": {
+      "xgRace": "Expected goals over time",
+      "noChances": "Neither side created a chance worth plotting.",
+      "xgRaceSummary": "Expected goals over the course of the match. {{home}} finished on {{homeXg}}, {{away}} on {{awayXg}}."
     }
   },
   "endOfSeason": {

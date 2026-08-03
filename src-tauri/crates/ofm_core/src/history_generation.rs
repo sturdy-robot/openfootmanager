@@ -375,6 +375,10 @@ fn synthesize_player_season(
         tackles_won,
         interceptions,
         fouls_committed,
+        // Backfilled history predates the engine that produces these, and
+        // inventing plausible-looking expected goals for a season nobody
+        // simulated would put fiction next to measurement in the same column.
+        ..Default::default()
     }
 }
 

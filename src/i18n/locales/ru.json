@@ -1668,7 +1668,12 @@
     "renewalProjectionWageBill": "Недельный фонд зарплат {{before}} → {{after}}",
     "renewalProjectionBudgetUsage": "Использование зарплатного бюджета {{before}}% → {{after}}%",
     "renewalProjectionRunway": "Финансовый запас {{before}} → {{after}}",
-    "ratingTrend": "Динамика рейтинга"
+    "ratingTrend": "Динамика рейтинга",
+    "xg": "xG",
+    "xa": "xA",
+    "xt": "xT",
+    "distance": "Дистанция",
+    "distanceFootnote": "Ожидаемые голы, передачи и угроза описывают качество моментов. Дистанция оценивается по роли и выносливости, а не измеряется."
   },
   "teamProfile": {
     "clubInfo": "Информация о клубе",
@@ -2698,6 +2703,11 @@
       "assistsFull": "Передачи",
       "shotsFull": "Удары в створ / всего ударов",
       "passesFull": "Точные / всего передач"
+    },
+    "charts": {
+      "xgRace": "Ожидаемые голы по ходу матча",
+      "noChances": "Ни одна из команд не создала момента, достойного графика.",
+      "xgRaceSummary": "Ожидаемые голы по ходу матча. {{home}} — {{homeXg}}, {{away}} — {{awayXg}}."
     }
   },
   "endOfSeason": {

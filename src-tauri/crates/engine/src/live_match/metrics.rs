@@ -110,6 +110,16 @@ impl MetricTally {
         }
     }
 
+    /// The side's expected goals so far.
+    ///
+    /// A sum over the squad and the handful of players already substituted —
+    /// cheap enough for the per-minute snapshot, unlike anything that has to
+    /// walk the event log.
+    pub fn team_xg(&self) -> f64 {
+        self.current.iter().map(|m| m.xg).sum::<f64>()
+            + self.departed.iter().map(|(_, m)| m.xg).sum::<f64>()
+    }
+
     /// A player is coming off. Keep what he did under his own name, because the
     /// index he leaves behind is about to belong to somebody else.
     pub fn retire(&mut self, index: usize, id: Arc<str>) {

@@ -1668,7 +1668,12 @@
     "renewalProjectionWageBill": "Folha de salários semanal {{before}} → {{after}}",
     "renewalProjectionBudgetUsage": "Uso do orçamento salarial {{before}}% → {{after}}%",
     "renewalProjectionRunway": "Reserva de caixa {{before}} → {{after}}",
-    "ratingTrend": "Tendência de avaliação"
+    "ratingTrend": "Tendência de avaliação",
+    "xg": "xG",
+    "xa": "xA",
+    "xt": "xT",
+    "distance": "Distância",
+    "distanceFootnote": "Golos, assistências e ameaça esperados descrevem a qualidade das oportunidades. A distância é estimada a partir da função e da preparação, não medida."
   },
   "teamProfile": {
     "clubInfo": "Informações do Clube",
@@ -2698,6 +2703,11 @@
       "assistsFull": "Assistências",
       "shotsFull": "Remates à baliza / total de remates",
       "passesFull": "Passes certos / tentados"
+    },
+    "charts": {
+      "xgRace": "Golos esperados ao longo do jogo",
+      "noChances": "Nenhuma equipa criou uma oportunidade digna de registo.",
+      "xgRaceSummary": "Golos esperados ao longo do jogo. O {{home}} terminou com {{homeXg}}, o {{away}} com {{awayXg}}."
     }
   },
   "endOfSeason": {

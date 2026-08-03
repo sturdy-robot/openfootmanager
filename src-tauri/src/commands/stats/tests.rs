@@ -254,6 +254,7 @@ fn get_player_stats_overview_aggregates_history_and_uses_exact_position_cohorts(
         tackles_won: 1,
         interceptions: 0,
         fouls_committed: 1,
+        ..Default::default()
     };
     let peer_a = make_player("player-2", "team-1", Position::Striker);
     let peer_b = make_player("player-3", "team-1", Position::Striker);
@@ -514,6 +515,7 @@ fn get_player_stats_overview_falls_back_to_current_season_totals_for_legacy_save
         tackles_won: 9,
         interceptions: 6,
         fouls_committed: 5,
+        ..Default::default()
     };
     let mut peer_a = make_player("player-2", "team-1", Position::Striker);
     peer_a.stats = PlayerSeasonStats {
@@ -531,7 +533,7 @@ fn get_player_stats_overview_falls_back_to_current_season_totals_for_legacy_save
         passes_attempted: 100,
         tackles_won: 6,
         interceptions: 4,
-        fouls_committed: 3,
+        fouls_committed: 3,    ..Default::default()
     };
     let mut peer_b = make_player("player-3", "team-1", Position::Striker);
     peer_b.stats = PlayerSeasonStats {
@@ -549,7 +551,7 @@ fn get_player_stats_overview_falls_back_to_current_season_totals_for_legacy_save
         passes_attempted: 100,
         tackles_won: 7,
         interceptions: 5,
-        fouls_committed: 4,
+        fouls_committed: 4,    ..Default::default()
     };
 
     let state = StateManager::new();

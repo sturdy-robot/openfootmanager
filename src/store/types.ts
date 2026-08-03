@@ -171,6 +171,14 @@ export interface PlayerSeasonStats {
   tackles_won?: number;
   interceptions?: number;
   fouls_committed?: number;
+  /** Quality of the chances he had. Goals minus this is his finishing. */
+  xg?: number;
+  /** Quality of the chances he created. */
+  xa?: number;
+  /** Danger added by moving the ball up the pitch. */
+  xt?: number;
+  /** Estimated from role and stamina, not tracked. */
+  distance_km?: number;
 }
 
 export interface CareerEntry {
