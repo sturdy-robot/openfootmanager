@@ -4,8 +4,8 @@ pub mod engine;
 pub mod event;
 pub mod live_match;
 pub mod report;
-pub mod sim;
 pub(crate) mod shared;
+pub mod sim;
 pub mod traits;
 pub mod types;
 
@@ -27,8 +27,8 @@ pub use engine::simulate_setup;
 pub use engine::simulate_with_rng;
 pub use event::{EventType, MatchEvent};
 pub use live_match::{
-    LiveMatchState, MatchCommand, MatchPhase, MatchSnapshot, MinuteResult,
-    PenaltyShootoutSnapshot, SetPieceTakers, SubstitutionRecord,
+    LiveMatchState, MatchCommand, MatchPhase, MatchSnapshot, MinuteResult, PenaltyShootoutSnapshot,
+    SetPieceTakers, SubstitutionRecord,
 };
 pub use report::{GoalDetail, GoalSource, MatchReport, PlayerMatchStats, TeamStats};
 pub use traits::{
@@ -36,6 +36,6 @@ pub use traits::{
 };
 pub use types::{
     BreakSpeed, CounterPressDuration, DefensiveLine, DefensiveShape, MarkingStyle, MatchConfig,
-    PlayStyle, PlayerData, PlayerRole, Position, PressingIntensity, Side, TacticsBuildUpStyle,
-    Slot, TacticsConfig, TacticsPitchWidth, Tempo, TeamData, Zone,
+    PlayStyle, PlayerData, PlayerRole, Position, PressingIntensity, Side, Slot,
+    TacticsBuildUpStyle, TacticsConfig, TacticsPitchWidth, TeamData, Tempo, Zone,
 };

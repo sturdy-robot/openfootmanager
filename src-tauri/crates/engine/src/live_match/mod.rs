@@ -3,8 +3,11 @@ mod penalty;
 mod possession;
 mod simulation;
 mod snapshot;
+mod squad_cache;
 mod substitution;
 mod zone_resolution;
+
+use squad_cache::SquadCache;
 
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -184,6 +187,18 @@ struct PenaltyShootoutState {
 // LiveMatchState — the core step-by-step simulation engine
 // ---------------------------------------------------------------------------
 
+/// The live match session is held behind a mutex in `StateManager` and shared
+/// between the Tauri command pool and, under the `mcp` feature, the MCP
+/// server's runtime. So this type has to be `Send`, and the cheapest way to
+/// make a hot-path field faster — a reference-counted handle — is exactly the
+/// kind of change that quietly takes that away. Worse, it would still compile
+/// here and only fail in the crate that shares it, under a feature flag that is
+/// off by default.
+const _: () = {
+    const fn assert_send<T: Send>() {}
+    assert_send::<LiveMatchState>();
+};
+
 pub struct LiveMatchState {
     // Teams (owned — subs mutate the player list)
     home: TeamData,
@@ -236,15 +251,11 @@ pub struct LiveMatchState {
     et_first_half_stoppage: u8,
     et_second_half_stoppage: u8,
 
-    // Per-minute stamina depletion tracking (player_id → current effective condition)
-    player_conditions: HashMap<String, f64>,
-
-    // Condition as a selection weight, aligned with each side's `players`
-    // order and refreshed once a minute. Reading it from `player_conditions`
-    // instead meant hashing a player id for every player on every action,
-    // which cost close to 40% of a simulated match.
-    home_selection_condition: Vec<f64>,
-    away_selection_condition: Vec<f64>,
+    // Everything about a player the resolution code reads by index rather than
+    // by id — stamina, traits, and a shared handle on the id itself. Aligned
+    // with each side's `players` order; see `squad_cache`.
+    home_cache: SquadCache,
+    away_cache: SquadCache,
 
     // Penalty shootout state
     penalty_state: PenaltyShootoutState,
@@ -264,13 +275,8 @@ impl LiveMatchState {
         away_bench: Vec<PlayerData>,
         allows_extra_time: bool,
     ) -> Self {
-        let home_len = home.players.len();
-        let away_len = away.players.len();
-        // Initialize player conditions from their condition attribute
-        let mut player_conditions = HashMap::new();
-        for p in home.players.iter().chain(away.players.iter()) {
-            player_conditions.insert(p.id.clone(), p.condition as f64);
-        }
+        let home_cache = SquadCache::new(&home.players);
+        let away_cache = SquadCache::new(&away.players);
 
         Self {
             home,
@@ -300,9 +306,8 @@ impl LiveMatchState {
             second_half_stoppage: 0,
             et_first_half_stoppage: 0,
             et_second_half_stoppage: 0,
-            home_selection_condition: vec![1.0; home_len],
-            away_selection_condition: vec![1.0; away_len],
-            player_conditions,
+            home_cache,
+            away_cache,
             penalty_state: PenaltyShootoutState::default(),
             recent_zones: VecDeque::with_capacity(10),
         }

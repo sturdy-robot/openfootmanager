@@ -1,11 +1,11 @@
 use rand::{Rng, RngExt};
 
-use crate::sim::state::Band;
 use crate::event::{EventDetail, EventType, MatchEvent};
 use crate::shared::{
     PlayStylePhase, PlayerSnap, TraitContext, role_attribute_modifier,
     tactics_defensive_conversion_mod, tactics_foul_modifier, tactics_shape_modifier, trait_bonus,
 };
+use crate::sim::state::Band;
 use crate::types::{Side, Zone};
 
 use super::LiveMatchState;
@@ -36,7 +36,6 @@ fn foul_pressure(band: Band) -> f64 {
         Band::OppBox => 0.80,
     }
 }
-
 
 /// How ambitious a pass is.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -74,7 +73,11 @@ impl PassKind {
 }
 
 impl LiveMatchState {
-    pub(super) fn resolve_action<R: Rng + ?Sized>(&mut self, minute: u8, rng: &mut R) -> Vec<MatchEvent> {
+    pub(super) fn resolve_action<R: Rng + ?Sized>(
+        &mut self,
+        minute: u8,
+        rng: &mut R,
+    ) -> Vec<MatchEvent> {
         let att_side = self.possession;
         let def_side = att_side.opposite();
         let band = Band::from_zone(self.ball_zone, att_side);
@@ -93,9 +96,33 @@ impl LiveMatchState {
         let action = choose_action(band, actor.role, &own_tactics, &opponent_tactics, rng);
 
         match action {
-            Action::ShortPass => self.resolve_pass(minute, att_side, def_side, band, &actor, PassKind::Short, rng),
-            Action::ProgressivePass => self.resolve_pass(minute, att_side, def_side, band, &actor, PassKind::Progressive, rng),
-            Action::LongPass => self.resolve_pass(minute, att_side, def_side, band, &actor, PassKind::Long, rng),
+            Action::ShortPass => self.resolve_pass(
+                minute,
+                att_side,
+                def_side,
+                band,
+                &actor,
+                PassKind::Short,
+                rng,
+            ),
+            Action::ProgressivePass => self.resolve_pass(
+                minute,
+                att_side,
+                def_side,
+                band,
+                &actor,
+                PassKind::Progressive,
+                rng,
+            ),
+            Action::LongPass => self.resolve_pass(
+                minute,
+                att_side,
+                def_side,
+                band,
+                &actor,
+                PassKind::Long,
+                rng,
+            ),
             Action::Carry => self.resolve_carry(minute, att_side, def_side, band, &actor, rng),
             Action::TakeOn => self.resolve_take_on(minute, att_side, def_side, band, &actor, rng),
             Action::Cross => self.resolve_cross(minute, att_side, def_side, band, &actor, rng),
@@ -103,10 +130,12 @@ impl LiveMatchState {
         }
     }
 
-
-
-
-    fn resolve_shot<R: Rng + ?Sized>(&mut self, minute: u8, att_side: Side, rng: &mut R) -> Vec<MatchEvent> {
+    fn resolve_shot<R: Rng + ?Sized>(
+        &mut self,
+        minute: u8,
+        att_side: Side,
+        rng: &mut R,
+    ) -> Vec<MatchEvent> {
         let mut events = Vec::new();
         let def_side = att_side.opposite();
         let zone = Zone::attacking_box(att_side);
@@ -125,8 +154,7 @@ impl LiveMatchState {
             events.push(foul_evt);
 
             if rng.random_range(0.0..1.0f64) < self.config.penalty_probability {
-                let pen_evt =
-                    MatchEvent::new(minute, EventType::PenaltyAwarded, att_side, zone);
+                let pen_evt = MatchEvent::new(minute, EventType::PenaltyAwarded, att_side, zone);
                 self.events.push(pen_evt.clone());
                 events.push(pen_evt);
                 let pen_events = self.resolve_in_match_penalty(minute, att_side, rng);
@@ -148,13 +176,13 @@ impl LiveMatchState {
 
         let shoot_raw =
             (shooter.shooting as f64 + shooter.composure as f64 + shooter.decisions as f64) / 3.0;
-        let shoot_rating = self.condition_adjusted_skill(&shooter.id, shoot_raw)
+        let shoot_rating = self.condition_adjusted_skill(&shooter, shoot_raw)
             * trait_bonus(&shooter, TraitContext::Shooting);
         let gk_raw = (goalkeeper.handling as f64
             + goalkeeper.reflexes as f64
             + goalkeeper.positioning as f64)
             / 3.0;
-        let gk_rating = self.condition_adjusted_skill(&goalkeeper.id, gk_raw)
+        let gk_rating = self.condition_adjusted_skill(&goalkeeper, gk_raw)
             * trait_bonus(&goalkeeper, TraitContext::Goalkeeping);
 
         let accuracy =
@@ -188,7 +216,8 @@ impl LiveMatchState {
         }
 
         let def_line_mod = tactics_defensive_conversion_mod(&self.team_ref(def_side).tactics);
-        let conversion = (self.config.goal_conversion_base * def_line_mod + (shoot_rating - gk_rating) / 150.0)
+        let conversion = (self.config.goal_conversion_base * def_line_mod
+            + (shoot_rating - gk_rating) / 150.0)
             .clamp(0.10, 0.70);
 
         if rng.random_range(0.0..1.0f64) < conversion {
@@ -368,15 +397,14 @@ impl LiveMatchState {
             + attacker.agility as f64
             + attacker.composure as f64)
             / 4.0;
-        let def_raw = (defender.defending as f64
-            + defender.tackling as f64
-            + defender.positioning as f64)
-            / 3.0;
-        let att_eff = self.condition_adjusted_skill(&attacker.id, att_raw)
+        let def_raw =
+            (defender.defending as f64 + defender.tackling as f64 + defender.positioning as f64)
+                / 3.0;
+        let att_eff = self.condition_adjusted_skill(attacker, att_raw)
             * trait_bonus(attacker, TraitContext::Dribbling)
             * role_attribute_modifier(attacker.role, PlayStylePhase::Attack)
             * crate::shared::home_mod(att_side, &self.config);
-        let def_eff = self.condition_adjusted_skill(&defender.id, def_raw)
+        let def_eff = self.condition_adjusted_skill(&defender, def_raw)
             * trait_bonus(&defender, TraitContext::Tackling)
             * role_attribute_modifier(defender.role, PlayStylePhase::Defense)
             * crate::shared::home_mod(def_side, &self.config)
@@ -444,9 +472,7 @@ impl LiveMatchState {
         }
 
         // A cleared ball in the final third is often a corner.
-        if matches!(band, Band::FinalThird | Band::OppBox)
-            && rng.random_range(0.0..1.0f64) < 0.20
-        {
+        if matches!(band, Band::FinalThird | Band::OppBox) && rng.random_range(0.0..1.0f64) < 0.20 {
             let corner = MatchEvent::new(minute, EventType::Corner, att_side, zone);
             self.events.push(corner.clone());
             events.push(corner);
@@ -474,15 +500,15 @@ impl LiveMatchState {
         let mut events = Vec::new();
         let zone = self.ball_zone;
 
-        let evt = MatchEvent::new(minute, EventType::Cross, att_side, zone)
-            .with_player(&crosser.id);
+        let evt =
+            MatchEvent::new(minute, EventType::Cross, att_side, zone).with_player(&crosser.id);
         self.events.push(evt.clone());
         events.push(evt);
 
         let attacker = self.pick_actor(att_side, Band::OppBox, Need::Shoot, rng);
         let defender = self.pick_actor(def_side, Band::OwnBox, Need::Defend, rng);
         let delivery = self.condition_adjusted_skill(
-            &crosser.id,
+            crosser,
             (crosser.passing as f64 + crosser.vision as f64) / 2.0,
         );
         let attacking = attacker.aerial as f64 * (0.75 + delivery / 400.0);
@@ -537,8 +563,10 @@ impl LiveMatchState {
         let zone = self.ball_zone;
 
         let skill = self.condition_adjusted_skill(
-            &passer.id,
-            (passer.passing as f64 + passer.vision as f64 + passer.composure as f64
+            passer,
+            (passer.passing as f64
+                + passer.vision as f64
+                + passer.composure as f64
                 + passer.teamwork as f64)
                 / 4.0,
         ) * trait_bonus(passer, TraitContext::Passing)
@@ -555,7 +583,8 @@ impl LiveMatchState {
             Band::FinalThird => 0.93,
             Band::OppBox => 0.88,
         };
-        let completion = (kind.base_completion() * (0.72 + 0.56 * quality) * space).clamp(0.20, 0.985);
+        let completion =
+            (kind.base_completion() * (0.72 + 0.56 * quality) * space).clamp(0.20, 0.985);
 
         if rng.random_range(0.0..1.0f64) < completion {
             let evt = MatchEvent::new(minute, EventType::PassCompleted, att_side, zone)
@@ -604,7 +633,7 @@ impl LiveMatchState {
         let mut events = Vec::new();
         let zone = self.ball_zone;
         let skill = self.condition_adjusted_skill(
-            &carrier.id,
+            carrier,
             (carrier.dribbling as f64 + carrier.composure as f64 + carrier.decisions as f64) / 3.0,
         ) * crate::shared::home_mod(att_side, &self.config);
         let press = self.effective_press(def_side);
@@ -617,8 +646,8 @@ impl LiveMatchState {
             events.push(evt);
         } else {
             let winner = self.pick_actor(def_side, band.mirror(), Need::Defend, rng);
-            let tackle = MatchEvent::new(minute, EventType::Tackle, def_side, zone)
-                .with_player(&winner.id);
+            let tackle =
+                MatchEvent::new(minute, EventType::Tackle, def_side, zone).with_player(&winner.id);
             self.events.push(tackle.clone());
             events.push(tackle);
 

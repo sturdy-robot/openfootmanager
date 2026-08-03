@@ -27,21 +27,24 @@ impl LiveMatchState {
             }
         }
 
-        // Clone teams and patch in live condition values from player_conditions map
+        // Clone the teams and patch in each player's live stamina, which the
+        // squad cache holds by index rather than on the player itself.
         let mut home_team = self.home.clone();
         let mut away_team = self.away.clone();
-        for p in home_team
-            .players
-            .iter_mut()
-            .chain(away_team.players.iter_mut())
-        {
-            if let Some(&cond) = self.player_conditions.get(&p.id) {
-                p.condition = cond.round() as u8;
+        for (team, cache) in [
+            (&mut home_team, &self.home_cache),
+            (&mut away_team, &self.away_cache),
+        ] {
+            for (index, p) in team.players.iter_mut().enumerate() {
+                p.condition = cache.condition(index).round() as u8;
             }
         }
 
-        let has_shootout_data = self.penalty_state.home_taken > 0 || self.penalty_state.away_taken > 0;
-        let penalty_shootout = if self.phase == MatchPhase::PenaltyShootout || (self.phase == MatchPhase::Finished && has_shootout_data) {
+        let has_shootout_data =
+            self.penalty_state.home_taken > 0 || self.penalty_state.away_taken > 0;
+        let penalty_shootout = if self.phase == MatchPhase::PenaltyShootout
+            || (self.phase == MatchPhase::Finished && has_shootout_data)
+        {
             Some(PenaltyShootoutSnapshot {
                 home_taken: self.penalty_state.home_taken,
                 away_taken: self.penalty_state.away_taken,

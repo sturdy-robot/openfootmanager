@@ -12,12 +12,11 @@ use std::collections::HashSet;
 use crate::sim::roles;
 use crate::sim::state::Band;
 
-use super::{LiveMatchState, SetPieceTakers};
+use super::{LiveMatchState, SetPieceTakers, SquadCache};
 
 // ---------------------------------------------------------------------------
 // Stamina system
 // ---------------------------------------------------------------------------
-
 
 /// What the engine is asking a player to do, which decides both who is a
 /// plausible choice and which attributes matter.
@@ -93,63 +92,64 @@ impl LiveMatchState {
         // Aggressive pressing tires a side faster; neutral (Medium) is ×1.0.
         let home_rate = base_rate * tactics_pressing_fatigue(&self.home.tactics);
         let away_rate = base_rate * tactics_pressing_fatigue(&self.away.tactics);
-        // Iterate over all on-pitch players, each with their team's fatigue rate.
-        let players = self
-            .home
-            .players
-            .iter()
-            .map(|p| (p, home_rate))
-            .chain(self.away.players.iter().map(|p| (p, away_rate)));
-        for (p, fatigue_rate) in players {
-            if self.sent_off.contains(&p.id) {
-                continue;
-            }
-            let stamina_factor = p.stamina as f64 / 100.0;
-            let fitness_factor = p.fitness as f64 / 100.0;
-            // Higher stamina → less depletion; higher fitness → less depletion.
-            // Fitness scales the base depletion more aggressively (unfit players tire much faster).
-            let depletion =
-                fatigue_rate * (1.0 - stamina_factor * 0.5) * (1.3 - fitness_factor * 0.6);
-            if let Some(cond) = self.player_conditions.get_mut(&p.id) {
-                *cond = (*cond - depletion).max(5.0);
-            }
-        }
-        self.refresh_selection_conditions();
-    }
 
-    /// Snapshot each side's conditions into selection weights.
-    ///
-    /// Done once a minute so `selection_weight` is a slice index rather than a
-    /// hash of the player's id, which it would otherwise perform for every
-    /// player on every action.
-    fn refresh_selection_conditions(&mut self) {
-        for (players, weights) in [
-            (&self.home.players, &mut self.home_selection_condition),
-            (&self.away.players, &mut self.away_selection_condition),
+        for (players, cache, fatigue_rate) in [
+            (&self.home.players, &mut self.home_cache, home_rate),
+            (&self.away.players, &mut self.away_cache, away_rate),
         ] {
-            weights.clear();
-            weights.extend(players.iter().map(|player| {
-                let condition = self
-                    .player_conditions
-                    .get(&player.id)
-                    .copied()
-                    .unwrap_or(player.condition as f64)
-                    / 100.0;
-                0.55 + 0.45 * condition
-            }));
+            for (index, p) in players.iter().enumerate() {
+                if !self.sent_off.is_empty() && self.sent_off.contains(&p.id) {
+                    continue;
+                }
+                let stamina_factor = p.stamina as f64 / 100.0;
+                let fitness_factor = p.fitness as f64 / 100.0;
+                // Higher stamina → less depletion; higher fitness → less
+                // depletion. Fitness scales the base depletion more
+                // aggressively — unfit players tire much faster.
+                let depletion =
+                    fatigue_rate * (1.0 - stamina_factor * 0.5) * (1.3 - fitness_factor * 0.6);
+                cache.deplete(index, depletion);
+            }
+            cache.refresh_selection_weights();
         }
     }
 
     /// Adjust a skill value based on the player's current in-match condition.
-    pub(super) fn condition_adjusted_skill(&self, player_id: &str, base_skill: f64) -> f64 {
-        let condition = self
-            .player_conditions
-            .get(player_id)
-            .copied()
-            .unwrap_or(50.0);
+    pub(super) fn condition_adjusted_skill(&self, snap: &PlayerSnap, base_skill: f64) -> f64 {
+        let condition = self.cache(snap.side).condition(snap.index);
         // At 100% condition: full skill. At 50%: ~80% skill. At 0%: ~60% skill.
         let factor = 0.6 + 0.4 * (condition / 100.0);
         base_skill * factor
+    }
+
+    pub(super) fn cache(&self, side: Side) -> &SquadCache {
+        match side {
+            Side::Home => &self.home_cache,
+            Side::Away => &self.away_cache,
+        }
+    }
+
+    pub(super) fn cache_mut(&mut self, side: Side) -> &mut SquadCache {
+        match side {
+            Side::Home => &mut self.home_cache,
+            Side::Away => &mut self.away_cache,
+        }
+    }
+
+    /// Take a snapshot of a player at a known squad index.
+    ///
+    /// Everything expensive about a snapshot — the id and the trait set — comes
+    /// from the cache rather than being rebuilt, which is what makes this cheap
+    /// enough to do twice for every action in the match.
+    pub(super) fn snap_at(&self, side: Side, index: usize) -> PlayerSnap {
+        let team = self.team_ref(side);
+        match team.players.get(index) {
+            Some(player) => {
+                let cache = self.cache(side);
+                PlayerSnap::from_cached(player, cache.id(index), cache.traits(index), side, index)
+            }
+            None => PlayerSnap::placeholder(),
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -200,26 +200,25 @@ impl LiveMatchState {
         }
 
         let mut roll = rng.random_range(0.0..total);
-        for (index, player) in team.players.iter().take(counted).enumerate() {
-            roll -= weights[index];
+        for (index, weight) in weights.iter().enumerate().take(counted) {
+            roll -= weight;
             if roll <= 0.0 {
-                return PlayerSnap::from(player);
+                return self.snap_at(side, index);
             }
         }
         // Floating-point drift only; the last eligible player is the answer.
-        let last = team
-            .players
+        match weights
             .iter()
-            .take(counted)
             .enumerate()
+            .take(counted)
             .rev()
-            .find(|(index, _)| weights[*index] > 0.0)
-            .map(|(_, player)| player)
-            .or(team.players.first());
-        let Some(last) = last else {
-            return PlayerSnap::placeholder();
-        };
-        PlayerSnap::from(last)
+            .find(|(_, weight)| **weight > 0.0)
+            .map(|(index, _)| index)
+        {
+            Some(index) => self.snap_at(side, index),
+            None if !team.players.is_empty() => self.snap_at(side, 0),
+            None => PlayerSnap::placeholder(),
+        }
     }
 
     #[inline]
@@ -250,16 +249,7 @@ impl LiveMatchState {
         // every action.
         let relative = need.fitness(player) / 50.0;
         let suitability = relative * relative;
-        // A substitution can leave the cache a minute stale; a neutral weight
-        // is the right answer until it is refreshed.
-        let condition = match side {
-            Side::Home => &self.home_selection_condition,
-            Side::Away => &self.away_selection_condition,
-        }
-        .get(index)
-        .copied()
-        .unwrap_or(1.0);
-        placement * suitability * condition
+        placement * suitability * self.cache(side).selection_weight(index)
     }
 
     pub(super) fn snap_player<R: Rng + ?Sized>(
@@ -281,9 +271,8 @@ impl LiveMatchState {
         // The draw is still a single `random_range` over the same pool size, so
         // a given seed picks exactly the same player as before.
         let dismissals = &self.sent_off;
-        let eligible = |player: &PlayerData| {
-            dismissals.is_empty() || !dismissals.contains(&player.id)
-        };
+        let eligible =
+            |player: &PlayerData| dismissals.is_empty() || !dismissals.contains(&player.id);
 
         let in_position = team
             .players
@@ -296,78 +285,98 @@ impl LiveMatchState {
         let pool_size = if in_position > 0 {
             in_position
         } else {
-            team.players.iter().filter(|player| eligible(player)).count()
+            team.players
+                .iter()
+                .filter(|player| eligible(player))
+                .count()
         };
         if pool_size == 0 {
             // Nobody available at all — see `PlayerSnap::placeholder`.
             return PlayerSnap::placeholder();
         }
 
-        let index = rng.random_range(0..pool_size);
+        let nth = rng.random_range(0..pool_size);
         let chosen = if in_position > 0 {
             team.players
                 .iter()
-                .filter(|player| eligible(player) && player.position == preferred)
-                .nth(index)
+                .enumerate()
+                .filter(|(_, player)| eligible(player) && player.position == preferred)
+                .nth(nth)
         } else {
-            team.players.iter().filter(|player| eligible(player)).nth(index)
+            team.players
+                .iter()
+                .enumerate()
+                .filter(|(_, player)| eligible(player))
+                .nth(nth)
         };
         match chosen {
-            Some(player) => PlayerSnap::from(player),
+            Some((index, _)) => self.snap_at(side, index),
             None => PlayerSnap::placeholder(),
         }
     }
 
     pub(super) fn snap_player_by_id(&self, player_id: &str, side: Side) -> PlayerSnap {
-        let team = self.team_ref(side);
-        if let Some(p) = team.players.iter().find(|p| p.id == player_id) {
-            PlayerSnap::from(p)
-        } else {
-            PlayerSnap::placeholder()
+        match self.cache(side).index_of(player_id) {
+            Some(index) => self.snap_at(side, index),
+            None => PlayerSnap::placeholder(),
         }
     }
 
-    pub(super) fn pick_penalty_taker<R: Rng + ?Sized>(&self, side: Side, rng: &mut R) -> PlayerSnap {
+    pub(super) fn pick_penalty_taker<R: Rng + ?Sized>(
+        &self,
+        side: Side,
+        rng: &mut R,
+    ) -> PlayerSnap {
+        let team = self.team_ref(side);
+        let available = |p: &PlayerData| !self.sent_off.contains(&p.id);
+
         // Use designated taker if set
         if let Some(ref id) = self.set_pieces_ref(side).penalty_taker {
-            let team = self.team_ref(side);
-            if let Some(p) = team
+            let designated = team
                 .players
                 .iter()
-                .find(|p| p.id == *id && !self.sent_off.contains(&p.id))
-            {
-                return PlayerSnap::from(p);
+                .enumerate()
+                .find(|(_, p)| p.id == *id && available(p));
+            if let Some((index, _)) = designated {
+                return self.snap_at(side, index);
             }
         }
-        // Fallback: pick the forward with highest shooting
-        let team = self.team_ref(side);
-        let mut candidates: Vec<&PlayerData> = team
+
+        // Otherwise the best shooter available. Picked by a single scan rather
+        // than by sorting the whole squad into a fresh `Vec`. `min_by_key` on
+        // the reversed rating, not `max_by_key`: both find the best shooter,
+        // but on a tie `min_by_key` keeps the first, which is what the stable
+        // sort this replaced did. `max_by_key` would keep the last and quietly
+        // change who takes every tied penalty in the game.
+        let best = team
             .players
             .iter()
-            .filter(|p| !self.sent_off.contains(&p.id))
-            .collect();
-        candidates.sort_by_key(|p| std::cmp::Reverse(p.shooting));
-        if let Some(p) = candidates.first() {
-            PlayerSnap::from(p)
-        } else {
-            self.snap_player(side, Position::Forward, rng)
+            .enumerate()
+            .filter(|(_, p)| available(p))
+            .min_by_key(|(_, p)| std::cmp::Reverse(p.shooting));
+        match best {
+            Some((index, _)) => self.snap_at(side, index),
+            None => self.snap_player(side, Position::Forward, rng),
         }
     }
 
     pub(super) fn pick_goalkeeper(&self, side: Side) -> PlayerSnap {
         let team = self.team_ref(side);
-        for p in &team.players {
-            if p.position == Position::Goalkeeper && !self.sent_off.contains(&p.id) {
-                return PlayerSnap::from(p);
-            }
+        let available = |p: &PlayerData| !self.sent_off.contains(&p.id);
+
+        let keeper = team
+            .players
+            .iter()
+            .enumerate()
+            .find(|(_, p)| p.position == Position::Goalkeeper && available(p));
+        if let Some((index, _)) = keeper {
+            return self.snap_at(side, index);
         }
-        // No goalkeeper available — pick first available
-        for p in &team.players {
-            if !self.sent_off.contains(&p.id) {
-                return PlayerSnap::from(p);
-            }
+        // No goalkeeper available — anyone still on the pitch goes in goal.
+        match team.players.iter().enumerate().find(|(_, p)| available(p)) {
+            Some((index, _)) => self.snap_at(side, index),
+            None => PlayerSnap::placeholder(),
         }
-        PlayerSnap::placeholder()
     }
 
     // -----------------------------------------------------------------------

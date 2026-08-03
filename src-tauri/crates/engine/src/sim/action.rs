@@ -308,7 +308,10 @@ mod tests {
     #[test]
     fn nobody_shoots_from_their_own_half() {
         assert_eq!(share(Band::OwnBox, PlayerRole::Standard, Action::Shot), 0.0);
-        assert_eq!(share(Band::OwnThird, PlayerRole::Standard, Action::Shot), 0.0);
+        assert_eq!(
+            share(Band::OwnThird, PlayerRole::Standard, Action::Shot),
+            0.0
+        );
     }
 
     #[test]
@@ -317,10 +320,15 @@ mod tests {
         // margin — but not so dominant that arriving there guarantees a shot,
         // or one entry produces a hatful of them.
         let shooting = share(Band::OppBox, PlayerRole::Standard, Action::Shot);
-        let next_most = [Action::ShortPass, Action::TakeOn, Action::Carry, Action::Cross]
-            .into_iter()
-            .map(|action| share(Band::OppBox, PlayerRole::Standard, action))
-            .fold(0.0f64, f64::max);
+        let next_most = [
+            Action::ShortPass,
+            Action::TakeOn,
+            Action::Carry,
+            Action::Cross,
+        ]
+        .into_iter()
+        .map(|action| share(Band::OppBox, PlayerRole::Standard, action))
+        .fold(0.0f64, f64::max);
         assert!(shooting > next_most * 1.5, "{shooting} vs {next_most}");
     }
 
@@ -328,11 +336,17 @@ mod tests {
     fn a_poacher_shoots_more_than_a_false_nine_and_passes_less() {
         let poacher_shots = share(Band::OppBox, PlayerRole::Poacher, Action::Shot);
         let false9_shots = share(Band::OppBox, PlayerRole::False9, Action::Shot);
-        assert!(poacher_shots > false9_shots, "{poacher_shots} vs {false9_shots}");
+        assert!(
+            poacher_shots > false9_shots,
+            "{poacher_shots} vs {false9_shots}"
+        );
 
         let poacher_passes = share(Band::FinalThird, PlayerRole::Poacher, Action::ShortPass);
         let false9_passes = share(Band::FinalThird, PlayerRole::False9, Action::ShortPass);
-        assert!(false9_passes > poacher_passes, "{false9_passes} vs {poacher_passes}");
+        assert!(
+            false9_passes > poacher_passes,
+            "{false9_passes} vs {poacher_passes}"
+        );
     }
 
     #[test]
@@ -342,7 +356,11 @@ mod tests {
             PlayerRole::AdvancedPlaymaker,
             Action::ProgressivePass,
         );
-        let winner = share(Band::Middle, PlayerRole::BallWinner, Action::ProgressivePass);
+        let winner = share(
+            Band::Middle,
+            PlayerRole::BallWinner,
+            Action::ProgressivePass,
+        );
         assert!(playmaker > winner, "{playmaker} vs {winner}");
     }
 

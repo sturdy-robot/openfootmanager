@@ -29,11 +29,7 @@ impl LiveMatchState {
         let gk_skill = (gk.reflexes as f64 + gk.handling as f64) / 2.0;
 
         // Fatigue affects penalty accuracy in shootout
-        let taker_condition = self
-            .player_conditions
-            .get(&taker.id)
-            .copied()
-            .unwrap_or(50.0);
+        let taker_condition = self.cache(kicking_side).condition(taker.index);
         let fatigue_factor = (taker_condition / 100.0).clamp(0.7, 1.0);
 
         let conversion = (0.75 + (shoot_skill - gk_skill) / 300.0) * fatigue_factor;
@@ -183,7 +179,12 @@ impl PenaltyShootoutState {
 mod tests {
     use super::PenaltyShootoutState;
 
-    fn state(home_taken: u8, away_taken: u8, home_scored: u8, away_scored: u8) -> PenaltyShootoutState {
+    fn state(
+        home_taken: u8,
+        away_taken: u8,
+        home_scored: u8,
+        away_scored: u8,
+    ) -> PenaltyShootoutState {
         PenaltyShootoutState {
             round: 0,
             home_taken,
@@ -194,7 +195,12 @@ mod tests {
         }
     }
 
-    fn sudden_death(home_taken: u8, away_taken: u8, home_scored: u8, away_scored: u8) -> PenaltyShootoutState {
+    fn sudden_death(
+        home_taken: u8,
+        away_taken: u8,
+        home_scored: u8,
+        away_scored: u8,
+    ) -> PenaltyShootoutState {
         PenaltyShootoutState {
             sudden_death: true,
             ..state(home_taken, away_taken, home_scored, away_scored)

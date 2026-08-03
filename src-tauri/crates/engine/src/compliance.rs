@@ -89,7 +89,10 @@ impl ComplianceReport {
     pub fn by_invariant(&self) -> HashMap<Invariant, Vec<&Violation>> {
         let mut grouped: HashMap<Invariant, Vec<&Violation>> = HashMap::new();
         for violation in &self.violations {
-            grouped.entry(violation.invariant).or_default().push(violation);
+            grouped
+                .entry(violation.invariant)
+                .or_default()
+                .push(violation);
         }
         grouped
     }
@@ -241,12 +244,7 @@ fn compare_reports(first: &MatchReport, second: &MatchReport) -> Vec<String> {
     )]
 }
 
-fn check_one(
-    result: &MatchReport,
-    setup: &MatchSetup,
-    seed: u64,
-    report: &mut ComplianceReport,
-) {
+fn check_one(result: &MatchReport, setup: &MatchSetup, seed: u64, report: &mut ComplianceReport) {
     check_report_consistency(result, seed, report);
     check_player_stats(result, setup, seed, report);
     check_discipline(result, seed, report);
@@ -559,11 +557,7 @@ fn check_shootout(result: &MatchReport, seed: u64, report: &mut ComplianceReport
         .filter(|e| e.event_type == EventType::ShootoutGoal)
         .count();
     if shootout_goals > 0 {
-        let counted = result
-            .events
-            .iter()
-            .filter(|e| e.is_goal())
-            .count();
+        let counted = result.events.iter().filter(|e| e.is_goal()).count();
         if counted != (result.home_goals + result.away_goals) as usize {
             report.fail(
                 Invariant::Shootout,
@@ -572,4 +566,3 @@ fn check_shootout(result: &MatchReport, seed: u64, report: &mut ComplianceReport
         }
     }
 }
-

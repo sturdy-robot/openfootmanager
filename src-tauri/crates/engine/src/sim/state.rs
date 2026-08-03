@@ -56,8 +56,6 @@ impl Band {
         }
     }
 
-
-
     /// Position in a per-band table, deep to advanced.
     pub fn index(self) -> usize {
         match self {
@@ -68,7 +66,6 @@ impl Band {
             Band::OppBox => 4,
         }
     }
-
 
     /// Read an absolute zone from `attacker`'s point of view.
     pub fn from_zone(zone: Zone, attacker: Side) -> Band {

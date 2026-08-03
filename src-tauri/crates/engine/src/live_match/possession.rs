@@ -17,8 +17,8 @@
 use rand::{Rng, RngExt};
 
 use crate::event::MatchEvent;
-use crate::sim::state::Band;
 use crate::shared::{tactics_break_speed_counter, tactics_counter_press_rewin};
+use crate::sim::state::Band;
 use crate::types::{Side, TacticsConfig};
 
 use super::LiveMatchState;
@@ -96,10 +96,8 @@ impl LiveMatchState {
             if self.possession != before {
                 self.resolve_transition(before, &own_tactics, &opponent_tactics, rng);
             }
-
         }
 
         events
     }
 }
-

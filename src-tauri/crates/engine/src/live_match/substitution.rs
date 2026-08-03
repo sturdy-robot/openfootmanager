@@ -63,10 +63,9 @@ impl LiveMatchState {
         // naturally play.
         player_on.position = player_off.position;
 
-        // Initialize condition for incoming player
-        self.player_conditions
-            .insert(player_on.id.clone(), player_on.condition as f64);
-
+        // The substitute takes over the vacated index outright — his id, his
+        // traits and his fresh legs all replace the man who went off.
+        self.cache_mut(side).replace(off_idx, &player_on);
         self.team_mut(side).players.insert(off_idx, player_on);
 
         // Move subbed-off player to bench (they can't come back, but we keep them)
@@ -135,10 +134,9 @@ impl LiveMatchState {
         // vacated index and adopt the slot's position instead.
         player_on.position = player_off.position;
 
-        // Initialize condition for incoming player
-        self.player_conditions
-            .insert(player_on.id.clone(), player_on.condition as f64);
-
+        // The substitute takes over the vacated index outright — his id, his
+        // traits and his fresh legs all replace the man who went off.
+        self.cache_mut(side).replace(off_idx, &player_on);
         self.team_mut(side).players.insert(off_idx, player_on);
 
         // Move swapped-out player to bench

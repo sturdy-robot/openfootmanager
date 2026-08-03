@@ -1,3 +1,4 @@
+use crate::sim::player_traits::TraitFlags;
 use crate::types::{
     BreakSpeed, CounterPressDuration, DefensiveLine, DefensiveShape, MarkingStyle, MatchConfig,
     PlayStyle, PlayerData, PlayerRole, PressingIntensity, Side, TacticsConfig,
@@ -10,9 +11,23 @@ use crate::types::{
 #[derive(Clone)]
 /// A copy of just the attributes the resolution code reads.
 ///
-/// Taken on every action, twice, so it carries what is used and nothing more.
+/// Taken on every action, twice, so it carries what is used and nothing more —
+/// and, as far as possible, nothing that has to be allocated. A match resolves
+/// somewhere around seven hundred actions, and this used to clone a `String`
+/// and a `Vec<String>` on each of the fourteen hundred selections that implies.
+///
+/// So the id is a shared handle rather than a copy of the text, the traits are
+/// a bitmask, and everything else is a `u8`. Cloning a snapshot is now a
+/// refcount bump and a memcpy of about thirty bytes.
 pub(crate) struct PlayerSnap {
-    pub id: String,
+    /// Shared with the squad rather than copied. `Arc`, not `Rc`: the live
+    /// match session is held behind a mutex and shared between the Tauri
+    /// command pool and the MCP server's runtime, so this has to stay `Send`.
+    pub id: std::sync::Arc<str>,
+    /// Which squad this player is in, and where in it — so condition can be a
+    /// slice index instead of hashing the id on every action.
+    pub side: Side,
+    pub index: usize,
     pub pace: u8,
     pub agility: u8,
     pub passing: u8,
@@ -29,14 +44,24 @@ pub(crate) struct PlayerSnap {
     pub handling: u8,
     pub reflexes: u8,
     pub aerial: u8,
-    pub traits: Vec<String>,
+    pub traits: TraitFlags,
     pub role: PlayerRole,
 }
 
 impl PlayerSnap {
-    pub fn from(p: &PlayerData) -> Self {
+    /// Snapshot a player whose id handle and trait mask were prepared when the
+    /// match was set up. See [`crate::live_match::SquadCache`].
+    pub fn from_cached(
+        p: &PlayerData,
+        id: std::sync::Arc<str>,
+        traits: TraitFlags,
+        side: Side,
+        index: usize,
+    ) -> Self {
         Self {
-            id: p.id.clone(),
+            id,
+            side,
+            index,
             pace: p.pace,
             agility: p.agility,
             passing: p.passing,
@@ -53,7 +78,7 @@ impl PlayerSnap {
             handling: p.handling,
             reflexes: p.reflexes,
             aerial: p.aerial,
-            traits: p.traits.clone(),
+            traits,
             role: p.role,
         }
     }
@@ -66,7 +91,9 @@ impl PlayerSnap {
     /// with an anonymous player instead.
     pub fn placeholder() -> Self {
         Self {
-            id: String::new(),
+            id: std::sync::Arc::from(""),
+            side: Side::Home,
+            index: usize::MAX,
             pace: 50,
             agility: 50,
             passing: 50,
@@ -83,13 +110,9 @@ impl PlayerSnap {
             handling: 50,
             reflexes: 50,
             aerial: 50,
-            traits: Vec::new(),
+            traits: TraitFlags::none(),
             role: PlayerRole::Standard,
         }
-    }
-
-    pub fn has_trait(&self, name: &str) -> bool {
-        self.traits.iter().any(|t| t == name)
     }
 }
 
@@ -113,65 +136,65 @@ pub(crate) fn trait_bonus(snap: &PlayerSnap, context: TraitContext) -> f64 {
     let mut bonus = 1.0;
     match context {
         TraitContext::Shooting => {
-            if snap.has_trait("Sharpshooter") {
+            if snap.traits.sharpshooter() {
                 bonus *= 1.08;
             }
-            if snap.has_trait("CoolHead") {
+            if snap.traits.cool_head() {
                 bonus *= 1.04;
             }
-            if snap.has_trait("CompleteForward") {
+            if snap.traits.complete_forward() {
                 bonus *= 1.05;
             }
         }
         TraitContext::Dribbling => {
-            if snap.has_trait("Dribbler") {
+            if snap.traits.dribbler() {
                 bonus *= 1.08;
             }
-            if snap.has_trait("Speedster") {
+            if snap.traits.speedster() {
                 bonus *= 1.04;
             }
-            if snap.has_trait("Agile") {
+            if snap.traits.agile() {
                 bonus *= 1.04;
             }
         }
         TraitContext::Passing => {
-            if snap.has_trait("Playmaker") {
+            if snap.traits.playmaker() {
                 bonus *= 1.08;
             }
-            if snap.has_trait("Visionary") {
+            if snap.traits.visionary() {
                 bonus *= 1.05;
             }
-            if snap.has_trait("SetPieceSpecialist") {
+            if snap.traits.set_piece_specialist() {
                 bonus *= 1.03;
             }
         }
         TraitContext::Tackling => {
-            if snap.has_trait("BallWinner") {
+            if snap.traits.ball_winner() {
                 bonus *= 1.08;
             }
-            if snap.has_trait("Rock") {
+            if snap.traits.rock() {
                 bonus *= 1.05;
             }
-            if snap.has_trait("Tank") {
+            if snap.traits.tank() {
                 bonus *= 1.04;
             }
         }
         TraitContext::Goalkeeping => {
-            if snap.has_trait("SafeHands") {
+            if snap.traits.safe_hands() {
                 bonus *= 1.08;
             }
-            if snap.has_trait("CatReflexes") {
+            if snap.traits.cat_reflexes() {
                 bonus *= 1.06;
             }
-            if snap.has_trait("AerialDominance") {
+            if snap.traits.aerial_dominance() {
                 bonus *= 1.04;
             }
         }
         TraitContext::Foul => {
-            if snap.has_trait("HotHead") {
+            if snap.traits.hot_head() {
                 bonus *= 1.25;
             }
-            if snap.has_trait("CoolHead") {
+            if snap.traits.cool_head() {
                 bonus *= 0.70;
             }
         }
@@ -279,7 +302,6 @@ pub(crate) fn tactics_foul_modifier(tactics: &TacticsConfig) -> f64 {
     press * marking
 }
 
-
 /// Shot conversion multiplier from the defending team's defensive line depth.
 /// High line = more space in behind = easier for attackers to score.
 pub(crate) fn tactics_defensive_conversion_mod(tactics: &TacticsConfig) -> f64 {
@@ -291,7 +313,6 @@ pub(crate) fn tactics_defensive_conversion_mod(tactics: &TacticsConfig) -> f64 {
     }
 }
 
-
 // --- Extended phase dials (tempo / shape / pressing-possession / transitions) ---
 //
 // These cover dimensions the original five dials don't touch. Each neutral
@@ -299,9 +320,6 @@ pub(crate) fn tactics_defensive_conversion_mod(tactics: &TacticsConfig) -> f64 {
 // team on its defaults leaves the simulation (and the RNG stream) unchanged.
 // build_up / width / def_line / marking are intentionally NOT re-hooked here:
 // they already have live effects above, and re-hooking would double-count.
-
-
-
 
 /// Pressing scales the effectiveness of the press that opposes the opponent's
 /// build-up (a higher press forces more build-up turnovers).
@@ -398,10 +416,7 @@ mod phase_modifier_tests {
         let passive = cfg(|c| c.pressing_intensity = PressingIntensity::Passive);
         let medium = cfg(|c| c.pressing_intensity = PressingIntensity::Medium);
         let aggressive = cfg(|c| c.pressing_intensity = PressingIntensity::Aggressive);
-        for f in [
-            tactics_pressing_press,
-            tactics_pressing_fatigue,
-        ] {
+        for f in [tactics_pressing_press, tactics_pressing_fatigue] {
             assert!(f(&passive) < f(&medium), "passive should be < medium");
             assert!(f(&medium) < f(&aggressive), "medium should be < aggressive");
             assert_eq!(f(&medium), 1.0, "medium must be neutral");
@@ -421,13 +436,28 @@ mod phase_modifier_tests {
     #[test]
     fn transition_dials_are_probabilities_with_neutral_zero() {
         // Counter-press: None rolls nothing; Long > Short > 0.
-        assert_eq!(tactics_counter_press_rewin(&cfg(|c| c.counter_press_duration = CounterPressDuration::None)), 0.0);
-        let short = tactics_counter_press_rewin(&cfg(|c| c.counter_press_duration = CounterPressDuration::Short));
-        let long = tactics_counter_press_rewin(&cfg(|c| c.counter_press_duration = CounterPressDuration::Long));
+        assert_eq!(
+            tactics_counter_press_rewin(&cfg(
+                |c| c.counter_press_duration = CounterPressDuration::None
+            )),
+            0.0
+        );
+        let short = tactics_counter_press_rewin(&cfg(|c| {
+            c.counter_press_duration = CounterPressDuration::Short
+        }));
+        let long = tactics_counter_press_rewin(&cfg(|c| {
+            c.counter_press_duration = CounterPressDuration::Long
+        }));
         assert!(0.0 < short && short < long && long < 1.0);
         // Break speed: only Fast rolls; Slow and Medium are no-ops.
-        assert_eq!(tactics_break_speed_counter(&cfg(|c| c.break_speed = BreakSpeed::Slow)), 0.0);
-        assert_eq!(tactics_break_speed_counter(&cfg(|c| c.break_speed = BreakSpeed::Medium)), 0.0);
+        assert_eq!(
+            tactics_break_speed_counter(&cfg(|c| c.break_speed = BreakSpeed::Slow)),
+            0.0
+        );
+        assert_eq!(
+            tactics_break_speed_counter(&cfg(|c| c.break_speed = BreakSpeed::Medium)),
+            0.0
+        );
         let fast = tactics_break_speed_counter(&cfg(|c| c.break_speed = BreakSpeed::Fast));
         assert!(0.0 < fast && fast < 1.0);
     }

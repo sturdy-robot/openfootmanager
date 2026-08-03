@@ -1880,8 +1880,20 @@ fn a_better_player_is_involved_more_than_a_weaker_one_in_the_same_role() {
         set(&mut home.players[forwards[0]], 92);
         set(&mut home.players[forwards[1]], 45);
     }
-    let good = home.players.iter().find(|p| p.shooting == 92).unwrap().id.clone();
-    let poor = home.players.iter().find(|p| p.shooting == 45).unwrap().id.clone();
+    let good = home
+        .players
+        .iter()
+        .find(|p| p.shooting == 92)
+        .unwrap()
+        .id
+        .clone();
+    let poor = home
+        .players
+        .iter()
+        .find(|p| p.shooting == 45)
+        .unwrap()
+        .id
+        .clone();
 
     let counts = involvement_by_player(home, away, 120);
     let good_touches = counts.get(&good).copied().unwrap_or(0);

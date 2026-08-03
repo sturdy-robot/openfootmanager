@@ -5,7 +5,9 @@ mod sweeps;
 mod targets;
 mod terminal;
 
+use std::alloc::{GlobalAlloc, Layout, System};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use clap::{Parser, ValueEnum};
@@ -16,6 +18,40 @@ use rand::rngs::StdRng;
 
 use builder::{build_team, build_team_with_tactics};
 use stats::BenchStats;
+
+/// An allocator that counts.
+///
+/// Heap traffic is the thing that has repeatedly cost this engine its speed —
+/// a `Vec` built per action, a `String` cloned per player, each invisible in a
+/// wall-clock number that only says "slower". Counting allocations turns a
+/// regression into a diagnosis: if the count per match jumped, the cause is a
+/// new allocation in the hot path and not the extra work you meant to add.
+///
+/// Only the benchmark binary installs this; the engine and the game are
+/// untouched. The counter is a relaxed atomic increment, so it perturbs the
+/// timing far less than it would cost to guess wrong about where the time went.
+struct CountingAllocator;
+
+static ALLOCATIONS: AtomicUsize = AtomicUsize::new(0);
+
+unsafe impl GlobalAlloc for CountingAllocator {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        ALLOCATIONS.fetch_add(1, Ordering::Relaxed);
+        unsafe { System.alloc(layout) }
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        unsafe { System.dealloc(ptr, layout) }
+    }
+
+    unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
+        ALLOCATIONS.fetch_add(1, Ordering::Relaxed);
+        unsafe { System.realloc(ptr, layout, new_size) }
+    }
+}
+
+#[global_allocator]
+static ALLOCATOR: CountingAllocator = CountingAllocator;
 
 #[derive(Parser)]
 #[command(
@@ -492,6 +528,9 @@ fn run_bench(config: &MatchConfig, games: u32, seed: Option<u64>) {
     eprintln!("Bench mode: {} games…", games);
 
     let mut times: Vec<std::time::Duration> = Vec::with_capacity(games as usize);
+    // Counted from after the `times` buffer is reserved, so the measurement is
+    // the simulation's own heap traffic and not the harness's.
+    let allocations_before = ALLOCATIONS.load(Ordering::Relaxed);
     for i in 0..games {
         let game_seed = base.wrapping_add(i as u64);
         let mut rng = StdRng::seed_from_u64(game_seed);
@@ -499,12 +538,20 @@ fn run_bench(config: &MatchConfig, games: u32, seed: Option<u64>) {
         let _ = simulate_with_rng(&home, &away, config, &mut rng);
         times.push(t.elapsed());
     }
+    let allocations = ALLOCATIONS.load(Ordering::Relaxed) - allocations_before;
 
     let total: std::time::Duration = times.iter().sum();
     let total_secs = total.as_secs_f64();
     let gps = games as f64 / total_secs;
 
     times.sort();
+    // The fastest match is the honest one to compare across runs. Everything
+    // above it includes whatever else the machine was doing — a compile in
+    // another terminal moves p50 by half a millisecond and looks exactly like a
+    // regression. The minimum is the closest this can get to the cost of the
+    // simulation itself, so it is what a before/after comparison should quote;
+    // the percentiles still say what a loaded machine actually delivers.
+    let min = times[0];
     let p50 = times[games as usize / 2];
     let p95 = times[(games as f64 * 0.95) as usize];
     let p99 = times[(games as f64 * 0.99) as usize];
@@ -516,9 +563,11 @@ fn run_bench(config: &MatchConfig, games: u32, seed: Option<u64>) {
     println!("  Games simulated : {games}");
     println!("  Total time      : {total_secs:.3}s");
     println!("  Throughput      : {gps:.0} games/sec");
+    println!("  Latency min     : {}µs  ← compare this one", min.as_micros());
     println!("  Latency p50     : {}µs", p50.as_micros());
     println!("  Latency p95     : {}µs", p95.as_micros());
     println!("  Latency p99     : {}µs", p99.as_micros());
+    println!("  Allocations     : {} per match", allocations / games as usize);
     println!("{}", sep.bright_cyan());
 }
 

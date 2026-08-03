@@ -20,7 +20,6 @@
 use crate::sim::state::Band;
 use crate::types::{PlayerRole, Position, Slot};
 
-
 /// Where each position naturally plays, before any role adjustment.
 ///
 /// Deliberately non-zero almost everywhere: a defender does get forward, a
@@ -51,20 +50,20 @@ fn position_occupancy(position: Position) -> [f32; 5] {
 fn slot_occupancy(slot: Slot) -> [f32; 5] {
     match slot {
         //                          OwnBox OwnThird Middle Final OppBox
-        Slot::Goalkeeper           => [1.00, 0.18, 0.01, 0.00, 0.00],
-        Slot::CenterBack           => [1.00, 1.00, 0.40, 0.10, 0.16],
-        Slot::RightBack            => [0.85, 1.00, 0.65, 0.30, 0.10],
-        Slot::LeftBack             => [0.85, 1.00, 0.65, 0.30, 0.10],
-        Slot::RightWingBack        => [0.60, 0.90, 0.85, 0.55, 0.15],
-        Slot::LeftWingBack         => [0.60, 0.90, 0.85, 0.55, 0.15],
-        Slot::DefensiveMidfielder  => [0.55, 1.00, 1.00, 0.30, 0.08],
-        Slot::CentralMidfielder    => [0.30, 0.75, 1.00, 0.75, 0.40],
-        Slot::AttackingMidfielder  => [0.10, 0.35, 0.85, 1.00, 0.72],
-        Slot::RightMidfielder      => [0.25, 0.65, 1.00, 0.80, 0.34],
-        Slot::LeftMidfielder       => [0.25, 0.65, 1.00, 0.80, 0.34],
-        Slot::RightWinger          => [0.06, 0.20, 0.60, 1.00, 0.70],
-        Slot::LeftWinger           => [0.06, 0.20, 0.60, 1.00, 0.70],
-        Slot::Striker              => [0.03, 0.12, 0.45, 0.95, 1.00],
+        Slot::Goalkeeper => [1.00, 0.18, 0.01, 0.00, 0.00],
+        Slot::CenterBack => [1.00, 1.00, 0.40, 0.10, 0.16],
+        Slot::RightBack => [0.85, 1.00, 0.65, 0.30, 0.10],
+        Slot::LeftBack => [0.85, 1.00, 0.65, 0.30, 0.10],
+        Slot::RightWingBack => [0.60, 0.90, 0.85, 0.55, 0.15],
+        Slot::LeftWingBack => [0.60, 0.90, 0.85, 0.55, 0.15],
+        Slot::DefensiveMidfielder => [0.55, 1.00, 1.00, 0.30, 0.08],
+        Slot::CentralMidfielder => [0.30, 0.75, 1.00, 0.75, 0.40],
+        Slot::AttackingMidfielder => [0.10, 0.35, 0.85, 1.00, 0.72],
+        Slot::RightMidfielder => [0.25, 0.65, 1.00, 0.80, 0.34],
+        Slot::LeftMidfielder => [0.25, 0.65, 1.00, 0.80, 0.34],
+        Slot::RightWinger => [0.06, 0.20, 0.60, 1.00, 0.70],
+        Slot::LeftWinger => [0.06, 0.20, 0.60, 1.00, 0.70],
+        Slot::Striker => [0.03, 0.12, 0.45, 0.95, 1.00],
     }
 }
 
@@ -135,18 +134,12 @@ fn role_shape(role: PlayerRole) -> ([f32; 5], f32, f32) {
     }
 }
 
-
 /// Relative likelihood of this player being the one on the ball in `band`.
 ///
 /// Reads a single band rather than building the whole profile: this runs for
 /// every player on both sides, twice per action, hundreds of times a match.
 #[inline]
-pub fn on_ball_weight(
-    position: Position,
-    slot: Option<Slot>,
-    role: PlayerRole,
-    band: Band,
-) -> f64 {
+pub fn on_ball_weight(position: Position, slot: Option<Slot>, role: PlayerRole, band: Band) -> f64 {
     let index = band.index();
     let (shape, involvement, _) = role_shape(role);
     (placement(position, slot)[index] * shape[index] * involvement) as f64
@@ -204,7 +197,10 @@ mod tests {
         // having attempted no pass, because they were never selectable in
         // build-up or midfield.
         let weight = on_ball_weight(Position::Forward, None, PlayerRole::Standard, Band::Middle);
-        assert!(weight > 0.0, "a forward must be able to touch the ball in midfield");
+        assert!(
+            weight > 0.0,
+            "a forward must be able to touch the ball in midfield"
+        );
     }
 
     #[test]
@@ -230,8 +226,16 @@ mod tests {
 
     #[test]
     fn a_ball_winner_contests_more_than_a_playmaker() {
-        let winner = off_ball_weight(Position::Midfielder, None, PlayerRole::BallWinner, Band::Middle);
-        let playmaker = off_ball_weight(Position::Midfielder, None, PlayerRole::AdvancedPlaymaker,
+        let winner = off_ball_weight(
+            Position::Midfielder,
+            None,
+            PlayerRole::BallWinner,
+            Band::Middle,
+        );
+        let playmaker = off_ball_weight(
+            Position::Midfielder,
+            None,
+            PlayerRole::AdvancedPlaymaker,
             Band::Middle,
         );
         assert!(winner > playmaker, "{winner} vs {playmaker}");
@@ -294,7 +298,6 @@ mod tests {
         );
         assert!(wing_back > centre_half, "{wing_back} vs {centre_half}");
     }
-
 
     const ALL_ROLES: [PlayerRole; 27] = [
         PlayerRole::Standard,

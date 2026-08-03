@@ -14,8 +14,8 @@
 //! divergence meant the league table was produced by different football than
 //! the match in front of them.
 
-use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 
 use crate::ai;
 use crate::live_match::LiveMatchState;

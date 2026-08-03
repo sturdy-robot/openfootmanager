@@ -114,7 +114,11 @@ fn team(id: &str, rating: u8) -> (TeamData, Vec<PlayerData>) {
         ));
     }
 
-    let mut bench = vec![player(&format!("{id}-bgk"), Position::Goalkeeper, rating - 5)];
+    let mut bench = vec![player(
+        &format!("{id}-bgk"),
+        Position::Goalkeeper,
+        rating - 5,
+    )];
     for index in 0..2 {
         bench.push(player(
             &format!("{id}-bd{index}"),
@@ -151,8 +155,8 @@ fn team(id: &str, rating: u8) -> (TeamData, Vec<PlayerData>) {
 fn setup(allows_extra_time: bool) -> MatchSetup {
     let (home, home_bench) = team("home", 70);
     let (away, away_bench) = team("away", 70);
-    let mut setup = MatchSetup::league(home, away, MatchConfig::default())
-        .with_benches(home_bench, away_bench);
+    let mut setup =
+        MatchSetup::league(home, away, MatchConfig::default()).with_benches(home_bench, away_bench);
     setup.allows_extra_time = allows_extra_time;
     setup
 }
@@ -368,4 +372,3 @@ fn ratings_spread_across_the_scale() {
         "nobody ever has a good game, so the morale reward is unreachable"
     );
 }
-
