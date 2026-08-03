@@ -100,6 +100,57 @@ fn dormant_competition_indices_due_today(game: &Game, today: &str) -> Vec<usize>
         .collect()
 }
 
+
+/// How many competitions get the full match engine on a single day.
+///
+/// A world with no configured scope treats *every* competition as active — see
+/// `Game::competition_in_active_scope`, where empty scope sets mean "everything
+/// is active" so that older saves keep behaving as they did. On a large world
+/// that means the full engine runs on every fixture in existence, and the
+/// engine is now a good deal richer than the one that rule was written for.
+///
+/// So the day is bounded. The competitions the player's own club plays in
+/// always get the full treatment; whatever is left over falls back to the
+/// scoreline model the dormant tier already uses, which is what out-of-scope
+/// competitions have always got.
+const MAX_FULL_ENGINE_COMPETITIONS_PER_DAY: usize = 8;
+
+/// Split the day's competitions into those worth simulating in full and those
+/// to resolve by scoreline, keeping the player's own football in the first
+/// group.
+fn cap_full_engine_competitions(game: &Game, due: Vec<usize>) -> (Vec<usize>, Vec<usize>) {
+    if due.len() <= MAX_FULL_ENGINE_COMPETITIONS_PER_DAY {
+        return (due, Vec::new());
+    }
+
+    let team_id = game.manager.team_id.as_deref();
+    let involves_user = |index: &usize| -> bool {
+        let Some(team_id) = team_id else {
+            return false;
+        };
+        game.competitions
+            .get(*index)
+            .is_some_and(|competition| {
+                competition
+                    .standings
+                    .iter()
+                    .any(|entry| entry.team_id == team_id)
+            })
+    };
+
+    let mut ordered = due;
+    // The player's competitions first, then by the competition's own priority.
+    ordered.sort_by_key(|index| {
+        let priority = game
+            .competitions
+            .get(*index)
+            .map_or(u32::MAX, |competition| competition.priority);
+        (!involves_user(index), priority)
+    });
+    let overflow = ordered.split_off(MAX_FULL_ENGINE_COMPETITIONS_PER_DAY);
+    (ordered, overflow)
+}
+
 fn simulate_competition_day_with_capture<F>(
     game: &mut Game,
     competition_index: usize,
@@ -135,7 +186,8 @@ where
     transfers::process_loan_development_reports(game);
     transfers::process_loan_returns(game);
 
-    let due_competitions = competition_indices_due_today(game, &today);
+    let (due_competitions, overflow_competitions) =
+        cap_full_engine_competitions(game, competition_indices_due_today(game, &today));
     let has_match_today = !due_competitions.is_empty();
 
     if has_match_today {
@@ -152,7 +204,9 @@ where
 
     // Tiered simulation: competitions outside the active scope are resolved by
     // scoreline only, keeping the dormant world moving without the full engine.
-    let dormant_competitions = dormant_competition_indices_due_today(game, &today);
+    // Anything the day's cap pushed out joins them.
+    let mut dormant_competitions = dormant_competition_indices_due_today(game, &today);
+    dormant_competitions.extend(overflow_competitions);
     if !dormant_competitions.is_empty() {
         let mut rng = rand::rng();
         for competition_index in dormant_competitions {

@@ -215,7 +215,10 @@ impl LiveMatchState {
             .rev()
             .find(|(index, _)| weights[*index] > 0.0)
             .map(|(_, player)| player)
-            .unwrap_or(&team.players[0]);
+            .or(team.players.first());
+        let Some(last) = last else {
+            return PlayerSnap::placeholder();
+        };
         PlayerSnap::from(last)
     }
 
@@ -296,7 +299,8 @@ impl LiveMatchState {
             team.players.iter().filter(|player| eligible(player)).count()
         };
         if pool_size == 0 {
-            return PlayerSnap::from(&team.players[0]);
+            // Nobody available at all — see `PlayerSnap::placeholder`.
+            return PlayerSnap::placeholder();
         }
 
         let index = rng.random_range(0..pool_size);
@@ -310,7 +314,7 @@ impl LiveMatchState {
         };
         match chosen {
             Some(player) => PlayerSnap::from(player),
-            None => PlayerSnap::from(&team.players[0]),
+            None => PlayerSnap::placeholder(),
         }
     }
 
@@ -319,7 +323,7 @@ impl LiveMatchState {
         if let Some(p) = team.players.iter().find(|p| p.id == player_id) {
             PlayerSnap::from(p)
         } else {
-            PlayerSnap::from(&team.players[0])
+            PlayerSnap::placeholder()
         }
     }
 
@@ -363,7 +367,7 @@ impl LiveMatchState {
                 return PlayerSnap::from(p);
             }
         }
-        PlayerSnap::from(&team.players[0])
+        PlayerSnap::placeholder()
     }
 
     // -----------------------------------------------------------------------

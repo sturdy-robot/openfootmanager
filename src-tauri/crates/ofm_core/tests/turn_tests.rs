@@ -2105,3 +2105,62 @@ fn league_fixtures_are_managed_from_the_dugout() {
          dugouts are not being applied"
     );
 }
+
+#[test]
+fn a_crowded_day_still_simulates_the_user_club_in_full() {
+    // A world with no configured scope treats every competition as active, so
+    // a large world would run the full engine on every fixture in existence.
+    // The day is capped — but the player's own football must never be the part
+    // that gets dropped to a scoreline.
+    let mut game = make_game_with_match();
+    let today = game.clock.current_date.format("%Y-%m-%d").to_string();
+
+    // The user's competition sits last and lowest-priority, so only the
+    // deliberate ordering can save it.
+    let mut user_competition = game.league.clone().unwrap();
+    user_competition.id = "user-league".to_string();
+    user_competition.priority = 99;
+
+    let mut competitions = Vec::new();
+    for index in 0..20 {
+        let mut filler = user_competition.clone();
+        filler.id = format!("filler-{index}");
+        filler.priority = 0;
+        filler.standings = vec![
+            StandingEntry::new(format!("other-a-{index}")),
+            StandingEntry::new(format!("other-b-{index}")),
+        ];
+        for fixture in filler.fixtures.iter_mut() {
+            fixture.id = format!("filler-fix-{index}");
+            fixture.home_team_id = format!("other-a-{index}");
+            fixture.away_team_id = format!("other-b-{index}");
+        }
+        competitions.push(filler);
+    }
+    competitions.push(user_competition);
+    game.competitions = competitions;
+
+    turn::process_day(&mut game);
+
+    let user_competition = game
+        .competitions
+        .iter()
+        .find(|competition| competition.id == "user-league")
+        .expect("the user's competition should still exist");
+    let fixture = &user_competition.fixtures[0];
+    assert_eq!(
+        fixture.status,
+        FixtureStatus::Completed,
+        "the user's fixture was not played"
+    );
+    assert!(
+        fixture
+            .result
+            .as_ref()
+            .and_then(|result| result.report.as_ref())
+            .is_some_and(|report| !report.events.is_empty()),
+        "the user's own match was resolved by scoreline instead of the full \
+         engine — the day's cap dropped the wrong competition"
+    );
+    let _ = today;
+}

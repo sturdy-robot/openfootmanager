@@ -59,6 +59,36 @@ impl PlayerSnap {
         }
     }
 
+    /// A featureless stand-in for a side with nobody available.
+    ///
+    /// A club with an empty squad should not be possible, but a malformed
+    /// world or a package with an empty club can produce one, and indexing
+    /// into the squad took the whole turn down with it. The match plays out
+    /// with an anonymous player instead.
+    pub fn placeholder() -> Self {
+        Self {
+            id: String::new(),
+            pace: 50,
+            agility: 50,
+            passing: 50,
+            shooting: 50,
+            tackling: 50,
+            dribbling: 50,
+            defending: 50,
+            positioning: 50,
+            vision: 50,
+            decisions: 50,
+            composure: 50,
+            aggression: 50,
+            teamwork: 50,
+            handling: 50,
+            reflexes: 50,
+            aerial: 50,
+            traits: Vec::new(),
+            role: PlayerRole::Standard,
+        }
+    }
+
     pub fn has_trait(&self, name: &str) -> bool {
         self.traits.iter().any(|t| t == name)
     }
