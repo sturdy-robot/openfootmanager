@@ -485,7 +485,17 @@ fn home_advantage_helps() {
         ..MatchConfig::default()
     };
 
-    let trials = 200;
+    // Three thousand, and it needs every one of them. Feeding the same seed to
+    // both configurations looks like a paired comparison, but home advantage
+    // shifts a probability, so the very first draw that lands between the two
+    // thresholds sends the two matches down different paths and consumes a
+    // different number of draws from then on. The pairing is gone after one
+    // action, leaving two independent samples — and at two hundred trials the
+    // noise was wider than the effect, so the assertion held or failed
+    // essentially at random. The effect itself is large and monotonic: at four
+    // thousand matches the bench reports 48.4% home wins at 1.0, 53.8% at 1.08
+    // and 64.7% at 1.25.
+    let trials = 3000;
     let mut home_wins_with = 0u32;
     let mut home_wins_without = 0u32;
 

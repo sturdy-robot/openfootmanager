@@ -380,7 +380,7 @@ impl Default for MatchConfig {
             // now puts its best finisher on the end of a chance rather than a
             // random forward, and its actual keeper in goal, so the same base
             // produced a markedly higher conversion rate.
-            goal_conversion_base: 0.235,
+            goal_conversion_base: 0.222,
             fatigue_per_minute: 0.20,
             foul_probability: 0.175,
             yellow_card_probability: 0.11,

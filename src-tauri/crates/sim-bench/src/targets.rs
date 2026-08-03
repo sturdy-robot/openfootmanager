@@ -255,15 +255,15 @@ pub fn all() -> Vec<Target> {
 /// gets ignored; a target quietly moved to match the engine stops meaning
 /// anything. Remove entries here as the engine is recalibrated — the run fails
 /// if a listed target starts passing, so this list cannot go stale.
-pub const KNOWN_FAILING: &[(&str, &str)] = &[
-    (
-        "Goals/game",
-        "engine overproduces goals; conversion is recalibrated in the possession-chain work",
-    ),
-    ("Clean sheets (home)", "follows from goals/game being high"),
-    ("Clean sheets (away)", "follows from goals/game being high"),
-    ("Both teams scored", "follows from goals/game being high"),
-];
+pub const KNOWN_FAILING: &[(&str, &str)] = &[(
+    "Both teams scored",
+    "unreachable with an evenly matched fixture, and not an engine fault. Two \
+     identical sides scoring independently at the measured rate give about \
+     56% by arithmetic alone, which is what the engine produces. Real \
+     football's 50-55% comes from a league containing mismatches: running this \
+     bench at 78-v-62 gives 46% and at 84-v-56 gives 28%. Closing it means \
+     benching a distribution of fixtures rather than one repeated pairing",
+)];
 
 fn known_failure_reason(label: &str) -> Option<&'static str> {
     KNOWN_FAILING

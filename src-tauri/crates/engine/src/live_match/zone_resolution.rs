@@ -72,6 +72,84 @@ impl PassKind {
     }
 }
 
+/// How a shot came about — which is what decides how good a chance it was.
+///
+/// Every shot used to be resolved as though it were struck inside the six-yard
+/// box: `resolve_shot` never saw where play actually was, and pinned the event
+/// to the penalty area regardless. A hopeful effort from the halfway line and a
+/// tap-in were the same two rolls with the same two probabilities, and the only
+/// thing separating them was who happened to be shooting.
+///
+/// Where a shot is taken from is the single biggest thing football knows about
+/// a chance. It is also what an expected-goals number is mostly made of, so
+/// without this distinction xG could only ever be shots multiplied by a
+/// constant — which is the fake it was already.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum ShotOrigin {
+    /// Inside the penalty area, in open play.
+    InsideBox,
+    /// From around the edge of the area.
+    EdgeOfBox,
+    /// From distance. Mostly ends up in the stand.
+    LongRange,
+    /// Meeting a cross — a header or a first-time finish, struck under no
+    /// control over the ball's pace or height.
+    FromCross,
+    /// A set piece swung into a crowded box.
+    SetPiece,
+}
+
+impl ShotOrigin {
+    /// Where play was when the shot was struck.
+    fn from_band(band: Band) -> Self {
+        match band {
+            Band::OppBox => ShotOrigin::InsideBox,
+            Band::FinalThird => ShotOrigin::EdgeOfBox,
+            // The action model gives shooting from your own half a weight of
+            // zero, so this is midfield in practice.
+            _ => ShotOrigin::LongRange,
+        }
+    }
+
+    /// How much this chance flatters or spoils a shot, as multipliers on the
+    /// chance of hitting the target and of beating the keeper once it is on it.
+    ///
+    /// Anchored on the real game: shots from inside the box go in around seven
+    /// times as often as shots from outside it, and a header off a cross is
+    /// worth a little less than the same position struck with the foot.
+    fn chance_quality(self) -> (f64, f64) {
+        match self {
+            //                      accuracy  conversion
+            ShotOrigin::InsideBox => (1.00, 1.00),
+            ShotOrigin::EdgeOfBox => (0.86, 0.40),
+            ShotOrigin::LongRange => (0.66, 0.16),
+            ShotOrigin::FromCross => (0.92, 0.80),
+            ShotOrigin::SetPiece => (0.88, 0.80),
+        }
+    }
+
+    /// Whether a foul on this shot can be a penalty.
+    ///
+    /// Only in the box. A defender clattering someone thirty yards out concedes
+    /// a free kick, and the engine used to award a spot kick for it because
+    /// every shot was nominally a box shot.
+    fn is_in_the_box(self) -> bool {
+        matches!(
+            self,
+            ShotOrigin::InsideBox | ShotOrigin::FromCross | ShotOrigin::SetPiece
+        )
+    }
+
+    /// Where the shot is recorded as having been taken.
+    fn zone(self, att_side: Side, band: Band) -> Zone {
+        if self.is_in_the_box() {
+            Zone::attacking_box(att_side)
+        } else {
+            band.to_zone(att_side)
+        }
+    }
+}
+
 impl LiveMatchState {
     pub(super) fn resolve_action<R: Rng + ?Sized>(
         &mut self,
@@ -126,7 +204,9 @@ impl LiveMatchState {
             Action::Carry => self.resolve_carry(minute, att_side, def_side, band, &actor, rng),
             Action::TakeOn => self.resolve_take_on(minute, att_side, def_side, band, &actor, rng),
             Action::Cross => self.resolve_cross(minute, att_side, def_side, band, &actor, rng),
-            Action::Shot => self.resolve_shot(minute, att_side, rng),
+            Action::Shot => {
+                self.resolve_shot(minute, att_side, ShotOrigin::from_band(band), band, rng)
+            }
         }
     }
 
@@ -134,14 +214,22 @@ impl LiveMatchState {
         &mut self,
         minute: u8,
         att_side: Side,
+        origin: ShotOrigin,
+        band: Band,
         rng: &mut R,
     ) -> Vec<MatchEvent> {
         let mut events = Vec::new();
         let def_side = att_side.opposite();
-        let zone = Zone::attacking_box(att_side);
+        let zone = origin.zone(att_side, band);
+        let (accuracy_quality, conversion_quality) = origin.chance_quality();
 
-        // Box foul rate fixed at 3.6% per shot — independent of foul_probability (which tunes outfield fouls)
-        if rng.random_range(0.0..1.0f64) < 0.036 {
+        // Box foul rate fixed at 3.6% per shot — independent of
+        // foul_probability, which tunes outfield fouls. The roll is made either
+        // way and only then gated on the shot actually being in the box: a
+        // defender fouling someone thirty yards out gives away a free kick, not
+        // a penalty.
+        let foul_roll = rng.random_range(0.0..1.0f64);
+        if origin.is_in_the_box() && foul_roll < 0.036 {
             let fouler = self.pick_actor(def_side, Band::OwnBox, Need::Defend, rng);
             let fouled = self.pick_actor(att_side, Band::OppBox, Need::Shoot, rng);
             let foul_evt = MatchEvent::new(minute, EventType::Foul, def_side, zone)
@@ -185,8 +273,12 @@ impl LiveMatchState {
         let gk_rating = self.condition_adjusted_skill(&goalkeeper, gk_raw)
             * trait_bonus(&goalkeeper, TraitContext::Goalkeeping);
 
-        let accuracy =
-            (self.config.shot_accuracy_base + (shoot_rating - 50.0) / 200.0).clamp(0.15, 0.85);
+        // Chance quality scales the finisher's own accuracy rather than
+        // replacing it, so a good striker is still a good striker from range —
+        // just not as good as he is six yards out.
+        let accuracy = ((self.config.shot_accuracy_base + (shoot_rating - 50.0) / 200.0)
+            * accuracy_quality)
+            .clamp(0.05, 0.85);
 
         if rng.random_range(0.0..1.0f64) > accuracy {
             let detail = EventDetail::Shot {
@@ -206,19 +298,31 @@ impl LiveMatchState {
                     .with_detail(detail);
                 self.events.push(evt.clone());
                 events.push(evt);
-                let gk_evt = MatchEvent::new(minute, EventType::GoalKick, def_side, zone);
-                self.events.push(gk_evt.clone());
-                events.push(gk_evt);
-                self.ball_zone = Zone::defensive_third(def_side);
-                self.possession = def_side;
+                // Not every miss is a goal kick. A shot that misses often does
+                // so off a defender's boot on the way past, and goes behind for
+                // a corner instead.
+                if rng.random_range(0.0..1.0f64) < 0.07 {
+                    let corner_evt = MatchEvent::new(minute, EventType::Corner, att_side, zone);
+                    self.events.push(corner_evt.clone());
+                    events.push(corner_evt);
+                    self.possession = att_side;
+                    self.ball_zone = Zone::attacking_box(att_side);
+                } else {
+                    let gk_evt = MatchEvent::new(minute, EventType::GoalKick, def_side, zone);
+                    self.events.push(gk_evt.clone());
+                    events.push(gk_evt);
+                    self.ball_zone = Zone::defensive_third(def_side);
+                    self.possession = def_side;
+                }
             }
             return events;
         }
 
         let def_line_mod = tactics_defensive_conversion_mod(&self.team_ref(def_side).tactics);
-        let conversion = (self.config.goal_conversion_base * def_line_mod
+        let conversion = ((self.config.goal_conversion_base * def_line_mod
             + (shoot_rating - gk_rating) / 150.0)
-            .clamp(0.10, 0.70);
+            * conversion_quality)
+            .clamp(0.02, 0.70);
 
         if rng.random_range(0.0..1.0f64) < conversion {
             let context = self.goal_context(att_side);
@@ -459,14 +563,20 @@ impl LiveMatchState {
             self.possession = att_side;
             self.ball_zone = zone;
             if matches!(band, Band::FinalThird | Band::OppBox)
-                && rng.random_range(0.0..1.0f64) < 0.72
+                && rng.random_range(0.0..1.0f64) < 0.92
             {
                 // A free kick in a dangerous area is delivered and attacked
                 // there and then. Merely moving the ball into the box left set
                 // pieces producing almost no goals, because play usually
                 // recycled before anyone had a shot.
                 self.ball_zone = Band::OppBox.to_zone(att_side);
-                events.extend(self.resolve_shot(minute, att_side, rng));
+                events.extend(self.resolve_shot(
+                    minute,
+                    att_side,
+                    ShotOrigin::SetPiece,
+                    Band::OppBox,
+                    rng,
+                ));
             }
             return events;
         }
@@ -520,7 +630,13 @@ impl LiveMatchState {
         const CROSS_FINDS_A_MAN: f64 = 0.30;
         if rng.random_range(0.0..1.0f64) < attacking / (attacking + defending) * CROSS_FINDS_A_MAN {
             self.ball_zone = Band::OppBox.to_zone(att_side);
-            events.extend(self.resolve_shot(minute, att_side, rng));
+            events.extend(self.resolve_shot(
+                minute,
+                att_side,
+                ShotOrigin::FromCross,
+                Band::OppBox,
+                rng,
+            ));
         } else {
             let clearance = MatchEvent::new(minute, EventType::Clearance, def_side, zone)
                 .with_player(defender.id.clone());
@@ -791,5 +907,73 @@ mod event_detail_tests {
             saw_any_goal,
             "No goal was scored in 500 seeds; increase seed range or check engine config"
         );
+    }
+}
+
+#[cfg(test)]
+mod shot_origin_tests {
+    use super::*;
+
+    /// The whole point of the distinction: a shot from distance is a worse
+    /// chance than a shot from six yards. Before this existed, both resolved
+    /// with identical probabilities and the only thing separating them was who
+    /// happened to be shooting.
+    #[test]
+    fn a_chance_gets_worse_the_further_out_it_is() {
+        let expected = |origin: ShotOrigin| {
+            let (accuracy, conversion) = origin.chance_quality();
+            accuracy * conversion
+        };
+
+        assert!(expected(ShotOrigin::InsideBox) > expected(ShotOrigin::EdgeOfBox));
+        assert!(expected(ShotOrigin::EdgeOfBox) > expected(ShotOrigin::LongRange));
+    }
+
+    /// Anchored on the real game, where shots from inside the area go in
+    /// several times as often as shots from outside it. A ratio near 1 would
+    /// mean the distinction exists in the type system and nowhere else.
+    #[test]
+    fn distance_matters_by_roughly_as_much_as_it_does_in_football() {
+        let value = |origin: ShotOrigin| {
+            let (accuracy, conversion) = origin.chance_quality();
+            accuracy * conversion
+        };
+        let ratio = value(ShotOrigin::InsideBox) / value(ShotOrigin::LongRange);
+        assert!(
+            (5.0..14.0).contains(&ratio),
+            "a box chance is worth {ratio:.1}x a long-range one, which is not \
+             the sort of number football produces"
+        );
+    }
+
+    #[test]
+    fn only_a_shot_in_the_box_can_win_a_penalty() {
+        assert!(ShotOrigin::InsideBox.is_in_the_box());
+        assert!(ShotOrigin::FromCross.is_in_the_box());
+        assert!(ShotOrigin::SetPiece.is_in_the_box());
+        // A defender clattering someone thirty yards out concedes a free kick.
+        assert!(!ShotOrigin::EdgeOfBox.is_in_the_box());
+        assert!(!ShotOrigin::LongRange.is_in_the_box());
+    }
+
+    /// A long-range effort logged in the penalty area would misreport where
+    /// chances come from and give the commentary the wrong picture.
+    #[test]
+    fn a_shot_is_recorded_where_it_was_struck() {
+        let long_range = ShotOrigin::LongRange.zone(Side::Home, Band::Middle);
+        assert_ne!(long_range, Zone::attacking_box(Side::Home));
+
+        let in_the_box = ShotOrigin::InsideBox.zone(Side::Home, Band::OppBox);
+        assert_eq!(in_the_box, Zone::attacking_box(Side::Home));
+    }
+
+    #[test]
+    fn where_play_is_decides_the_kind_of_chance() {
+        assert_eq!(ShotOrigin::from_band(Band::OppBox), ShotOrigin::InsideBox);
+        assert_eq!(
+            ShotOrigin::from_band(Band::FinalThird),
+            ShotOrigin::EdgeOfBox
+        );
+        assert_eq!(ShotOrigin::from_band(Band::Middle), ShotOrigin::LongRange);
     }
 }
