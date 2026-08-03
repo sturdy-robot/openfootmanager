@@ -45,8 +45,10 @@ fn compact_match_report(report: &engine::MatchReport) -> CompactMatchReport {
             minute: event.minute,
             event_type: format!("{:?}", event.event_type),
             side: format!("{:?}", event.side),
-            player_id: event.player_id.clone(),
-            secondary_player_id: event.secondary_player_id.clone(),
+            // The compact log is what a save keeps forever, so it owns its
+            // ids rather than sharing the engine's handles.
+            player_id: event.player_id.as_deref().map(str::to_string),
+            secondary_player_id: event.secondary_player_id.as_deref().map(str::to_string),
         })
         .collect();
 

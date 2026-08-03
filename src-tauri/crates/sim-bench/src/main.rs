@@ -12,9 +12,9 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use clap::{Parser, ValueEnum};
 use colored::Colorize;
-use engine::{MatchConfig, PlayStyle, simulate_with_rng};
-use rand::SeedableRng;
+use engine::{simulate_with_rng, MatchConfig, PlayStyle};
 use rand::rngs::StdRng;
+use rand::SeedableRng;
 
 use builder::{build_team, build_team_with_tactics};
 use stats::BenchStats;
@@ -247,7 +247,11 @@ fn main() {
     }
 
     let Some(active_engine) = engine_by_id(&cli.engine) else {
-        eprintln!("Unknown engine {:?}. Known: {}", cli.engine, engine::DEFAULT_ENGINE_ID);
+        eprintln!(
+            "Unknown engine {:?}. Known: {}",
+            cli.engine,
+            engine::DEFAULT_ENGINE_ID
+        );
         std::process::exit(2);
     };
 
@@ -441,7 +445,11 @@ fn run_compliance(active: &dyn engine::InstantEngine, config: &MatchConfig, cli:
         report.matches_checked
     );
     for (invariant, violations) in &grouped {
-        println!("\n  {} — {} violation(s)", invariant.name().bold(), violations.len());
+        println!(
+            "\n  {} — {} violation(s)",
+            invariant.name().bold(),
+            violations.len()
+        );
         for violation in violations.iter().take(5) {
             println!("    {}", violation.detail);
         }
@@ -528,6 +536,7 @@ fn run_bench(config: &MatchConfig, games: u32, seed: Option<u64>) {
     eprintln!("Bench mode: {} games…", games);
 
     let mut times: Vec<std::time::Duration> = Vec::with_capacity(games as usize);
+    let mut events = 0usize;
     // Counted from after the `times` buffer is reserved, so the measurement is
     // the simulation's own heap traffic and not the harness's.
     let allocations_before = ALLOCATIONS.load(Ordering::Relaxed);
@@ -535,8 +544,9 @@ fn run_bench(config: &MatchConfig, games: u32, seed: Option<u64>) {
         let game_seed = base.wrapping_add(i as u64);
         let mut rng = StdRng::seed_from_u64(game_seed);
         let t = Instant::now();
-        let _ = simulate_with_rng(&home, &away, config, &mut rng);
+        let report = simulate_with_rng(&home, &away, config, &mut rng);
         times.push(t.elapsed());
+        events += report.events.len();
     }
     let allocations = ALLOCATIONS.load(Ordering::Relaxed) - allocations_before;
 
@@ -563,11 +573,27 @@ fn run_bench(config: &MatchConfig, games: u32, seed: Option<u64>) {
     println!("  Games simulated : {games}");
     println!("  Total time      : {total_secs:.3}s");
     println!("  Throughput      : {gps:.0} games/sec");
-    println!("  Latency min     : {}µs  ← compare this one", min.as_micros());
+    println!(
+        "  Latency min     : {}µs  ← compare this one",
+        min.as_micros()
+    );
     println!("  Latency p50     : {}µs", p50.as_micros());
     println!("  Latency p95     : {}µs", p95.as_micros());
     println!("  Latency p99     : {}µs", p99.as_micros());
-    println!("  Allocations     : {} per match", allocations / games as usize);
+    // Event volume is what the per-match cost has to be read against: this
+    // engine resolves several times as many actions as the one it replaced, so
+    // a higher total with a lower cost per event is a faster engine, not a
+    // slower one.
+    let events_per_match = events / games as usize;
+    println!("  Events          : {events_per_match} per match");
+    println!(
+        "  Allocations     : {} per match",
+        allocations / games as usize
+    );
+    println!(
+        "  Cost per event  : {:.2}µs",
+        min.as_secs_f64() * 1e6 / events_per_match as f64
+    );
     println!("{}", sep.bright_cyan());
 }
 
@@ -591,25 +617,158 @@ fn run_phase_sweep(config: &MatchConfig, cli: &Cli) {
     let n = TacticsConfig::default();
     let variants: Vec<(&str, &str, TacticsConfig)> = vec![
         ("baseline", "Neutral", n),
-        ("build_up", "Short", TacticsConfig { build_up_style: TacticsBuildUpStyle::Short, ..n }),
-        ("build_up", "Long", TacticsConfig { build_up_style: TacticsBuildUpStyle::Long, ..n }),
-        ("width", "Narrow", TacticsConfig { width: TacticsPitchWidth::Narrow, ..n }),
-        ("width", "Wide", TacticsConfig { width: TacticsPitchWidth::Wide, ..n }),
-        ("def_line", "VeryLow", TacticsConfig { defensive_line: DefensiveLine::VeryLow, ..n }),
-        ("def_line", "High", TacticsConfig { defensive_line: DefensiveLine::High, ..n }),
-        ("marking", "Zonal", TacticsConfig { marking_style: MarkingStyle::Zonal, ..n }),
-        ("marking", "ManToMan", TacticsConfig { marking_style: MarkingStyle::ManToMan, ..n }),
-        ("pressing", "Passive", TacticsConfig { pressing_intensity: PressingIntensity::Passive, ..n }),
-        ("pressing", "Aggressive", TacticsConfig { pressing_intensity: PressingIntensity::Aggressive, ..n }),
-        ("tempo", "Patient", TacticsConfig { tempo: Tempo::Patient, ..n }),
-        ("tempo", "Direct", TacticsConfig { tempo: Tempo::Direct, ..n }),
-        ("shape", "Stretched", TacticsConfig { defensive_shape: DefensiveShape::Stretched, ..n }),
-        ("shape", "Compact", TacticsConfig { defensive_shape: DefensiveShape::Compact, ..n }),
-        ("counter_press", "None", TacticsConfig { counter_press_duration: CounterPressDuration::None, ..n }),
-        ("counter_press", "Short", TacticsConfig { counter_press_duration: CounterPressDuration::Short, ..n }),
-        ("counter_press", "Long", TacticsConfig { counter_press_duration: CounterPressDuration::Long, ..n }),
-        ("break_speed", "Slow", TacticsConfig { break_speed: BreakSpeed::Slow, ..n }),
-        ("break_speed", "Fast", TacticsConfig { break_speed: BreakSpeed::Fast, ..n }),
+        (
+            "build_up",
+            "Short",
+            TacticsConfig {
+                build_up_style: TacticsBuildUpStyle::Short,
+                ..n
+            },
+        ),
+        (
+            "build_up",
+            "Long",
+            TacticsConfig {
+                build_up_style: TacticsBuildUpStyle::Long,
+                ..n
+            },
+        ),
+        (
+            "width",
+            "Narrow",
+            TacticsConfig {
+                width: TacticsPitchWidth::Narrow,
+                ..n
+            },
+        ),
+        (
+            "width",
+            "Wide",
+            TacticsConfig {
+                width: TacticsPitchWidth::Wide,
+                ..n
+            },
+        ),
+        (
+            "def_line",
+            "VeryLow",
+            TacticsConfig {
+                defensive_line: DefensiveLine::VeryLow,
+                ..n
+            },
+        ),
+        (
+            "def_line",
+            "High",
+            TacticsConfig {
+                defensive_line: DefensiveLine::High,
+                ..n
+            },
+        ),
+        (
+            "marking",
+            "Zonal",
+            TacticsConfig {
+                marking_style: MarkingStyle::Zonal,
+                ..n
+            },
+        ),
+        (
+            "marking",
+            "ManToMan",
+            TacticsConfig {
+                marking_style: MarkingStyle::ManToMan,
+                ..n
+            },
+        ),
+        (
+            "pressing",
+            "Passive",
+            TacticsConfig {
+                pressing_intensity: PressingIntensity::Passive,
+                ..n
+            },
+        ),
+        (
+            "pressing",
+            "Aggressive",
+            TacticsConfig {
+                pressing_intensity: PressingIntensity::Aggressive,
+                ..n
+            },
+        ),
+        (
+            "tempo",
+            "Patient",
+            TacticsConfig {
+                tempo: Tempo::Patient,
+                ..n
+            },
+        ),
+        (
+            "tempo",
+            "Direct",
+            TacticsConfig {
+                tempo: Tempo::Direct,
+                ..n
+            },
+        ),
+        (
+            "shape",
+            "Stretched",
+            TacticsConfig {
+                defensive_shape: DefensiveShape::Stretched,
+                ..n
+            },
+        ),
+        (
+            "shape",
+            "Compact",
+            TacticsConfig {
+                defensive_shape: DefensiveShape::Compact,
+                ..n
+            },
+        ),
+        (
+            "counter_press",
+            "None",
+            TacticsConfig {
+                counter_press_duration: CounterPressDuration::None,
+                ..n
+            },
+        ),
+        (
+            "counter_press",
+            "Short",
+            TacticsConfig {
+                counter_press_duration: CounterPressDuration::Short,
+                ..n
+            },
+        ),
+        (
+            "counter_press",
+            "Long",
+            TacticsConfig {
+                counter_press_duration: CounterPressDuration::Long,
+                ..n
+            },
+        ),
+        (
+            "break_speed",
+            "Slow",
+            TacticsConfig {
+                break_speed: BreakSpeed::Slow,
+                ..n
+            },
+        ),
+        (
+            "break_speed",
+            "Fast",
+            TacticsConfig {
+                break_speed: BreakSpeed::Fast,
+                ..n
+            },
+        ),
     ];
 
     eprintln!("Phase sweep: {games} games per option (seed: {base})…");
@@ -621,17 +780,38 @@ fn run_phase_sweep(config: &MatchConfig, cli: &Cli) {
     println!("{sep}");
     println!(
         "{:<14} {:<11} {:>6} {:>7} {:>7} {:>5} {:>5} {:>8} {:>7} {:>8} {:>7}",
-        "dial", "option", "poss%", "shotsF", "shotsA", "GF", "GA", "passes", "crosses", "dribbles", "tackles",
+        "dial",
+        "option",
+        "poss%",
+        "shotsF",
+        "shotsA",
+        "GF",
+        "GA",
+        "passes",
+        "crosses",
+        "dribbles",
+        "tackles",
     );
     println!("{sep}");
 
     for (dial, opt, tactics) in variants {
         let mut team_rng = StdRng::seed_from_u64(base.wrapping_add(0xDEAD_BEEF));
         let home = build_team_with_tactics(
-            "home", "Home FC", cli.home_rating, home_style, &cli.home_formation, tactics, &mut team_rng,
+            "home",
+            "Home FC",
+            cli.home_rating,
+            home_style,
+            &cli.home_formation,
+            tactics,
+            &mut team_rng,
         );
         let away = build_team(
-            "away", "Away FC", cli.away_rating, away_style, &cli.away_formation, &mut team_rng,
+            "away",
+            "Away FC",
+            cli.away_rating,
+            away_style,
+            &cli.away_formation,
+            &mut team_rng,
         );
         let (mut poss, mut sf, mut sa, mut gf, mut ga) = (0.0f64, 0u64, 0u64, 0u64, 0u64);
         // Home-side event mix: what the dial actually changed about the play.
@@ -639,7 +819,8 @@ fn run_phase_sweep(config: &MatchConfig, cli: &Cli) {
         for i in 0..games {
             let mut rng = StdRng::seed_from_u64(base.wrapping_add(i as u64));
             let r = simulate_with_rng(&home, &away, config, &mut rng);
-            let ticks = (r.home_stats.possession_ticks + r.away_stats.possession_ticks).max(1) as f64;
+            let ticks =
+                (r.home_stats.possession_ticks + r.away_stats.possession_ticks).max(1) as f64;
             poss += r.home_stats.possession_ticks as f64 / ticks;
             sf += r.home_stats.shots as u64;
             sa += r.away_stats.shots as u64;
@@ -650,7 +831,9 @@ fn run_phase_sweep(config: &MatchConfig, cli: &Cli) {
             crosses += r
                 .events
                 .iter()
-                .filter(|e| e.side == engine::Side::Home && e.event_type == engine::EventType::Cross)
+                .filter(|e| {
+                    e.side == engine::Side::Home && e.event_type == engine::EventType::Cross
+                })
                 .count() as u64;
             dribbles += r
                 .events

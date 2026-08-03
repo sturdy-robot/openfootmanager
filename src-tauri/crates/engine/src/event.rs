@@ -1,7 +1,21 @@
+use std::sync::Arc;
+
 use crate::types::{Side, Zone};
 use serde::{Deserialize, Serialize};
 
 /// A single event that occurred during the match.
+///
+/// # Why the ids are `Arc<str>`
+///
+/// A match produces on the order of sixteen hundred of these, and each one is
+/// built and then cloned — once into the match's own log, once into the minute
+/// being handed back. As `String` that was two heap allocations per event and
+/// the single largest remaining cost in the simulation. The engine already
+/// holds a shared handle on every player's id (see `live_match::SquadCache`),
+/// so an event can borrow it rather than copy the text.
+///
+/// This is invisible outside the engine: an `Arc<str>` serializes as the same
+/// JSON string a `String` did, so saves and the match feed are unchanged.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MatchEvent {
     pub minute: u8,
@@ -9,9 +23,9 @@ pub struct MatchEvent {
     pub side: Side,
     pub zone: Zone,
     /// ID of the primary player involved (scorer, passer, fouler, etc.).
-    pub player_id: Option<String>,
+    pub player_id: Option<Arc<str>>,
     /// ID of a secondary player (assist provider, fouled player, etc.).
-    pub secondary_player_id: Option<String>,
+    pub secondary_player_id: Option<Arc<str>>,
     /// Optional engine-derived qualifier for richer commentary. `None` for
     /// events that carry no extra colour.
     #[serde(default)]
@@ -122,13 +136,18 @@ impl MatchEvent {
         }
     }
 
-    pub fn with_player(mut self, player_id: &str) -> Self {
-        self.player_id = Some(player_id.to_string());
+    /// Attach the player this event is about.
+    ///
+    /// Takes anything that can become a shared id: pass an `Arc<str>` from the
+    /// squad cache and nothing is allocated, pass a `&str` and it is copied
+    /// once. The hot paths pass the former.
+    pub fn with_player(mut self, player_id: impl Into<Arc<str>>) -> Self {
+        self.player_id = Some(player_id.into());
         self
     }
 
-    pub fn with_secondary(mut self, player_id: &str) -> Self {
-        self.secondary_player_id = Some(player_id.to_string());
+    pub fn with_secondary(mut self, player_id: impl Into<Arc<str>>) -> Self {
+        self.secondary_player_id = Some(player_id.into());
         self
     }
 

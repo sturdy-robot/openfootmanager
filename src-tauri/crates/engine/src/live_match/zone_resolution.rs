@@ -145,8 +145,8 @@ impl LiveMatchState {
             let fouler = self.pick_actor(def_side, Band::OwnBox, Need::Defend, rng);
             let fouled = self.pick_actor(att_side, Band::OppBox, Need::Shoot, rng);
             let foul_evt = MatchEvent::new(minute, EventType::Foul, def_side, zone)
-                .with_player(&fouler.id)
-                .with_secondary(&fouled.id)
+                .with_player(fouler.id.clone())
+                .with_secondary(fouled.id.clone())
                 .with_detail(EventDetail::Foul {
                     severity: foul_severity(fouler.aggression),
                 });
@@ -194,7 +194,7 @@ impl LiveMatchState {
             };
             if rng.random_range(0.0..1.0f64) < 0.4 {
                 let evt = MatchEvent::new(minute, EventType::ShotBlocked, att_side, zone)
-                    .with_player(&shooter.id)
+                    .with_player(shooter.id.clone())
                     .with_detail(detail);
                 self.events.push(evt.clone());
                 events.push(evt);
@@ -202,7 +202,7 @@ impl LiveMatchState {
                 self.possession = def_side;
             } else {
                 let evt = MatchEvent::new(minute, EventType::ShotOffTarget, att_side, zone)
-                    .with_player(&shooter.id)
+                    .with_player(shooter.id.clone())
                     .with_detail(detail);
                 self.events.push(evt.clone());
                 events.push(evt);
@@ -223,8 +223,8 @@ impl LiveMatchState {
         if rng.random_range(0.0..1.0f64) < conversion {
             let context = self.goal_context(att_side);
             let evt = MatchEvent::new(minute, EventType::Goal, att_side, zone)
-                .with_player(&shooter.id)
-                .with_secondary(&assister.id)
+                .with_player(shooter.id.clone())
+                .with_secondary(assister.id.clone())
                 .with_detail(EventDetail::Goal { context });
             self.events.push(evt.clone());
             events.push(evt);
@@ -233,7 +233,7 @@ impl LiveMatchState {
             self.possession = def_side;
         } else {
             let evt = MatchEvent::new(minute, EventType::ShotSaved, att_side, zone)
-                .with_player(&shooter.id)
+                .with_player(shooter.id.clone())
                 .with_detail(EventDetail::Save {
                     quality: save_quality(gk_rating),
                 });
@@ -288,8 +288,8 @@ impl LiveMatchState {
         }
 
         let evt = MatchEvent::new(minute, EventType::Foul, fouling_side, zone)
-            .with_player(&fouler.id)
-            .with_secondary(&fouled.id)
+            .with_player(fouler.id.clone())
+            .with_secondary(fouled.id.clone())
             .with_detail(EventDetail::Foul {
                 severity: foul_severity(fouler.aggression),
             });
@@ -316,8 +316,8 @@ impl LiveMatchState {
         events.extend(card_events);
 
         if rng.random_range(0.0..1.0f64) < self.config.injury_probability {
-            let evt =
-                MatchEvent::new(minute, EventType::Injury, att_side, zone).with_player(&fouled.id);
+            let evt = MatchEvent::new(minute, EventType::Injury, att_side, zone)
+                .with_player(fouled.id.clone());
             self.events.push(evt.clone());
             events.push(evt);
         }
@@ -413,7 +413,7 @@ impl LiveMatchState {
 
         if rng.random_range(0.0..1.0f64) < success {
             let evt = MatchEvent::new(minute, EventType::Dribble, att_side, zone)
-                .with_player(&attacker.id);
+                .with_player(attacker.id.clone());
             self.events.push(evt.clone());
             events.push(evt);
             // Beating a man usually just buys space; only sometimes does it
@@ -430,10 +430,10 @@ impl LiveMatchState {
         let is_tackle = rng.random_range(0.0..1.0f64) < 0.5;
         let fouled = if is_tackle {
             let beaten = MatchEvent::new(minute, EventType::DribbleTackled, att_side, zone)
-                .with_player(&attacker.id)
-                .with_secondary(&defender.id);
+                .with_player(attacker.id.clone())
+                .with_secondary(defender.id.clone());
             let tackle = MatchEvent::new(minute, EventType::Tackle, def_side, zone)
-                .with_player(&defender.id);
+                .with_player(defender.id.clone());
             self.events.push(beaten.clone());
             self.events.push(tackle.clone());
             events.push(beaten);
@@ -446,7 +446,7 @@ impl LiveMatchState {
             was_fouled
         } else {
             let clearance = MatchEvent::new(minute, EventType::Clearance, def_side, zone)
-                .with_player(&defender.id);
+                .with_player(defender.id.clone());
             self.events.push(clearance.clone());
             events.push(clearance);
             false
@@ -500,8 +500,8 @@ impl LiveMatchState {
         let mut events = Vec::new();
         let zone = self.ball_zone;
 
-        let evt =
-            MatchEvent::new(minute, EventType::Cross, att_side, zone).with_player(&crosser.id);
+        let evt = MatchEvent::new(minute, EventType::Cross, att_side, zone)
+            .with_player(crosser.id.clone());
         self.events.push(evt.clone());
         events.push(evt);
 
@@ -523,7 +523,7 @@ impl LiveMatchState {
             events.extend(self.resolve_shot(minute, att_side, rng));
         } else {
             let clearance = MatchEvent::new(minute, EventType::Clearance, def_side, zone)
-                .with_player(&defender.id);
+                .with_player(defender.id.clone());
             self.events.push(clearance.clone());
             events.push(clearance);
             if rng.random_range(0.0..1.0f64) < 0.22 {
@@ -588,7 +588,7 @@ impl LiveMatchState {
 
         if rng.random_range(0.0..1.0f64) < completion {
             let evt = MatchEvent::new(minute, EventType::PassCompleted, att_side, zone)
-                .with_player(&passer.id);
+                .with_player(passer.id.clone());
             self.events.push(evt.clone());
             events.push(evt);
 
@@ -607,9 +607,9 @@ impl LiveMatchState {
         } else {
             let interceptor = self.pick_actor(def_side, band.mirror(), Need::Defend, rng);
             let lost = MatchEvent::new(minute, EventType::PassIntercepted, att_side, zone)
-                .with_player(&passer.id);
+                .with_player(passer.id.clone());
             let won = MatchEvent::new(minute, EventType::Interception, def_side, zone)
-                .with_player(&interceptor.id);
+                .with_player(interceptor.id.clone());
             self.events.push(lost.clone());
             self.events.push(won.clone());
             events.push(lost);
@@ -641,13 +641,13 @@ impl LiveMatchState {
 
         if rng.random_range(0.0..1.0f64) < keep {
             let evt = MatchEvent::new(minute, EventType::Dribble, att_side, zone)
-                .with_player(&carrier.id);
+                .with_player(carrier.id.clone());
             self.events.push(evt.clone());
             events.push(evt);
         } else {
             let winner = self.pick_actor(def_side, band.mirror(), Need::Defend, rng);
-            let tackle =
-                MatchEvent::new(minute, EventType::Tackle, def_side, zone).with_player(&winner.id);
+            let tackle = MatchEvent::new(minute, EventType::Tackle, def_side, zone)
+                .with_player(winner.id.clone());
             self.events.push(tackle.clone());
             events.push(tackle);
 

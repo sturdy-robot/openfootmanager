@@ -230,6 +230,21 @@ impl MatchReport {
         let mut goals = Vec::new();
         let mut player_stats: HashMap<String, PlayerMatchStats> = HashMap::new();
 
+        // `entry` needs an owned key, which means building a `String` for every
+        // one of the ~1600 events in a match just to reach a row that, after
+        // the first few minutes, always exists already.
+        fn tally<'a>(
+            stats: &'a mut HashMap<String, PlayerMatchStats>,
+            id: &str,
+        ) -> &'a mut PlayerMatchStats {
+            if !stats.contains_key(id) {
+                stats.insert(id.to_string(), PlayerMatchStats::default());
+            }
+            stats
+                .get_mut(id)
+                .expect("just inserted when it was missing")
+        }
+
         home_stats.possession_ticks = home_possession_ticks;
         away_stats.possession_ticks = away_possession_ticks;
 
@@ -291,18 +306,18 @@ impl MatchReport {
                     goals.push(GoalDetail {
                         minute: event.minute,
                         scorer_id: pid.to_string(),
-                        assist_id: event.secondary_player_id.clone(),
+                        assist_id: event.secondary_player_id.as_deref().map(str::to_string),
                         goal_source: source,
                         side: event.side,
                     });
                     if !pid.is_empty() {
-                        let ps = player_stats.entry(pid.to_string()).or_default();
+                        let ps = tally(&mut player_stats, pid);
                         ps.goals += 1;
                         ps.shots += 1;
                         ps.shots_on_target += 1;
                     }
                     if let Some(ref assist_id) = event.secondary_player_id {
-                        let ps = player_stats.entry(assist_id.clone()).or_default();
+                        let ps = tally(&mut player_stats, assist_id);
                         ps.assists += 1;
                     }
                 }
@@ -320,7 +335,7 @@ impl MatchReport {
                         side: event.side,
                     });
                     if !pid.is_empty() {
-                        let ps = player_stats.entry(pid.to_string()).or_default();
+                        let ps = tally(&mut player_stats, pid);
                         ps.goals += 1;
                         ps.shots += 1;
                         ps.shots_on_target += 1;
@@ -337,7 +352,7 @@ impl MatchReport {
                     stats.shots_off_target += 1;
                     stats.penalties += 1;
                     if !pid.is_empty() {
-                        let ps = player_stats.entry(pid.to_string()).or_default();
+                        let ps = tally(&mut player_stats, pid);
                         ps.shots += 1;
                     }
                 }
@@ -345,7 +360,7 @@ impl MatchReport {
                     stats.shots += 1;
                     stats.shots_on_target += 1;
                     if !pid.is_empty() {
-                        let ps = player_stats.entry(pid.to_string()).or_default();
+                        let ps = tally(&mut player_stats, pid);
                         ps.shots += 1;
                         ps.shots_on_target += 1;
                     }
@@ -354,7 +369,7 @@ impl MatchReport {
                     stats.shots += 1;
                     stats.shots_off_target += 1;
                     if !pid.is_empty() {
-                        let ps = player_stats.entry(pid.to_string()).or_default();
+                        let ps = tally(&mut player_stats, pid);
                         ps.shots += 1;
                     }
                 }
@@ -362,14 +377,14 @@ impl MatchReport {
                     stats.shots += 1;
                     stats.shots_blocked += 1;
                     if !pid.is_empty() {
-                        let ps = player_stats.entry(pid.to_string()).or_default();
+                        let ps = tally(&mut player_stats, pid);
                         ps.shots += 1;
                     }
                 }
                 EventType::PassCompleted => {
                     stats.passes_completed += 1;
                     if !pid.is_empty() {
-                        let ps = player_stats.entry(pid.to_string()).or_default();
+                        let ps = tally(&mut player_stats, pid);
                         ps.passes_completed += 1;
                         ps.passes_attempted += 1;
                     }
@@ -377,42 +392,42 @@ impl MatchReport {
                 EventType::PassIntercepted => {
                     stats.passes_intercepted += 1;
                     if !pid.is_empty() {
-                        let ps = player_stats.entry(pid.to_string()).or_default();
+                        let ps = tally(&mut player_stats, pid);
                         ps.passes_attempted += 1;
                     }
                 }
                 EventType::Tackle => {
                     stats.tackles += 1;
                     if !pid.is_empty() {
-                        let ps = player_stats.entry(pid.to_string()).or_default();
+                        let ps = tally(&mut player_stats, pid);
                         ps.tackles_won += 1;
                     }
                 }
                 EventType::Interception => {
                     stats.interceptions += 1;
                     if !pid.is_empty() {
-                        let ps = player_stats.entry(pid.to_string()).or_default();
+                        let ps = tally(&mut player_stats, pid);
                         ps.interceptions += 1;
                     }
                 }
                 EventType::Foul => {
                     stats.fouls += 1;
                     if !pid.is_empty() {
-                        let ps = player_stats.entry(pid.to_string()).or_default();
+                        let ps = tally(&mut player_stats, pid);
                         ps.fouls_committed += 1;
                     }
                 }
                 EventType::YellowCard | EventType::SecondYellow => {
                     stats.yellow_cards += 1;
                     if !pid.is_empty() {
-                        let ps = player_stats.entry(pid.to_string()).or_default();
+                        let ps = tally(&mut player_stats, pid);
                         ps.yellow_cards += 1;
                     }
                 }
                 EventType::RedCard => {
                     stats.red_cards += 1;
                     if !pid.is_empty() {
-                        let ps = player_stats.entry(pid.to_string()).or_default();
+                        let ps = tally(&mut player_stats, pid);
                         ps.red_cards += 1;
                     }
                 }
@@ -480,11 +495,11 @@ fn populate_minutes_played(
             EventType::Substitution => {
                 if let Some(ref player_off_id) = event.secondary_player_id {
                     minutes_by_player
-                        .insert(player_off_id.clone(), event.minute.min(total_minutes));
+                        .insert(player_off_id.to_string(), event.minute.min(total_minutes));
                 }
                 if let Some(ref player_on_id) = event.player_id {
                     minutes_by_player.insert(
-                        player_on_id.clone(),
+                        player_on_id.to_string(),
                         total_minutes.saturating_sub(event.minute),
                     );
                 }
@@ -493,7 +508,7 @@ fn populate_minutes_played(
                 if let Some(ref player_id) = event.player_id {
                     let dismissed_at = event.minute.min(total_minutes);
                     minutes_by_player
-                        .entry(player_id.clone())
+                        .entry(player_id.to_string())
                         .and_modify(|minutes| *minutes = (*minutes).min(dismissed_at))
                         .or_insert(dismissed_at);
                 }
