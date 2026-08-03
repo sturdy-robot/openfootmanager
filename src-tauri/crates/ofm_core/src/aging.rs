@@ -130,6 +130,11 @@ fn retire_player(player: &mut Player) {
 }
 
 pub fn apply_seasonal_aging(game: &mut Game, current_date: NaiveDate, season: u32) {
+    let season_year = current_date
+        .format("%Y")
+        .to_string()
+        .parse::<u32>()
+        .unwrap_or(season);
     for player in game.players.iter_mut() {
         if player.retired {
             continue;
@@ -137,6 +142,14 @@ pub fn apply_seasonal_aging(game: &mut Game, current_date: NaiveDate, season: u3
 
         let age = player_age_on(current_date, &player.date_of_birth);
         apply_attribute_curve(player, age, season);
+
+        // Aging moves attributes and everything derived from them has to move
+        // with it: the overall rating, the potential clamp, and the traits.
+        // This was missing, so a veteran carried his prime rating and his prime
+        // traits into the new season. Players at a club were quietly repaired
+        // by the next training session, which calls the same function — but
+        // free agents are not trained, so theirs never updated at all.
+        crate::player_rating::refresh_player_derived(player, season_year);
 
         if should_retire(player, age, current_date, season) {
             if let Some(team_id) = player.team_id.clone()
@@ -217,6 +230,60 @@ mod tests {
         );
 
         Game::new(clock, manager, vec![team], players, vec![], vec![])
+    }
+
+    /// Aging moves attributes, and everything derived from them has to move
+    /// too. It did not: `apply_seasonal_aging` changed a veteran's pace and
+    /// left his overall rating and his traits at their prime values.
+    ///
+    /// Players at a club were quietly repaired, because training calls the same
+    /// refresh — so the damage was invisible for anyone in a squad and
+    /// permanent for everyone else. A free agent is never trained, so his
+    /// rating and traits froze the day he left his club.
+    #[test]
+    fn aging_a_free_agent_updates_what_his_attributes_no_longer_support() {
+        let mut player = make_player("veteran", "1996-01-01");
+        player.attributes.pace = 87;
+        crate::player_rating::refresh_player_derived(&mut player, 2026);
+        assert!(
+            player
+                .traits
+                .contains(&domain::player::PlayerTrait::Speedster),
+            "the fixture needs a player who is actually quick"
+        );
+        let prime_ovr = player.ovr;
+
+        let mut game = make_game(vec![player]);
+        // Unattached, so training never runs for him and nothing else in the
+        // season rollover will quietly refresh what aging leaves behind.
+        game.players[0].team_id = None;
+
+        // From thirty, when the pace curve starts, through the seasons in
+        // which he is still playing — a retired player is skipped by aging, so
+        // there is no point running him past that.
+        for season in 0..5u32 {
+            let date = NaiveDate::from_ymd_opt(2026 + season as i32, 6, 30).unwrap();
+            apply_seasonal_aging(&mut game, date, season);
+        }
+
+        let aged = &game.players[0];
+        assert!(
+            aged.attributes.pace < 85,
+            "the aging curve did not take enough pace to test anything ({})",
+            aged.attributes.pace
+        );
+        assert!(
+            !aged
+                .traits
+                .contains(&domain::player::PlayerTrait::Speedster),
+            "a {}-pace veteran is still marked a Speedster",
+            aged.attributes.pace
+        );
+        assert!(
+            aged.ovr < prime_ovr,
+            "his overall rating never moved: {prime_ovr} then {}",
+            aged.ovr
+        );
     }
 
     #[test]

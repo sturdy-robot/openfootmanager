@@ -364,6 +364,10 @@ fn report_with_scorer(home_goals: u8, away_goals: u8, scorer_id: &str, side: Sid
             yellow_cards: 0,
             red_cards: 0,
             rating: 7.5,
+            // This fixture is about who scored, so the advanced numbers are
+            // left at their defaults rather than listed out — and a field added
+            // to the engine's stats will no longer stop this file compiling.
+            ..Default::default()
         },
     );
     let goals = (0..home_goals)

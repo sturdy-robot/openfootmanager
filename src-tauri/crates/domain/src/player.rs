@@ -518,7 +518,7 @@ pub struct ActiveLoan {
     pub development_reported_appearances: u32,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Copy, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PlayerTrait {
     // Physical
     Speedster, // pace >= 85
@@ -549,81 +549,184 @@ pub enum PlayerTrait {
     Wonderkid, // age <= 21 && potential >= 85 && (potential - ovr) >= 10
 }
 
+/// How a trait behaves once the attributes behind it start to go.
+///
+/// Football does not treat these the same way. A winger who has lost his legs
+/// has lost them, and everyone can see it; a playmaker a few points off his
+/// peak has not forgotten how to find the pass. Deriving every trait from
+/// current attributes with one rule makes the first case right and the second
+/// wrong — and, worse, makes a trait flicker on and off as an attribute drifts
+/// across a threshold by a point.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TraitPersistence {
+    /// Goes the season the attribute does.
+    Physical,
+    /// Survives a dip, not a decline.
+    Technical,
+    /// Learned, and not easily unlearned. Only a collapse takes it.
+    Learned,
+}
+
+impl TraitPersistence {
+    /// How far an attribute may fall below the threshold that earned the trait
+    /// before the trait is lost.
+    const fn slack(self) -> u8 {
+        match self {
+            TraitPersistence::Physical => 0,
+            TraitPersistence::Technical => 8,
+            TraitPersistence::Learned => 25,
+        }
+    }
+}
+
+/// Which of the three a trait is.
+///
+/// Exhaustive on purpose: a new trait must say how it ages rather than
+/// inheriting whatever a catch-all arm happened to be.
+pub const fn persistence(player_trait: PlayerTrait) -> TraitPersistence {
+    use PlayerTrait as T;
+    use TraitPersistence::*;
+    match player_trait {
+        // Legs, lungs and joints.
+        T::Speedster | T::Tank | T::Agile | T::Tireless | T::Engine => Physical,
+
+        // Technique fades with the body that executes it, but more slowly.
+        T::Sharpshooter
+        | T::Dribbler
+        | T::BallWinner
+        | T::Rock
+        | T::CatReflexes
+        | T::AerialDominance
+        | T::CompleteForward => Technical,
+
+        // How a player reads and handles a game. Learned, and it stays.
+        T::Playmaker
+        | T::Visionary
+        | T::Leader
+        | T::CoolHead
+        | T::TeamPlayer
+        | T::SafeHands
+        | T::SetPieceSpecialist => Learned,
+
+        // A temperament, not a skill: it does not mellow because the legs did.
+        T::HotHead => Learned,
+
+        // Awarded on age and potential, and expires on its own.
+        T::Wonderkid => Physical,
+    }
+}
+
+/// Every attribute-derived trait, so a caller can ask about all of them.
+pub const ALL_TRAITS: [PlayerTrait; 21] = [
+    PlayerTrait::Speedster,
+    PlayerTrait::Tank,
+    PlayerTrait::Agile,
+    PlayerTrait::Tireless,
+    PlayerTrait::Playmaker,
+    PlayerTrait::Sharpshooter,
+    PlayerTrait::Dribbler,
+    PlayerTrait::BallWinner,
+    PlayerTrait::Rock,
+    PlayerTrait::Leader,
+    PlayerTrait::CoolHead,
+    PlayerTrait::Visionary,
+    PlayerTrait::HotHead,
+    PlayerTrait::TeamPlayer,
+    PlayerTrait::SafeHands,
+    PlayerTrait::CatReflexes,
+    PlayerTrait::AerialDominance,
+    PlayerTrait::CompleteForward,
+    PlayerTrait::Engine,
+    PlayerTrait::SetPieceSpecialist,
+    PlayerTrait::Wonderkid,
+];
+
+/// Whether these attributes earn a trait, allowing `slack` points of shortfall.
+///
+/// At `slack` zero this is the threshold that earns the trait in the first
+/// place; above zero it is the looser bar a player who already has it must fall
+/// under before losing it.
+fn qualifies(player_trait: PlayerTrait, attrs: &PlayerAttributes, slack: u8) -> bool {
+    // Reaching a threshold, with the shortfall allowance applied.
+    let met = |value: u8, threshold: u8| value.saturating_add(slack) >= threshold;
+    // The one condition that reads the other way — a hot head is calm enough to
+    // stop being one — so slack has to loosen it in the same direction.
+    let under = |value: u8, threshold: u8| value < threshold.saturating_add(slack);
+
+    use PlayerTrait as T;
+    match player_trait {
+        // Physical
+        T::Speedster => met(attrs.pace, 85),
+        T::Tank => met(attrs.strength, 85) && met(attrs.stamina, 75),
+        T::Agile => met(attrs.agility, 85),
+        T::Tireless => met(attrs.stamina, 90),
+
+        // Technical
+        T::Playmaker => met(attrs.passing, 80) && met(attrs.vision, 80),
+        T::Sharpshooter => met(attrs.shooting, 85),
+        T::Dribbler => met(attrs.dribbling, 85),
+        T::BallWinner => met(attrs.tackling, 80) && met(attrs.aggression, 70),
+        T::Rock => met(attrs.defending, 85) && met(attrs.positioning, 75),
+
+        // Mental
+        T::Leader => met(attrs.leadership, 85) && met(attrs.teamwork, 75),
+        T::CoolHead => met(attrs.composure, 85) && met(attrs.decisions, 80),
+        T::Visionary => met(attrs.vision, 85),
+        T::HotHead => met(attrs.aggression, 85) && under(attrs.composure, 50),
+        T::TeamPlayer => met(attrs.teamwork, 85),
+
+        // Goalkeeper-oriented; any player with the attributes can earn these.
+        T::SafeHands => met(attrs.handling, 85),
+        T::CatReflexes => met(attrs.reflexes, 85),
+        T::AerialDominance => met(attrs.aerial, 85),
+
+        // Combo
+        T::CompleteForward => {
+            met(attrs.shooting, 75)
+                && met(attrs.dribbling, 75)
+                && met(attrs.pace, 70)
+                && met(attrs.strength, 70)
+        }
+        T::Engine => met(attrs.stamina, 85) && met(attrs.pace, 70) && met(attrs.teamwork, 75),
+        T::SetPieceSpecialist => {
+            met(attrs.passing, 80) && met(attrs.shooting, 75) && met(attrs.vision, 75)
+        }
+
+        // Awarded elsewhere, on age and potential.
+        T::Wonderkid => false,
+    }
+}
+
 /// Derive traits purely from a player's attributes (position-independent).
-pub fn compute_traits(attrs: &PlayerAttributes, _position: &Position) -> Vec<PlayerTrait> {
-    let mut traits = Vec::new();
+///
+/// This is the bar for *earning* a trait. A player who already has one is
+/// judged by [`recompute_traits`], which is more forgiving.
+pub fn compute_traits(attrs: &PlayerAttributes, position: &Position) -> Vec<PlayerTrait> {
+    recompute_traits(attrs, position, &[])
+}
 
-    // Physical
-    if attrs.pace >= 85 {
-        traits.push(PlayerTrait::Speedster);
-    }
-    if attrs.strength >= 85 && attrs.stamina >= 75 {
-        traits.push(PlayerTrait::Tank);
-    }
-    if attrs.agility >= 85 {
-        traits.push(PlayerTrait::Agile);
-    }
-    if attrs.stamina >= 90 {
-        traits.push(PlayerTrait::Tireless);
-    }
-
-    // Technical
-    if attrs.passing >= 80 && attrs.vision >= 80 {
-        traits.push(PlayerTrait::Playmaker);
-    }
-    if attrs.shooting >= 85 {
-        traits.push(PlayerTrait::Sharpshooter);
-    }
-    if attrs.dribbling >= 85 {
-        traits.push(PlayerTrait::Dribbler);
-    }
-    if attrs.tackling >= 80 && attrs.aggression >= 70 {
-        traits.push(PlayerTrait::BallWinner);
-    }
-    if attrs.defending >= 85 && attrs.positioning >= 75 {
-        traits.push(PlayerTrait::Rock);
-    }
-
-    // Mental
-    if attrs.leadership >= 85 && attrs.teamwork >= 75 {
-        traits.push(PlayerTrait::Leader);
-    }
-    if attrs.composure >= 85 && attrs.decisions >= 80 {
-        traits.push(PlayerTrait::CoolHead);
-    }
-    if attrs.vision >= 85 {
-        traits.push(PlayerTrait::Visionary);
-    }
-    if attrs.aggression >= 85 && attrs.composure < 50 {
-        traits.push(PlayerTrait::HotHead);
-    }
-    if attrs.teamwork >= 85 {
-        traits.push(PlayerTrait::TeamPlayer);
-    }
-
-    // Goalkeeper-oriented (any player with high GK stats can earn these)
-    if attrs.handling >= 85 {
-        traits.push(PlayerTrait::SafeHands);
-    }
-    if attrs.reflexes >= 85 {
-        traits.push(PlayerTrait::CatReflexes);
-    }
-    if attrs.aerial >= 85 {
-        traits.push(PlayerTrait::AerialDominance);
-    }
-
-    // Combo / Special — purely attribute-based
-    if attrs.shooting >= 75 && attrs.dribbling >= 75 && attrs.pace >= 70 && attrs.strength >= 70 {
-        traits.push(PlayerTrait::CompleteForward);
-    }
-    if attrs.stamina >= 85 && attrs.pace >= 70 && attrs.teamwork >= 75 {
-        traits.push(PlayerTrait::Engine);
-    }
-    if attrs.passing >= 80 && attrs.shooting >= 75 && attrs.vision >= 75 {
-        traits.push(PlayerTrait::SetPieceSpecialist);
-    }
-
-    traits
+/// Work out a player's traits given what he already has.
+///
+/// Earning a trait always takes the full threshold — nobody picks one up by
+/// nearly qualifying. Keeping one is easier, and how much easier depends on
+/// what sort of trait it is: see [`TraitPersistence`]. A player who has fallen
+/// apart loses even what he learned, or a single outstanding season would label
+/// him for a twenty-year career.
+pub fn recompute_traits(
+    attrs: &PlayerAttributes,
+    _position: &Position,
+    existing: &[PlayerTrait],
+) -> Vec<PlayerTrait> {
+    ALL_TRAITS
+        .into_iter()
+        .filter(|player_trait| {
+            if qualifies(*player_trait, attrs, 0) {
+                return true;
+            }
+            existing.contains(player_trait)
+                && qualifies(*player_trait, attrs, persistence(*player_trait).slack())
+        })
+        .collect()
 }
 
 impl Player {
@@ -772,5 +875,160 @@ mod tests {
         assert_eq!(player.natural_position, Position::Midfielder);
         assert!(!player.retired);
         assert!(player.movement_history.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod trait_persistence_tests {
+    use super::*;
+
+    fn attrs() -> PlayerAttributes {
+        PlayerAttributes {
+            pace: 70,
+            stamina: 70,
+            strength: 70,
+            agility: 70,
+            passing: 70,
+            shooting: 70,
+            tackling: 70,
+            dribbling: 70,
+            defending: 70,
+            positioning: 70,
+            vision: 70,
+            decisions: 70,
+            composure: 70,
+            aggression: 70,
+            teamwork: 70,
+            leadership: 70,
+            handling: 70,
+            reflexes: 70,
+            aerial: 70,
+        }
+    }
+
+    /// Legs are legs. A winger who has lost his pace is not a Speedster any
+    /// more, whatever he used to be, and the engine should stop picking him to
+    /// run at people the season it happens.
+    #[test]
+    fn pace_goes_and_the_trait_goes_with_it() {
+        let mut prime = attrs();
+        prime.pace = 92;
+        let earned = compute_traits(&prime, &Position::Forward);
+        assert!(earned.contains(&PlayerTrait::Speedster));
+
+        let mut veteran = prime.clone();
+        veteran.pace = 74;
+        let kept = recompute_traits(&veteran, &Position::Forward, &earned);
+        assert!(
+            !kept.contains(&PlayerTrait::Speedster),
+            "a 74-pace veteran is still listed as a Speedster"
+        );
+    }
+
+    /// Vision is a way of seeing the game, not a sprint time. A playmaker a
+    /// few points off his peak has not forgotten how to find the pass, and a
+    /// trait that switches off the season an attribute drifts by one point is
+    /// noise rather than characterisation.
+    #[test]
+    fn a_playmaker_does_not_forget_how_to_pass() {
+        let mut prime = attrs();
+        prime.vision = 88;
+        prime.passing = 84;
+        let earned = compute_traits(&prime, &Position::Midfielder);
+        assert!(earned.contains(&PlayerTrait::Visionary));
+        assert!(earned.contains(&PlayerTrait::Playmaker));
+
+        let mut older = prime.clone();
+        older.vision = 79;
+        older.passing = 78;
+        let kept = recompute_traits(&older, &Position::Midfielder, &earned);
+        assert!(
+            kept.contains(&PlayerTrait::Visionary),
+            "a learned trait vanished after a modest decline"
+        );
+        assert!(kept.contains(&PlayerTrait::Playmaker));
+    }
+
+    /// Sticky is not immortal. A player who falls apart loses even what he
+    /// learned, or a one-season wonder carries the label for a twenty-year
+    /// career.
+    #[test]
+    fn a_collapse_takes_even_a_learned_trait() {
+        let mut prime = attrs();
+        prime.vision = 88;
+        let earned = compute_traits(&prime, &Position::Midfielder);
+        assert!(earned.contains(&PlayerTrait::Visionary));
+
+        let mut finished = prime.clone();
+        finished.vision = 45;
+        let kept = recompute_traits(&finished, &Position::Midfielder, &earned);
+        assert!(
+            !kept.contains(&PlayerTrait::Visionary),
+            "a player with 45 vision is still marked Visionary"
+        );
+    }
+
+    /// A technical trait sits between the two: kept through a dip, gone after a
+    /// real decline.
+    #[test]
+    fn a_technical_trait_survives_a_dip_but_not_a_decline() {
+        let mut prime = attrs();
+        prime.shooting = 87;
+        let earned = compute_traits(&prime, &Position::Forward);
+        assert!(earned.contains(&PlayerTrait::Sharpshooter));
+
+        let mut dipped = prime.clone();
+        dipped.shooting = 82;
+        assert!(
+            recompute_traits(&dipped, &Position::Forward, &earned)
+                .contains(&PlayerTrait::Sharpshooter),
+            "a five-point dip should not cost a striker his finishing"
+        );
+
+        let mut declined = prime.clone();
+        declined.shooting = 70;
+        assert!(
+            !recompute_traits(&declined, &Position::Forward, &earned)
+                .contains(&PlayerTrait::Sharpshooter)
+        );
+    }
+
+    /// Retention only keeps what was already there. Nobody picks up a trait by
+    /// getting close to it — the thresholds would be meaningless.
+    #[test]
+    fn nobody_earns_a_trait_by_nearly_qualifying() {
+        let mut nearly = attrs();
+        nearly.shooting = 82;
+        nearly.vision = 82;
+        let from_nothing = recompute_traits(&nearly, &Position::Forward, &[]);
+        assert!(!from_nothing.contains(&PlayerTrait::Sharpshooter));
+        assert!(!from_nothing.contains(&PlayerTrait::Visionary));
+    }
+
+    /// A player still at his peak keeps exactly what the thresholds say, so
+    /// retention can never inflate a squad.
+    #[test]
+    fn retention_never_adds_to_what_the_attributes_earn() {
+        let mut prime = attrs();
+        prime.pace = 90;
+        prime.vision = 90;
+        prime.shooting = 90;
+        let earned = compute_traits(&prime, &Position::Forward);
+        let kept = recompute_traits(&prime, &Position::Forward, &earned);
+        assert_eq!(earned, kept);
+    }
+
+    /// Every trait has to say how it behaves in decline, or a new one silently
+    /// inherits whatever the fallback happens to be.
+    #[test]
+    fn every_trait_declares_how_it_ages() {
+        for player_trait in ALL_TRAITS {
+            // Wonderkid is not attribute-derived; it is awarded on age and
+            // potential and expires on its own.
+            if player_trait == PlayerTrait::Wonderkid {
+                continue;
+            }
+            let _ = persistence(player_trait);
+        }
     }
 }

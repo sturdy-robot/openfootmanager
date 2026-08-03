@@ -23,10 +23,7 @@ pub fn formation_slots(formation: &str) -> Vec<Position> {
 /// player is currently playing", since `player.position` is no longer mutated to
 /// encode the deployed slot.
 pub fn deployed_position(team: &domain::team::Team, player_id: &str) -> Option<Position> {
-    let slot_index = team
-        .starting_xi_ids
-        .iter()
-        .position(|id| id == player_id)?;
+    let slot_index = team.starting_xi_ids.iter().position(|id| id == player_id)?;
     formation_slots(&team.formation).get(slot_index).cloned()
 }
 
@@ -53,8 +50,14 @@ pub fn refresh_player_derived(player: &mut Player, current_year: u32) {
         player.potential.max(ovr)
     };
 
-    // 3. Recompute attribute-based traits
-    let mut traits = domain::player::compute_traits(&player.attributes, &player.natural_position);
+    // 3. Recompute attribute-based traits, given the ones he already has.
+    //    Earning a trait takes the full threshold; keeping one is easier, and
+    //    how much easier depends on whether it lives in the legs or the head.
+    let mut traits = domain::player::recompute_traits(
+        &player.attributes,
+        &player.natural_position,
+        &player.traits,
+    );
 
     // 4. Award Wonderkid trait: young player whose ceiling far exceeds current ability
     if qualifies_for_wonderkid(age, potential, ovr) && !traits.contains(&PlayerTrait::Wonderkid) {
