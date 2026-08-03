@@ -141,7 +141,11 @@ impl InstantEngine for DefaultEngine {
     }
 
     fn simulate(&self, setup: &MatchSetup, rng: &mut dyn Rng) -> MatchReport {
-        crate::engine::simulate_with_rng(&setup.home, &setup.away, &setup.config, rng)
+        // Straight through, not via `simulate_with_rng`: that takes the two
+        // teams and a config, so routing through it silently discarded the
+        // benches, the extra-time flag and the dugouts this setup carries — and
+        // cloned both squads a second time on the way.
+        crate::engine::simulate_setup(setup, rng)
     }
 }
 

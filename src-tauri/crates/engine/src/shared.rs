@@ -354,7 +354,11 @@ pub(crate) fn tactics_tempo_progression(tactics: &TacticsConfig) -> f64 {
 /// Applied to the possessing side's weight in the per-minute possession contest.
 pub(crate) fn tactics_tempo_retention(tactics: &TacticsConfig) -> f64 {
     match tactics.tempo {
-        Tempo::Patient => 1.03,
+        // A side told to be patient should visibly hold the ball, not hold it
+        // three percent more. This is its only lever on possession — retention
+        // in the chain governs where the ball goes, not who has it — so at the
+        // old value the effect was inside the noise of a 200-seed run.
+        Tempo::Patient => 1.12,
         Tempo::Direct => 1.0,
     }
 }

@@ -29,8 +29,8 @@ use super::helpers::{Need, danger_band, foul_severity, save_quality};
 /// the defender's own third — the attacking side's dangerous territory.
 fn foul_pressure(band: Band) -> f64 {
     match band {
-        Band::OwnBox => 1.35,
-        Band::OwnThird => 1.30,
+        Band::OwnBox => 1.45,
+        Band::OwnThird => 1.44,
         Band::Middle => 0.95,
         Band::FinalThird => 0.80,
         Band::OppBox => 0.80,

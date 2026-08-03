@@ -95,18 +95,30 @@ impl LiveMatchState {
 
     pub(super) fn handle_full_time<R: Rng + ?Sized>(&mut self, rng: &mut R) -> MinuteResult {
         if self.allows_extra_time && self.home_score == self.away_score {
-            // Go to extra time
+            // Go to extra time.
+            //
+            // Continues from where regulation actually ended rather than
+            // resetting to 91. The second half runs to 90 plus stoppage, so
+            // pinning extra time to 91 put its kick-off *before* the full-time
+            // whistle in the event log — a log that has to stay in order for
+            // replay to feed it back and for the match feed to read sensibly.
             self.phase = MatchPhase::ExtraTimeFirstHalf;
-            self.current_minute = 91;
+            self.current_minute = self.current_minute.max(90).saturating_add(1);
+            let kick_off_minute = self.current_minute;
             self.ball_zone = Zone::Midfield;
             self.possession = Side::Home;
             self.et_first_half_stoppage = rng.random_range(0..=2);
 
-            let evt = MatchEvent::new(91, EventType::KickOff, Side::Home, Zone::Midfield);
+            let evt = MatchEvent::new(
+                kick_off_minute,
+                EventType::KickOff,
+                Side::Home,
+                Zone::Midfield,
+            );
             self.events.push(evt.clone());
 
             MinuteResult {
-                minute: 91,
+                minute: kick_off_minute,
                 phase: MatchPhase::ExtraTimeFirstHalf,
                 events: vec![evt],
                 home_score: self.home_score,

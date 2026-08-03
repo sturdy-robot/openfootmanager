@@ -28,7 +28,7 @@
 
 use rand::{Rng, RngExt};
 
-use crate::event::MatchEvent;
+use crate::event::{EventType, MatchEvent};
 use crate::sim::state::Band;
 use crate::types::{DefensiveShape, PressingIntensity, TacticsBuildUpStyle, TacticsConfig, Tempo};
 
@@ -61,7 +61,7 @@ fn base_retention(band: Band) -> f64 {
         Band::OwnBox => 0.71,
         Band::OwnThird => 0.80,
         Band::Middle => 0.82,
-        Band::FinalThird => 0.76,
+        Band::FinalThird => 0.81,
         // The box resolves to a shot; nothing is retained there.
         Band::OppBox => 0.0,
     }
@@ -159,14 +159,26 @@ impl LiveMatchState {
             let own_tactics = self.team_ref(before).tactics.clone();
             let opponent_tactics = self.team_ref(before.opposite()).tactics.clone();
 
+            let events_before = events.len();
             events.extend(self.resolve_action(minute, rng));
+
             seconds += rng.random_range(ACTION_SECONDS);
 
-            // The action kept the ball and did not resolve to a set piece or a
-            // shot: decide whether the side circulates it or drives forward.
-            // `resolve_action` has already moved the ball on its own terms, so
-            // this only pulls it back to where it was.
-            if self.possession == before && band != Band::OppBox {
+            // The side still has the ball: did it commit forward, or work it?
+            //
+            // The resolver has already moved the ball by the time this runs, so
+            // declining to progress means putting it back. That is deliberate
+            // and it is what governs how often play reaches the box — the
+            // resolver decides whether an action *can* progress, this decides
+            // whether the side takes it.
+            //
+            // A set piece is exempt. A corner has been won; it is an outcome,
+            // not an option to decline, and pulling the ball back out would
+            // cancel a chance the match has already produced.
+            let won_set_piece = events[events_before..]
+                .iter()
+                .any(|event| matches!(event.event_type, EventType::Corner | EventType::FreeKick));
+            if self.possession == before && band != Band::OppBox && !won_set_piece {
                 if rng.random_range(0.0..1.0f64)
                     < retention_chance(band, &own_tactics, &opponent_tactics)
                 {

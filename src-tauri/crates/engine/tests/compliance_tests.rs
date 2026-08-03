@@ -196,8 +196,40 @@ fn default_engine_is_compliant() {
 fn default_engine_is_compliant_in_knockout_ties() {
     // Extra time and shootouts only exercise their invariants when the tie can
     // actually reach them, so this run uses two evenly matched sides.
-    let report = compliance::run_all(&DefaultEngine, &setup(true), 400, SEED ^ 0xFFFF);
+    let setup = setup(true);
+    let report = compliance::run_all(&DefaultEngine, &setup, 400, SEED ^ 0xFFFF);
     assert!(report.passed(), "{}", describe(&report));
+
+    // And prove the run actually got there. This assertion exists because the
+    // test spent a long time passing without it: the engine adapter rebuilt a
+    // bare setup and dropped `allows_extra_time`, so four hundred "knockout"
+    // matches all ended at ninety minutes and the shootout invariant was never
+    // once evaluated. A compliance check that cannot reach its own subject is
+    // worse than no check, because it reads as coverage.
+    use engine::traits::InstantEngine;
+    use rand::SeedableRng;
+    use rand::rngs::StdRng;
+
+    let mut reached_extra_time = 0;
+    let mut shootouts = 0;
+    for offset in 0..400 {
+        let mut rng = StdRng::seed_from_u64((SEED ^ 0xFFFF) + offset);
+        let result = DefaultEngine.simulate(&setup, &mut rng);
+        if result.total_minutes > 95 {
+            reached_extra_time += 1;
+        }
+        if result.home_penalties.is_some() {
+            shootouts += 1;
+        }
+    }
+    assert!(
+        reached_extra_time > 0,
+        "no tie reached extra time, so the lifecycle invariant was never tested there"
+    );
+    assert!(
+        shootouts > 0,
+        "no tie reached a shootout, so the shootout invariant was never tested"
+    );
 }
 
 #[test]
@@ -238,7 +270,7 @@ fn golden_report_is_unchanged() {
     let actual = hasher.finish();
 
     // Pinned behaviour fingerprint. See the doc comment before changing.
-    const GOLDEN: u64 = 0x858d_208f_7308_325b;
+    const GOLDEN: u64 = 0xb56e_bcc2_0fde_8e30;
 
     assert_eq!(
         actual, GOLDEN,
@@ -282,7 +314,7 @@ fn golden_report_is_unchanged_with_instructions() {
     let actual = hasher.finish();
 
     // Pinned behaviour fingerprint. See `golden_report_is_unchanged`.
-    const GOLDEN_WITH_INSTRUCTIONS: u64 = 0xd72f_8795_3b33_568e;
+    const GOLDEN_WITH_INSTRUCTIONS: u64 = 0x0d5a_5bf6_a7b8_273e;
 
     assert_eq!(
         actual, GOLDEN_WITH_INSTRUCTIONS,
@@ -336,3 +368,4 @@ fn ratings_spread_across_the_scale() {
         "nobody ever has a good game, so the morale reward is unreachable"
     );
 }
+
