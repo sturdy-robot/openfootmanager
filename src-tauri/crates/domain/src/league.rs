@@ -520,6 +520,20 @@ pub struct CompactMatchReport {
     pub home_stats: CompactTeamMatchStats,
     pub away_stats: CompactTeamMatchStats,
     pub events: Vec<CompactMatchEvent>,
+    /// Who was on top, minute by minute — positive when the home side was.
+    ///
+    /// Kept in the saved record so a match can be read back long after it was
+    /// played. One entry per minute in which anybody threatened, which is a
+    /// few dozen numbers, not a per-minute array padded with zeroes.
+    #[serde(default)]
+    pub momentum: Vec<CompactMinuteMomentum>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+pub struct CompactMinuteMomentum {
+    pub minute: u8,
+    pub home: f32,
+    pub away: f32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

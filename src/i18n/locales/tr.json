@@ -2707,7 +2707,12 @@
     "charts": {
       "xgRace": "Maç boyunca beklenen goller",
       "noChances": "İki takım da grafiğe değer bir pozisyon üretemedi.",
-      "xgRaceSummary": "Maç boyunca beklenen goller. {{home}} {{homeXg}} ile, {{away}} {{awayXg}} ile bitirdi."
+      "xgRaceSummary": "Maç boyunca beklenen goller. {{home}} {{homeXg}} ile, {{away}} {{awayXg}} ile bitirdi.",
+      "momentum": "Maçın gidişatı",
+      "noMomentum": "İki takım da grafiğe değer bir baskı kuramadı.",
+      "momentumSummary": "Dakika dakika maçın gidişatı. {{home}} {{homeMinutes}} dakika, {{away}} {{awayMinutes}} dakika üstün oynadı.",
+      "momentumHome": "{{team}} üstün",
+      "momentumAway": "{{team}} üstün"
     }
   },
   "endOfSeason": {

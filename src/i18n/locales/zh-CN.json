@@ -2707,7 +2707,12 @@
     "charts": {
       "xgRace": "全场预期进球走势",
       "noChances": "两队都没有创造出值得记录的机会。",
-      "xgRaceSummary": "全场预期进球走势。{{home}} 最终为 {{homeXg}}，{{away}} 为 {{awayXg}}。"
+      "xgRaceSummary": "全场预期进球走势。{{home}} 最终为 {{homeXg}}，{{away}} 为 {{awayXg}}。",
+      "momentum": "比赛气势",
+      "noMomentum": "两队都没有形成值得记录的压制。",
+      "momentumSummary": "逐分钟的比赛气势。{{home}} 占优 {{homeMinutes}} 分钟，{{away}} 占优 {{awayMinutes}} 分钟。",
+      "momentumHome": "{{team}} 占优",
+      "momentumAway": "{{team}} 占优"
     }
   },
   "endOfSeason": {

@@ -2707,7 +2707,12 @@
     "charts": {
       "xgRace": "Expected goals over time",
       "noChances": "Neither side created a chance worth plotting.",
-      "xgRaceSummary": "Expected goals over the course of the match. {{home}} finished on {{homeXg}}, {{away}} on {{awayXg}}."
+      "xgRaceSummary": "Expected goals over the course of the match. {{home}} finished on {{homeXg}}, {{away}} on {{awayXg}}.",
+      "momentum": "Match momentum",
+      "noMomentum": "Neither side built any pressure worth plotting.",
+      "momentumSummary": "Match momentum by minute. {{home}} was on top for {{homeMinutes}} minutes, {{away}} for {{awayMinutes}}.",
+      "momentumHome": "{{team}} on top",
+      "momentumAway": "{{team}} on top"
     }
   },
   "endOfSeason": {

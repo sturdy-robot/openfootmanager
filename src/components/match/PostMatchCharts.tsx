@@ -1,5 +1,8 @@
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
+  ReferenceLine,
   Cell,
   Line,
   LineChart,
@@ -11,7 +14,7 @@ import {
   YAxis,
 } from "recharts";
 import { useTranslation } from "react-i18next";
-import type { MatchEvent } from "./types";
+import type { MatchEvent, MinuteMomentum } from "./types";
 import { useChartTheme } from "../ui/charts/chartTheme";
 
 interface PossessionDonutProps {
@@ -262,6 +265,141 @@ export function XgRaceChart({
           </svg>
           {awayTeamName} {final.away.toFixed(2)}
         </span>
+      </div>
+    </figure>
+  );
+}
+
+
+// ---------------------------------------------------------------------------
+// Match momentum
+// ---------------------------------------------------------------------------
+
+/**
+ * Fill the gaps so the chart has a bar for every minute played.
+ *
+ * The engine only records minutes in which somebody threatened, which keeps the
+ * saved record small. A chart needs the quiet minutes too, or the x-axis lies
+ * about when the pressure came.
+ */
+export function buildMomentumSeries(
+  momentum: MinuteMomentum[],
+  totalMinutes: number,
+): { minute: number; net: number }[] {
+  const byMinute = new Map(momentum.map((m) => [m.minute, m.home - m.away]));
+  const last = Math.max(totalMinutes, ...momentum.map((m) => m.minute), 0);
+  const series = [];
+  for (let minute = 1; minute <= last; minute++) {
+    series.push({ minute, net: byMinute.get(minute) ?? 0 });
+  }
+  return series;
+}
+
+/** Which side a minute belonged to, for the accessible summary. */
+function describeMomentum(series: { minute: number; net: number }[]): {
+  homeMinutes: number;
+  awayMinutes: number;
+} {
+  let homeMinutes = 0;
+  let awayMinutes = 0;
+  for (const point of series) {
+    if (point.net > 0) homeMinutes++;
+    else if (point.net < 0) awayMinutes++;
+  }
+  return { homeMinutes, awayMinutes };
+}
+
+export function MomentumChart({
+  momentum,
+  totalMinutes,
+  homeTeamName,
+  awayTeamName,
+  homeColor,
+  awayColor,
+}: {
+  momentum: MinuteMomentum[] | undefined;
+  totalMinutes: number;
+  homeTeamName: string;
+  awayTeamName: string;
+  homeColor: string;
+  awayColor: string;
+}) {
+  const { t } = useTranslation();
+  const theme = useChartTheme();
+  const series = buildMomentumSeries(momentum ?? [], totalMinutes);
+
+  if (series.every((point) => point.net === 0)) {
+    return (
+      <p className="text-xs text-gray-600 dark:text-gray-400">
+        {t("match.charts.noMomentum")}
+      </p>
+    );
+  }
+
+  const { homeMinutes, awayMinutes } = describeMomentum(series);
+
+  return (
+    <figure className="m-0">
+      <figcaption className="text-xs font-heading font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
+        {t("match.charts.momentum")}
+      </figcaption>
+      {/* One image to assistive technology, summarised in words. A bar-by-bar
+          reading of ninety numbers helps nobody; who was on top, and for how
+          much of the match, is the thing the chart is actually saying. */}
+      <div
+        role="img"
+        aria-label={t("match.charts.momentumSummary", {
+          home: homeTeamName,
+          away: awayTeamName,
+          homeMinutes,
+          awayMinutes,
+        })}
+        style={{ width: "100%", height: 140 }}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={series} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
+            <CartesianGrid stroke={theme.gridColor} strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              dataKey="minute"
+              stroke={theme.axisColor}
+              tick={{ fontSize: 10, fill: theme.axisColor }}
+              unit="'"
+              interval={14}
+            />
+            <YAxis hide domain={["dataMin", "dataMax"]} />
+            {/* The halfway line: above it the home side was on top, below it
+                the away side. Without it the bars have no anchor. */}
+            <ReferenceLine y={0} stroke={theme.axisColor} />
+            <Tooltip
+              contentStyle={{
+                background: theme.tooltipBg,
+                border: `1px solid ${theme.tooltipBorder}`,
+                borderRadius: 8,
+                fontSize: 12,
+              }}
+              labelFormatter={(minute) => `${minute}'`}
+              formatter={(value) => {
+                const net = typeof value === "number" ? value : 0;
+                return [
+                  Math.abs(net).toFixed(2),
+                  net >= 0 ? homeTeamName : awayTeamName,
+                ];
+              }}
+            />
+            <Bar dataKey="net" isAnimationActive={!prefersReducedMotion()}>
+              {series.map((point) => (
+                <Cell
+                  key={point.minute}
+                  fill={point.net >= 0 ? homeColor : awayColor}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="flex items-center justify-between mt-1 text-[10px] font-heading uppercase tracking-wider text-gray-600 dark:text-gray-400">
+        <span>{t("match.charts.momentumHome", { team: homeTeamName })}</span>
+        <span>{t("match.charts.momentumAway", { team: awayTeamName })}</span>
       </div>
     </figure>
   );

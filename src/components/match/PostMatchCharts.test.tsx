@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildXgRace } from "./PostMatchCharts";
+import { buildMomentumSeries, buildXgRace } from "./PostMatchCharts";
 import type { MatchEvent } from "./types";
 
 const shot = (
@@ -71,5 +71,39 @@ describe("buildXgRace", () => {
       detail: { Goal: { context: "Opener" } },
     } as unknown as MatchEvent;
     expect(() => buildXgRace([legacy], 90)).not.toThrow();
+  });
+});
+
+describe("buildMomentumSeries", () => {
+  it("fills the minutes nobody threatened in", () => {
+    // The engine only records minutes where something happened, which keeps
+    // the saved record small. A chart that skipped the quiet ones would put
+    // the pressure at the wrong point in the match.
+    const series = buildMomentumSeries(
+      [{ minute: 3, home: 0.1, away: 0 }, { minute: 6, home: 0, away: 0.2 }],
+      8,
+    );
+    expect(series.map((p) => p.minute)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(series[2].net).toBeCloseTo(0.1);
+    expect(series[3].net).toBe(0);
+  });
+
+  it("signs the value toward whoever was on top", () => {
+    const series = buildMomentumSeries(
+      [{ minute: 1, home: 0.05, away: 0.2 }],
+      1,
+    );
+    expect(series[0].net).toBeLessThan(0);
+  });
+
+  it("runs past the nominal ninety when a match did", () => {
+    const series = buildMomentumSeries([{ minute: 96, home: 0.3, away: 0 }], 90);
+    expect(series[series.length - 1].minute).toBe(96);
+  });
+
+  it("handles a match nobody threatened in", () => {
+    const series = buildMomentumSeries([], 90);
+    expect(series).toHaveLength(90);
+    expect(series.every((p) => p.net === 0)).toBe(true);
   });
 });

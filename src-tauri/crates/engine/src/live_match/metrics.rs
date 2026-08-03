@@ -16,7 +16,10 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use serde::{Deserialize, Serialize};
+
 use crate::sim::state::Band;
+use crate::types::Side;
 
 /// One player's advanced numbers.
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -240,5 +243,118 @@ mod tests {
         }
         let distance = |t: &MetricTally| t.by_id(|_| Arc::from("p"))[&Arc::from("p")].distance_km;
         assert!(distance(&fresh) > distance(&spent));
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Match momentum
+// ---------------------------------------------------------------------------
+
+/// How much each side threatened in a single minute.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+pub struct MinuteMomentum {
+    pub minute: u8,
+    pub home: f32,
+    pub away: f32,
+}
+
+impl MinuteMomentum {
+    /// Signed, positive when the home side was on top. This is what a bar
+    /// chart plots: one bar per minute, leaning toward whoever was on top.
+    pub fn net(&self) -> f32 {
+        self.home - self.away
+    }
+}
+
+/// Who was on top, minute by minute.
+///
+/// A cumulative possession bar cannot answer this — it says who has had more of
+/// the ball overall, not who is on top *now*, and a side can dominate the ball
+/// for an hour without threatening once.
+///
+/// Momentum here is the danger a side generated in that minute: the threat it
+/// added by carrying play upfield, plus the quality of any chance it worked.
+/// Both are things the engine already computes for every action, so this is a
+/// reading of the match rather than a separate model that could disagree with
+/// it.
+#[derive(Debug, Clone, Default)]
+pub(crate) struct MomentumLog {
+    minutes: Vec<MinuteMomentum>,
+}
+
+impl MomentumLog {
+    /// Record danger created by `side` in `minute`.
+    pub fn credit(&mut self, side: Side, minute: u8, amount: f64) {
+        if amount <= 0.0 {
+            // Playing backwards gives something up, but it is not the other
+            // side's momentum — they did not do anything.
+            return;
+        }
+        let slot = match self.minutes.iter_mut().rev().find(|m| m.minute == minute) {
+            Some(existing) => existing,
+            None => {
+                self.minutes.push(MinuteMomentum {
+                    minute,
+                    ..Default::default()
+                });
+                self.minutes.last_mut().expect("just pushed")
+            }
+        };
+        match side {
+            Side::Home => slot.home += amount as f32,
+            Side::Away => slot.away += amount as f32,
+        }
+    }
+
+    pub fn minutes(&self) -> &[MinuteMomentum] {
+        &self.minutes
+    }
+}
+
+#[cfg(test)]
+mod momentum_tests {
+    use super::*;
+
+    #[test]
+    fn a_minute_collects_both_sides() {
+        let mut log = MomentumLog::default();
+        log.credit(Side::Home, 12, 0.05);
+        log.credit(Side::Away, 12, 0.02);
+        log.credit(Side::Home, 13, 0.01);
+
+        assert_eq!(log.minutes().len(), 2);
+        assert_eq!(log.minutes()[0].minute, 12);
+        assert!((log.minutes()[0].net() - 0.03).abs() < 1e-6);
+        assert!(log.minutes()[1].net() > 0.0);
+    }
+
+    #[test]
+    fn the_sign_says_who_was_on_top() {
+        let mut log = MomentumLog::default();
+        log.credit(Side::Away, 40, 0.09);
+        assert!(
+            log.minutes()[0].net() < 0.0,
+            "away pressure must read negative"
+        );
+    }
+
+    /// Going backwards is not the opponent's momentum — nobody did anything.
+    #[test]
+    fn losing_ground_credits_nobody() {
+        let mut log = MomentumLog::default();
+        log.credit(Side::Home, 5, -0.04);
+        assert!(log.minutes().is_empty());
+    }
+
+    /// Minutes are recorded in the order they are played, so a chart can plot
+    /// them straight through without sorting.
+    #[test]
+    fn minutes_stay_in_order() {
+        let mut log = MomentumLog::default();
+        for minute in [3u8, 3, 8, 9, 9, 20] {
+            log.credit(Side::Home, minute, 0.01);
+        }
+        let recorded: Vec<u8> = log.minutes().iter().map(|m| m.minute).collect();
+        assert_eq!(recorded, vec![3, 8, 9, 20]);
     }
 }

@@ -2707,7 +2707,12 @@
     "charts": {
       "xgRace": "Buts attendus au fil du match",
       "noChances": "Aucune des deux équipes n'a créé d'occasion à représenter.",
-      "xgRaceSummary": "Buts attendus au fil du match. {{home}} termine à {{homeXg}}, {{away}} à {{awayXg}}."
+      "xgRaceSummary": "Buts attendus au fil du match. {{home}} termine à {{homeXg}}, {{away}} à {{awayXg}}.",
+      "momentum": "Dynamique du match",
+      "noMomentum": "Aucune des deux équipes n'a installé de pression à représenter.",
+      "momentumSummary": "Dynamique du match minute par minute. {{home}} a dominé {{homeMinutes}} minutes, {{away}} {{awayMinutes}}.",
+      "momentumHome": "{{team}} domine",
+      "momentumAway": "{{team}} domine"
     }
   },
   "endOfSeason": {

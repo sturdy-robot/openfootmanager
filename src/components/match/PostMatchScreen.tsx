@@ -17,7 +17,7 @@ import {
   renderScorers,
   PlayerRatingsPanel,
 } from "./PostMatchHelpers";
-import { PossessionDonut, XgRaceChart } from "./PostMatchCharts";
+import { MomentumChart, PossessionDonut, XgRaceChart } from "./PostMatchCharts";
 import {
   Trophy,
   TrendingDown,
@@ -673,6 +673,16 @@ export default function PostMatchScreen({
                   homeColor={homeTeamColor}
                   awayColor={awayTeamColor}
                 />
+                <div className="mt-4">
+                  <MomentumChart
+                    momentum={snapshot.momentum}
+                    totalMinutes={snapshot.current_minute}
+                    homeTeamName={snapshot.home_team.name}
+                    awayTeamName={snapshot.away_team.name}
+                    homeColor={homeTeamColor}
+                    awayColor={awayTeamColor}
+                  />
+                </div>
               </div>
 
               {/* Key Events */}

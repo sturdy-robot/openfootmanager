@@ -2726,7 +2726,12 @@
     "charts": {
       "xgRace": "Gol attesi nel corso della partita",
       "noChances": "Nessuna delle due squadre ha creato un'occasione da rappresentare.",
-      "xgRaceSummary": "Gol attesi nel corso della partita. {{home}} chiude a {{homeXg}}, {{away}} a {{awayXg}}."
+      "xgRaceSummary": "Gol attesi nel corso della partita. {{home}} chiude a {{homeXg}}, {{away}} a {{awayXg}}.",
+      "momentum": "Inerzia della partita",
+      "noMomentum": "Nessuna delle due squadre ha costruito pressione da rappresentare.",
+      "momentumSummary": "Inerzia della partita minuto per minuto. {{home}} ha comandato per {{homeMinutes}} minuti, {{away}} per {{awayMinutes}}.",
+      "momentumHome": "Comanda {{team}}",
+      "momentumAway": "Comanda {{team}}"
     }
   },
   "notifications": {

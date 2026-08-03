@@ -2707,7 +2707,12 @@
     "charts": {
       "xgRace": "Golos esperados ao longo do jogo",
       "noChances": "Nenhuma equipa criou uma oportunidade digna de registo.",
-      "xgRaceSummary": "Golos esperados ao longo do jogo. O {{home}} terminou com {{homeXg}}, o {{away}} com {{awayXg}}."
+      "xgRaceSummary": "Golos esperados ao longo do jogo. O {{home}} terminou com {{homeXg}}, o {{away}} com {{awayXg}}.",
+      "momentum": "Momento do jogo",
+      "noMomentum": "Nenhuma equipa criou pressão digna de registo.",
+      "momentumSummary": "Momento do jogo por minuto. O {{home}} dominou {{homeMinutes}} minutos, o {{away}} {{awayMinutes}}.",
+      "momentumHome": "{{team}} por cima",
+      "momentumAway": "{{team}} por cima"
     }
   },
   "endOfSeason": {

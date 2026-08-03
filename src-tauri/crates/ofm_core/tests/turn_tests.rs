@@ -328,6 +328,7 @@ fn make_game_without_match_today() -> Game {
 
 fn empty_report(home_goals: u8, away_goals: u8) -> MatchReport {
     MatchReport {
+        momentum: Vec::new(),
         home_goals,
         away_goals,
         home_stats: TeamStats::default(),
@@ -396,6 +397,7 @@ fn report_with_scorer(home_goals: u8, away_goals: u8, scorer_id: &str, side: Sid
         .collect();
 
     MatchReport {
+        momentum: Vec::new(),
         home_goals,
         away_goals,
         home_stats: TeamStats::default(),
@@ -538,6 +540,7 @@ fn full_squad_report(home_goals: u8, away_goals: u8) -> MatchReport {
         }
     }
     MatchReport {
+        momentum: Vec::new(),
         home_goals,
         away_goals,
         home_stats: TeamStats::default(),
@@ -895,6 +898,7 @@ fn apply_match_report_gk_clean_sheet() {
         },
     );
     let report = MatchReport {
+        momentum: Vec::new(),
         home_goals: 1,
         away_goals: 0,
         player_stats,
@@ -919,6 +923,7 @@ fn apply_match_report_gk_no_clean_sheet_on_conceding() {
         },
     );
     let report = MatchReport {
+        momentum: Vec::new(),
         home_goals: 1,
         away_goals: 2,
         player_stats,
@@ -1099,6 +1104,7 @@ fn apply_match_report_running_avg_rating() {
         },
     );
     let report1 = MatchReport {
+        momentum: Vec::new(),
         player_stats: ps1,
         ..empty_report(1, 0)
     };
@@ -1122,6 +1128,7 @@ fn apply_match_report_running_avg_rating() {
         },
     );
     let report2 = MatchReport {
+        momentum: Vec::new(),
         player_stats: ps2,
         ..empty_report(0, 0)
     };
@@ -1161,6 +1168,7 @@ fn apply_match_report_yellow_and_red_cards() {
         },
     );
     let report = MatchReport {
+        momentum: Vec::new(),
         player_stats,
         ..empty_report(1, 0)
     };
@@ -1282,6 +1290,7 @@ fn apply_match_report_morale_drop_from_red_card() {
         },
     );
     let report = MatchReport {
+        momentum: Vec::new(),
         player_stats,
         ..empty_report(0, 2) // Loss
     };

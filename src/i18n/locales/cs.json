@@ -2708,7 +2708,12 @@
     "charts": {
       "xgRace": "Očekávané góly v průběhu zápasu",
       "noChances": "Ani jeden tým si nevytvořil šanci, kterou by stálo za to zakreslit.",
-      "xgRaceSummary": "Očekávané góly v průběhu zápasu. {{home}} končí na {{homeXg}}, {{away}} na {{awayXg}}."
+      "xgRaceSummary": "Očekávané góly v průběhu zápasu. {{home}} končí na {{homeXg}}, {{away}} na {{awayXg}}.",
+      "momentum": "Průběh zápasu",
+      "noMomentum": "Ani jeden tým nevyvinul tlak, který by stálo za to zakreslit.",
+      "momentumSummary": "Průběh zápasu po minutách. {{home}} měl navrch {{homeMinutes}} minut, {{away}} {{awayMinutes}}.",
+      "momentumHome": "Navrch má {{team}}",
+      "momentumAway": "Navrch má {{team}}"
     }
   },
   "endOfSeason": {

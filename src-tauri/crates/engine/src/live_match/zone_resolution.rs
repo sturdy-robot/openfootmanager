@@ -353,6 +353,9 @@ impl LiveMatchState {
             let gained = crate::live_match::metrics::threat(landed)
                 - crate::live_match::metrics::threat(band);
             self.metrics_mut(att_side).add_xt(actor_index, gained);
+            // Momentum reads the same number: moving play into somewhere more
+            // dangerous is what being on top looks like.
+            self.credit_momentum(att_side, minute, gained);
         }
 
         events
@@ -476,6 +479,7 @@ impl LiveMatchState {
             .clamp(0.02, 0.70);
         let xg = reference_accuracy * reference_conversion;
         self.metrics_mut(att_side).add_xg(shooter.index, xg);
+        self.credit_momentum(att_side, minute, xg);
         // The man who made it gets the same credit: expected assists is the
         // expected goals of the chance you created.
         self.metrics_mut(att_side).add_xa(assister.index, xg);

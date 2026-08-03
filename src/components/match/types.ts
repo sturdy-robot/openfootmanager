@@ -122,6 +122,7 @@ export interface MatchSnapshot {
   substitutions: SubstitutionRecord[];
   home_xg: number;
   away_xg: number;
+  momentum?: MinuteMomentum[];
   allows_extra_time: boolean;
   home_yellows: Record<string, number>;
   away_yellows: Record<string, number>;
@@ -314,4 +315,11 @@ export interface MatchStatsResponse {
   home_pass_accuracy: number;
   away_pass_accuracy: number;
   players: MatchPlayerStatsRow[];
+}
+
+/** Who was on top in a single minute. Positive net means the home side. */
+export interface MinuteMomentum {
+  minute: number;
+  home: number;
+  away: number;
 }

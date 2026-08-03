@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { MomentumChart } from "./PostMatchCharts";
 import { MatchSnapshot, MatchEvent, EnginePlayerData } from "./types";
 import { getEventDisplay, getEventTypeLabel, getPlayerName } from "./helpers";
 import { getCommentary } from "./commentary";
@@ -205,6 +206,19 @@ export function MatchStats({ snapshot }: { snapshot: MatchSnapshot }) {
           </div>
         );
       })}
+      {/* While the match is running, who is on top *now* is the thing you
+          want, and a cumulative possession bar cannot tell you: a side can
+          have the ball for an hour without threatening once. */}
+      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-navy-700">
+        <MomentumChart
+          momentum={snapshot.momentum}
+          totalMinutes={snapshot.current_minute}
+          homeTeamName={snapshot.home_team.name}
+          awayTeamName={snapshot.away_team.name}
+          homeColor="var(--color-primary-500)"
+          awayColor="var(--color-indigo-500)"
+        />
+      </div>
     </div>
   );
 }

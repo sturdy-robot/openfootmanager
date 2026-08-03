@@ -2707,7 +2707,12 @@
     "charts": {
       "xgRace": "Erwartete Tore im Spielverlauf",
       "noChances": "Keine der beiden Mannschaften hat eine nennenswerte Chance erspielt.",
-      "xgRaceSummary": "Erwartete Tore im Spielverlauf. {{home}} kommt auf {{homeXg}}, {{away}} auf {{awayXg}}."
+      "xgRaceSummary": "Erwartete Tore im Spielverlauf. {{home}} kommt auf {{homeXg}}, {{away}} auf {{awayXg}}.",
+      "momentum": "Spielverlauf",
+      "noMomentum": "Keine der beiden Mannschaften hat nennenswerten Druck aufgebaut.",
+      "momentumSummary": "Spielverlauf nach Minuten. {{home}} war {{homeMinutes}} Minuten obenauf, {{away}} {{awayMinutes}}.",
+      "momentumHome": "{{team}} überlegen",
+      "momentumAway": "{{team}} überlegen"
     }
   },
   "endOfSeason": {

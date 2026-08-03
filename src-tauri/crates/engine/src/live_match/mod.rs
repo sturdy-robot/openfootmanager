@@ -8,7 +8,8 @@ mod squad_cache;
 mod substitution;
 mod zone_resolution;
 
-use metrics::MetricTally;
+pub use metrics::MinuteMomentum;
+use metrics::{MetricTally, MomentumLog};
 use squad_cache::SquadCache;
 
 use rand::Rng;
@@ -156,6 +157,10 @@ pub struct MatchSnapshot {
     pub home_xg: f32,
     #[serde(default)]
     pub away_xg: f32,
+    /// Who was on top, minute by minute. One entry per minute in which
+    /// anybody threatened, so a quiet match is a short list.
+    #[serde(default)]
+    pub momentum: Vec<MinuteMomentum>,
     pub allows_extra_time: bool,
     pub home_yellows: HashMap<String, u8>,
     pub away_yellows: HashMap<String, u8>,
@@ -270,6 +275,9 @@ pub struct LiveMatchState {
     home_metrics: MetricTally,
     away_metrics: MetricTally,
 
+    /// Who was on top, minute by minute. See `metrics::MomentumLog`.
+    momentum: MomentumLog,
+
     // Penalty shootout state
     penalty_state: PenaltyShootoutState,
 
@@ -330,6 +338,7 @@ impl LiveMatchState {
             away_cache,
             home_metrics,
             away_metrics,
+            momentum: MomentumLog::default(),
             penalty_state: PenaltyShootoutState::default(),
             recent_zones: VecDeque::with_capacity(10),
             awaiting_set_piece: false,
@@ -484,6 +493,8 @@ impl LiveMatchState {
             entry.xt = m.xt as f32;
             entry.distance_km = m.distance_km as f32;
         }
+
+        report.momentum = self.momentum.minutes().to_vec();
 
         report.assign_ratings(&home_refs, &away_refs);
 

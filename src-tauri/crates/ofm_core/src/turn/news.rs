@@ -907,6 +907,7 @@ mod tests {
 
     fn make_report(goals: Vec<GoalDetail>, home_goals: u8, away_goals: u8) -> MatchReport {
         MatchReport {
+            momentum: Vec::new(),
             home_goals,
             away_goals,
             home_stats: TeamStats::default(),

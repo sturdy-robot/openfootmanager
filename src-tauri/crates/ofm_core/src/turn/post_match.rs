@@ -53,6 +53,18 @@ fn compact_match_report(report: &engine::MatchReport) -> CompactMatchReport {
         .collect();
 
     CompactMatchReport {
+        // Momentum survives into the save. It is a handful of numbers per
+        // match, and it is the one thing here that says how a match felt
+        // rather than only what it ended.
+        momentum: report
+            .momentum
+            .iter()
+            .map(|m| domain::league::CompactMinuteMomentum {
+                minute: m.minute,
+                home: m.home,
+                away: m.away,
+            })
+            .collect(),
         total_minutes: report.total_minutes,
         home_stats: compact_team_stats(&report.home_stats, home_possession_pct),
         away_stats: compact_team_stats(&report.away_stats, away_possession_pct),

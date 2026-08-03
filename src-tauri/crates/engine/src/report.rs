@@ -208,6 +208,9 @@ pub struct MatchReport {
     pub events: Vec<MatchEvent>,
     pub goals: Vec<GoalDetail>,
     pub player_stats: HashMap<String, PlayerMatchStats>,
+    /// Who was on top, minute by minute.
+    #[serde(default)]
+    pub momentum: Vec<crate::live_match::MinuteMomentum>,
     /// Possession percentage for the home team (0–100).
     pub home_possession: f64,
     /// Total simulated minutes (90 + stoppage).
@@ -505,6 +508,9 @@ impl MatchReport {
             total_minutes,
             home_penalties: None,
             away_penalties: None,
+            // Filled in by the live match, which is the only thing that knows
+            // when each action happened.
+            momentum: Vec::new(),
         }
     }
 }

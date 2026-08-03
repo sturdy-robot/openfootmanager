@@ -2707,7 +2707,12 @@
     "charts": {
       "xgRace": "Ожидаемые голы по ходу матча",
       "noChances": "Ни одна из команд не создала момента, достойного графика.",
-      "xgRaceSummary": "Ожидаемые голы по ходу матча. {{home}} — {{homeXg}}, {{away}} — {{awayXg}}."
+      "xgRaceSummary": "Ожидаемые голы по ходу матча. {{home}} — {{homeXg}}, {{away}} — {{awayXg}}.",
+      "momentum": "Ход матча",
+      "noMomentum": "Ни одна из команд не создала давления, достойного графика.",
+      "momentumSummary": "Ход матча по минутам. {{home}} доминировал {{homeMinutes}} минут, {{away}} — {{awayMinutes}}.",
+      "momentumHome": "Давит {{team}}",
+      "momentumAway": "Давит {{team}}"
     }
   },
   "endOfSeason": {

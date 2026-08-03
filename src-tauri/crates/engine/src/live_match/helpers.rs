@@ -168,6 +168,11 @@ impl LiveMatchState {
         }
     }
 
+    /// Record danger created by `side` this minute, for the momentum chart.
+    pub(super) fn credit_momentum(&mut self, side: Side, minute: u8, amount: f64) {
+        self.momentum.credit(side, minute, amount);
+    }
+
     pub(super) fn cache_mut(&mut self, side: Side) -> &mut SquadCache {
         match side {
             Side::Home => &mut self.home_cache,

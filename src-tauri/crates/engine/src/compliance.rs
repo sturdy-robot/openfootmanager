@@ -196,6 +196,18 @@ pub fn fingerprint(report: &MatchReport) -> String {
         // about the model and not about floating-point noise.
         parts.push(format!("{label}-xg|{:.4}", stats.xg));
     }
+    // Momentum is in here for the same reason expected goals is: it changes
+    // nothing that happens, so a change to how it is measured moves no
+    // scoreline and would slip past a fingerprint made only of events. It is
+    // persisted to saves now, which makes a silent change to it worse than a
+    // loud one. Four places, so the check is about the model rather than
+    // floating-point noise.
+    for minute in &report.momentum {
+        parts.push(format!(
+            "mom|{}|{:.4}|{:.4}",
+            minute.minute, minute.home, minute.away
+        ));
+    }
     for event in &report.events {
         parts.push(format!(
             "{}|{:?}|{:?}|{:?}|{}|{}|{:?}",
