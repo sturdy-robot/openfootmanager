@@ -23,7 +23,7 @@ use std::collections::{HashMap, HashSet};
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 
-use crate::event::{EventType, MatchEvent};
+use crate::event::EventType;
 use crate::report::MatchReport;
 use crate::traits::{InstantEngine, MatchSetup};
 use crate::types::Side;
@@ -573,15 +573,3 @@ fn check_shootout(result: &MatchReport, seed: u64, report: &mut ComplianceReport
     }
 }
 
-/// Events that carry a player reference, for callers that want to audit
-/// attribution. Kept here so engines and tooling agree on what "acting" means.
-pub fn is_on_ball_event(event: &MatchEvent) -> bool {
-    !matches!(
-        event.event_type,
-        EventType::KickOff
-            | EventType::HalfTime
-            | EventType::SecondHalfStart
-            | EventType::FullTime
-            | EventType::Substitution
-    )
-}

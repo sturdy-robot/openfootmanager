@@ -65,9 +65,17 @@ export interface Commentary {
   line: string;
 }
 
-/** Stable, RNG-free hash so a given event always renders the same variant. */
-function hashEvent(evt: MatchEvent): number {
-  const key = `${evt.minute}|${evt.event_type}|${evt.player_id ?? ""}`;
+/**
+ * Stable, RNG-free hash so a given event always renders the same variant.
+ *
+ * The event's position in the feed is part of the key. Without it, a player
+ * who does the same thing twice in a minute — which the possession chain makes
+ * routine, since it resolves several actions per minute — hashes identically
+ * both times, so the sampler keeps or drops them together and renders the same
+ * sentence twice in a row.
+ */
+function hashEvent(evt: MatchEvent, ordinal: number): number {
+  const key = `${ordinal}|${evt.minute}|${evt.event_type}|${evt.player_id ?? ""}`;
   let h = 5381;
   for (let i = 0; i < key.length; i++) {
     h = ((h << 5) + h + key.charCodeAt(i)) | 0;
@@ -180,7 +188,9 @@ export function getCommentary(
   snapshot: MatchSnapshot,
   t: TFunction,
 ): Commentary | null {
-  const hash = hashEvent(evt);
+  // `indexOf` falls back to -1 for an event not in the snapshot (tests build
+  // events standalone); that is still a stable key for that call.
+  const hash = hashEvent(evt, snapshot.events.indexOf(evt));
   if (!COMMENTARY_EVENTS.has(evt.event_type)) {
     const rate = SAMPLED_EVENTS[evt.event_type];
     if (rate === undefined) return null;

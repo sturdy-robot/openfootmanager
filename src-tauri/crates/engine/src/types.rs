@@ -105,22 +105,6 @@ pub enum Slot {
     Striker,
 }
 
-impl Slot {
-    /// The coarse bucket this slot belongs to.
-    pub fn position(self) -> Position {
-        match self {
-            Slot::Goalkeeper => Position::Goalkeeper,
-            Slot::RightBack | Slot::CenterBack | Slot::LeftBack => Position::Defender,
-            Slot::RightWingBack | Slot::LeftWingBack => Position::Defender,
-            Slot::DefensiveMidfielder
-            | Slot::CentralMidfielder
-            | Slot::AttackingMidfielder
-            | Slot::RightMidfielder
-            | Slot::LeftMidfielder => Position::Midfielder,
-            Slot::RightWinger | Slot::LeftWinger | Slot::Striker => Position::Forward,
-        }
-    }
-}
 
 // ---------------------------------------------------------------------------
 // PlayerData — a snapshot of a player for engine consumption

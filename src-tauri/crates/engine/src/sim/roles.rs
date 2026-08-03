@@ -20,18 +20,6 @@
 use crate::sim::state::Band;
 use crate::types::{PlayerRole, Position, Slot};
 
-/// How a player tends to be used, independent of how good he is.
-#[derive(Debug, Clone, Copy)]
-pub struct RoleProfile {
-    /// Relative likelihood of being in each band when his side has the ball,
-    /// indexed by [`Band::index`].
-    pub occupancy: [f32; 5],
-    /// How much this player wants the ball when he is in the right area.
-    /// A playmaker takes more touches than a runner standing in the same place.
-    pub involvement: f32,
-    /// How readily he contests possession when his side does not have it.
-    pub defensive_engagement: f32,
-}
 
 /// Where each position naturally plays, before any role adjustment.
 ///
@@ -147,20 +135,6 @@ fn role_shape(role: PlayerRole) -> ([f32; 5], f32, f32) {
     }
 }
 
-/// How a player of this position and role is used.
-pub fn profile(position: Position, slot: Option<Slot>, role: PlayerRole) -> RoleProfile {
-    let base = placement(position, slot);
-    let (shape, involvement, defensive_engagement) = role_shape(role);
-    let mut occupancy = [0.0f32; 5];
-    for index in 0..5 {
-        occupancy[index] = base[index] * shape[index];
-    }
-    RoleProfile {
-        occupancy,
-        involvement,
-        defensive_engagement,
-    }
-}
 
 /// Relative likelihood of this player being the one on the ball in `band`.
 ///
@@ -206,7 +180,16 @@ mod tests {
                 Position::Midfielder,
                 Position::Forward,
             ] {
-                let total: f32 = profile(position, None, role).occupancy.iter().sum();
+                let total: f64 = [
+                    Band::OwnBox,
+                    Band::OwnThird,
+                    Band::Middle,
+                    Band::FinalThird,
+                    Band::OppBox,
+                ]
+                .iter()
+                .map(|band| on_ball_weight(position, None, role, *band))
+                .sum();
                 assert!(
                     total > 0.0,
                     "{role:?} as {position:?} is nowhere on the pitch"
@@ -256,9 +239,20 @@ mod tests {
 
     #[test]
     fn a_keeper_stays_at_home() {
-        let profile = profile(Position::Goalkeeper, None, PlayerRole::Standard);
-        assert!(profile.occupancy[Band::OwnBox.index()] > 0.0);
-        assert_eq!(profile.occupancy[Band::OppBox.index()], 0.0);
+        let at_home = on_ball_weight(
+            Position::Goalkeeper,
+            None,
+            PlayerRole::Standard,
+            Band::OwnBox,
+        );
+        let up_the_other_end = on_ball_weight(
+            Position::Goalkeeper,
+            None,
+            PlayerRole::Standard,
+            Band::OppBox,
+        );
+        assert!(at_home > 0.0);
+        assert_eq!(up_the_other_end, 0.0);
     }
 
     #[test]
@@ -301,13 +295,6 @@ mod tests {
         assert!(wing_back > centre_half, "{wing_back} vs {centre_half}");
     }
 
-    #[test]
-    fn every_slot_reports_the_bucket_it_belongs_to() {
-        assert_eq!(Slot::RightWingBack.position(), Position::Defender);
-        assert_eq!(Slot::AttackingMidfielder.position(), Position::Midfielder);
-        assert_eq!(Slot::LeftWinger.position(), Position::Forward);
-        assert_eq!(Slot::Goalkeeper.position(), Position::Goalkeeper);
-    }
 
     const ALL_ROLES: [PlayerRole; 27] = [
         PlayerRole::Standard,

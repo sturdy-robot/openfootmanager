@@ -187,3 +187,36 @@ describe("build-up commentary", () => {
     expect(second).toEqual(first);
   });
 });
+
+describe("commentary sampling is per-event, not per-minute", () => {
+  it("does not show the same line twice for a player's repeated actions", () => {
+    // The chain resolves several actions a minute, so a midfielder can pass
+    // three times inside one minute. If the sampler cannot tell those events
+    // apart, it keeps or drops all of them together and renders the identical
+    // sentence back to back.
+    const repeated = Array.from({ length: 3 }, () =>
+      ({
+        minute: 34,
+        // Corners are always shown, so this cannot pass by everything being
+        // sampled out — which is exactly how the first version of this test
+        // passed while proving nothing.
+        event_type: "Corner",
+        side: "Home",
+        zone: "Midfield",
+        player_id: "p1",
+        secondary_player_id: null,
+        detail: null,
+      }) as unknown as MatchEvent,
+    );
+    const lines = repeated
+      .map((evt) => getCommentary(evt, snapshot(repeated), i18n.t.bind(i18n)))
+      .filter((c): c is NonNullable<typeof c> => c !== null)
+      .map((c) => c.line);
+    expect(lines.length).toBe(repeated.length);
+    // Two templates cannot produce three distinct sentences, so the thing that
+    // matters is that the feed never prints the same line twice in a row.
+    for (let index = 1; index < lines.length; index++) {
+      expect(lines[index]).not.toBe(lines[index - 1]);
+    }
+  });
+});

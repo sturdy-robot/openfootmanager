@@ -56,16 +56,6 @@ impl Band {
         }
     }
 
-    /// One band back towards their own goal, or `None` when already there.
-    pub fn retreated(self) -> Option<Band> {
-        match self {
-            Band::OwnBox => None,
-            Band::OwnThird => Some(Band::OwnBox),
-            Band::Middle => Some(Band::OwnThird),
-            Band::FinalThird => Some(Band::Middle),
-            Band::OppBox => Some(Band::FinalThird),
-        }
-    }
 
 
     /// Position in a per-band table, deep to advanced.
@@ -79,14 +69,6 @@ impl Band {
         }
     }
 
-    /// Every band, deep to advanced. Index order matches [`Band::index`].
-    pub const ALL: [Band; 5] = [
-        Band::OwnBox,
-        Band::OwnThird,
-        Band::Middle,
-        Band::FinalThird,
-        Band::OppBox,
-    ];
 
     /// Read an absolute zone from `attacker`'s point of view.
     pub fn from_zone(zone: Zone, attacker: Side) -> Band {
@@ -171,17 +153,7 @@ mod tests {
     }
 
     #[test]
-    fn advancing_and_retreating_are_inverses() {
-        for band in ALL {
-            if let Some(forward) = band.advanced() {
-                assert_eq!(forward.retreated(), Some(band));
-            }
-        }
-    }
-
-    #[test]
     fn the_pitch_ends_where_you_would_expect() {
         assert_eq!(Band::OppBox.advanced(), None);
-        assert_eq!(Band::OwnBox.retreated(), None);
     }
 }
