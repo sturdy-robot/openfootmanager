@@ -2464,6 +2464,83 @@
           "0": "È tutto — fischio finale!",
           "1": "L'arbitro pone fine all'incontro."
         }
+      },
+      "PassCompleted": {
+        "headline": "COSTRUZIONE",
+        "lines": {
+          "0": "{{player}} fa girare il pallone per il {{team}}.",
+          "1": "Bel passaggio di {{player}}."
+        }
+      },
+      "PassIntercepted": {
+        "headline": "INTERCETTATO",
+        "lines": {
+          "0": "{{player}} la perde — il {{opponent}} ne approfitta.",
+          "1": "Passaggio impreciso di {{player}}, ed è intercettato."
+        }
+      },
+      "Interception": {
+        "headline": "HA LETTO TUTTO",
+        "lines": {
+          "0": "{{player}} legge l'azione e interviene.",
+          "1": "Bella intercettazione di {{player}}."
+        }
+      },
+      "Tackle": {
+        "headline": "CONTRASTO",
+        "lines": {
+          "0": "{{player}} recupera palla con un bel contrasto.",
+          "1": "Tempo perfetto di {{player}} — il {{team}} ha il pallone."
+        }
+      },
+      "Clearance": {
+        "headline": "SPAZZATA",
+        "lines": {
+          "0": "{{player}} spazza via.",
+          "1": "{{player}} allontana il pericolo."
+        }
+      },
+      "Dribble": {
+        "headline": "IN PROGRESSIONE",
+        "lines": {
+          "0": "{{player}} punta la difesa.",
+          "1": "{{player}} salta l'uomo."
+        }
+      },
+      "DribbleTackled": {
+        "headline": "FERMATO",
+        "lines": {
+          "0": "{{player}} viene fermato e perde palla.",
+          "1": "{{player}} si incarta e la perde."
+        }
+      },
+      "Cross": {
+        "headline": "TRAVERSONE",
+        "lines": {
+          "0": "{{player}} mette in mezzo.",
+          "1": "{{player}} crossa davanti alla porta."
+        }
+      },
+      "Corner": {
+        "headline": "CALCIO D'ANGOLO",
+        "lines": {
+          "0": "Corner per il {{team}}.",
+          "1": "Il {{team}} guadagna un angolo — tutti in area."
+        }
+      },
+      "FreeKick": {
+        "headline": "PUNIZIONE",
+        "lines": {
+          "0": "Punizione per il {{team}}.",
+          "1": "Il {{team}} ha una palla da fermo qui."
+        }
+      },
+      "GoalKick": {
+        "headline": "RIMESSA DAL FONDO",
+        "lines": {
+          "0": "Rimessa dal fondo.",
+          "1": "È uscita sul fondo — rimessa dal portiere."
+        }
       }
     },
     "recommendedPlan": "Piano consigliato",
@@ -2575,7 +2652,9 @@
         "playerNotOnBench": "Il giocatore non è in panchina",
         "playerNotInStartingXi": "Il giocatore non è nell'undici titolare"
       },
-      "csv": { "writeFailed": "Impossibile scrivere il file CSV." },
+      "csv": {
+        "writeFailed": "Impossibile scrivere il file CSV."
+      },
       "worldReadFileFailed": "Impossibile leggere il file del database del mondo.",
       "package": {
         "invalid": "Questo pacchetto mondo non è valido e non può essere caricato.",

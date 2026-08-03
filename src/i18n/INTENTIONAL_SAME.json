@@ -255,7 +255,8 @@
     "worldEditor.sectionStaff",
     "worldEditor.staffClub",
     "worldEditor.staffSpecialization.Technique",
-    "packageBuild.patches"
+    "packageBuild.patches",
+    "match.commentary.Corner.headline"
   ],
   "it": [
     "nations.sn",

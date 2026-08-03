@@ -2445,6 +2445,83 @@
           "0": "就是这样——全场结束！",
           "1": "裁判吹响终场哨声。"
         }
+      },
+      "PassCompleted": {
+        "headline": "组织进攻",
+        "lines": {
+          "0": "{{player}}为{{team}}保持着传递节奏。",
+          "1": "{{player}}送出一脚干净的传球。"
+        }
+      },
+      "PassIntercepted": {
+        "headline": "被断球",
+        "lines": {
+          "0": "{{player}}丢了球——{{opponent}}抓住机会。",
+          "1": "{{player}}传球失误，被对手断下。"
+        }
+      },
+      "Interception": {
+        "headline": "提前预判",
+        "lines": {
+          "0": "{{player}}预判到位，果断上抢。",
+          "1": "{{player}}完成一次敏锐的拦截。"
+        }
+      },
+      "Tackle": {
+        "headline": "抢断",
+        "lines": {
+          "0": "{{player}}用一记强硬的抢断赢回球权。",
+          "1": "{{player}}时机拿捏得当——球权归{{team}}。"
+        }
+      },
+      "Clearance": {
+        "headline": "解围",
+        "lines": {
+          "0": "{{player}}将球大脚解围。",
+          "1": "{{player}}化解了危险。"
+        }
+      },
+      "Dribble": {
+        "headline": "带球突进",
+        "lines": {
+          "0": "{{player}}持球杀向对方防线。",
+          "1": "{{player}}晃过了防守球员。"
+        }
+      },
+      "DribbleTackled": {
+        "headline": "被拦下",
+        "lines": {
+          "0": "{{player}}被断下球。",
+          "1": "{{player}}陷入包夹，丢掉球权。"
+        }
+      },
+      "Cross": {
+        "headline": "传中",
+        "lines": {
+          "0": "{{player}}将球传入禁区。",
+          "1": "{{player}}送出一记门前横传。"
+        }
+      },
+      "Corner": {
+        "headline": "角球",
+        "lines": {
+          "0": "{{team}}获得角球。",
+          "1": "{{team}}赢得角球——全队压上。"
+        }
+      },
+      "FreeKick": {
+        "headline": "任意球",
+        "lines": {
+          "0": "{{team}}获得任意球。",
+          "1": "{{team}}在这里得到一次定位球机会。"
+        }
+      },
+      "GoalKick": {
+        "headline": "球门球",
+        "lines": {
+          "0": "球门球。",
+          "1": "球出了底线——球门球。"
+        }
       }
     },
     "recommendedPlan": "推荐方案",
@@ -2575,7 +2652,9 @@
         "playerNotOnBench": "球员不在替补席上",
         "playerNotInStartingXi": "球员不在首发阵容中"
       },
-      "csv": { "writeFailed": "无法写入 CSV 文件。" },
+      "csv": {
+        "writeFailed": "无法写入 CSV 文件。"
+      },
       "worldReadFileFailed": "读取世界数据库文件失败。",
       "package": {
         "invalid": "此世界包无效，无法加载。",

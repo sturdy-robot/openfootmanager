@@ -2445,6 +2445,83 @@
           "0": "Et voilà — c'est terminé !",
           "1": "L'arbitre siffle la fin du match."
         }
+      },
+      "PassCompleted": {
+        "headline": "CONSTRUCTION",
+        "lines": {
+          "0": "{{player}} fait tourner le ballon pour {{team}}.",
+          "1": "Bonne passe de {{player}}."
+        }
+      },
+      "PassIntercepted": {
+        "headline": "INTERCEPTÉ",
+        "lines": {
+          "0": "{{player}} perd le ballon — {{opponent}} en profite.",
+          "1": "Passe manquée de {{player}}, et c'est intercepté."
+        }
+      },
+      "Interception": {
+        "headline": "BIEN LU",
+        "lines": {
+          "0": "{{player}} lit l'action et intervient.",
+          "1": "Belle interception de {{player}}."
+        }
+      },
+      "Tackle": {
+        "headline": "TACLE",
+        "lines": {
+          "0": "{{player}} récupère le ballon d'un beau tacle.",
+          "1": "Bien senti par {{player}} — {{team}} a le ballon."
+        }
+      },
+      "Clearance": {
+        "headline": "DÉGAGEMENT",
+        "lines": {
+          "0": "{{player}} dégage loin devant.",
+          "1": "{{player}} écarte le danger."
+        }
+      },
+      "Dribble": {
+        "headline": "IL PART",
+        "lines": {
+          "0": "{{player}} se lance dans la défense.",
+          "1": "{{player}} efface son adversaire."
+        }
+      },
+      "DribbleTackled": {
+        "headline": "STOPPÉ",
+        "lines": {
+          "0": "{{player}} se fait prendre le ballon.",
+          "1": "{{player}} s'emmêle et le perd."
+        }
+      },
+      "Cross": {
+        "headline": "CENTRE",
+        "lines": {
+          "0": "{{player}} centre dans la surface.",
+          "1": "{{player}} envoie un ballon devant le but."
+        }
+      },
+      "Corner": {
+        "headline": "CORNER",
+        "lines": {
+          "0": "Corner pour {{team}}.",
+          "1": "{{team}} obtient un corner — tout le monde monte."
+        }
+      },
+      "FreeKick": {
+        "headline": "COUP FRANC",
+        "lines": {
+          "0": "Coup franc pour {{team}}.",
+          "1": "{{team}} a un coup de pied arrêté ici."
+        }
+      },
+      "GoalKick": {
+        "headline": "SIX MÈTRES",
+        "lines": {
+          "0": "Six mètres.",
+          "1": "C'est sorti — dégagement aux six mètres."
+        }
       }
     },
     "recommendedPlan": "Plan recommandé",
@@ -2575,7 +2652,9 @@
         "playerNotOnBench": "Le joueur n'est pas sur le banc",
         "playerNotInStartingXi": "Le joueur n'est pas dans le onze de départ"
       },
-      "csv": { "writeFailed": "Échec de l'écriture du fichier CSV." },
+      "csv": {
+        "writeFailed": "Échec de l'écriture du fichier CSV."
+      },
       "worldReadFileFailed": "Impossible de lire le fichier de base de données du monde.",
       "package": {
         "invalid": "Ce package de monde est invalide et n’a pas pu être chargé.",

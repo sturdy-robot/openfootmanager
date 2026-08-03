@@ -10,6 +10,35 @@ import type {
 } from "./types";
 import { getPlayerName } from "./helpers";
 
+/**
+ * Build-up events, and how much of each reaches the feed.
+ *
+ * These used to be silent — thirteen of the engine's thirty event types
+ * produced no prose at all, so the most common thing in a match, players
+ * passing the ball to each other, was narrated as nothing happening.
+ *
+ * They cannot all be shown. A match now resolves hundreds of actions, so
+ * narrating every pass would bury the goals. Each type is sampled instead, at a
+ * rate reflecting how interesting it is: a set piece always earns a mention, a
+ * completed pass in midfield rarely does.
+ *
+ * Sampling uses the same stable hash as variant selection, so a given event is
+ * always either shown or not — the feed never changes under a re-render.
+ */
+const SAMPLED_EVENTS: Record<string, number> = {
+  Corner: 1.0,
+  FreeKick: 0.45,
+  GoalKick: 0.14,
+  PassIntercepted: 0.22,
+  DribbleTackled: 0.2,
+  Dribble: 0.14,
+  Cross: 0.14,
+  Tackle: 0.1,
+  Interception: 0.1,
+  Clearance: 0.08,
+  PassCompleted: 0.02,
+};
+
 /** Event types that get the full headline + prose treatment. */
 const COMMENTARY_EVENTS = new Set([
   "Goal",
@@ -151,7 +180,13 @@ export function getCommentary(
   snapshot: MatchSnapshot,
   t: TFunction,
 ): Commentary | null {
-  if (!COMMENTARY_EVENTS.has(evt.event_type)) return null;
+  const hash = hashEvent(evt);
+  if (!COMMENTARY_EVENTS.has(evt.event_type)) {
+    const rate = SAMPLED_EVENTS[evt.event_type];
+    if (rate === undefined) return null;
+    // Deterministic sample: the same event is always kept or always dropped.
+    if (hash % 1000 >= rate * 1000) return null;
+  }
 
   const isHome = evt.side === "Home";
   const team = isHome ? snapshot.home_team.name : snapshot.away_team.name;
@@ -162,7 +197,6 @@ export function getCommentary(
   const tokens: Record<string, string> = { team, opponent, player, victim };
   const baseKey = `match.commentary.${evt.event_type}`;
   const variant = variantKey(evt, snapshot);
-  const hash = hashEvent(evt);
 
   return pickLine(t, baseKey, variant, hash, tokens);
 }

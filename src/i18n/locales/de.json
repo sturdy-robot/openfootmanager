@@ -2445,6 +2445,83 @@
           "0": "Das war's — Abpfiff!",
           "1": "Der Schiedsrichter beendet das Spiel."
         }
+      },
+      "PassCompleted": {
+        "headline": "SPIELAUFBAU",
+        "lines": {
+          "0": "{{player}} hält den Ball für {{team}} in den eigenen Reihen.",
+          "1": "Sauberer Pass von {{player}}."
+        }
+      },
+      "PassIntercepted": {
+        "headline": "ABGEFANGEN",
+        "lines": {
+          "0": "{{player}} verliert den Ball — {{opponent}} ist da.",
+          "1": "Ungenauer Pass von {{player}}, und er wird abgefangen."
+        }
+      },
+      "Interception": {
+        "headline": "GELESEN",
+        "lines": {
+          "0": "{{player}} liest die Situation und geht dazwischen.",
+          "1": "Aufmerksam abgefangen von {{player}}."
+        }
+      },
+      "Tackle": {
+        "headline": "ZWEIKAMPF",
+        "lines": {
+          "0": "{{player}} holt sich den Ball mit einem starken Tackling.",
+          "1": "Gut getimt von {{player}} — {{team}} hat den Ball."
+        }
+      },
+      "Clearance": {
+        "headline": "GEKLÄRT",
+        "lines": {
+          "0": "{{player}} schlägt den Ball weg.",
+          "1": "{{player}} klärt die Gefahr."
+        }
+      },
+      "Dribble": {
+        "headline": "IM LAUF",
+        "lines": {
+          "0": "{{player}} zieht auf die Abwehr zu.",
+          "1": "{{player}} lässt seinen Gegenspieler stehen."
+        }
+      },
+      "DribbleTackled": {
+        "headline": "GESTOPPT",
+        "lines": {
+          "0": "{{player}} verliert den Ball.",
+          "1": "{{player}} verzettelt sich und verliert ihn."
+        }
+      },
+      "Cross": {
+        "headline": "FLANKE",
+        "lines": {
+          "0": "{{player}} flankt in den Strafraum.",
+          "1": "{{player}} bringt den Ball vors Tor."
+        }
+      },
+      "Corner": {
+        "headline": "ECKBALL",
+        "lines": {
+          "0": "Ecke für {{team}}.",
+          "1": "{{team}} holt einen Eckball heraus — alle nach vorne."
+        }
+      },
+      "FreeKick": {
+        "headline": "FREISTOSS",
+        "lines": {
+          "0": "Freistoß für {{team}}.",
+          "1": "{{team}} hat hier einen Standard."
+        }
+      },
+      "GoalKick": {
+        "headline": "ABSTOSS",
+        "lines": {
+          "0": "Abstoß.",
+          "1": "Der Ball ist im Toraus — Abstoß."
+        }
       }
     },
     "recommendedPlan": "Empfohlener Plan",
@@ -2575,7 +2652,9 @@
         "playerNotOnBench": "Spieler ist nicht auf der Bank",
         "playerNotInStartingXi": "Spieler ist nicht in der Startelf"
       },
-      "csv": { "writeFailed": "Die CSV-Datei konnte nicht geschrieben werden." },
+      "csv": {
+        "writeFailed": "Die CSV-Datei konnte nicht geschrieben werden."
+      },
       "worldReadFileFailed": "Die Weltdatenbankdatei konnte nicht gelesen werden.",
       "package": {
         "invalid": "Dieses Welt-Paket ist ungültig und konnte nicht geladen werden.",

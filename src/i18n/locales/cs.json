@@ -2480,6 +2480,83 @@
           "0": "A je to tady — konec zápasu!",
           "1": "Rozhodčí ukončil dnešní utkání."
         }
+      },
+      "PassCompleted": {
+        "headline": "ROZEHRÁVKA",
+        "lines": {
+          "0": "{{player}} udržuje míč v držení {{team}}.",
+          "1": "Čistá přihrávka od {{player}}."
+        }
+      },
+      "PassIntercepted": {
+        "headline": "ZACHYCENO",
+        "lines": {
+          "0": "{{player}} ztrácí míč — {{opponent}} toho využívá.",
+          "1": "Nepřesná přihrávka {{player}} a je zachycená."
+        }
+      },
+      "Interception": {
+        "headline": "PŘEČETL TO",
+        "lines": {
+          "0": "{{player}} čte situaci a zasahuje.",
+          "1": "Pozorné zachycení od {{player}}."
+        }
+      },
+      "Tackle": {
+        "headline": "SKLUZ",
+        "lines": {
+          "0": "{{player}} získává míč důrazným zákrokem.",
+          "1": "Načasováno přesně od {{player}} — míč má {{team}}."
+        }
+      },
+      "Clearance": {
+        "headline": "ODVRÁCENO",
+        "lines": {
+          "0": "{{player}} odkopává míč pryč.",
+          "1": "{{player}} odvrací nebezpečí."
+        }
+      },
+      "Dribble": {
+        "headline": "V POHYBU",
+        "lines": {
+          "0": "{{player}} se řítí na obranu.",
+          "1": "{{player}} obchází svého protihráče."
+        }
+      },
+      "DribbleTackled": {
+        "headline": "ZASTAVEN",
+        "lines": {
+          "0": "{{player}} přichází o míč.",
+          "1": "{{player}} se zamotal a ztrácí ho."
+        }
+      },
+      "Cross": {
+        "headline": "CENTR",
+        "lines": {
+          "0": "{{player}} centruje do vápna.",
+          "1": "{{player}} posílá míč před bránu."
+        }
+      },
+      "Corner": {
+        "headline": "ROH",
+        "lines": {
+          "0": "Roh pro {{team}}.",
+          "1": "{{team}} si vynutil rohový kop — všichni dopředu."
+        }
+      },
+      "FreeKick": {
+        "headline": "VOLNÝ KOP",
+        "lines": {
+          "0": "Volný kop pro {{team}}.",
+          "1": "{{team}} tady má standardní situaci."
+        }
+      },
+      "GoalKick": {
+        "headline": "KOP OD BRÁNY",
+        "lines": {
+          "0": "Kop od brány.",
+          "1": "Míč je za koncovou čarou — kop od brány."
+        }
       }
     },
     "matchReport": "Zpráva ze zápasu",
@@ -2589,7 +2666,9 @@
         "playerNotOnBench": "Hráč není na lavički",
         "playerNotInStartingXi": "Hráč není v základní sestavě"
       },
-      "csv": { "writeFailed": "Nepodařilo se zapsat soubor CSV." },
+      "csv": {
+        "writeFailed": "Nepodařilo se zapsat soubor CSV."
+      },
       "worldReadFileFailed": "Nepodařilo se načíst databázový soubor světa.",
       "package": {
         "invalid": "Tento balíček světa je neplatný a nepodařilo se ho načíst.",

@@ -2479,6 +2479,83 @@
           "0": "İşte bu kadar — maç bitti!",
           "1": "Hakem maçı sona erdiriyor."
         }
+      },
+      "PassCompleted": {
+        "headline": "OYUN KURMA",
+        "lines": {
+          "0": "{{player}} topu {{team}} adına dolaştırıyor.",
+          "1": "{{player}} temiz bir pas veriyor."
+        }
+      },
+      "PassIntercepted": {
+        "headline": "PAS ARASI",
+        "lines": {
+          "0": "{{player}} topu kaptırıyor — {{opponent}} fırsatı değerlendiriyor.",
+          "1": "{{player}} kötü bir pas verdi ve top kesildi."
+        }
+      },
+      "Interception": {
+        "headline": "OKUDU",
+        "lines": {
+          "0": "{{player}} oyunu okuyup araya giriyor.",
+          "1": "{{player}} dikkatli bir pas arası yapıyor."
+        }
+      },
+      "Tackle": {
+        "headline": "MÜDAHALE",
+        "lines": {
+          "0": "{{player}} sert bir müdahaleyle topu kazanıyor.",
+          "1": "{{player}} tam zamanında girdi — top {{team}} tarafında."
+        }
+      },
+      "Clearance": {
+        "headline": "UZAKLAŞTIRDI",
+        "lines": {
+          "0": "{{player}} topu uzaklaştırıyor.",
+          "1": "{{player}} tehlikeyi bertaraf ediyor."
+        }
+      },
+      "Dribble": {
+        "headline": "İLERLİYOR",
+        "lines": {
+          "0": "{{player}} savunmaya doğru gidiyor.",
+          "1": "{{player}} rakibini geçiyor."
+        }
+      },
+      "DribbleTackled": {
+        "headline": "DURDURULDU",
+        "lines": {
+          "0": "{{player}} topu kaptırıyor.",
+          "1": "{{player}} sıkışıyor ve topu kaybediyor."
+        }
+      },
+      "Cross": {
+        "headline": "ORTA",
+        "lines": {
+          "0": "{{player}} ceza sahasına ortalıyor.",
+          "1": "{{player}} kale önüne bir top gönderiyor."
+        }
+      },
+      "Corner": {
+        "headline": "KORNER",
+        "lines": {
+          "0": "{{team}} korner kazandı.",
+          "1": "{{team}} korner kazanıyor — herkes ileri çıkıyor."
+        }
+      },
+      "FreeKick": {
+        "headline": "SERBEST VURUŞ",
+        "lines": {
+          "0": "{{team}} lehine serbest vuruş.",
+          "1": "{{team}} burada duran top kazandı."
+        }
+      },
+      "GoalKick": {
+        "headline": "KALE VURUŞU",
+        "lines": {
+          "0": "Kale vuruşu.",
+          "1": "Top dışarı çıktı — kale vuruşu."
+        }
       }
     },
     "matchReport": "Maç Raporu",
@@ -2588,7 +2665,9 @@
         "playerNotOnBench": "Oyuncu yedek kulübesinde değil",
         "playerNotInStartingXi": "Oyuncu ilk 11'de değil"
       },
-      "csv": { "writeFailed": "CSV dosyası yazılamadı." },
+      "csv": {
+        "writeFailed": "CSV dosyası yazılamadı."
+      },
       "worldReadFileFailed": "Dünya veritabanı dosyası okunamadı.",
       "package": {
         "invalid": "Bu dünya paketi geçersiz ve yüklenemedi.",

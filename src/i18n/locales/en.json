@@ -2479,6 +2479,83 @@
           "0": "That's it — full time!",
           "1": "The referee brings the match to an end."
         }
+      },
+      "PassCompleted": {
+        "headline": "BUILD-UP",
+        "lines": {
+          "0": "{{player}} keeps it ticking for {{team}}.",
+          "1": "Neat ball from {{player}}."
+        }
+      },
+      "PassIntercepted": {
+        "headline": "INTERCEPTED",
+        "lines": {
+          "0": "{{player}} gives it away — {{opponent}} pounce.",
+          "1": "Loose pass from {{player}}, and it's cut out."
+        }
+      },
+      "Interception": {
+        "headline": "READ IT",
+        "lines": {
+          "0": "{{player}} reads it and steps in.",
+          "1": "Sharp interception by {{player}}."
+        }
+      },
+      "Tackle": {
+        "headline": "TACKLE",
+        "lines": {
+          "0": "{{player}} wins it back with a strong tackle.",
+          "1": "Well timed by {{player}} — {{team}} have it."
+        }
+      },
+      "Clearance": {
+        "headline": "CLEARED",
+        "lines": {
+          "0": "{{player}} hacks it clear.",
+          "1": "{{player}} gets rid of the danger."
+        }
+      },
+      "Dribble": {
+        "headline": "ON THE RUN",
+        "lines": {
+          "0": "{{player}} drives at them.",
+          "1": "{{player}} slips past his man."
+        }
+      },
+      "DribbleTackled": {
+        "headline": "STOPPED",
+        "lines": {
+          "0": "{{player}} is dispossessed.",
+          "1": "{{player}} runs into trouble and loses it."
+        }
+      },
+      "Cross": {
+        "headline": "CROSS",
+        "lines": {
+          "0": "{{player}} swings it into the box.",
+          "1": "{{player}} whips one across the face of goal."
+        }
+      },
+      "Corner": {
+        "headline": "CORNER",
+        "lines": {
+          "0": "Corner to {{team}}.",
+          "1": "{{team}} win a corner — everyone forward."
+        }
+      },
+      "FreeKick": {
+        "headline": "FREE KICK",
+        "lines": {
+          "0": "Free kick to {{team}}.",
+          "1": "{{team}} have a set piece here."
+        }
+      },
+      "GoalKick": {
+        "headline": "GOAL KICK",
+        "lines": {
+          "0": "Goal kick.",
+          "1": "It's gone behind — goal kick."
+        }
       }
     },
     "matchReport": "Match Report",
@@ -2588,7 +2665,9 @@
         "playerNotOnBench": "Player not on bench",
         "playerNotInStartingXi": "Player not in starting XI"
       },
-      "csv": { "writeFailed": "Failed to write the CSV file." },
+      "csv": {
+        "writeFailed": "Failed to write the CSV file."
+      },
       "worldReadFileFailed": "Failed to read the world database file.",
       "package": {
         "invalid": "This world package is invalid and could not be loaded.",

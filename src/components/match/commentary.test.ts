@@ -139,3 +139,51 @@ describe("getCommentary", () => {
     expect(result!.line).not.toMatch(/\{\{.*?\}\}/);
   });
 });
+
+describe("build-up commentary", () => {
+  const buildUp = (minute: number, type: string): MatchEvent =>
+    ({
+      minute,
+      event_type: type,
+      side: "Home",
+      zone: "Midfield",
+      player_id: "p1",
+      secondary_player_id: null,
+      detail: null,
+    }) as unknown as MatchEvent;
+
+  it("narrates set pieces that used to be silent", () => {
+    const corner = buildUp(12, "Corner");
+    const result = getCommentary(corner, snapshot([corner]), i18n.t.bind(i18n));
+    expect(result).not.toBeNull();
+    expect(result?.line.length).toBeGreaterThan(0);
+  });
+
+  it("shows only a fraction of the passes, or the feed would bury the goals", () => {
+    // A match resolves hundreds of actions. Narrating every one is worse than
+    // narrating none, so completed passes are sampled.
+    const passes = Array.from({ length: 400 }, (_, index) =>
+      buildUp(index % 90, "PassCompleted"),
+    );
+    const shown = passes.filter(
+      (evt) => getCommentary(evt, snapshot(passes), i18n.t.bind(i18n)) !== null,
+    ).length;
+    expect(shown).toBeGreaterThan(0);
+    expect(shown).toBeLessThan(passes.length * 0.15);
+  });
+
+  it("keeps the same events every time it is asked", () => {
+    // The feed re-renders constantly; a line that appears and disappears would
+    // be worse than no line at all.
+    const events = Array.from({ length: 60 }, (_, index) =>
+      buildUp(index, "Tackle"),
+    );
+    const first = events.map(
+      (evt) => getCommentary(evt, snapshot(events), i18n.t.bind(i18n)) !== null,
+    );
+    const second = events.map(
+      (evt) => getCommentary(evt, snapshot(events), i18n.t.bind(i18n)) !== null,
+    );
+    expect(second).toEqual(first);
+  });
+});
