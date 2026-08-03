@@ -81,3 +81,48 @@ the stage — the calibration held while the ball actually got passed around.
 Forwards still finish on zero passes, and roles are still flat. Neither is
 addressed by the chain: both come from *who* is chosen to act, which is
 uniform within a position until weighted actor selection lands.
+
+---
+
+## Where the overhaul landed
+
+`post-overhaul.json`, `post-overhaul-sweeps.json` and
+`post-overhaul-phase-sweep.txt` are the final state. Against
+`pre-overhaul.*`, taken before any of this work:
+
+### Involvement
+
+| | before | after |
+| --- | --- | --- |
+| Forwards finishing with 0 passes | **100%** | **1.9%** |
+| Midfielder passes per 90 | 5.7 | 15.4 |
+| Midfielder touches per 90 | 11.7 | 30.9 |
+| Defender touches per 90 | 3.3 | 15.4 |
+| Goalkeeper touches per 90 | 0.0 | 1.1 |
+| Goals scored by non-forwards | none | defenders and midfielders both score |
+
+### Does a player matter?
+
+| sweep | before | after |
+| --- | --- | --- |
+| Striker shooting, 50 → 90 | 1.36× | 1.73× |
+| Playmaker passing + vision | 1.18× | 1.99× |
+| Striker role | 1.01× (flat) | 1.48× |
+| Striker traits | 1.14× | 1.16× |
+
+### Do tactics matter?
+
+Before: completed passes spanned six percent across all twenty dial settings,
+and four of them were byte-identical to the baseline because they were the
+defaults.
+
+After, per 1500 matches against a neutral opponent: a Patient side takes a
+third fewer shots and scores a third fewer goals; a Compact block concedes a
+third fewer; aggressive pressing creates more and concedes more. `build_up`
+remains the weak dial — see the note in its commit.
+
+### Cost
+
+253 µs → ~640 µs per match. The stage gate was 500 µs and is missed; the
+matchday budget it stands in for is roughly 26 ms, so the headroom is large.
+Recorded rather than rebased.
