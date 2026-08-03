@@ -274,7 +274,6 @@ pub fn run() {
             step_live_match,
             apply_match_command,
             get_match_snapshot,
-            get_match_stats,
             finish_live_match,
             generate_player_portrait,
             prewarm_player_portraits,

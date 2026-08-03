@@ -10,6 +10,13 @@ use serde::{Deserialize, Serialize};
 pub struct FinishLiveMatchResponse {
     pub game: Game,
     pub round_summary: Option<RoundSummaryDto>,
+    /// Everything the post-match screen shows beyond the snapshot.
+    ///
+    /// Returned here rather than fetched separately because finishing the match
+    /// consumes the live session: by the time the post-match screen mounts
+    /// there is nothing left to ask. The report is built here anyway, so this
+    /// costs a walk of the squad and nothing more.
+    pub match_stats: MatchStatsResponse,
 }
 
 pub fn finish_live_match(state: &StateManager) -> Result<FinishLiveMatchResponse, String> {
@@ -38,7 +45,9 @@ pub fn finish_live_match(state: &StateManager) -> Result<FinishLiveMatchResponse
     let seed = session.seed;
     let replay = session.replay_input();
 
+    let snapshot = session.snapshot();
     let report = session.match_state.into_report();
+    let match_stats = build_match_stats(&report, &snapshot);
     info!(
         "[cmd] finish_live_match: fixture_index={}, competition_id={}, home_team_id={}, away_team_id={}, events= {}",
         fixture_index,
@@ -135,6 +144,7 @@ pub fn finish_live_match(state: &StateManager) -> Result<FinishLiveMatchResponse
     Ok(FinishLiveMatchResponse {
         game,
         round_summary,
+        match_stats,
     })
 }
 
@@ -357,23 +367,15 @@ pub struct MatchStatsResponse {
     pub players: Vec<MatchPlayerStatsRow>,
 }
 
-/// Everything the post-match screen needs that the per-minute snapshot does not
-/// carry.
+/// Assemble the post-match figures from a finished report.
 ///
-/// A one-shot request on purpose. Assembling this walks the whole event log —
-/// some sixteen hundred entries by full time — so it must not be folded into
-/// `get_match_snapshot`, which the live screen calls every minute.
-pub fn get_match_stats(state: &StateManager) -> Result<MatchStatsResponse, String> {
-    log::debug!("[cmd] get_match_stats");
-    let report = state
-        .with_live_match(|session| session.report())
-        .ok_or_else(|| "be.error.noActiveLiveMatch".to_string())?;
-    let snapshot = state
-        .with_live_match(|session| session.snapshot())
-        .ok_or_else(|| "be.error.noActiveLiveMatch".to_string())?;
-
-    // Everyone who played, including anyone taken off — they are on the bench
-    // now, but the afternoon still happened.
+/// Everyone who played gets a row, including anyone taken off — they are on the
+/// bench by now, but the afternoon still happened, and the frontend cannot
+/// join them back by iterating the current eleven.
+fn build_match_stats(
+    report: &engine::MatchReport,
+    snapshot: &engine::MatchSnapshot,
+) -> MatchStatsResponse {
     let mut players = Vec::new();
     for (side, team, bench) in [
         ("Home", &snapshot.home_team, &snapshot.home_bench),
@@ -385,7 +387,7 @@ pub fn get_match_stats(state: &StateManager) -> Result<MatchStatsResponse, Strin
             };
             if stats.minutes_played == 0 {
                 // An unused substitute has no performance to show, and padding
-                // the list with elevens of zeroes buries the players who played.
+                // the table with elevens of zeroes buries the players who did.
                 continue;
             }
             players.push(MatchPlayerStatsRow {
@@ -412,7 +414,7 @@ pub fn get_match_stats(state: &StateManager) -> Result<MatchStatsResponse, Strin
         }
     }
 
-    Ok(MatchStatsResponse {
+    MatchStatsResponse {
         home_xg: report.home_stats.xg,
         away_xg: report.away_stats.xg,
         home_shots: report.home_stats.shots,
@@ -426,7 +428,7 @@ pub fn get_match_stats(state: &StateManager) -> Result<MatchStatsResponse, Strin
         home_pass_accuracy: report.home_stats.pass_accuracy(),
         away_pass_accuracy: report.away_stats.pass_accuracy(),
         players,
-    })
+    }
 }
 
 pub fn get_match_snapshot(state: &StateManager) -> Result<engine::MatchSnapshot, String> {

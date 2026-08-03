@@ -465,6 +465,7 @@ describe("PostMatchScreen", function (): void {
       <ThemeProvider>
         <PostMatchScreen
           snapshot={makeSnapshot()}
+          matchStats={matchStatsFixture}
           gameState={makeGameState()}
           userSide="Home"
           isSpectator={false}
@@ -487,6 +488,7 @@ describe("PostMatchScreen", function (): void {
       <ThemeProvider>
         <PostMatchScreen
           snapshot={makeSnapshot()}
+          matchStats={matchStatsFixture}
           gameState={makeGameState()}
           userSide="Home"
           isSpectator={false}
@@ -508,6 +510,7 @@ describe("PostMatchScreen", function (): void {
       <ThemeProvider>
         <PostMatchScreen
           snapshot={makeSnapshot()}
+          matchStats={matchStatsFixture}
           gameState={makeGameState()}
           userSide={null}
           isSpectator={true}
@@ -528,6 +531,7 @@ describe("PostMatchScreen", function (): void {
       <ThemeProvider>
         <PostMatchScreen
           snapshot={makeSnapshot()}
+          matchStats={matchStatsFixture}
           gameState={makeGameState()}
           userSide="Home"
           isSpectator={false}
@@ -550,6 +554,7 @@ describe("PostMatchScreen", function (): void {
       <ThemeProvider>
         <PostMatchScreen
           snapshot={makeSnapshot()}
+          matchStats={matchStatsFixture}
           gameState={makeGameState()}
           userSide={null}
           isSpectator={true}
@@ -585,6 +590,7 @@ describe("PostMatchScreen", function (): void {
       <ThemeProvider>
         <PostMatchScreen
           snapshot={snapshot}
+          matchStats={matchStatsFixture}
           gameState={makeGameState()}
           userSide="Home"
           isSpectator={false}
@@ -610,6 +616,7 @@ describe("PostMatchScreen", function (): void {
       <ThemeProvider>
         <PostMatchScreen
           snapshot={snapshot}
+          matchStats={matchStatsFixture}
           gameState={makeGameState()}
           userSide="Home"
           isSpectator={false}
@@ -642,6 +649,7 @@ describe("PostMatchScreen", function (): void {
       <ThemeProvider>
         <PostMatchScreen
           snapshot={snapshot}
+          matchStats={matchStatsFixture}
           gameState={makeGameState()}
           userSide="Home"
           isSpectator={false}
@@ -662,6 +670,7 @@ describe("PostMatchScreen", function (): void {
       <ThemeProvider>
         <PostMatchScreen
           snapshot={makeSnapshot()}
+          matchStats={matchStatsFixture}
           gameState={makeGameState()}
           userSide="Home"
           isSpectator={false}
@@ -756,6 +765,7 @@ describe("PostMatchScreen player ratings", () => {
       <ThemeProvider>
         <PostMatchScreen
           snapshot={makeSnapshot()}
+          matchStats={matchStatsFixture}
           gameState={makeGameState()}
           userSide="Home"
           isSpectator={false}
@@ -823,13 +833,29 @@ describe("PostMatchScreen player ratings", () => {
     ).toBeInTheDocument();
   });
 
-  it("says it is loading rather than claiming the stats are gone", async () => {
-    // `null` used to mean both "still fetching" and "failed", so opening the
-    // tab promptly told the user their statistics no longer existed.
+  it("never asks the backend, because by now there is nothing to ask", async () => {
+    // The regression this guards. Finishing the match consumes the live
+    // session — `MatchSimulation` calls `finish_live_match` before this screen
+    // mounts — so a component that fetched its own statistics here got
+    // `noActiveLiveMatch` every time and told the user the match it had just
+    // played was unavailable. The figures ride along on the finalize response
+    // instead, and this asserts no request is made at all.
+    const { invoke } = await import("@tauri-apps/api/core");
+    vi.mocked(invoke).mockClear();
+    await showRatings();
+    expect(invoke).not.toHaveBeenCalledWith("get_match_stats");
+    expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it("says it is loading rather than claiming the stats are gone", () => {
+    // `undefined` is the window between the final whistle and the finalize
+    // call returning. Collapsing it with `null` told the user their statistics
+    // no longer existed, seconds after they had played the match.
     render(
       <ThemeProvider>
         <PostMatchScreen
           snapshot={makeSnapshot()}
+          matchStats={undefined}
           gameState={makeGameState()}
           userSide="Home"
           isSpectator={false}
@@ -839,6 +865,10 @@ describe("PostMatchScreen player ratings", () => {
         />
       </ThemeProvider>,
     );
+    fireEvent.click(screen.getByRole("tab", { name: "match.playerRatings" }));
     expect(screen.getByText("match.statTable.loading")).toBeInTheDocument();
+    expect(
+      screen.queryByText("match.statTable.unavailable"),
+    ).not.toBeInTheDocument();
   });
 });

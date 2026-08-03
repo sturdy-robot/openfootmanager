@@ -201,6 +201,9 @@ export function XgRaceChart({
               stroke={theme.axisColor}
               tick={{ fontSize: 10, fill: theme.axisColor }}
               width={30}
+              // Expected goals accumulates as a float, so without this the
+              // axis reads 1.8400000000000003.
+              tickFormatter={(value: number) => value.toFixed(1)}
             />
             <Tooltip
               contentStyle={{
@@ -210,6 +213,9 @@ export function XgRaceChart({
                 fontSize: 12,
               }}
               labelFormatter={(minute) => `${minute}'`}
+              formatter={(value) =>
+                typeof value === "number" ? value.toFixed(2) : String(value)
+              }
             />
             <Line
               type="stepAfter"

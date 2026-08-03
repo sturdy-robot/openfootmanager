@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { GameStateData } from "../../store/gameStore";
@@ -33,6 +33,10 @@ import {
 
 interface PostMatchScreenProps {
   snapshot: MatchSnapshot;
+  /** Handed down rather than fetched: finishing the match consumes the live
+   *  session, so there is nothing left to ask by the time this mounts.
+   *  `undefined` while finalizing, `null` if it failed. */
+  matchStats: MatchStatsResponse | null | undefined;
   gameState: GameStateData;
   userSide: "Home" | "Away" | null;
   isSpectator: boolean;
@@ -90,6 +94,7 @@ export function computeGoalSources(
 
 export default function PostMatchScreen({
   snapshot,
+  matchStats,
   gameState,
   userSide,
   isSpectator,
@@ -99,29 +104,6 @@ export default function PostMatchScreen({
 }: PostMatchScreenProps) {
   const { t } = useTranslation();
   const teamTalkOptions = getTeamTalkOptions(t);
-  // Fetched once when the screen mounts. The per-minute snapshot deliberately
-  // does not carry this: assembling it walks the whole event log.
-  // Three states, not two: `undefined` while the request is in flight, `null`
-  // when it failed. Collapsing them told anyone who opened the tab promptly
-  // that their statistics were gone, when they were merely still coming.
-  const [matchStats, setMatchStats] = useState<
-    MatchStatsResponse | null | undefined
-  >(undefined);
-  useEffect(() => {
-    let cancelled = false;
-    invoke<MatchStatsResponse>("get_match_stats")
-      .then((stats) => {
-        if (!cancelled) setMatchStats(stats);
-      })
-      .catch(() => {
-        // The session is gone — the match was already finished elsewhere. The
-        // screen still renders everything it can read off the snapshot.
-        if (!cancelled) setMatchStats(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const [activeTab, setActiveTab] = useState<PostMatchTab>(
     !isSpectator && userSide ? "teamTalk" : "matchReport",

@@ -15,6 +15,7 @@ import PreMatchSetup from "../components/match/PreMatchSetup";
 import MatchLive from "../components/match/MatchLive";
 import HalfTimeBreak from "../components/match/HalfTimeBreak";
 import PostMatchScreen from "../components/match/PostMatchScreen";
+import type { MatchStatsResponse } from "../components/match/types";
 import RoundDigestScreen from "../components/match/RoundDigestScreen";
 import PressConference from "../components/match/PressConference";
 import PenaltyShootoutScreen from "../components/match/PenaltyShootoutScreen";
@@ -30,6 +31,7 @@ interface MatchRouteState {
 }
 
 interface FinishLiveMatchResponse {
+  match_stats: MatchStatsResponse;
   game: GameStateData;
   round_summary?: RoundSummary | null;
 }
@@ -50,6 +52,10 @@ export default function MatchSimulation() {
   const [userSide, setUserSide] = useState<"Home" | "Away" | null>(null);
   const [isSpectator, setIsSpectator] = useState(matchMode === "spectator");
   const [roundSummary, setRoundSummary] = useState<RoundSummary | null>(null);
+  // `undefined` until the match is finalized, `null` if finalizing failed.
+  const [matchStats, setMatchStats] = useState<
+    MatchStatsResponse | null | undefined
+  >(undefined);
   const [hasFinalizedMatch, setHasFinalizedMatch] = useState(false);
   const [preferredSpeed, setPreferredSpeed] = useState<"slow" | "normal" | "fast">("normal");
   const [hasUserOverriddenSpeed, setHasUserOverriddenSpeed] = useState(false);
@@ -235,6 +241,10 @@ export default function MatchSimulation() {
       console.info("[MatchSimulation] finalizeMatch:start");
       const response =
         await invoke<FinishLiveMatchResponse>("finish_live_match");
+      // Kept from the finalize response: finishing consumes the live session,
+      // so by the time the post-match screen mounts there is nothing left to
+      // ask the backend for.
+      setMatchStats(response.match_stats ?? null);
       console.info("[MatchSimulation] finalizeMatch:success", {
         hasRoundSummary: !!response.round_summary,
         hasUpdatedGame: !!response.game,
@@ -398,6 +408,7 @@ export default function MatchSimulation() {
       return (
         <PostMatchScreen
           snapshot={snapshot}
+          matchStats={matchStats}
           gameState={gameState}
           userSide={userSide}
           isSpectator={isSpectator}
