@@ -458,7 +458,18 @@ impl MatchReport {
                     stats.free_kicks += 1;
                 }
                 EventType::PenaltyAwarded => {
-                    stats.penalties += 1;
+                    // Counted where it is taken, not where it is given. Every
+                    // award is resolved immediately as a `PenaltyGoal` or a
+                    // `PenaltyMiss`, so counting it here as well made every
+                    // penalty in the match count twice — the benchmark had
+                    // quietly worked around it for some time by tallying the
+                    // award events itself instead of reading this figure.
+                    //
+                    // It also removes a stray one: a shootout announces itself
+                    // with a `PenaltyAwarded`, which used to add a penalty to
+                    // the home side's match statistics for a shootout it may
+                    // not even have started. Shootout kicks are `ShootoutGoal`
+                    // and were never in this count.
                 }
                 // Shootout kicks are intentionally excluded from goals,
                 // GoalDetails, and player stats — the shootout is scored

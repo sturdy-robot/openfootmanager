@@ -1217,3 +1217,66 @@ fn good_finishers_beat_their_expected_goals_and_poor_ones_do_not() {
         "poor finishers should fall short of the average-finisher baseline, got {poor:.2}"
     );
 }
+
+/// A side's expected goals must be the expected goals of the players in it.
+///
+/// The two are filled in from the same tally but by different routes — one
+/// summed onto the team, one written row by row into the player table — so a
+/// player whose row went missing would leave them disagreeing.
+#[test]
+fn a_sides_expected_goals_is_the_sum_of_its_players() {
+    let home = make_team("h", "Home", 70, PlayStyle::Balanced);
+    let away = make_team("a", "Away", 70, PlayStyle::Balanced);
+    let config = MatchConfig::default();
+
+    for seed in 0..40 {
+        let report = simulate_with_rng(&home, &away, &config, &mut seeded_rng(seed));
+        for (team, team_xg) in [(&home, report.home_stats.xg), (&away, report.away_stats.xg)] {
+            let summed: f32 = team
+                .players
+                .iter()
+                .filter_map(|p| report.player_stats.get(&p.id))
+                .map(|stats| stats.xg)
+                .sum();
+            assert!(
+                (summed - team_xg).abs() < 1e-3,
+                "seed {seed}: {} has {team_xg} expected goals but its players \
+                 account for {summed}",
+                team.id
+            );
+        }
+    }
+}
+
+/// Expected assists should track expected goals, because every chance in open
+/// play has someone who made it. The gap between them is the penalties, which
+/// are worth expected goals to the taker and nothing to anybody else — nobody
+/// creates a penalty.
+#[test]
+fn expected_assists_trails_expected_goals_by_the_penalties() {
+    let home = make_team("h", "Home", 70, PlayStyle::Balanced);
+    let away = make_team("a", "Away", 70, PlayStyle::Balanced);
+    let config = MatchConfig::default();
+
+    const PENALTY_XG: f64 = 0.75;
+    let (mut xg, mut xa, mut penalties) = (0.0f64, 0.0f64, 0.0f64);
+    for seed in 0..600 {
+        let report = simulate_with_rng(&home, &away, &config, &mut seeded_rng(seed));
+        xg += (report.home_stats.xg + report.away_stats.xg) as f64;
+        xa += report
+            .player_stats
+            .values()
+            .map(|stats| stats.xa as f64)
+            .sum::<f64>();
+        penalties += (report.home_stats.penalties + report.away_stats.penalties) as f64;
+    }
+
+    let unexplained = (xg - xa) - penalties * PENALTY_XG;
+    assert!(
+        unexplained.abs() < 0.10 * xg,
+        "expected goals exceeds expected assists by {:.1}, of which the \
+         penalties explain only {:.1} — something else is losing credit",
+        xg - xa,
+        penalties * PENALTY_XG,
+    );
+}

@@ -1,0 +1,196 @@
+[
+  {
+    "dimension": "Striker shooting",
+    "key_metric": "goals/90",
+    "arms": [
+      {
+        "arm": "shooting 50",
+        "team_goals_per_game": 1.347,
+        "subject_goals_per_90": 0.32349695731500805,
+        "subject_assists_per_90": 0.1917383181654303,
+        "subject_shots_per_90": 3.4222831608963085,
+        "subject_passes_per_90": 45.449355955905645,
+        "subject_tackles_per_90": 5.200041515989118,
+        "subject_touches_per_90": 63.90588980782467
+      },
+      {
+        "arm": "shooting 60",
+        "team_goals_per_game": 1.3915,
+        "subject_goals_per_90": 0.3844704108556351,
+        "subject_assists_per_90": 0.19862665727068615,
+        "subject_shots_per_90": 3.6092036906537306,
+        "subject_passes_per_90": 45.44568085350464,
+        "subject_tackles_per_90": 5.20411675052033,
+        "subject_touches_per_90": 64.09987053212933
+      },
+      {
+        "arm": "shooting 70",
+        "team_goals_per_game": 1.4425,
+        "subject_goals_per_90": 0.4548158416057717,
+        "subject_assists_per_90": 0.20481447726739394,
+        "subject_shots_per_90": 3.8246770611059873,
+        "subject_passes_per_90": 45.4801106751292,
+        "subject_tackles_per_90": 5.203368278586982,
+        "subject_touches_per_90": 64.34956532179285
+      },
+      {
+        "arm": "shooting 80",
+        "team_goals_per_game": 1.491,
+        "subject_goals_per_90": 0.5162645999345049,
+        "subject_assists_per_90": 0.2112214823709202,
+        "subject_shots_per_90": 4.019102718043881,
+        "subject_passes_per_90": 45.48138849470582,
+        "subject_tackles_per_90": 5.200469381071936,
+        "subject_touches_per_90": 64.54781137430412
+      },
+      {
+        "arm": "shooting 90",
+        "team_goals_per_game": 1.5615,
+        "subject_goals_per_90": 0.5944128467408273,
+        "subject_assists_per_90": 0.21860637752038692,
+        "subject_shots_per_90": 4.218366210713623,
+        "subject_passes_per_90": 45.42444024759014,
+        "subject_tackles_per_90": 5.198410532406144,
+        "subject_touches_per_90": 64.66818772310951
+      }
+    ]
+  },
+  {
+    "dimension": "Playmaker passing + vision",
+    "key_metric": "passes/90",
+    "arms": [
+      {
+        "arm": "passing/vision 50",
+        "team_goals_per_game": 1.458,
+        "subject_goals_per_90": 0.013280357640577778,
+        "subject_assists_per_90": 0.02902004077015144,
+        "subject_shots_per_90": 0.24445695360619096,
+        "subject_passes_per_90": 36.78265574361805,
+        "subject_tackles_per_90": 5.034731141072376,
+        "subject_touches_per_90": 50.662596938413024
+      },
+      {
+        "arm": "passing/vision 60",
+        "team_goals_per_game": 1.4735,
+        "subject_goals_per_90": 0.014256997399873272,
+        "subject_assists_per_90": 0.036871544999672254,
+        "subject_shots_per_90": 0.24089409399785872,
+        "subject_passes_per_90": 41.47065571263137,
+        "subject_tackles_per_90": 4.9958485371555925,
+        "subject_touches_per_90": 55.28568619310857
+      },
+      {
+        "arm": "passing/vision 70",
+        "team_goals_per_game": 1.4945,
+        "subject_goals_per_90": 0.012291589275178637,
+        "subject_assists_per_90": 0.04916635710071455,
+        "subject_shots_per_90": 0.2374735047964513,
+        "subject_passes_per_90": 46.37174136310994,
+        "subject_tackles_per_90": 4.950068832899941,
+        "subject_touches_per_90": 60.131929724886916
+      },
+      {
+        "arm": "passing/vision 80",
+        "team_goals_per_game": 1.5045,
+        "subject_goals_per_90": 0.010836074276363676,
+        "subject_assists_per_90": 0.055165469043305985,
+        "subject_shots_per_90": 0.23051285278810005,
+        "subject_passes_per_90": 51.58808688561375,
+        "subject_tackles_per_90": 4.934354186391423,
+        "subject_touches_per_90": 65.35728944905678
+      },
+      {
+        "arm": "passing/vision 90",
+        "team_goals_per_game": 1.5085,
+        "subject_goals_per_90": 0.012788422651903508,
+        "subject_assists_per_90": 0.0550885898851228,
+        "subject_shots_per_90": 0.23806140628928069,
+        "subject_passes_per_90": 57.006853282908324,
+        "subject_tackles_per_90": 4.925510170621605,
+        "subject_touches_per_90": 70.73374941249767
+      }
+    ]
+  },
+  {
+    "dimension": "Striker role",
+    "key_metric": "shots/90",
+    "arms": [
+      {
+        "arm": "Poacher",
+        "team_goals_per_game": 1.7555,
+        "subject_goals_per_90": 0.8018929503916449,
+        "subject_assists_per_90": 0.12679503916449086,
+        "subject_shots_per_90": 6.260443864229765,
+        "subject_passes_per_90": 21.10917101827676,
+        "subject_tackles_per_90": 1.5876305483028719,
+        "subject_touches_per_90": 32.282800261096604
+      },
+      {
+        "arm": "TargetMan",
+        "team_goals_per_game": 1.5525,
+        "subject_goals_per_90": 0.6935954053995258,
+        "subject_assists_per_90": 0.2344616790306089,
+        "subject_shots_per_90": 5.497857158396241,
+        "subject_passes_per_90": 51.78910957861075,
+        "subject_tackles_per_90": 3.1664563708747577,
+        "subject_touches_per_90": 66.66934975090825
+      },
+      {
+        "arm": "False9",
+        "team_goals_per_game": 1.377,
+        "subject_goals_per_90": 0.4648359739303537,
+        "subject_assists_per_90": 0.2537700089989365,
+        "subject_shots_per_90": 3.5179296992173654,
+        "subject_passes_per_90": 86.21701071691527,
+        "subject_tackles_per_90": 4.612527610373319,
+        "subject_touches_per_90": 102.65414087426032
+      },
+      {
+        "arm": "CompleteForward",
+        "team_goals_per_game": 1.5875,
+        "subject_goals_per_90": 0.7392267539013385,
+        "subject_assists_per_90": 0.2772712675335703,
+        "subject_shots_per_90": 5.837392975141384,
+        "subject_passes_per_90": 58.337188859072825,
+        "subject_tackles_per_90": 3.756878711510513,
+        "subject_touches_per_90": 75.19195075087498
+      }
+    ]
+  },
+  {
+    "dimension": "Striker traits",
+    "key_metric": "goals/90",
+    "arms": [
+      {
+        "arm": "none",
+        "team_goals_per_game": 1.5225,
+        "subject_goals_per_90": 0.5526203757272757,
+        "subject_assists_per_90": 0.21466231483806175,
+        "subject_shots_per_90": 4.114934122193234,
+        "subject_passes_per_90": 45.43767533757601,
+        "subject_tackles_per_90": 5.195613968059907,
+        "subject_touches_per_90": 64.5819188071041
+      },
+      {
+        "arm": "Sharpshooter",
+        "team_goals_per_game": 1.701,
+        "subject_goals_per_90": 0.6889811073495686,
+        "subject_assists_per_90": 0.24129081576935676,
+        "subject_shots_per_90": 4.270012012667904,
+        "subject_passes_per_90": 44.89630883477121,
+        "subject_tackles_per_90": 5.201266790433548,
+        "subject_touches_per_90": 64.16713989297804
+      },
+      {
+        "arm": "CoolHead",
+        "team_goals_per_game": 1.609,
+        "subject_goals_per_90": 0.6142859477391205,
+        "subject_assists_per_90": 0.22502573823803376,
+        "subject_shots_per_90": 4.187243638978314,
+        "subject_passes_per_90": 45.35175591979475,
+        "subject_tackles_per_90": 5.190299544065498,
+        "subject_touches_per_90": 64.60542872550782
+      }
+    ]
+  }
+]
