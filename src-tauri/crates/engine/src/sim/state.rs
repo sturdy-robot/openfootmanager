@@ -57,6 +57,19 @@ impl Band {
     }
 
     /// Position in a per-band table, deep to advanced.
+    /// Every band, in `index` order. Anything that stores a value per band
+    /// iterates this so the array and `index` can never disagree.
+    pub const ALL: [Band; Band::COUNT] = [
+        Band::OwnBox,
+        Band::OwnThird,
+        Band::Middle,
+        Band::FinalThird,
+        Band::OppBox,
+    ];
+
+    /// How many bands there are — the length of any per-band array.
+    pub const COUNT: usize = 5;
+
     pub fn index(self) -> usize {
         match self {
             Band::OwnBox => 0,

@@ -9,7 +9,6 @@ use crate::types::{PlayerData, Position, Side, TeamData};
 
 use std::collections::HashSet;
 
-use crate::sim::roles;
 use crate::sim::state::Band;
 
 use super::{LiveMatchState, SetPieceTakers, SquadCache};
@@ -37,7 +36,32 @@ pub(super) enum Need {
 }
 
 impl Need {
-    fn is_defensive(self) -> bool {
+    /// Every job, in `index` order. Anything that stores a value per job
+    /// iterates this so the array and `index` can never disagree.
+    pub(super) const ALL: [Need; Need::COUNT] = [
+        Need::BuildUp,
+        Need::Progress,
+        Need::TakeOn,
+        Need::Shoot,
+        Need::Defend,
+        Need::Keep,
+    ];
+
+    /// How many jobs there are — the length of any per-job array.
+    pub(super) const COUNT: usize = 6;
+
+    pub(super) fn index(self) -> usize {
+        match self {
+            Need::BuildUp => 0,
+            Need::Progress => 1,
+            Need::TakeOn => 2,
+            Need::Shoot => 3,
+            Need::Defend => 4,
+            Need::Keep => 5,
+        }
+    }
+
+    pub(super) fn is_defensive(self) -> bool {
         matches!(self, Need::Defend)
     }
 
@@ -46,7 +70,7 @@ impl Need {
     /// Summed directly rather than through an array and a closure: this runs
     /// for every plausible player on every action.
     #[inline]
-    fn fitness(self, p: &PlayerData) -> f64 {
+    pub(super) fn fitness(self, p: &PlayerData) -> f64 {
         let total: u32 = match self {
             Need::BuildUp => {
                 p.passing as u32 + p.vision as u32 + p.composure as u32 + p.teamwork as u32
@@ -221,6 +245,14 @@ impl LiveMatchState {
         }
     }
 
+    /// How likely this player is to be the one the engine picks.
+    ///
+    /// Where his role and deployed slot put him, how suited he is to the job,
+    /// and how fresh he is. The first two are settled when the match starts and
+    /// only move when somebody comes on or the formation changes, so both are
+    /// read out of the squad cache rather than recomputed — this runs for every
+    /// player on both sides, twice per action, some fifteen thousand times a
+    /// match.
     #[inline]
     fn selection_weight(
         &self,
@@ -234,22 +266,12 @@ impl LiveMatchState {
         if !dismissals.is_empty() && dismissals.contains(&player.id) {
             return 0.0;
         }
-        let placement = if need.is_defensive() {
-            roles::off_ball_weight(player.position, player.slot, player.role, band)
-        } else {
-            roles::on_ball_weight(player.position, player.slot, player.role, band)
-        };
+        let cache = self.cache(side);
+        let placement = cache.placement(index, band, need);
         if placement <= 0.0 {
             return 0.0;
         }
-        // Suitability is deliberately super-linear: a clearly better player
-        // should be picked noticeably more often, not marginally. Squared
-        // rather than an arbitrary fractional power — the shape is what
-        // matters, and `powf` is far too expensive to run for every player on
-        // every action.
-        let relative = need.fitness(player) / 50.0;
-        let suitability = relative * relative;
-        placement * suitability * self.cache(side).selection_weight(index)
+        placement * cache.suitability(index, need) * cache.selection_weight(index)
     }
 
     pub(super) fn snap_player<R: Rng + ?Sized>(

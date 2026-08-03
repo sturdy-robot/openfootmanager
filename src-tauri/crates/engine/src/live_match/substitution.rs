@@ -208,5 +208,170 @@ impl LiveMatchState {
             };
             team.players[idx].position = new_pos;
         }
+
+        // Everyone is still on the pitch and every index is still valid, but
+        // half the squad now plays somewhere else — which is exactly the case
+        // where the cached placements would otherwise stay quietly wrong for
+        // the rest of the match.
+        let players = std::mem::take(&mut self.team_mut(side).players);
+        self.cache_mut(side).refresh_placements(&players);
+        self.team_mut(side).players = players;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::live_match::LiveMatchState;
+    use crate::live_match::helpers::Need;
+    use crate::sim::state::Band;
+    use crate::types::{
+        MatchConfig, PlayStyle, PlayerData, PlayerRole, Position, Side, TacticsConfig, TeamData,
+    };
+
+    fn player(id: &str, position: Position, defending: u8) -> PlayerData {
+        PlayerData {
+            id: id.to_string(),
+            name: id.to_string(),
+            position,
+            ovr: 70,
+            condition: 90,
+            fitness: 80,
+            pace: 70,
+            stamina: 70,
+            strength: 70,
+            agility: 70,
+            passing: 70,
+            shooting: 70,
+            tackling: defending,
+            dribbling: 70,
+            defending,
+            positioning: 70,
+            vision: 70,
+            decisions: 70,
+            composure: 70,
+            aggression: 70,
+            teamwork: 70,
+            leadership: 70,
+            handling: 70,
+            reflexes: 70,
+            aerial: 70,
+            traits: vec![],
+            slot: None,
+            role: PlayerRole::Standard,
+        }
+    }
+
+    /// An eleven whose outfielders differ only in how defensive they are, so a
+    /// formation change is guaranteed to move somebody.
+    fn eleven(prefix: &str) -> TeamData {
+        let mut players = vec![player(&format!("{prefix}_gk"), Position::Goalkeeper, 40)];
+        for i in 0..10 {
+            // Descending defensive score, so the sort inside `apply_formation`
+            // is stable and predictable.
+            players.push(player(
+                &format!("{prefix}_o{i}"),
+                Position::Midfielder,
+                90 - i * 5,
+            ));
+        }
+        TeamData {
+            id: prefix.to_string(),
+            name: prefix.to_string(),
+            formation: "4-4-2".to_string(),
+            play_style: PlayStyle::Balanced,
+            players,
+            tactics: TacticsConfig::default(),
+        }
+    }
+
+    fn state() -> LiveMatchState {
+        LiveMatchState::new(
+            eleven("home"),
+            eleven("away"),
+            MatchConfig::default(),
+            vec![],
+            vec![],
+            false,
+        )
+    }
+
+    /// Changing formation rewrites players' positions in place. Nobody leaves
+    /// the pitch and every squad index stays valid, so this is the one way the
+    /// cached placements can go stale while everything else still looks right —
+    /// and the batch path never changes formation, so no golden report would
+    /// catch it. A stale cache means the engine keeps picking players for a
+    /// shape they stopped playing when the manager changed it.
+    #[test]
+    fn changing_formation_moves_where_the_engine_looks_for_players() {
+        let mut state = state();
+
+        let before: Vec<f64> = (0..11)
+            .map(|i| {
+                state
+                    .cache(Side::Home)
+                    .placement(i, Band::OppBox, Need::Shoot)
+            })
+            .collect();
+
+        // 4-4-2 to 3-4-3: one defender becomes a forward.
+        state.apply_formation(Side::Home, "3-4-3");
+
+        let after: Vec<f64> = (0..11)
+            .map(|i| {
+                state
+                    .cache(Side::Home)
+                    .placement(i, Band::OppBox, Need::Shoot)
+            })
+            .collect();
+
+        assert_ne!(
+            before, after,
+            "nobody's presence in the opposition box changed after switching \
+             from 4-4-2 to 3-4-3 — the cached placements are stale"
+        );
+
+        // And specifically: the cache must agree with where the players
+        // actually are now, not merely differ from before.
+        for (index, p) in state.team_ref(Side::Home).players.iter().enumerate() {
+            let expected =
+                crate::sim::roles::on_ball_weight(p.position, p.slot, p.role, Band::OppBox);
+            assert_eq!(
+                after[index], expected,
+                "{} is a {:?} but the cache still places him elsewhere",
+                p.id, p.position
+            );
+        }
+    }
+
+    /// A substitution replaces the player at a squad index outright. The XI is
+    /// slot-aligned, so the index itself must survive — everything the engine
+    /// reads by index depends on it.
+    #[test]
+    fn a_substitute_takes_the_vacated_index_and_the_cache_follows() {
+        let mut home = eleven("home");
+        let bench = vec![player("sub", Position::Forward, 20)];
+        let mut state = LiveMatchState::new(
+            std::mem::replace(&mut home, eleven("spare")),
+            eleven("away"),
+            MatchConfig::default(),
+            bench,
+            vec![],
+            false,
+        );
+
+        let target = 5usize;
+        let off_id = state.team_ref(Side::Home).players[target].id.clone();
+        state.do_substitution(Side::Home, &off_id, "sub").unwrap();
+
+        assert_eq!(
+            state.team_ref(Side::Home).players[target].id,
+            "sub",
+            "the substitute did not take the vacated slot"
+        );
+        assert_eq!(
+            &*state.cache(Side::Home).id(target),
+            "sub",
+            "the squad cache still names the player who went off"
+        );
     }
 }

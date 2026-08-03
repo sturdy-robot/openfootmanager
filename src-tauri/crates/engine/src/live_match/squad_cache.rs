@@ -20,8 +20,55 @@
 
 use std::sync::Arc;
 
+use super::helpers::Need;
 use crate::sim::player_traits::TraitFlags;
+use crate::sim::roles;
+use crate::sim::state::Band;
 use crate::types::PlayerData;
+
+/// Everything about one player that stays put between substitutions.
+///
+/// Choosing who acts weighs every player on both sides, twice per action —
+/// something like fifteen thousand times a match. Each of those used to walk a
+/// twenty-seven-arm match on the player's role, read a placement table, and sum
+/// four attributes, all to arrive at numbers that had not changed since
+/// kick-off. They are worked out once and read from here instead.
+#[derive(Debug, Clone, Default)]
+struct Placement {
+    /// Relative likelihood of being on the ball, per band.
+    on_ball: [f64; Band::COUNT],
+    /// Relative likelihood of contesting it, per band.
+    off_ball: [f64; Band::COUNT],
+    /// How suited this player is to each job, already squared.
+    suitability: [f64; Need::COUNT],
+}
+
+impl Placement {
+    fn new(player: &PlayerData) -> Self {
+        let mut on_ball = [0.0; Band::COUNT];
+        let mut off_ball = [0.0; Band::COUNT];
+        for (index, band) in Band::ALL.iter().enumerate() {
+            on_ball[index] =
+                roles::on_ball_weight(player.position, player.slot, player.role, *band);
+            off_ball[index] =
+                roles::off_ball_weight(player.position, player.slot, player.role, *band);
+        }
+
+        let mut suitability = [0.0; Need::COUNT];
+        for (index, need) in Need::ALL.iter().enumerate() {
+            // Deliberately super-linear: a clearly better player should be
+            // picked noticeably more often, not marginally.
+            let relative = need.fitness(player) / 50.0;
+            suitability[index] = relative * relative;
+        }
+
+        Self {
+            on_ball,
+            off_ball,
+            suitability,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Default)]
 pub(super) struct SquadCache {
@@ -31,6 +78,7 @@ pub(super) struct SquadCache {
     condition: Vec<f64>,
     /// Condition as a selection multiplier; see `refresh_selection_weights`.
     selection_weight: Vec<f64>,
+    placement: Vec<Placement>,
 }
 
 impl SquadCache {
@@ -44,6 +92,7 @@ impl SquadCache {
                 .collect(),
             condition: players.iter().map(|p| p.condition as f64).collect(),
             selection_weight: vec![1.0; players.len()],
+            placement: players.iter().map(Placement::new).collect(),
         }
     }
 
@@ -58,6 +107,41 @@ impl SquadCache {
         self.traits[index] = TraitFlags::from_names(&player.traits);
         self.condition[index] = player.condition as f64;
         self.selection_weight[index] = selection_weight(player.condition as f64);
+        self.placement[index] = Placement::new(player);
+    }
+
+    /// Recompute where everyone plays.
+    ///
+    /// Changing formation rewrites players' positions in place, without anybody
+    /// leaving the pitch. Nothing else about the squad moves, so this is the one
+    /// case where the cache can go stale while every index stays perfectly
+    /// valid — and the batch path never changes formation, so no golden report
+    /// would ever catch it.
+    pub fn refresh_placements(&mut self, players: &[PlayerData]) {
+        self.placement.clear();
+        self.placement.extend(players.iter().map(Placement::new));
+    }
+
+    /// How likely this player is to be the one acting in `band`.
+    ///
+    /// Zero means he is not in this part of the pitch at all.
+    pub fn placement(&self, index: usize, band: Band, need: Need) -> f64 {
+        let Some(placement) = self.placement.get(index) else {
+            return 0.0;
+        };
+        if need.is_defensive() {
+            placement.off_ball[band.index()]
+        } else {
+            placement.on_ball[band.index()]
+        }
+    }
+
+    /// How suited this player is to the job being asked of him.
+    pub fn suitability(&self, index: usize, need: Need) -> f64 {
+        match self.placement.get(index) {
+            Some(placement) => placement.suitability[need.index()],
+            None => 0.0,
+        }
     }
 
     pub fn id(&self, index: usize) -> Arc<str> {
