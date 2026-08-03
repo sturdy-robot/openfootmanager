@@ -1,16 +1,20 @@
 import { useState, useEffect } from "react";
 import CompetitionsOverview from "./CompetitionsOverview";
 import KnockoutBracket from "./KnockoutBracket";
+import TournamentsAwardCard from "./TournamentsAwardCard";
+import {
+  buildTopScorers,
+  byTablePosition,
+  isKnockoutCompetition,
+  localizedRoundName,
+  summarizeCompetitionProgress,
+} from "./TournamentsTab.helpers";
 import { invoke } from "@tauri-apps/api/core";
-import type { ReactNode } from "react";
-import type { TFunction } from "i18next";
 import {
   FixtureData,
   GameStateData,
   LeagueData,
-  SeasonAwardEntryData,
   SeasonAwardsData,
-  SeasonManagerAwardEntryData,
 } from "../../store/gameStore";
 import {
   fetchCompetitionsView,
@@ -47,34 +51,6 @@ interface TournamentsTabProps {
   gameState: GameStateData;
   onSelectTeam: (id: string) => void;
   onSelectPlayer?: (id: string) => void;
-}
-
-function isKnockoutCompetition(competition: LeagueData): boolean {
-  return (
-    (competition.rules != null && competition.rules.format !== "LeagueTable") ||
-    (competition.knockout_rounds?.length ?? 0) > 0
-  );
-}
-
-function byTablePosition(
-  a: { points: number; goals_for: number; goals_against: number },
-  b: { points: number; goals_for: number; goals_against: number },
-): number {
-  return (
-    b.points - a.points ||
-    b.goals_for - b.goals_against - (a.goals_for - a.goals_against) ||
-    b.goals_for - a.goals_for
-  );
-}
-
-/** Round names arrive as backend data ("Final", "Round of 16"); localize the known shapes. */
-function localizedRoundName(t: TFunction, name: string): string {
-  if (name === "Final") return t("tournaments.rounds.final");
-  if (name === "Semifinal") return t("tournaments.rounds.semifinal");
-  if (name === "Quarterfinal") return t("tournaments.rounds.quarterfinal");
-  const roundOf = name.match(/^Round of (\d+)$/);
-  if (roundOf) return t("tournaments.rounds.roundOf", { size: roundOf[1] });
-  return name;
 }
 
 export default function TournamentsTab({
@@ -235,29 +211,14 @@ export default function TournamentsTab({
 
   const competitiveFixtures = getCompetitiveFixtures(league.fixtures);
 
-  const matchdays = new Map<number, FixtureData[]>();
-  competitiveFixtures.forEach((f) => {
-    const list = matchdays.get(f.matchday) || [];
-    list.push(f);
-    matchdays.set(f.matchday, list);
-  });
-  const sortedMatchdays = Array.from(matchdays.entries()).sort(
-    (a, b) => a[0] - b[0],
-  );
-
-  const completedMatchdays = sortedMatchdays.filter(([, fixtures]) =>
-    fixtures.every((f) => f.status === "Completed"),
-  ).length;
-  const totalMatchdays = sortedMatchdays.length;
-  // Awards only become final once the competition's season has fully played out;
-  // before that the standings-based winners are just current leaders.
-  const seasonComplete = totalMatchdays > 0 && completedMatchdays >= totalMatchdays;
-  const totalGoals = competitiveFixtures
-    .filter((f) => f.result)
-    .reduce((s, f) => s + (f.result!.home_goals + f.result!.away_goals), 0);
-  const completedMatches = competitiveFixtures.filter(
-    (f) => f.status === "Completed",
-  ).length;
+  const {
+    sortedMatchdays,
+    completedMatchdays,
+    totalMatchdays,
+    seasonComplete,
+    totalGoals,
+    completedMatches,
+  } = summarizeCompetitionProgress(competitiveFixtures);
 
   // Build fallback player name lookup from gameState.players while slice loads.
   const fallbackPlayerNames = Object.fromEntries(
@@ -274,28 +235,7 @@ export default function TournamentsTab({
   const resolvedPlayerNames =
     Object.keys(playerNames).length > 0 ? playerNames : fallbackPlayerNames;
 
-  const topScorers = (() => {
-    const goals: Record<string, number> = {};
-    competitiveFixtures.forEach((f) => {
-      if (f.result) {
-        f.result.home_scorers.forEach((s) => {
-          goals[s.player_id] = (goals[s.player_id] || 0) + 1;
-        });
-        f.result.away_scorers.forEach((s) => {
-          goals[s.player_id] = (goals[s.player_id] || 0) + 1;
-        });
-      }
-    });
-    return Object.entries(goals)
-      .map(([pid, g]) => ({
-        playerId: pid,
-        playerName: resolvedPlayerNames[pid] ?? null,
-        goals: g,
-      }))
-      .filter((e) => e.playerName !== null)
-      .sort((a, b) => b.goals - a.goals)
-      .slice(0, 10);
-  })();
+  const topScorers = buildTopScorers(competitiveFixtures, resolvedPlayerNames);
 
   const isClubTeam = (id: string) => id in teamNames;
   const resolveTeamName = (id: string) => {
@@ -978,7 +918,7 @@ export default function TournamentsTab({
           )}
           {awards ? (
             <>
-              <AwardCard
+              <TournamentsAwardCard
                 icon={<Briefcase className="w-5 h-5 text-accent-500" />}
                 title={t("tournaments.awards.managerOfSeasonTitle")}
                 subtitle={t("tournaments.awards.managerOfSeasonSubtitle")}
@@ -988,7 +928,7 @@ export default function TournamentsTab({
                 decimal={false}
                 onSelectTeam={onSelectTeam}
               />
-              <AwardCard
+              <TournamentsAwardCard
                 icon={<Zap className="w-5 h-5 text-accent-500" />}
                 title={t("tournaments.awards.goldenBootTitle")}
                 subtitle={t("tournaments.awards.goldenBootSubtitle")}
@@ -998,7 +938,7 @@ export default function TournamentsTab({
                 onSelectPlayer={onSelectPlayer}
                 onSelectTeam={onSelectTeam}
               />
-              <AwardCard
+              <TournamentsAwardCard
                 icon={<Star className="w-5 h-5 text-purple-500" />}
                 title={t("tournaments.awards.assistKingTitle")}
                 subtitle={t("tournaments.awards.assistKingSubtitle")}
@@ -1008,7 +948,7 @@ export default function TournamentsTab({
                 onSelectPlayer={onSelectPlayer}
                 onSelectTeam={onSelectTeam}
               />
-              <AwardCard
+              <TournamentsAwardCard
                 icon={<Trophy className="w-5 h-5 text-primary-500" />}
                 title={t("tournaments.awards.playerOfYearTitle")}
                 subtitle={t("tournaments.awards.playerOfYearSubtitle")}
@@ -1019,7 +959,7 @@ export default function TournamentsTab({
                 onSelectPlayer={onSelectPlayer}
                 onSelectTeam={onSelectTeam}
               />
-              <AwardCard
+              <TournamentsAwardCard
                 icon={<Shield className="w-5 h-5 text-blue-500" />}
                 title={t("tournaments.awards.goldenGloveTitle")}
                 subtitle={t("tournaments.awards.goldenGloveSubtitle")}
@@ -1029,7 +969,7 @@ export default function TournamentsTab({
                 onSelectPlayer={onSelectPlayer}
                 onSelectTeam={onSelectTeam}
               />
-              <AwardCard
+              <TournamentsAwardCard
                 icon={<Users className="w-5 h-5 text-green-500" />}
                 title={t("tournaments.awards.everPresentTitle")}
                 subtitle={t("tournaments.awards.everPresentSubtitle")}
@@ -1039,7 +979,7 @@ export default function TournamentsTab({
                 onSelectPlayer={onSelectPlayer}
                 onSelectTeam={onSelectTeam}
               />
-              <AwardCard
+              <TournamentsAwardCard
                 icon={<Star className="w-5 h-5 text-amber-500" />}
                 title={t("tournaments.awards.youngPlayerTitle")}
                 subtitle={t("tournaments.awards.youngPlayerSubtitle")}
@@ -1075,110 +1015,5 @@ export default function TournamentsTab({
         </div>
       )}
     </div>
-  );
-}
-
-function AwardCard({
-  icon,
-  title,
-  subtitle,
-  entries,
-  unit,
-  emptyText,
-  decimal,
-  onSelectPlayer,
-  onSelectTeam,
-}: {
-  icon: ReactNode;
-  title: string;
-  subtitle: string;
-  entries: Array<SeasonAwardEntryData | SeasonManagerAwardEntryData>;
-  unit: string;
-  emptyText: string;
-  decimal?: boolean;
-  onSelectPlayer?: (id: string) => void;
-  onSelectTeam: (id: string) => void;
-}) {
-  const { t } = useTranslation();
-  const buildAwardMenuItems = (entry: SeasonAwardEntryData | SeasonManagerAwardEntryData) => {
-    const items = [buildViewTeamMenuItem(t, () => onSelectTeam(entry.team_id))];
-
-    if (typeof onSelectPlayer === "function" && "player_id" in entry) {
-      items.unshift(
-        buildViewProfileMenuItem(t, () => onSelectPlayer(entry.player_id)),
-      );
-    }
-
-    return items;
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          {icon}
-          <div>
-            <span>{title}</span>
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 font-normal normal-case tracking-normal">
-              {subtitle}
-            </p>
-          </div>
-        </div>
-      </CardHeader>
-      <CardBody className="p-0">
-        {entries.length === 0 ? (
-          <p className="p-4 text-sm text-gray-400 dark:text-gray-500 text-center">
-            {emptyText}
-          </p>
-        ) : (
-          <div className="divide-y divide-gray-100 dark:divide-navy-600">
-            {entries.map((entry, i) => (
-              <ContextMenu
-                items={buildAwardMenuItems(entry)}
-                key={"player_id" in entry ? entry.player_id : entry.manager_id}
-              >
-                <div
-                  className="flex items-center px-4 py-2.5 gap-3"
-                  data-testid={`tournaments-award-entry-${"player_id" in entry ? entry.player_id : entry.manager_id}`}
-                >
-                  <span
-                    className={`font-heading font-bold text-sm w-5 text-center ${i === 0
-                      ? "text-accent-500"
-                      : "text-gray-400 dark:text-gray-500"
-                      }`}
-                  >
-                    {i + 1}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className={`text-sm font-semibold truncate ${i === 0
-                        ? "text-gray-900 dark:text-gray-100"
-                        : "text-gray-700 dark:text-gray-300"
-                        }`}
-                    >
-                      {"player_name" in entry ? entry.player_name : entry.manager_name}
-                    </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">
-                      {entry.team_name}
-                    </p>
-                  </div>
-                  <span
-                    className={`font-heading font-bold tabular-nums ${i === 0
-                      ? "text-lg text-accent-500"
-                      : "text-sm text-gray-600 dark:text-gray-400"
-                      }`}
-                  >
-                    {decimal ? entry.value.toFixed(2) : `${Math.round("win_rate" in entry ? entry.win_rate : entry.value)}`}
-                  </span>
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500 w-12">
-                    {unit}
-                  </span>
-                </div>
-              </ContextMenu>
-            ))}
-          </div>
-        )}
-      </CardBody>
-    </Card>
   );
 }

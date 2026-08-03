@@ -233,6 +233,7 @@ const UNSUPPORTED_FORMAT_VERSION: &str = "be.error.package.unsupportedFormatVers
 const INVALID_ENTITY: &str = "be.error.package.invalidEntity";
 const MISSING_ID: &str = "be.error.package.missingId";
 const DUPLICATE_ID: &str = "be.error.package.duplicateId";
+const INVALID_PACKAGE_ID: &str = "be.error.package.invalidPackageId";
 const UNKNOWN_CONFEDERATION: &str = "be.error.package.unknownConfederation";
 const UNKNOWN_COUNTRY: &str = "be.error.package.unknownCountry";
 const UNKNOWN_TEAM: &str = "be.error.package.unknownTeam";
@@ -478,9 +479,23 @@ pub fn load_world_package_files(dir: &Path) -> (WorldPackage, Vec<PackageError>)
 /// independent of file-discovery order (and therefore of folder layout).
 pub fn load_world_package(dir: &Path) -> (WorldPackage, Vec<PackageError>) {
     let (package, mut errors) = load_world_package_files(dir);
-    errors.extend(validate_format_version(&package));
-    errors.extend(validate_references(&package));
+    errors.extend(validate_package(&package));
     (package, errors)
+}
+
+/// Every check a package must pass, for callers that obtained one some other way.
+///
+/// [`load_world_package`] runs exactly this after reading a directory. The
+/// archive loader deliberately does not — it is the runtime read path, and an
+/// already-installed package has to keep loading — so anything whose job *is*
+/// validation calls this itself. Keeping the set in one place is the point: when
+/// it lived in two, `ofm-cli validate <dir>` and `ofm-cli validate <file>.ofm`
+/// disagreed about the same package.
+pub fn validate_package(package: &WorldPackage) -> Vec<PackageError> {
+    let mut errors = validate_format_version(package);
+    errors.extend(validate_manifest(package));
+    errors.extend(validate_references(package));
+    errors
 }
 
 /// Highest package `formatVersion` this build understands.
@@ -500,6 +515,53 @@ pub fn validate_format_version(package: &WorldPackage) -> Vec<PackageError> {
         return vec![PackageError::new(UNSUPPORTED_FORMAT_VERSION, "package.json")
             .with("version", meta.format_version.to_string())
             .with("supported", SUPPORTED_PACKAGE_FORMAT_VERSION.to_string())];
+    }
+    Vec::new()
+}
+
+/// The one package id that cannot be installed — it collides with the prefix
+/// that tells a bundled asset path from a package-qualified one.
+///
+/// Removable once `isPackageQualifiedAsset` (`src/lib/packageAssets.ts`) stops
+/// deciding on the first path segment — if a qualified path carried an explicit
+/// marker, or the two kinds of path were separate fields, `assets` would be an
+/// ordinary id again.
+pub const RESERVED_PACKAGE_ID: &str = "assets";
+
+/// Whether `id` can be used as a package identifier.
+///
+/// The id is not just a label. It becomes a filename under the packages
+/// directory (`<id>.ofm`) and the first segment of every qualified asset path
+/// (`<id>/assets/images/…`), so anything that could escape that directory has
+/// to be refused.
+///
+/// This is the single source of truth for that rule. The installer applies it
+/// to the id it resolves; [`validate_manifest`] applies it while the author can
+/// still fix it. Before they shared this function a manifest could declare an
+/// id that the editor and the CLI both called valid and the installer then
+/// refused with a generic "invalid package" — issue #414, `trendyol-super-lig-25/26`.
+pub fn is_valid_package_id(id: &str) -> bool {
+    !(id.is_empty()
+        || id.contains('/')
+        || id.contains('\\')
+        || id.contains("..")
+        || id.contains('\0')
+        || id == RESERVED_PACKAGE_ID)
+}
+
+/// Reject a manifest that declares an id the installer could never accept.
+///
+/// An **empty** id is deliberately not an error here: a package may omit it and
+/// the installer falls back to the archive's filename. Only an id the author
+/// actually wrote, and that cannot be used, is reported.
+pub fn validate_manifest(package: &WorldPackage) -> Vec<PackageError> {
+    let Some(meta) = package.meta.as_ref() else {
+        return Vec::new();
+    };
+    if !meta.id.is_empty() && !is_valid_package_id(&meta.id) {
+        return vec![
+            PackageError::new(INVALID_PACKAGE_ID, "package.json").with("id", meta.id.clone()),
+        ];
     }
     Vec::new()
 }
@@ -1306,6 +1368,13 @@ pub fn load_world_package_from_ofm(path: &Path) -> (WorldPackage, Vec<PackageErr
     };
 
     // Load whatever was successfully extracted, even if some entries had errors.
+    //
+    // Deliberately *not* validating the manifest id here. This is the runtime
+    // read path: `read_package_info` drops a package from the installed list on
+    // any error at all, and career startup refuses to begin. A package already
+    // sitting in the packages directory — dropped there by hand, or installed by
+    // a build that predates the check — would silently disappear instead of
+    // continuing to work. Authoring tools call `validate_manifest` themselves.
     let (package, load_errors) = load_world_package_files(&temp_dir);
     let _ = std::fs::remove_dir_all(&temp_dir);
 
@@ -1455,6 +1524,124 @@ mod tests {
     }
 
     #[test]
+    fn an_unusable_package_id_is_caught_while_the_author_can_still_fix_it() {
+        // Issue #414: the reporter's manifest declared `trendyol-super-lig-25/26`.
+        // The editor and `ofm-cli validate` both called the package valid, and the
+        // installer then refused it — the slash makes `<id>.ofm` escape the
+        // packages directory. Whatever the installer will not accept has to fail
+        // here, at authoring time, on the author's own machine.
+        let dir = temp_package();
+        write(
+            &dir,
+            "package.json",
+            r#"{"schema":"world","id":"trendyol-super-lig-25/26","name":"Süper Lig"}"#,
+        );
+
+        let (_pkg, errors) = load_world_package(&dir);
+
+        let err = errors
+            .iter()
+            .find(|e| e.code == INVALID_PACKAGE_ID)
+            .expect("the unusable id should be reported");
+        // The id travels with the error: "invalid package" alone is what left the
+        // reporter with nothing to act on.
+        assert_eq!(
+            err.params,
+            vec![("id".to_string(), "trendyol-super-lig-25/26".to_string())]
+        );
+    }
+
+    #[test]
+    fn an_omitted_package_id_is_not_an_error() {
+        // An empty id is legal — the installer falls back to the archive filename,
+        // and procedurally generated packages rely on that. Only an id the author
+        // actually wrote, and that cannot be used, is a problem.
+        let dir = temp_package();
+        write(&dir, "package.json", r#"{"schema":"world","name":"Nameless"}"#);
+
+        let (_pkg, errors) = load_world_package(&dir);
+
+        assert!(
+            !errors.iter().any(|e| e.code == INVALID_PACKAGE_ID),
+            "an omitted id must not be reported, got {errors:?}"
+        );
+    }
+
+    #[test]
+    fn reading_an_installed_archive_stays_permissive_about_the_id() {
+        // The archive load is the *runtime* read path. `read_package_info` drops a
+        // package from the installed list on any error, and career startup refuses
+        // to begin — so folding the id check in here would make a package that is
+        // already installed, and already working, silently disappear. Whatever the
+        // id says, reading it back has to keep succeeding; `validate_manifest` is
+        // what authoring tools ask for on top.
+        let archive = build_zip(&[(
+            "package.json",
+            br#"{"schema":"world","id":"a/b","name":"Slashed"}"#,
+        )]);
+
+        let (pkg, errors) = load_world_package_from_ofm(&archive);
+
+        assert!(
+            errors.is_empty(),
+            "the runtime read must not fail on the id: {errors:?}"
+        );
+        // …and asking explicitly, as `ofm-cli validate` does, still reports it.
+        assert!(validate_manifest(&pkg)
+            .iter()
+            .any(|e| e.code == INVALID_PACKAGE_ID));
+        std::fs::remove_file(&archive).ok();
+    }
+
+    #[test]
+    fn an_archive_and_a_directory_validate_to_the_same_answer() {
+        // `ofm-cli validate` used to give two answers for the same package: the
+        // directory branch ran the full set, the archive branch ran none of it,
+        // so an unsupported formatVersion or a dangling reference came back
+        // "Valid" from a `.ofm` and rejected from the folder it was packed from.
+        // `validate_package` is the one set both now ask for.
+        let manifest = r#"{"schema":"world","id":"drifted","name":"Drifted","formatVersion":99}"#;
+        let team = r##"{"schema":"team","items":[{"id":"zed","name":"Zed FC","city":"Zed",
+             "country":"NOWHERE","colors":{"primary":"#fff","secondary":"#000"}}]}"##;
+
+        let dir = temp_package();
+        write(&dir, "package.json", manifest);
+        write(&dir, "teams/teams.json", team);
+        let (_, from_dir) = load_world_package(&dir);
+
+        let archive = build_zip(&[
+            ("package.json", manifest.as_bytes()),
+            ("teams/teams.json", team.as_bytes()),
+        ]);
+        let (pkg, mut from_archive) = load_world_package_from_ofm(&archive);
+        from_archive.extend(validate_package(&pkg));
+
+        let codes = |errors: &[PackageError]| {
+            let mut codes: Vec<String> = errors.iter().map(|e| e.code.clone()).collect();
+            codes.sort();
+            codes
+        };
+        assert_eq!(codes(&from_dir), codes(&from_archive));
+        assert!(from_dir.iter().any(|e| e.code == UNSUPPORTED_FORMAT_VERSION));
+        assert!(from_dir.iter().any(|e| e.code == UNKNOWN_COUNTRY));
+
+        std::fs::remove_dir_all(&dir).ok();
+        std::fs::remove_file(&archive).ok();
+    }
+
+    #[test]
+    fn the_installer_and_the_validator_share_one_id_rule() {
+        // The two used to be separate copies, which is how they drifted apart.
+        // If a case is ever added to one list, this fails until it is in both.
+        for bad in ["", "..", "../evil", "a/b", "a\\b", "with\0null", "assets"] {
+            assert!(!is_valid_package_id(bad), "expected {bad:?} to be refused");
+        }
+        for good in ["eng-premier-league", "brasileirao_2026", "süper-lig-25-26"] {
+            assert!(is_valid_package_id(good), "expected {good:?} to pass");
+        }
+    }
+
+    #[test]
     fn a_newer_format_version_is_named_as_the_reason() {
         // A package from a future build parses as nothing recognisable, so the
         // only symptom is emptiness. Say what is actually wrong.
@@ -1552,7 +1739,10 @@ mod tests {
         assert!(errors.is_empty(), "package should load: {errors:?}");
         qualify_package_asset_paths(&mut package, "badge-pkg");
 
-        let world = crate::generator::build_world_from_package(&package).expect("world builds");
+        // No opening year: this asserts badge resolution, not era ageing, so let
+        // the package's own `baseYear` (absent here) pick the default.
+        let world =
+            crate::generator::build_world_from_package(&package, None).expect("world builds");
         let logo = world
             .teams
             .iter()
@@ -2041,6 +2231,154 @@ colors:
         std::fs::remove_dir_all(&dir).ok();
     }
 
+    /// A minimal one-country package declaring `base_year`, for era assertions.
+    fn write_era_package(dir: &std::path::Path, base_year: i32) {
+        write(
+            dir,
+            "world.yaml",
+            &format!("schema: world\nname: Era World\nbaseYear: {base_year}\n"),
+        );
+        write(dir, "confed.yaml", "schema: confederation\nid: galaxy\nname: Galaxy\n");
+        write(
+            dir,
+            "country.yaml",
+            "schema: country\nid: ZZ\nname: Zedland\nconfederation: galaxy\n",
+        );
+        write(
+            dir,
+            "teams.yaml",
+            "schema: team\nitems:\n  - { id: zed-fc, name: Zed FC, city: Zedtown, country: ZZ, colors: { primary: \"#000\", secondary: \"#fff\" } }\n",
+        );
+    }
+
+    /// The most recent birth year in the world — the era ceiling every player
+    /// must sit at or below.
+    fn newest_birth_year(world: &crate::generator::WorldData) -> i32 {
+        world
+            .players
+            .iter()
+            .filter_map(|player| player.date_of_birth.get(0..4))
+            .filter_map(|year| year.parse::<i32>().ok())
+            .max()
+            .expect("world should have players with parseable birth years")
+    }
+
+    #[test]
+    fn package_base_year_ages_squads_when_no_career_year_is_given() {
+        let dir = temp_package();
+        write_era_package(&dir, 1962);
+
+        let (package, errors) = load_world_package(&dir);
+        assert!(errors.is_empty(), "package should be valid: {errors:?}");
+        let world = crate::generator::build_world_data_from_package(&package, None);
+
+        assert!(
+            newest_birth_year(&world) < 1962,
+            "a package declaring baseYear 1962 must not generate players born after it",
+        );
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn an_absurdly_early_base_year_cannot_underflow_birth_years() {
+        // `baseYear` is author-supplied with no lower bound, and every birth
+        // year is `opening_year - age`. A tiny value therefore underflows a
+        // u32 — a panic in debug, a birth year near 4 billion in release —
+        // so a mistyped manifest could take the game down.
+        let dir = temp_package();
+        write_era_package(&dir, 5);
+
+        let (package, errors) = load_world_package(&dir);
+        assert!(errors.is_empty(), "package should be valid: {errors:?}");
+        let world = crate::generator::build_world_data_from_package(&package, None);
+
+        // `baseYear: 5` resolves to the clamped floor, so every player must be
+        // born at or before it. A loose range here would let a regression that
+        // ignores the clamp slip through.
+        let floor = crate::generator::MIN_OPENING_YEAR as i32;
+        for player in &world.players {
+            let birth_year: i32 = player.date_of_birth[0..4]
+                .parse()
+                .unwrap_or_else(|_| panic!("unparseable dob {}", player.date_of_birth));
+            assert!(
+                birth_year <= floor && birth_year > floor - 100,
+                "{} was born in {birth_year}, outside the clamped era floor {floor}",
+                player.full_name,
+            );
+        }
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn a_negative_base_year_clamps_to_the_floor_like_a_tiny_one_does() {
+        // `baseYear: 5` and `baseYear: -50` are the same authoring mistake, so
+        // they belong in the same place. Discarding the negative instead of
+        // clamping it silently opened a contemporary world from a manifest that
+        // plainly asked for a historical one.
+        let dir = temp_package();
+        write_era_package(&dir, -50);
+
+        let (package, errors) = load_world_package(&dir);
+        assert!(errors.is_empty(), "package should be valid: {errors:?}");
+        let world = crate::generator::build_world_data_from_package(&package, None);
+
+        let floor = crate::generator::MIN_OPENING_YEAR as i32;
+        assert!(
+            newest_birth_year(&world) <= floor,
+            "a negative baseYear must clamp to {floor}, not fall back to today",
+        );
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn an_absurdly_late_base_year_still_produces_parseable_dates() {
+        // The year is formatted straight into birth and contract dates, so an
+        // unbounded value yields strings no date parser accepts — no crash,
+        // just ages that silently stop resolving.
+        let dir = temp_package();
+        write_era_package(&dir, 2_000_000_000);
+
+        let (package, errors) = load_world_package(&dir);
+        assert!(errors.is_empty(), "package should be valid: {errors:?}");
+        let world = crate::generator::build_world_data_from_package(&package, None);
+
+        let ceiling = crate::generator::MAX_OPENING_YEAR as i32;
+        for player in &world.players {
+            chrono::NaiveDate::parse_from_str(&player.date_of_birth, "%Y-%m-%d")
+                .unwrap_or_else(|_| panic!("unparseable dob {}", player.date_of_birth));
+            let birth_year: i32 = player.date_of_birth[0..4].parse().expect("year");
+            assert!(
+                birth_year <= ceiling,
+                "{} was born in {birth_year}, past the era ceiling {ceiling}",
+                player.full_name,
+            );
+        }
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn career_start_year_overrides_the_packages_declared_base_year() {
+        // Installing a 1962 database but starting a 1985 career must age squads
+        // against 1985 — the clock is what the player actually experiences.
+        let dir = temp_package();
+        write_era_package(&dir, 1962);
+
+        let (package, errors) = load_world_package(&dir);
+        assert!(errors.is_empty(), "package should be valid: {errors:?}");
+        let world = crate::generator::build_world_data_from_package(&package, Some(1985));
+
+        let newest = newest_birth_year(&world);
+        assert!(
+            newest < 1985,
+            "players must not be born after the career start year, got {newest}",
+        );
+        assert!(
+            newest > 1962,
+            "squads should be aged against the 1985 career, not the 1962 manifest (got {newest})",
+        );
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
     #[test]
     fn builds_a_playable_world_from_a_package() {
         let dir = temp_package();
@@ -2065,7 +2403,7 @@ colors:
         let (package, errors) = load_world_package(&dir);
         assert!(errors.is_empty(), "package should be valid: {errors:?}");
 
-        let world = crate::generator::build_world_data_from_package(&package);
+        let world = crate::generator::build_world_data_from_package(&package, None);
         assert_eq!(world.name, "Zed World");
         let team_ids: Vec<&str> = world.teams.iter().map(|t| t.id.as_str()).collect();
         assert_eq!(team_ids, vec!["zed-fc", "zed-utd"], "stable authored ids are kept");
@@ -2111,7 +2449,7 @@ colors:
         let (package, errors) = load_world_package(&dir);
         assert!(errors.is_empty(), "{errors:?}");
 
-        let world = crate::generator::build_world_data_from_package(&package);
+        let world = crate::generator::build_world_data_from_package(&package, None);
 
         let star = world
             .players
@@ -2369,7 +2707,7 @@ colors:
             ("d.yaml", "schema: team\nid: team-d\nname: Team D\ncity: City D\ncountry: ES\ncolors: { primary: \"#555\", secondary: \"#fff\" }\n"),
         ]);
         assert!(errors.is_empty());
-        let world = crate::generator::build_world_data_from_package(&pkg);
+        let world = crate::generator::build_world_data_from_package(&pkg, None);
         assert_eq!(world.teams.len(), 4);
         // Fallback league must be generated.
         let defs = world.competition_definitions.as_ref()
@@ -2393,7 +2731,7 @@ colors:
         // totalling 8 teams, and a fallback league covering all of them.
         let (pkg, errors, dir) = package_from_files(&[("a.yaml", TEAM_A)]);
         assert!(errors.is_empty());
-        let world = crate::generator::build_world_data_from_package(&pkg);
+        let world = crate::generator::build_world_data_from_package(&pkg, None);
         assert_eq!(world.teams.len(), 8, "should fill to THIN_PACKAGE_MIN_TEAMS");
         assert!(
             world.competition_definitions.is_some(),
@@ -2579,7 +2917,7 @@ colors:
         let dir = temp_package();
         write(&dir, "world.yaml", "schema: world\nid: empty\nname: Empty World\n");
         let (pkg, _) = load_world_package(&dir);
-        let world = crate::generator::build_world_data_from_package(&pkg);
+        let world = crate::generator::build_world_data_from_package(&pkg, None);
         // The world builds but has no teams; game.rs rejects this as noDatabasePackage.
         assert!(world.teams.is_empty(), "OK: correctly produces 0 teams");
         std::fs::remove_dir_all(&dir).ok();
