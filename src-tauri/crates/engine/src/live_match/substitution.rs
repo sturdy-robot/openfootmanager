@@ -64,8 +64,14 @@ impl LiveMatchState {
         player_on.position = player_off.position;
 
         // The substitute takes over the vacated index outright — his id, his
-        // traits and his fresh legs all replace the man who went off.
+        // traits and his fresh legs all replace the man who went off. What the
+        // departing player did has to be banked under his own name first, or it
+        // would be credited to the man who replaced him.
+        let departing = self.cache(side).id(off_idx);
+        self.metrics_mut(side).retire(off_idx, departing);
         self.cache_mut(side).replace(off_idx, &player_on);
+        let work_rates = self.cache(side).work_rates();
+        self.metrics_mut(side).set_work_rate(work_rates);
         self.team_mut(side).players.insert(off_idx, player_on);
 
         // Move subbed-off player to bench (they can't come back, but we keep them)
@@ -135,8 +141,14 @@ impl LiveMatchState {
         player_on.position = player_off.position;
 
         // The substitute takes over the vacated index outright — his id, his
-        // traits and his fresh legs all replace the man who went off.
+        // traits and his fresh legs all replace the man who went off. What the
+        // departing player did has to be banked under his own name first, or it
+        // would be credited to the man who replaced him.
+        let departing = self.cache(side).id(off_idx);
+        self.metrics_mut(side).retire(off_idx, departing);
         self.cache_mut(side).replace(off_idx, &player_on);
+        let work_rates = self.cache(side).work_rates();
+        self.metrics_mut(side).set_work_rate(work_rates);
         self.team_mut(side).players.insert(off_idx, player_on);
 
         // Move swapped-out player to bench
@@ -216,6 +228,8 @@ impl LiveMatchState {
         let players = std::mem::take(&mut self.team_mut(side).players);
         self.cache_mut(side).refresh_placements(&players);
         self.team_mut(side).players = players;
+        let work_rates = self.cache(side).work_rates();
+        self.metrics_mut(side).set_work_rate(work_rates);
     }
 }
 

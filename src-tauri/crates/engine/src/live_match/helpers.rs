@@ -136,6 +136,14 @@ impl LiveMatchState {
             }
             cache.refresh_selection_weights();
         }
+
+        // A minute of football is a minute of running, for everybody.
+        for (cache, metrics) in [
+            (&self.home_cache, &mut self.home_metrics),
+            (&self.away_cache, &mut self.away_metrics),
+        ] {
+            metrics.cover_ground(cache.conditions());
+        }
     }
 
     /// Adjust a skill value based on the player's current in-match condition.
@@ -150,6 +158,13 @@ impl LiveMatchState {
         match side {
             Side::Home => &self.home_cache,
             Side::Away => &self.away_cache,
+        }
+    }
+
+    pub(super) fn metrics_mut(&mut self, side: Side) -> &mut super::MetricTally {
+        match side {
+            Side::Home => &mut self.home_metrics,
+            Side::Away => &mut self.away_metrics,
         }
     }
 

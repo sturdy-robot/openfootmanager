@@ -10,14 +10,13 @@ pub struct RunConfig<'a> {
     pub away_formation: &'a str,
     pub home_rating: u8,
     pub away_rating: u8,
-    pub goal_conversion_base: f64,
     pub seed: Option<u64>,
 }
 
 pub fn generate_html(stats: &BenchStats, cfg: &RunConfig) -> String {
     let seed_line = cfg.seed.map(|s| format!(" · seed {s}")).unwrap_or_default();
 
-    let xg = stats.xg_proxy_pg(cfg.goal_conversion_base);
+    let xg = stats.xg_pg();
     let goals_vs_xg = stats.gpg() - xg;
     let hp = stats.avg_home_possession();
 

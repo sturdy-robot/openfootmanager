@@ -173,7 +173,8 @@ impl LiveMatchState {
         let opponent_tactics = self.team_ref(def_side).tactics;
         let action = choose_action(band, actor.role, &own_tactics, &opponent_tactics, rng);
 
-        match action {
+        let actor_index = actor.index;
+        let events = match action {
             Action::ShortPass => self.resolve_pass(
                 minute,
                 att_side,
@@ -207,7 +208,21 @@ impl LiveMatchState {
             Action::Shot => {
                 self.resolve_shot(minute, att_side, ShotOrigin::from_band(band), band, rng)
             }
+        };
+
+        // Expected threat: what moving the ball was worth. Only when the side
+        // still has it — giving it away is not a contribution — and the delta
+        // can be negative, because playing backwards really does give something
+        // up. This is most of what a midfielder does over ninety minutes, and
+        // no counting stat records any of it.
+        if self.possession == att_side {
+            let landed = Band::from_zone(self.ball_zone, att_side);
+            let gained = crate::live_match::metrics::threat(landed)
+                - crate::live_match::metrics::threat(band);
+            self.metrics_mut(att_side).add_xt(actor_index, gained);
         }
+
+        events
     }
 
     fn resolve_shot<R: Rng + ?Sized>(
@@ -280,6 +295,42 @@ impl LiveMatchState {
             * accuracy_quality)
             .clamp(0.05, 0.85);
 
+        // Expected goals: what this chance was worth, before anybody rolls for
+        // it. Deliberately computed with an average finisher and an average
+        // keeper — the chance is the chance, whoever is standing over it. That
+        // is the whole use of the number: a striker who scores more than his
+        // expected goals is finishing well, and if the shooter's own rating
+        // went into it that comparison would be circular. It draws nothing from
+        // the random stream, so it cannot disturb a replay.
+        let def_line_mod = tactics_defensive_conversion_mod(&self.team_ref(def_side).tactics);
+        // The reference finisher: not the average squad member, but the
+        // average man who actually takes a shot. Those are not the same
+        // player. The engine chooses who shoots by how good he is at shooting,
+        // weighted super-linearly, so in a squad rated 70 the person who ends
+        // up striking the ball behaves like an 84 — and calibrating against the
+        // squad average would leave every team on earth apparently
+        // overperforming its expected goals by a fifth.
+        //
+        // Anchored so that a reference squad scores what it is expected to.
+        // Better finishers than that beat it and worse ones fall short, which
+        // is the only reason the number is worth having.
+        const REFERENCE_FINISHER: f64 = 84.0;
+        let reference_accuracy = ((self.config.shot_accuracy_base
+            + (REFERENCE_FINISHER - 50.0) / 200.0)
+            * accuracy_quality)
+            .clamp(0.05, 0.85);
+        // The skill term drops out: the reference finisher faces a keeper of
+        // his own standard, which is what makes this a property of the chance
+        // and not of the two men involved in it.
+        let reference_conversion =
+            (self.config.goal_conversion_base * def_line_mod * conversion_quality)
+                .clamp(0.02, 0.70);
+        let xg = reference_accuracy * reference_conversion;
+        self.metrics_mut(att_side).add_xg(shooter.index, xg);
+        // The man who made it gets the same credit: expected assists is the
+        // expected goals of the chance you created.
+        self.metrics_mut(att_side).add_xa(assister.index, xg);
+
         if rng.random_range(0.0..1.0f64) > accuracy {
             let detail = EventDetail::Shot {
                 danger: danger_band(shoot_rating),
@@ -318,7 +369,6 @@ impl LiveMatchState {
             return events;
         }
 
-        let def_line_mod = tactics_defensive_conversion_mod(&self.team_ref(def_side).tactics);
         let conversion = ((self.config.goal_conversion_base * def_line_mod
             + (shoot_rating - gk_rating) / 150.0)
             * conversion_quality)

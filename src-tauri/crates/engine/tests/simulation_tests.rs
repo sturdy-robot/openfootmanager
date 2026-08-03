@@ -1084,3 +1084,136 @@ fn penalties_occur_at_realistic_rate() {
         "Expected penalties/game in [0.15, 0.70], got {avg:.3}"
     );
 }
+
+// ---------------------------------------------------------------------------
+// Expected goals, assists and threat
+// ---------------------------------------------------------------------------
+
+/// The test that decides whether expected goals is a real number or a decorated
+/// shot count.
+///
+/// A chance worth 0.1 goals should produce a goal about a tenth of the time, so
+/// over enough matches the expected goals a side accumulates has to land near
+/// the goals it actually scores. If it does not, the model is not describing
+/// the engine it is attached to.
+///
+/// It will not land exactly, and should not: expected goals is computed with an
+/// average finisher, so a side of better-than-average finishers is supposed to
+/// beat it. The gap is the finishing, and its sign is the interesting part.
+#[test]
+fn expected_goals_predicts_the_goals_that_are_actually_scored() {
+    let home = make_team("h", "Home", 70, PlayStyle::Balanced);
+    let away = make_team("a", "Away", 70, PlayStyle::Balanced);
+    let config = MatchConfig::default();
+
+    let trials = 1500;
+    let (mut goals, mut xg) = (0.0f64, 0.0f64);
+    for seed in 0..trials {
+        let report = simulate_with_rng(&home, &away, &config, &mut seeded_rng(seed));
+        goals += (report.home_stats.goals + report.away_stats.goals) as f64;
+        xg += (report.home_stats.xg + report.away_stats.xg) as f64;
+    }
+
+    let ratio = goals / xg;
+    assert!(
+        (0.75..1.35).contains(&ratio),
+        "expected goals does not describe this engine: {:.2} goals per game \
+         against {:.2} xG, a ratio of {ratio:.2}",
+        goals / trials as f64,
+        xg / trials as f64,
+    );
+}
+
+/// Expected threat has to reward the players who actually move the ball.
+/// A goalkeeper knocking it thirty yards to a centre-half should not out-rank
+/// the midfielders carrying play into the final third.
+#[test]
+fn expected_threat_favours_the_players_who_move_the_ball_forward() {
+    let home = make_team("h", "Home", 70, PlayStyle::Balanced);
+    let away = make_team("a", "Away", 70, PlayStyle::Balanced);
+    let config = MatchConfig::default();
+
+    let (mut keeper, mut outfield) = (0.0f64, 0.0f64);
+    for seed in 0..200 {
+        let report = simulate_with_rng(&home, &away, &config, &mut seeded_rng(seed));
+        for (id, stats) in &report.player_stats {
+            if id.contains("_gk") {
+                keeper += stats.xt as f64;
+            } else if id.starts_with("h_mid") || id.starts_with("h_fwd") {
+                outfield += stats.xt as f64;
+            }
+        }
+    }
+    assert!(
+        outfield > keeper,
+        "midfielders and forwards added {outfield:.2} of threat against the \
+         keepers' {keeper:.2}"
+    );
+}
+
+/// Everyone who played ran somewhere. A zero here means the derived distance
+/// never reached the report.
+#[test]
+fn every_player_who_started_covers_some_ground() {
+    let home = make_team("h", "Home", 70, PlayStyle::Balanced);
+    let away = make_team("a", "Away", 70, PlayStyle::Balanced);
+    let report = simulate_with_rng(&home, &away, &MatchConfig::default(), &mut seeded_rng(7));
+
+    for player in home.players.iter().chain(away.players.iter()) {
+        let stats = report
+            .player_stats
+            .get(&player.id)
+            .unwrap_or_else(|| panic!("{} has no row in the report", player.id));
+        assert!(
+            (4.0..16.0).contains(&stats.distance_km),
+            "{} covered {}km, which is not a footballer's afternoon",
+            player.id,
+            stats.distance_km
+        );
+    }
+}
+
+/// What expected goals is *for*.
+///
+/// The number is computed with an average finisher, so it describes the chance
+/// and not the man taking it. That makes the gap between a player's goals and
+/// his expected goals a measure of his finishing — which is the whole reason
+/// the statistic exists, and the thing a manager actually wants to know when
+/// deciding whether to sign someone.
+///
+/// A side of excellent finishers must beat its expected goals; a side of poor
+/// ones must fall short of it. If both came out the same, xG would be measuring
+/// the shooter twice and telling you nothing.
+#[test]
+fn good_finishers_beat_their_expected_goals_and_poor_ones_do_not() {
+    let config = MatchConfig::default();
+    let performance = |skill: u8| {
+        let team = make_team("h", "Home", skill, PlayStyle::Balanced);
+        let foil = make_team("a", "Away", 65, PlayStyle::Balanced);
+        let (mut goals, mut xg) = (0.0f64, 0.0f64);
+        for seed in 0..800 {
+            let report = simulate_with_rng(&team, &foil, &config, &mut seeded_rng(seed));
+            goals += report.home_stats.goals as f64;
+            xg += report.home_stats.xg as f64;
+        }
+        goals / xg
+    };
+
+    let elite = performance(90);
+    let poor = performance(40);
+
+    assert!(
+        elite > poor,
+        "a side of 90-rated finishers converted {elite:.2} of its expected \
+         goals and a side of 40-rated ones {poor:.2} — finishing quality is \
+         not reaching the comparison"
+    );
+    assert!(
+        elite > 1.0,
+        "excellent finishers should beat the average-finisher baseline, got {elite:.2}"
+    );
+    assert!(
+        poor < 1.0,
+        "poor finishers should fall short of the average-finisher baseline, got {poor:.2}"
+    );
+}

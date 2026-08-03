@@ -136,6 +136,25 @@ impl SquadCache {
         }
     }
 
+    /// How much of the pitch each player's role asks him to cover, relative to
+    /// an average outfielder.
+    ///
+    /// The sum of where he is expected to be, on and off the ball, across the
+    /// whole pitch. A wing-back is asked to be almost everywhere; a centre-half
+    /// is asked to hold a line. Used only for the derived distance figure.
+    pub fn work_rates(&self) -> Vec<f64> {
+        /// The total presence of a run-of-the-mill outfielder, which the rest
+        /// are expressed against.
+        const TYPICAL: f64 = 6.0;
+        self.placement
+            .iter()
+            .map(|placement| {
+                let total: f64 = placement.on_ball.iter().chain(&placement.off_ball).sum();
+                (total / TYPICAL).clamp(0.55, 1.45)
+            })
+            .collect()
+    }
+
     /// How suited this player is to the job being asked of him.
     pub fn suitability(&self, index: usize, need: Need) -> f64 {
         match self.placement.get(index) {
@@ -166,6 +185,11 @@ impl SquadCache {
     /// the right answer until the next refresh.
     pub fn selection_weight(&self, index: usize) -> f64 {
         self.selection_weight.get(index).copied().unwrap_or(1.0)
+    }
+
+    /// Everyone's live stamina, in squad order.
+    pub fn conditions(&self) -> impl Iterator<Item = f64> + '_ {
+        self.condition.iter().copied()
     }
 
     pub fn deplete(&mut self, index: usize, amount: f64) {

@@ -13,7 +13,6 @@ pub struct RunConfig<'a> {
     pub away_formation: &'a str,
     pub home_rating: u8,
     pub away_rating: u8,
-    pub goal_conversion_base: f64,
     pub seed: Option<u64>,
 }
 
@@ -149,12 +148,15 @@ pub fn print_report(stats: &BenchStats, cfg: &RunConfig) {
     let shots = stats.shots_pg();
     let acc = stats.shot_accuracy_pct();
     let conv = stats.goal_conversion_pct();
-    let xg = stats.xg_proxy_pg(cfg.goal_conversion_base);
+    let xg = stats.xg_pg();
 
     metric("  Shots/game       ", shots, 1);
     metric("  Shots on target %", acc, 1);
     metric("  Goal conversion %", conv, 1);
-    metric("  xG/game (proxy)  ", xg, 2);
+    metric("  xG/game          ", xg, 2);
+    metric("  xA/game          ", stats.xa_pg(), 2);
+    metric("  xT/game          ", stats.xt_pg(), 2);
+    metric("  km per player    ", stats.distance_per_player(), 2);
     let diff = stats.gpg() - xg;
     let diff_label = if diff >= 0.0 {
         format!("{:+.2} (overperforming)", diff).green().to_string()

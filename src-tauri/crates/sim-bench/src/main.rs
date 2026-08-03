@@ -335,7 +335,6 @@ fn main() {
             away_formation: &cli.away_formation,
             home_rating: cli.home_rating,
             away_rating: cli.away_rating,
-            goal_conversion_base: config.goal_conversion_base,
             seed: Some(base_seed),
         };
         terminal::print_report(&bench_stats, &run_cfg);
@@ -352,7 +351,6 @@ fn main() {
             away_formation: &cli.away_formation,
             home_rating: cli.home_rating,
             away_rating: cli.away_rating,
-            goal_conversion_base: config.goal_conversion_base,
             seed: Some(base_seed),
         };
         let content = html::generate_html(&bench_stats, &run_cfg);
@@ -361,7 +359,7 @@ fn main() {
     }
 
     // ── JSON output ───────────────────────────────────────────────────────────
-    let json_summary = bench_stats.to_json(config.goal_conversion_base);
+    let json_summary = bench_stats.to_json();
     let json = serde_json::to_string_pretty(&json_summary).expect("JSON serialization failed");
 
     if let Some(ref out_path) = cli.out {

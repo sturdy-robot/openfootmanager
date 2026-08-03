@@ -189,6 +189,12 @@ pub fn fingerprint(report: &MatchReport) -> String {
             stats.penalties,
             stats.yellow_cards,
         ));
+        // Expected goals is in here deliberately. It draws nothing from the
+        // random stream, so a change to how a chance is valued moves no
+        // scoreline and no event — and would slip past a fingerprint made only
+        // of things that happened. Formatted to four places so the check is
+        // about the model and not about floating-point noise.
+        parts.push(format!("{label}-xg|{:.4}", stats.xg));
     }
     for event in &report.events {
         parts.push(format!(

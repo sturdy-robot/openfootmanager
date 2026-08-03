@@ -121,6 +121,13 @@ impl LiveMatchState {
         let conversion = (0.75 + (shoot_skill - gk_skill) / 300.0).clamp(0.55, 0.92);
         let zone = Zone::attacking_box(att_side);
 
+        // A penalty is the best chance in football and worth the same to
+        // everyone who steps up, which is why expected goals gives it a flat
+        // value rather than the taker's own conversion. Leaving it out
+        // altogether — as this did — quietly cost the model every tenth goal.
+        const PENALTY_XG: f64 = 0.75;
+        self.metrics_mut(att_side).add_xg(taker.index, PENALTY_XG);
+
         if rng.random_range(0.0..1.0f64) < conversion {
             // PenaltyGoal intentionally carries no EventDetail::Goal context: penalty
             // commentary uses its own base key (match.commentary.PenaltyGoal) with no

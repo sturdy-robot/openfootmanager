@@ -26,6 +26,10 @@ pub struct TeamStats {
     pub yellow_cards: u8,
     pub red_cards: u8,
     pub possession_ticks: u32,
+    /// The side's expected goals: the quality of the chances it made. Compared
+    /// against `goals`, the difference is finishing.
+    #[serde(default)]
+    pub xg: f32,
 }
 
 impl TeamStats {
@@ -58,6 +62,22 @@ pub struct PlayerMatchStats {
     pub red_cards: u8,
     /// Match rating 0.0–10.0, computed after the match.
     pub rating: f32,
+    /// Expected goals: the quality of the chances he had, valued with an
+    /// average finisher. Outscoring it means he finished well.
+    #[serde(default)]
+    pub xg: f32,
+    /// Expected assists: the quality of the chances he created.
+    #[serde(default)]
+    pub xa: f32,
+    /// Expected threat: the danger he added by moving the ball up the pitch.
+    #[serde(default)]
+    pub xt: f32,
+    /// Ground covered, in kilometres. Derived from how much the player's role
+    /// asks him to cover and how much is left in his legs — the engine has no
+    /// model of where a player stands off the ball, so there is no distance
+    /// here to measure.
+    #[serde(default)]
+    pub distance_km: f32,
 }
 
 // ---------------------------------------------------------------------------

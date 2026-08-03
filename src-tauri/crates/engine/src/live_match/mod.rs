@@ -1,4 +1,5 @@
 mod helpers;
+mod metrics;
 mod penalty;
 mod possession;
 mod simulation;
@@ -7,6 +8,7 @@ mod squad_cache;
 mod substitution;
 mod zone_resolution;
 
+use metrics::MetricTally;
 use squad_cache::SquadCache;
 
 use rand::Rng;
@@ -257,6 +259,11 @@ pub struct LiveMatchState {
     home_cache: SquadCache,
     away_cache: SquadCache,
 
+    // Expected goals, assists and threat, and ground covered — the numbers
+    // football talks about that no counting stat records. See `metrics`.
+    home_metrics: MetricTally,
+    away_metrics: MetricTally,
+
     // Penalty shootout state
     penalty_state: PenaltyShootoutState,
 
@@ -277,6 +284,8 @@ impl LiveMatchState {
     ) -> Self {
         let home_cache = SquadCache::new(&home.players);
         let away_cache = SquadCache::new(&away.players);
+        let home_metrics = MetricTally::new(home_cache.work_rates());
+        let away_metrics = MetricTally::new(away_cache.work_rates());
 
         Self {
             home,
@@ -308,6 +317,8 @@ impl LiveMatchState {
             et_second_half_stoppage: 0,
             home_cache,
             away_cache,
+            home_metrics,
+            away_metrics,
             penalty_state: PenaltyShootoutState::default(),
             recent_zones: VecDeque::with_capacity(10),
         }
@@ -398,6 +409,9 @@ impl LiveMatchState {
             .map(|player| player.id.clone())
             .collect();
 
+        let home_metrics = self.home_metrics.by_id(|index| self.home_cache.id(index));
+        let away_metrics = self.away_metrics.by_id(|index| self.away_cache.id(index));
+
         let mut report = MatchReport::from_events_with_players(
             self.events,
             self.home_possession_ticks,
@@ -423,6 +437,25 @@ impl LiveMatchState {
         let away_ids = side_ids(&self.away.players, Side::Away);
         let home_refs: Vec<&str> = home_ids.iter().map(String::as_str).collect();
         let away_refs: Vec<&str> = away_ids.iter().map(String::as_str).collect();
+        // Expected goals, assists and threat are accumulated as the match runs
+        // rather than read back off the event log, because the log has no place
+        // to put them: threat accrues on actions that produce no event at all.
+        for (metrics, stats) in [
+            (&home_metrics, &mut report.home_stats),
+            (&away_metrics, &mut report.away_stats),
+        ] {
+            stats.xg = metrics.values().map(|m| m.xg).sum::<f64>() as f32;
+        }
+        for (id, m) in home_metrics.iter().chain(away_metrics.iter()) {
+            // A player with nothing but running to show for his afternoon still
+            // needs a row, or the distance he covered disappears.
+            let entry = report.player_stats.entry(id.to_string()).or_default();
+            entry.xg = m.xg as f32;
+            entry.xa = m.xa as f32;
+            entry.xt = m.xt as f32;
+            entry.distance_km = m.distance_km as f32;
+        }
+
         report.assign_ratings(&home_refs, &away_refs);
 
         if self.penalty_state.home_taken > 0 || self.penalty_state.away_taken > 0 {
