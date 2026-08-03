@@ -400,9 +400,25 @@ impl LiveMatchState {
             self.current_minute,
             tracked_player_ids,
         );
-        let home_ids: Vec<String> = self.home.players.iter().map(|p| p.id.clone()).collect();
-        let away_ids: Vec<String> = self.away.players.iter().map(|p| p.id.clone()).collect();
-        report.assign_ratings(&home_ids, &away_ids);
+        // Includes players who were substituted off: they have a performance
+        // to rate even though they are no longer in the eleven.
+        let side_ids = |players: &[PlayerData], side: Side| -> Vec<String> {
+            players
+                .iter()
+                .map(|player| player.id.clone())
+                .chain(
+                    self.substitutions
+                        .iter()
+                        .filter(|sub| sub.side == side)
+                        .map(|sub| sub.player_off_id.clone()),
+                )
+                .collect()
+        };
+        let home_ids = side_ids(&self.home.players, Side::Home);
+        let away_ids = side_ids(&self.away.players, Side::Away);
+        let home_refs: Vec<&str> = home_ids.iter().map(String::as_str).collect();
+        let away_refs: Vec<&str> = away_ids.iter().map(String::as_str).collect();
+        report.assign_ratings(&home_refs, &away_refs);
 
         if self.penalty_state.home_taken > 0 || self.penalty_state.away_taken > 0 {
             report.home_penalties = Some(self.penalty_state.home_scored);

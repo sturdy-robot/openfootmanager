@@ -36,7 +36,6 @@ pub enum EventType {
     Cross,
 
     // --- Shooting ---
-    ShotOnTarget,
     ShotOffTarget,
     ShotBlocked,
     ShotSaved,

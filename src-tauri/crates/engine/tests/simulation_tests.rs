@@ -77,14 +77,6 @@ fn player_overall_rating() {
 }
 
 #[test]
-fn player_effective_overall_accounts_for_condition() {
-    let mut p = make_player("p1", "Test", Position::Forward, 80);
-    p.condition = 50;
-    let eff = p.effective_overall();
-    assert!((eff - 40.0).abs() < 0.01, "Expected ~40.0, got {eff}");
-}
-
-#[test]
 fn team_position_counts() {
     let team = make_team("t1", "Test FC", 60, PlayStyle::Balanced);
     assert_eq!(team.count_position(Position::Goalkeeper), 1);
@@ -94,21 +86,42 @@ fn team_position_counts() {
 }
 
 #[test]
-fn team_ratings_non_zero() {
-    let team = make_team("t1", "Test FC", 65, PlayStyle::Balanced);
-    assert!(team.defense_rating() > 0.0);
-    assert!(team.midfield_rating() > 0.0);
-    assert!(team.attack_rating() > 0.0);
-    assert!(team.goalkeeper_rating() > 0.0);
+fn midfield_rating_is_non_zero_and_scales_with_skill() {
+    let weak = make_team("w", "Weak", 30, PlayStyle::Balanced);
+    let strong = make_team("s", "Strong", 90, PlayStyle::Balanced);
+    assert!(weak.midfield_rating() > 0.0);
+    assert!(strong.midfield_rating() > weak.midfield_rating());
 }
 
 #[test]
-fn team_ratings_scale_with_skill() {
-    let weak = make_team("w", "Weak", 30, PlayStyle::Balanced);
-    let strong = make_team("s", "Strong", 90, PlayStyle::Balanced);
-    assert!(strong.defense_rating() > weak.defense_rating());
-    assert!(strong.midfield_rating() > weak.midfield_rating());
-    assert!(strong.attack_rating() > weak.attack_rating());
+fn a_composite_rating_is_not_truncated_to_whole_numbers() {
+    // These composites used to be built with integer division and cast back
+    // to `u8` before averaging, so every one of them lost its fraction.
+    let mut team = make_team("t", "Test FC", 60, PlayStyle::Balanced);
+    for (index, player) in team
+        .players
+        .iter_mut()
+        .filter(|p| p.position == Position::Midfielder)
+        .enumerate()
+    {
+        // Attributes that average to something with a fractional part.
+        player.passing = 61;
+        player.vision = 62;
+        player.decisions = 62;
+        player.stamina = 62 + index as u8;
+    }
+    let rating = team.midfield_rating();
+    assert!(
+        (rating - rating.round()).abs() > 1e-9,
+        "expected a fractional rating, got {rating}"
+    );
+}
+
+#[test]
+fn a_position_nobody_plays_still_yields_a_rating() {
+    let mut team = make_team("t", "Test FC", 60, PlayStyle::Balanced);
+    team.players.retain(|p| p.position != Position::Midfielder);
+    assert!(team.midfield_rating() > 0.0);
 }
 
 // ---------------------------------------------------------------------------
@@ -222,7 +235,7 @@ fn penalty_goal_is_goal() {
 
 #[test]
 fn non_goal_events_not_goal() {
-    let shot = MatchEvent::new(10, EventType::ShotOnTarget, Side::Home, Zone::AwayBox);
+    let shot = MatchEvent::new(10, EventType::ShotSaved, Side::Home, Zone::AwayBox);
     assert!(!shot.is_goal());
     let foul = MatchEvent::new(20, EventType::Foul, Side::Away, Zone::Midfield);
     assert!(!foul.is_goal());

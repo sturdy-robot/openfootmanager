@@ -81,19 +81,25 @@ impl MatchReport {
     /// Contributions are scaled by minutes played, so a substitute who came on
     /// for ten minutes is judged on ten minutes rather than being dragged to
     /// the base by a full match's worth of expectations.
-    pub fn assign_ratings(&mut self, home_player_ids: &[String], away_player_ids: &[String]) {
+    pub fn assign_ratings(&mut self, home_player_ids: &[&str], away_player_ids: &[&str]) {
         let home_result = match self.home_goals.cmp(&self.away_goals) {
             std::cmp::Ordering::Greater => 0.3,
             std::cmp::Ordering::Less => -0.3,
             std::cmp::Ordering::Equal => 0.0,
         };
 
+        // Borrowed and hashed rather than cloned and scanned: this runs for
+        // every player of every match the league simulates.
+        let home: std::collections::HashSet<&str> = home_player_ids.iter().copied().collect();
+        let away: std::collections::HashSet<&str> = away_player_ids.iter().copied().collect();
+
         for (id, stats) in self.player_stats.iter_mut() {
-            let result_bonus = if home_player_ids.iter().any(|player| player == id) {
+            let result_bonus = if home.contains(id.as_str()) {
                 home_result
-            } else if away_player_ids.iter().any(|player| player == id) {
+            } else if away.contains(id.as_str()) {
                 -home_result
             } else {
+                // Neither side claims him — nothing to reward or punish.
                 0.0
             };
             stats.rating = rate(stats, result_bonus);
@@ -332,7 +338,7 @@ impl MatchReport {
                         ps.shots += 1;
                     }
                 }
-                EventType::ShotOnTarget | EventType::ShotSaved => {
+                EventType::ShotSaved => {
                     stats.shots += 1;
                     stats.shots_on_target += 1;
                     if !pid.is_empty() {

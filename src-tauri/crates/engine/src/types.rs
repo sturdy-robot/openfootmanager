@@ -212,10 +212,6 @@ impl PlayerData {
             / 11.0
     }
 
-    /// Effective rating accounting for current condition (0-100).
-    pub fn effective_overall(&self) -> f64 {
-        self.overall() * (self.condition as f64 / 100.0)
-    }
 }
 
 // ---------------------------------------------------------------------------
@@ -335,54 +331,35 @@ impl TeamData {
         self.players.iter().filter(|p| p.position == pos).count()
     }
 
-    /// Average of a specific attribute among players in the given position.
-    pub fn position_attr_avg(&self, pos: Position, attr_fn: fn(&PlayerData) -> u8) -> f64 {
-        let players: Vec<_> = self.players.iter().filter(|p| p.position == pos).collect();
-        if players.is_empty() {
-            return 40.0; // fallback
+    /// Average of a composite attribute among players in the given position.
+    ///
+    /// The composite is computed in floating point. It used to be built with
+    /// integer division and cast back to `u8` before averaging, which
+    /// truncated every one of these ratings.
+    pub fn position_attr_avg(&self, pos: Position, attr_fn: fn(&PlayerData) -> f64) -> f64 {
+        let mut total = 0.0;
+        let mut counted = 0;
+        for player in self.players.iter().filter(|p| p.position == pos) {
+            total += attr_fn(player);
+            counted += 1;
         }
-        players.iter().map(|p| attr_fn(p) as f64).sum::<f64>() / players.len() as f64
+        if counted == 0 {
+            // Nobody plays this position — a shape with no recognised holder
+            // still needs a number rather than a division by zero.
+            return 40.0;
+        }
+        total / counted as f64
     }
 
-    /// Composite defense rating (from defenders + goalkeeper).
-    pub fn defense_rating(&self) -> f64 {
-        let def_avg = self.position_attr_avg(Position::Defender, |p| {
-            ((p.defending as u16 + p.tackling as u16 + p.positioning as u16 + p.strength as u16)
-                / 4) as u8
-        });
-        let gk_avg = self.position_attr_avg(Position::Goalkeeper, |p| {
-            ((p.positioning as u16 + p.decisions as u16 + p.strength as u16 + p.pace as u16) / 4)
-                as u8
-        });
-        def_avg * 0.7 + gk_avg * 0.3
-    }
 
-    /// Composite midfield rating.
+    /// Composite midfield rating, used by the possession contest.
     pub fn midfield_rating(&self) -> f64 {
         self.position_attr_avg(Position::Midfielder, |p| {
-            ((p.passing as u16 + p.vision as u16 + p.decisions as u16 + p.stamina as u16) / 4) as u8
+            (p.passing as f64 + p.vision as f64 + p.decisions as f64 + p.stamina as f64) / 4.0
         })
     }
 
-    /// Composite attack rating (from forwards + midfielders).
-    pub fn attack_rating(&self) -> f64 {
-        let fwd_avg = self.position_attr_avg(Position::Forward, |p| {
-            ((p.shooting as u16 + p.dribbling as u16 + p.pace as u16 + p.positioning as u16) / 4)
-                as u8
-        });
-        let mid_contrib = self.position_attr_avg(Position::Midfielder, |p| {
-            ((p.shooting as u16 + p.passing as u16 + p.vision as u16) / 3) as u8
-        });
-        fwd_avg * 0.75 + mid_contrib * 0.25
-    }
 
-    /// Goalkeeper save rating.
-    pub fn goalkeeper_rating(&self) -> f64 {
-        self.position_attr_avg(Position::Goalkeeper, |p| {
-            ((p.positioning as u16 + p.decisions as u16 + p.pace as u16 + p.strength as u16) / 4)
-                as u8
-        })
-    }
 }
 
 // ---------------------------------------------------------------------------

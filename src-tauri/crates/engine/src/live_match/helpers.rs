@@ -383,7 +383,7 @@ impl LiveMatchState {
     pub(super) fn effective_press(&self, pressing_side: Side) -> f64 {
         let team = self.team_ref(pressing_side);
         let base = team.position_attr_avg(Position::Midfielder, |p| {
-            ((p.stamina as u16 + p.tackling as u16 + p.pace as u16) / 3) as u8
+            (p.stamina as f64 + p.tackling as f64 + p.pace as f64) / 3.0
         });
         let modifier = play_style_modifier(team.play_style, PlayStylePhase::Press, true);
         base * modifier

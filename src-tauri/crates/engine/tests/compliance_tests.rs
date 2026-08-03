@@ -15,6 +15,25 @@ fn player(id: &str, position: Position, rating: u8) -> PlayerData {
     player_in(id, position, None, rating)
 }
 
+/// Spread a player's attributes around his rating, deterministically from his
+/// id.
+///
+/// Uniform squads are a trap for the golden reports. Every player having the
+/// same number in every attribute makes any composite exact, so a change to how
+/// composites are computed — integer truncation, say — leaves the fingerprint
+/// untouched. It also makes weighted selection degenerate, since every
+/// candidate scores identically. Varying them gives the goldens something to
+/// actually discriminate.
+fn spread(id: &str, rating: u8, salt: u8) -> u8 {
+    let mut hash: u32 = 2166136261;
+    for byte in id.as_bytes().iter().chain(std::iter::once(&salt)) {
+        hash ^= *byte as u32;
+        hash = hash.wrapping_mul(16777619);
+    }
+    let offset = (hash % 21) as i16 - 10;
+    (rating as i16 + offset).clamp(20, 95) as u8
+}
+
 fn player_in(id: &str, position: Position, slot: Option<Slot>, rating: u8) -> PlayerData {
     PlayerData {
         id: id.to_string(),
@@ -23,25 +42,25 @@ fn player_in(id: &str, position: Position, slot: Option<Slot>, rating: u8) -> Pl
         ovr: rating,
         condition: 100,
         fitness: 90,
-        pace: rating,
-        stamina: rating,
-        strength: rating,
-        agility: rating,
-        passing: rating,
-        shooting: rating,
-        tackling: rating,
-        dribbling: rating,
-        defending: rating,
-        positioning: rating,
-        vision: rating,
-        decisions: rating,
-        composure: rating,
-        aggression: rating,
-        teamwork: rating,
-        leadership: rating,
-        handling: rating,
-        reflexes: rating,
-        aerial: rating,
+        pace: spread(id, rating, 0),
+        stamina: spread(id, rating, 1),
+        strength: spread(id, rating, 2),
+        agility: spread(id, rating, 3),
+        passing: spread(id, rating, 4),
+        shooting: spread(id, rating, 5),
+        tackling: spread(id, rating, 6),
+        dribbling: spread(id, rating, 7),
+        defending: spread(id, rating, 8),
+        positioning: spread(id, rating, 9),
+        vision: spread(id, rating, 10),
+        decisions: spread(id, rating, 11),
+        composure: spread(id, rating, 12),
+        aggression: spread(id, rating, 13),
+        teamwork: spread(id, rating, 14),
+        leadership: spread(id, rating, 15),
+        handling: spread(id, rating, 16),
+        reflexes: spread(id, rating, 17),
+        aerial: spread(id, rating, 18),
         traits: Vec::new(),
         slot,
         role: PlayerRole::Standard,
@@ -219,7 +238,7 @@ fn golden_report_is_unchanged() {
     let actual = hasher.finish();
 
     // Pinned behaviour fingerprint. See the doc comment before changing.
-    const GOLDEN: u64 = 0x9c28_cf1c_31c7_6639;
+    const GOLDEN: u64 = 0x858d_208f_7308_325b;
 
     assert_eq!(
         actual, GOLDEN,
@@ -263,7 +282,7 @@ fn golden_report_is_unchanged_with_instructions() {
     let actual = hasher.finish();
 
     // Pinned behaviour fingerprint. See `golden_report_is_unchanged`.
-    const GOLDEN_WITH_INSTRUCTIONS: u64 = 0xe9e8_20c5_d9fa_1d87;
+    const GOLDEN_WITH_INSTRUCTIONS: u64 = 0xd72f_8795_3b33_568e;
 
     assert_eq!(
         actual, GOLDEN_WITH_INSTRUCTIONS,

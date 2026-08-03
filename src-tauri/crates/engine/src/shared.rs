@@ -9,12 +9,12 @@ use crate::types::{
 // ---------------------------------------------------------------------------
 
 #[derive(Clone)]
-#[allow(dead_code)]
+/// A copy of just the attributes the resolution code reads.
+///
+/// Taken on every action, twice, so it carries what is used and nothing more.
 pub(crate) struct PlayerSnap {
     pub id: String,
     pub pace: u8,
-    pub stamina: u8,
-    pub strength: u8,
     pub agility: u8,
     pub passing: u8,
     pub shooting: u8,
@@ -27,7 +27,6 @@ pub(crate) struct PlayerSnap {
     pub composure: u8,
     pub aggression: u8,
     pub teamwork: u8,
-    pub leadership: u8,
     pub handling: u8,
     pub reflexes: u8,
     pub aerial: u8,
@@ -40,8 +39,6 @@ impl PlayerSnap {
         Self {
             id: p.id.clone(),
             pace: p.pace,
-            stamina: p.stamina,
-            strength: p.strength,
             agility: p.agility,
             passing: p.passing,
             shooting: p.shooting,
@@ -54,7 +51,6 @@ impl PlayerSnap {
             composure: p.composure,
             aggression: p.aggression,
             teamwork: p.teamwork,
-            leadership: p.leadership,
             handling: p.handling,
             reflexes: p.reflexes,
             aerial: p.aerial,

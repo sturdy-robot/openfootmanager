@@ -121,10 +121,7 @@ export function PlayerRatingsPanel({
     if (!ratings[evt.player_id] && ratings[evt.player_id] !== 0) return;
     if (evt.event_type === "Goal" || evt.event_type === "PenaltyGoal")
       ratings[evt.player_id] = (ratings[evt.player_id] || 6) + 1.2;
-    else if (
-      evt.event_type === "ShotSaved" ||
-      evt.event_type === "ShotOnTarget"
-    )
+    else if (evt.event_type === "ShotSaved")
       ratings[evt.player_id] = (ratings[evt.player_id] || 6) + 0.2;
     else if (evt.event_type === "ShotOffTarget")
       ratings[evt.player_id] = (ratings[evt.player_id] || 6) - 0.1;
