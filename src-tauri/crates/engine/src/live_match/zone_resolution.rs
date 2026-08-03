@@ -3,15 +3,14 @@ use rand::{Rng, RngExt};
 use crate::sim::state::Band;
 use crate::event::{EventDetail, EventType, MatchEvent};
 use crate::shared::{
-    PlayStylePhase, PlayerSnap, TraitContext, play_style_modifier, role_attribute_modifier,
-    tactics_buildup_mod, tactics_cross_probability, tactics_defensive_conversion_mod,
-    tactics_foul_modifier, tactics_pressing_contest, tactics_shape_modifier,
-    tactics_tempo_retention, trait_bonus,
+    PlayStylePhase, PlayerSnap, TraitContext, role_attribute_modifier,
+    tactics_defensive_conversion_mod, tactics_foul_modifier, tactics_shape_modifier, trait_bonus,
 };
 use crate::types::{Side, Zone};
 
 use super::LiveMatchState;
 use super::helpers::{Need, danger_band, foul_severity, save_quality};
+use crate::sim::action::{Action, choose_action};
 
 // ---------------------------------------------------------------------------
 // Action resolution
@@ -30,11 +29,47 @@ use super::helpers::{Need, danger_band, foul_severity, save_quality};
 /// the defender's own third — the attacking side's dangerous territory.
 fn foul_pressure(band: Band) -> f64 {
     match band {
-        Band::OwnBox => 1.45,
-        Band::OwnThird => 1.44,
-        Band::Middle => 0.95,
+        Band::OwnBox => 0.70,
+        Band::OwnThird => 1.60,
+        Band::Middle => 1.30,
         Band::FinalThird => 0.80,
         Band::OppBox => 0.80,
+    }
+}
+
+
+/// How ambitious a pass is.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum PassKind {
+    /// To a team-mate nearby. Keeps play where it is.
+    Short,
+    /// Breaks a line. Moves play on one phase.
+    Progressive,
+    /// Hit long. Skips a phase, given away far more often.
+    Long,
+}
+
+impl PassKind {
+    /// Baseline completion before the passer, the press or the pitch.
+    ///
+    /// Real football completes around 80–88% of passes overall, and that
+    /// average is dominated by short ones. A long ball is closer to a coin
+    /// flip.
+    fn base_completion(self) -> f64 {
+        match self {
+            PassKind::Short => 0.860,
+            PassKind::Progressive => 0.700,
+            PassKind::Long => 0.47,
+        }
+    }
+
+    /// How far up the pitch it moves play when it comes off.
+    fn bands_gained(self) -> u8 {
+        match self {
+            PassKind::Short => 0,
+            PassKind::Progressive => 1,
+            PassKind::Long => 2,
+        }
     }
 }
 
@@ -42,277 +77,34 @@ impl LiveMatchState {
     pub(super) fn resolve_action<R: Rng + ?Sized>(&mut self, minute: u8, rng: &mut R) -> Vec<MatchEvent> {
         let att_side = self.possession;
         let def_side = att_side.opposite();
-        let zone = self.ball_zone;
+        let band = Band::from_zone(self.ball_zone, att_side);
 
-        if zone.is_box_for(att_side) {
-            self.resolve_shot(minute, att_side, rng)
-        } else if zone == Zone::attacking_third(att_side) {
-            self.resolve_attacking_third(minute, att_side, def_side, rng)
-        } else if zone == Zone::Midfield {
-            self.resolve_midfield(minute, att_side, def_side, rng)
-        } else {
-            self.resolve_buildup(minute, att_side, def_side, rng)
+        // Who is on the ball is settled first, because what he does with it
+        // depends on the sort of player he is.
+        let need = match band {
+            Band::OwnBox | Band::OwnThird => Need::BuildUp,
+            Band::Middle => Need::Progress,
+            Band::FinalThird | Band::OppBox => Need::TakeOn,
+        };
+        let actor = self.pick_actor(att_side, band, need, rng);
+
+        let own_tactics = self.team_ref(att_side).tactics;
+        let opponent_tactics = self.team_ref(def_side).tactics;
+        let action = choose_action(band, actor.role, &own_tactics, &opponent_tactics, rng);
+
+        match action {
+            Action::ShortPass => self.resolve_pass(minute, att_side, def_side, band, &actor, PassKind::Short, rng),
+            Action::ProgressivePass => self.resolve_pass(minute, att_side, def_side, band, &actor, PassKind::Progressive, rng),
+            Action::LongPass => self.resolve_pass(minute, att_side, def_side, band, &actor, PassKind::Long, rng),
+            Action::Carry => self.resolve_carry(minute, att_side, def_side, band, &actor, rng),
+            Action::TakeOn => self.resolve_take_on(minute, att_side, def_side, band, &actor, rng),
+            Action::Cross => self.resolve_cross(minute, att_side, def_side, band, &actor, rng),
+            Action::Shot => self.resolve_shot(minute, att_side, rng),
         }
     }
 
-    fn resolve_buildup<R: Rng + ?Sized>(
-        &mut self,
-        minute: u8,
-        att_side: Side,
-        def_side: Side,
-        rng: &mut R,
-    ) -> Vec<MatchEvent> {
-        let mut events = Vec::new();
-        let passer = self.pick_actor(att_side, Band::OwnThird, Need::BuildUp, rng);
-        let pass_skill = self.condition_adjusted_skill(
-            &passer.id,
-            (passer.passing as f64
-                + passer.vision as f64
-                + passer.composure as f64
-                + passer.teamwork as f64)
-                / 4.0,
-        ) * trait_bonus(&passer, TraitContext::Passing);
-        let press = self.effective_press(def_side);
-        let ball_zone = self.ball_zone;
 
-        let buildup_mod = tactics_buildup_mod(&self.team_ref(att_side).tactics);
-        let success_chance = (pass_skill * 1.3 * buildup_mod) / (pass_skill * 1.3 * buildup_mod + press);
-        if rng.random_range(0.0..1.0f64) < success_chance {
-            let evt = MatchEvent::new(minute, EventType::PassCompleted, att_side, ball_zone)
-                .with_player(&passer.id);
-            self.events.push(evt.clone());
-            events.push(evt);
-            self.ball_zone = Zone::Midfield;
-        } else {
-            let interceptor = self.pick_actor(def_side, Band::FinalThird, Need::Defend, rng);
-            let evt1 = MatchEvent::new(minute, EventType::PassIntercepted, att_side, ball_zone)
-                .with_player(&passer.id);
-            let evt2 = MatchEvent::new(minute, EventType::Interception, def_side, ball_zone)
-                .with_player(&interceptor.id);
-            self.events.push(evt1.clone());
-            self.events.push(evt2.clone());
-            events.push(evt1);
-            events.push(evt2);
-            self.possession = def_side;
-        }
-        events
-    }
 
-    fn resolve_midfield<R: Rng + ?Sized>(
-        &mut self,
-        minute: u8,
-        att_side: Side,
-        def_side: Side,
-        rng: &mut R,
-    ) -> Vec<MatchEvent> {
-        let mut events = Vec::new();
-        let attacker = self.pick_actor(att_side, Band::Middle, Need::Progress, rng);
-        let defender = self.pick_actor(def_side, Band::Middle, Need::Defend, rng);
-
-        let att_raw = (attacker.dribbling as f64
-            + attacker.passing as f64
-            + attacker.vision as f64
-            + attacker.teamwork as f64)
-            / 4.0;
-        let def_raw = (defender.tackling as f64
-            + defender.positioning as f64
-            + defender.decisions as f64
-            + defender.teamwork as f64)
-            / 4.0;
-        let att_rating = self.condition_adjusted_skill(&attacker.id, att_raw)
-            * trait_bonus(&attacker, TraitContext::Midfield);
-        let def_rating = self.condition_adjusted_skill(&defender.id, def_raw)
-            * trait_bonus(&defender, TraitContext::Tackling);
-
-        let att_mod = play_style_modifier(
-            self.team_ref(att_side).play_style,
-            PlayStylePhase::Midfield,
-            true,
-        ) * role_attribute_modifier(attacker.role, PlayStylePhase::Midfield);
-        let def_mod = play_style_modifier(
-            self.team_ref(def_side).play_style,
-            PlayStylePhase::Midfield,
-            false,
-        ) * role_attribute_modifier(defender.role, PlayStylePhase::Defense);
-        // This roll decides whether the ball is kept or lost — whether it
-        // *advances* is the retention layer's call, in `possession.rs`. So the
-        // tempo term here is retention, not progression: a patient side keeps
-        // the ball better. It used to be progression, which meant a patient
-        // side lost the ball *more* often and needed a compensating possession
-        // bonus elsewhere to cancel out. Pressing is the other side of the same
-        // roll: a side pressing hard wins it back more.
-        let att_eff = att_rating
-            * att_mod
-            * crate::shared::home_mod(att_side, &self.config)
-            * tactics_tempo_retention(&self.team_ref(att_side).tactics);
-        let def_eff = def_rating
-            * def_mod
-            * crate::shared::home_mod(def_side, &self.config)
-            * tactics_pressing_contest(&self.team_ref(def_side).tactics);
-        let success = att_eff / (att_eff + def_eff);
-
-        if rng.random_range(0.0..1.0f64) < success {
-            let evt = MatchEvent::new(minute, EventType::PassCompleted, att_side, Zone::Midfield)
-                .with_player(&attacker.id);
-            self.events.push(evt.clone());
-            events.push(evt);
-            self.ball_zone = Zone::attacking_third(att_side);
-        } else {
-            if rng.random_range(0.0..1.0f64) < 0.6 {
-                let evt = MatchEvent::new(minute, EventType::Tackle, def_side, Zone::Midfield)
-                    .with_player(&defender.id);
-                self.events.push(evt.clone());
-                events.push(evt);
-                let foul_mod = tactics_foul_modifier(&self.team_ref(def_side).tactics);
-                let foul_events =
-                    self.maybe_foul(minute, def_side, &attacker, &defender, Zone::Midfield, rng, foul_mod);
-                let fouled = foul_events.iter().any(|e| e.event_type == EventType::Foul);
-                events.extend(foul_events);
-                if fouled {
-                    // Fouled team (att_side) retains possession for the free kick
-                    self.possession = att_side;
-                    self.ball_zone = Zone::Midfield;
-                    return events;
-                }
-            } else {
-                let evt =
-                    MatchEvent::new(minute, EventType::Interception, def_side, Zone::Midfield)
-                        .with_player(&defender.id);
-                self.events.push(evt.clone());
-                events.push(evt);
-            }
-            self.possession = def_side;
-            self.ball_zone = Zone::Midfield;
-        }
-        events
-    }
-
-    fn resolve_attacking_third<R: Rng + ?Sized>(
-        &mut self,
-        minute: u8,
-        att_side: Side,
-        def_side: Side,
-        rng: &mut R,
-    ) -> Vec<MatchEvent> {
-        let mut events = Vec::new();
-        let attacker = self.pick_actor(att_side, Band::FinalThird, Need::TakeOn, rng);
-        let defender = self.pick_actor(def_side, Band::OwnThird, Need::Defend, rng);
-
-        let att_raw = (attacker.dribbling as f64
-            + attacker.pace as f64
-            + attacker.agility as f64
-            + attacker.composure as f64)
-            / 4.0;
-        let def_raw = (defender.defending as f64
-            + defender.tackling as f64
-            + defender.positioning as f64
-            + defender.aerial as f64)
-            / 4.0;
-        let att_rating = self.condition_adjusted_skill(&attacker.id, att_raw)
-            * trait_bonus(&attacker, TraitContext::Dribbling);
-        let def_rating = self.condition_adjusted_skill(&defender.id, def_raw)
-            * trait_bonus(&defender, TraitContext::Tackling);
-
-        let att_mod = play_style_modifier(
-            self.team_ref(att_side).play_style,
-            PlayStylePhase::Attack,
-            true,
-        ) * role_attribute_modifier(attacker.role, PlayStylePhase::Attack);
-        let def_mod = play_style_modifier(
-            self.team_ref(def_side).play_style,
-            PlayStylePhase::Defense,
-            false,
-        ) * role_attribute_modifier(defender.role, PlayStylePhase::Defense);
-        let att_eff = att_rating * att_mod * crate::shared::home_mod(att_side, &self.config);
-        let def_eff = def_rating
-            * def_mod
-            * crate::shared::home_mod(def_side, &self.config)
-            * tactics_shape_modifier(&self.team_ref(def_side).tactics);
-        let success = att_eff / (att_eff + def_eff);
-        let zone = Zone::attacking_third(att_side);
-        let cross_prob = tactics_cross_probability(&self.team_ref(att_side).tactics);
-
-        if rng.random_range(0.0..1.0f64) < success {
-            let evt = MatchEvent::new(minute, EventType::Dribble, att_side, zone)
-                .with_player(&attacker.id);
-            self.events.push(evt.clone());
-            events.push(evt);
-            if rng.random_range(0.0..1.0f64) < cross_prob {
-                let winger_id = attacker.id.clone();
-                let cross_evt = MatchEvent::new(minute, EventType::Cross, att_side, zone)
-                    .with_player(&winger_id);
-                self.events.push(cross_evt.clone());
-                events.push(cross_evt);
-                let header = self.pick_actor(att_side, Band::OppBox, Need::Shoot, rng);
-                let def_header = self.pick_actor(def_side, Band::OwnBox, Need::Defend, rng);
-                let aerial_att = header.aerial as f64;
-                let aerial_def = def_header.aerial as f64;
-                let aerial_win = aerial_att / (aerial_att + aerial_def);
-                if rng.random_range(0.0..1.0f64) < aerial_win {
-                    self.ball_zone = Zone::attacking_box(att_side);
-                    let shot_events = self.resolve_shot(minute, att_side, rng);
-                    events.extend(shot_events);
-                } else {
-                    let clear_evt =
-                        MatchEvent::new(minute, EventType::Clearance, def_side, zone)
-                            .with_player(&def_header.id);
-                    self.events.push(clear_evt.clone());
-                    events.push(clear_evt);
-                    self.possession = def_side;
-                    self.ball_zone = Zone::defensive_third(att_side);
-                }
-            } else {
-                self.ball_zone = Zone::attacking_box(att_side);
-            }
-        } else {
-            let is_tackle = rng.random_range(0.0..1.0f64) < 0.5;
-            let fouled = if is_tackle {
-                let evt1 = MatchEvent::new(minute, EventType::DribbleTackled, att_side, zone)
-                    .with_player(&attacker.id)
-                    .with_secondary(&defender.id);
-                let evt2 = MatchEvent::new(minute, EventType::Tackle, def_side, zone)
-                    .with_player(&defender.id);
-                self.events.push(evt1.clone());
-                self.events.push(evt2.clone());
-                events.push(evt1);
-                events.push(evt2);
-                let foul_mod = tactics_foul_modifier(&self.team_ref(def_side).tactics);
-                let foul_events =
-                    self.maybe_foul(minute, def_side, &attacker, &defender, zone, rng, foul_mod);
-                let was_fouled = foul_events.iter().any(|e| e.event_type == EventType::Foul);
-                events.extend(foul_events);
-                was_fouled
-            } else {
-                let evt = MatchEvent::new(minute, EventType::Clearance, def_side, zone)
-                    .with_player(&defender.id);
-                self.events.push(evt.clone());
-                events.push(evt);
-                false
-            };
-            if fouled {
-                // Fouled team (att_side) retains possession for the free kick in the attacking third
-                self.possession = att_side;
-                self.ball_zone = zone;
-                return events;
-            }
-            if rng.random_range(0.0..1.0f64) < 0.13 {
-                let evt = MatchEvent::new(minute, EventType::Corner, att_side, zone);
-                self.events.push(evt.clone());
-                events.push(evt);
-                // How often a corner actually produces a chance. Lower than it
-                // looks: most corners are cleared. Set pieces are exempt from
-                // the retain-or-progress decision, so whatever survives here
-                // reaches the box, where it used to be pulled back out again.
-                if rng.random_range(0.0..1.0f64) < 0.18 {
-                    self.ball_zone = Zone::attacking_box(att_side);
-                    return events;
-                }
-            }
-            self.possession = def_side;
-            self.ball_zone = Zone::defensive_third(att_side);
-        }
-        events
-    }
 
     fn resolve_shot<R: Rng + ?Sized>(&mut self, minute: u8, att_side: Side, rng: &mut R) -> Vec<MatchEvent> {
         let mut events = Vec::new();
@@ -419,7 +211,7 @@ impl LiveMatchState {
             self.events.push(evt.clone());
             events.push(evt);
             // 40% of saves → corner (keeper parries wide), 60% → goal kick (keeper catches)
-            if rng.random_range(0.0..1.0f64) < 0.40 {
+            if rng.random_range(0.0..1.0f64) < 0.52 {
                 let corner_evt = MatchEvent::new(minute, EventType::Corner, att_side, zone);
                 self.events.push(corner_evt.clone());
                 events.push(corner_evt);
@@ -551,6 +343,301 @@ impl LiveMatchState {
             events.push(evt);
         }
 
+        events
+    }
+}
+
+impl LiveMatchState {
+    /// Committing to beat a man: a duel, roughly even, and the main source of
+    /// fouls in dangerous areas.
+    fn resolve_take_on<R: Rng + ?Sized>(
+        &mut self,
+        minute: u8,
+        att_side: Side,
+        def_side: Side,
+        band: Band,
+        attacker: &PlayerSnap,
+        rng: &mut R,
+    ) -> Vec<MatchEvent> {
+        let mut events = Vec::new();
+        let zone = self.ball_zone;
+        let defender = self.pick_actor(def_side, band.mirror(), Need::Defend, rng);
+
+        let att_raw = (attacker.dribbling as f64
+            + attacker.pace as f64
+            + attacker.agility as f64
+            + attacker.composure as f64)
+            / 4.0;
+        let def_raw = (defender.defending as f64
+            + defender.tackling as f64
+            + defender.positioning as f64)
+            / 3.0;
+        let att_eff = self.condition_adjusted_skill(&attacker.id, att_raw)
+            * trait_bonus(attacker, TraitContext::Dribbling)
+            * role_attribute_modifier(attacker.role, PlayStylePhase::Attack)
+            * crate::shared::home_mod(att_side, &self.config);
+        let def_eff = self.condition_adjusted_skill(&defender.id, def_raw)
+            * trait_bonus(&defender, TraitContext::Tackling)
+            * role_attribute_modifier(defender.role, PlayStylePhase::Defense)
+            * crate::shared::home_mod(def_side, &self.config)
+            * tactics_shape_modifier(&self.team_ref(def_side).tactics);
+        let success = att_eff / (att_eff + def_eff);
+
+        if rng.random_range(0.0..1.0f64) < success {
+            let evt = MatchEvent::new(minute, EventType::Dribble, att_side, zone)
+                .with_player(&attacker.id);
+            self.events.push(evt.clone());
+            events.push(evt);
+            // Beating a man usually just buys space; only sometimes does it
+            // carry play into the next phase.
+            if rng.random_range(0.0..1.0f64) < 0.42
+                && let Some(further) = band.advanced()
+            {
+                self.ball_zone = further.to_zone(att_side);
+            }
+            return events;
+        }
+
+        // Beaten: a tackle, or a foul, or the ball hacked away.
+        let is_tackle = rng.random_range(0.0..1.0f64) < 0.5;
+        let fouled = if is_tackle {
+            let beaten = MatchEvent::new(minute, EventType::DribbleTackled, att_side, zone)
+                .with_player(&attacker.id)
+                .with_secondary(&defender.id);
+            let tackle = MatchEvent::new(minute, EventType::Tackle, def_side, zone)
+                .with_player(&defender.id);
+            self.events.push(beaten.clone());
+            self.events.push(tackle.clone());
+            events.push(beaten);
+            events.push(tackle);
+            let foul_mod = tactics_foul_modifier(&self.team_ref(def_side).tactics);
+            let foul_events =
+                self.maybe_foul(minute, def_side, attacker, &defender, zone, rng, foul_mod);
+            let was_fouled = foul_events.iter().any(|e| e.event_type == EventType::Foul);
+            events.extend(foul_events);
+            was_fouled
+        } else {
+            let clearance = MatchEvent::new(minute, EventType::Clearance, def_side, zone)
+                .with_player(&defender.id);
+            self.events.push(clearance.clone());
+            events.push(clearance);
+            false
+        };
+
+        if fouled {
+            // The free kick stays with the side that was fouled. A dangerous
+            // one is worth something: a delivery into the box is how free kicks
+            // turn into goals, and without it set-piece scoring never happens.
+            self.possession = att_side;
+            self.ball_zone = zone;
+            if matches!(band, Band::FinalThird | Band::OppBox)
+                && rng.random_range(0.0..1.0f64) < 0.72
+            {
+                // A free kick in a dangerous area is delivered and attacked
+                // there and then. Merely moving the ball into the box left set
+                // pieces producing almost no goals, because play usually
+                // recycled before anyone had a shot.
+                self.ball_zone = Band::OppBox.to_zone(att_side);
+                events.extend(self.resolve_shot(minute, att_side, rng));
+            }
+            return events;
+        }
+
+        // A cleared ball in the final third is often a corner.
+        if matches!(band, Band::FinalThird | Band::OppBox)
+            && rng.random_range(0.0..1.0f64) < 0.20
+        {
+            let corner = MatchEvent::new(minute, EventType::Corner, att_side, zone);
+            self.events.push(corner.clone());
+            events.push(corner);
+            if rng.random_range(0.0..1.0f64) < 0.18 {
+                self.ball_zone = Band::OppBox.to_zone(att_side);
+                return events;
+            }
+        }
+
+        self.possession = def_side;
+        self.ball_zone = band.mirror().to_zone(def_side);
+        events
+    }
+
+    /// A ball into the box, contested in the air.
+    fn resolve_cross<R: Rng + ?Sized>(
+        &mut self,
+        minute: u8,
+        att_side: Side,
+        def_side: Side,
+        band: Band,
+        crosser: &PlayerSnap,
+        rng: &mut R,
+    ) -> Vec<MatchEvent> {
+        let mut events = Vec::new();
+        let zone = self.ball_zone;
+
+        let evt = MatchEvent::new(minute, EventType::Cross, att_side, zone)
+            .with_player(&crosser.id);
+        self.events.push(evt.clone());
+        events.push(evt);
+
+        let attacker = self.pick_actor(att_side, Band::OppBox, Need::Shoot, rng);
+        let defender = self.pick_actor(def_side, Band::OwnBox, Need::Defend, rng);
+        let delivery = self.condition_adjusted_skill(
+            &crosser.id,
+            (crosser.passing as f64 + crosser.vision as f64) / 2.0,
+        );
+        let attacking = attacker.aerial as f64 * (0.75 + delivery / 400.0);
+        let defending = defender.aerial as f64;
+
+        // Most crosses are cleared or overhit. Only the ones that actually pick
+        // out a runner become a chance — otherwise crossing often enough to
+        // look like football would flood the match with shots.
+        const CROSS_FINDS_A_MAN: f64 = 0.30;
+        if rng.random_range(0.0..1.0f64) < attacking / (attacking + defending) * CROSS_FINDS_A_MAN {
+            self.ball_zone = Band::OppBox.to_zone(att_side);
+            events.extend(self.resolve_shot(minute, att_side, rng));
+        } else {
+            let clearance = MatchEvent::new(minute, EventType::Clearance, def_side, zone)
+                .with_player(&defender.id);
+            self.events.push(clearance.clone());
+            events.push(clearance);
+            if rng.random_range(0.0..1.0f64) < 0.22 {
+                let corner = MatchEvent::new(minute, EventType::Corner, att_side, zone);
+                self.events.push(corner.clone());
+                events.push(corner);
+                if rng.random_range(0.0..1.0f64) < 0.44 {
+                    self.ball_zone = Band::OppBox.to_zone(att_side);
+                    return events;
+                }
+            }
+            self.possession = def_side;
+            self.ball_zone = band.mirror().to_zone(def_side);
+        }
+        events
+    }
+}
+
+impl LiveMatchState {
+    /// A pass: the thing football mostly consists of.
+    ///
+    /// Completion is the passer's quality against the pressure he is under,
+    /// nudged by where he is — playing out of your own box is harder than
+    /// knocking it about in midfield, and the final third is tighter still.
+    #[allow(clippy::too_many_arguments)]
+    fn resolve_pass<R: Rng + ?Sized>(
+        &mut self,
+        minute: u8,
+        att_side: Side,
+        def_side: Side,
+        band: Band,
+        passer: &PlayerSnap,
+        kind: PassKind,
+        rng: &mut R,
+    ) -> Vec<MatchEvent> {
+        let mut events = Vec::new();
+        let zone = self.ball_zone;
+
+        let skill = self.condition_adjusted_skill(
+            &passer.id,
+            (passer.passing as f64 + passer.vision as f64 + passer.composure as f64
+                + passer.teamwork as f64)
+                / 4.0,
+        ) * trait_bonus(passer, TraitContext::Passing)
+            * crate::shared::home_mod(att_side, &self.config);
+
+        let press = self.effective_press(def_side);
+        // Skill and pressure move completion around the baseline rather than
+        // replacing it, so a poor passer is worse but not hopeless.
+        let quality = skill / (skill + press * 0.55);
+        let space = match band {
+            Band::OwnBox => 0.94,
+            Band::OwnThird => 1.0,
+            Band::Middle => 1.0,
+            Band::FinalThird => 0.93,
+            Band::OppBox => 0.88,
+        };
+        let completion = (kind.base_completion() * (0.72 + 0.56 * quality) * space).clamp(0.20, 0.985);
+
+        if rng.random_range(0.0..1.0f64) < completion {
+            let evt = MatchEvent::new(minute, EventType::PassCompleted, att_side, zone)
+                .with_player(&passer.id);
+            self.events.push(evt.clone());
+            events.push(evt);
+
+            let mut landed = band;
+            for _ in 0..kind.bands_gained() {
+                landed = landed.advanced().unwrap_or(landed);
+            }
+            // A pass inside the box is a cut-back or a recycle: the ball comes
+            // back out. Without this the box is an absorbing state — play
+            // arrives, passes to itself, and shoots again and again off a
+            // single entry.
+            if band == Band::OppBox && kind != PassKind::Long {
+                landed = Band::FinalThird;
+            }
+            self.ball_zone = landed.to_zone(att_side);
+        } else {
+            let interceptor = self.pick_actor(def_side, band.mirror(), Need::Defend, rng);
+            let lost = MatchEvent::new(minute, EventType::PassIntercepted, att_side, zone)
+                .with_player(&passer.id);
+            let won = MatchEvent::new(minute, EventType::Interception, def_side, zone)
+                .with_player(&interceptor.id);
+            self.events.push(lost.clone());
+            self.events.push(won.clone());
+            events.push(lost);
+            events.push(won);
+            self.possession = def_side;
+            self.ball_zone = band.mirror().to_zone(def_side);
+        }
+        events
+    }
+
+    /// Moving with the ball. Low risk, no progress by itself.
+    fn resolve_carry<R: Rng + ?Sized>(
+        &mut self,
+        minute: u8,
+        att_side: Side,
+        def_side: Side,
+        band: Band,
+        carrier: &PlayerSnap,
+        rng: &mut R,
+    ) -> Vec<MatchEvent> {
+        let mut events = Vec::new();
+        let zone = self.ball_zone;
+        let skill = self.condition_adjusted_skill(
+            &carrier.id,
+            (carrier.dribbling as f64 + carrier.composure as f64 + carrier.decisions as f64) / 3.0,
+        ) * crate::shared::home_mod(att_side, &self.config);
+        let press = self.effective_press(def_side);
+        let keep = (skill / (skill + press * 0.45)).clamp(0.55, 0.97);
+
+        if rng.random_range(0.0..1.0f64) < keep {
+            let evt = MatchEvent::new(minute, EventType::Dribble, att_side, zone)
+                .with_player(&carrier.id);
+            self.events.push(evt.clone());
+            events.push(evt);
+        } else {
+            let winner = self.pick_actor(def_side, band.mirror(), Need::Defend, rng);
+            let tackle = MatchEvent::new(minute, EventType::Tackle, def_side, zone)
+                .with_player(&winner.id);
+            self.events.push(tackle.clone());
+            events.push(tackle);
+
+            // A challenge that takes the ball off a carrier is the other main
+            // source of fouls. Attaching them only to take-ons left the match
+            // with barely half the fouls a real one has.
+            let foul_mod = tactics_foul_modifier(&self.team_ref(def_side).tactics);
+            let foul_events =
+                self.maybe_foul(minute, def_side, carrier, &winner, zone, rng, foul_mod);
+            let was_fouled = foul_events.iter().any(|e| e.event_type == EventType::Foul);
+            events.extend(foul_events);
+            if was_fouled {
+                self.ball_zone = zone;
+                return events;
+            }
+
+            self.possession = def_side;
+            self.ball_zone = band.mirror().to_zone(def_side);
+        }
         events
     }
 }

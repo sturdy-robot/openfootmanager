@@ -88,7 +88,7 @@ fn play(home: TacticsConfig, seed: u64) -> Totals {
 }
 
 fn band(home: TacticsConfig, metric: impl Fn(&Totals) -> usize) -> usize {
-    (0..SEEDS).map(|s| metric(&play(home.clone(), s))).sum()
+    (0..SEEDS).map(|s| metric(&play(home, s))).sum()
 }
 
 fn with(f: impl FnOnce(&mut TacticsConfig)) -> TacticsConfig {
@@ -101,8 +101,8 @@ fn with(f: impl FnOnce(&mut TacticsConfig)) -> TacticsConfig {
 fn neutral_is_reproducible() {
     let n = TacticsConfig::default();
     for seed in 0..15 {
-        let a = play(n.clone(), seed);
-        let b = play(n.clone(), seed);
+        let a = play(n, seed);
+        let b = play(n, seed);
         assert_eq!(
             (a.home_possession, a.home_shots, a.away_shots),
             (b.home_possession, b.home_shots, b.away_shots),
@@ -176,15 +176,15 @@ fn play_batch(home: TacticsConfig, seed: u64) -> Totals {
 }
 
 fn band_batch(home: TacticsConfig, metric: impl Fn(&Totals) -> usize) -> usize {
-    (0..SEEDS).map(|s| metric(&play_batch(home.clone(), s))).sum()
+    (0..SEEDS).map(|s| metric(&play_batch(home, s))).sum()
 }
 
 #[test]
 fn batch_neutral_is_reproducible() {
     let n = TacticsConfig::default();
     for seed in 0..15 {
-        let a = play_batch(n.clone(), seed);
-        let b = play_batch(n.clone(), seed);
+        let a = play_batch(n, seed);
+        let b = play_batch(n, seed);
         assert_eq!(
             (a.home_possession, a.home_shots, a.away_shots),
             (b.home_possession, b.home_shots, b.away_shots),
@@ -256,10 +256,10 @@ fn aggressive_pressing_tires_the_team_more_than_passive() {
     let passive = with(|c| c.pressing_intensity = PressingIntensity::Passive);
     let (mut aggressive_cond, mut passive_cond) = (0i64, 0i64);
     for seed in 0..40u64 {
-        let (h, a) = final_conditions(aggressive.clone(), passive.clone(), seed);
+        let (h, a) = final_conditions(aggressive, passive, seed);
         aggressive_cond += h;
         passive_cond += a;
-        let (h, a) = final_conditions(passive.clone(), aggressive.clone(), seed);
+        let (h, a) = final_conditions(passive, aggressive, seed);
         passive_cond += h;
         aggressive_cond += a;
     }

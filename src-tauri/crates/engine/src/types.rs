@@ -274,7 +274,7 @@ pub enum BreakSpeed {
     Fast,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
 pub struct TacticsConfig {
     pub pressing_intensity: PressingIntensity,
     pub defensive_line: DefensiveLine,
@@ -387,12 +387,12 @@ impl Default for MatchConfig {
             // now puts its best finisher on the end of a chance rather than a
             // random forward, and its actual keeper in goal, so the same base
             // produced a markedly higher conversion rate.
-            goal_conversion_base: 0.29,
+            goal_conversion_base: 0.235,
             fatigue_per_minute: 0.20,
-            foul_probability: 0.134,
+            foul_probability: 0.175,
             yellow_card_probability: 0.11,
             red_card_probability: 0.04,
-            penalty_probability: 0.50,
+            penalty_probability: 0.32,
             stoppage_time_max: 4,
             injury_probability: 0.03,
         }

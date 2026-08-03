@@ -5,53 +5,53 @@
     "arms": [
       {
         "arm": "shooting 50",
-        "team_goals_per_game": 1.582,
-        "subject_goals_per_90": 0.4562028876498193,
-        "subject_assists_per_90": 0.2168190068185163,
-        "subject_shots_per_90": 3.2699445688964466,
-        "subject_passes_per_90": 5.016760141929788,
-        "subject_tackles_per_90": 4.9235574014421895,
-        "subject_touches_per_90": 17.693313929721864
+        "team_goals_per_game": 1.6295,
+        "subject_goals_per_90": 0.387911961847949,
+        "subject_assists_per_90": 0.22861731591799278,
+        "subject_shots_per_90": 3.285697897376227,
+        "subject_passes_per_90": 45.444205903079364,
+        "subject_tackles_per_90": 5.195267047968666,
+        "subject_touches_per_90": 63.72965797538471
       },
       {
         "arm": "shooting 60",
-        "team_goals_per_game": 1.619,
-        "subject_goals_per_90": 0.5153869624915547,
-        "subject_assists_per_90": 0.22263147570995792,
-        "subject_shots_per_90": 3.4272497439138676,
-        "subject_passes_per_90": 5.018035002070484,
-        "subject_tackles_per_90": 4.9287862607065795,
-        "subject_touches_per_90": 17.851219405880173
+        "team_goals_per_game": 1.679,
+        "subject_goals_per_90": 0.4523378985954581,
+        "subject_assists_per_90": 0.23551071024698306,
+        "subject_shots_per_90": 3.481035132669395,
+        "subject_passes_per_90": 45.44422531671847,
+        "subject_tackles_per_90": 5.197952460816502,
+        "subject_touches_per_90": 63.919278444569485
       },
       {
         "arm": "shooting 70",
-        "team_goals_per_game": 1.6615,
-        "subject_goals_per_90": 0.5800788911650612,
-        "subject_assists_per_90": 0.22850106786383648,
-        "subject_shots_per_90": 3.6128666695724188,
-        "subject_passes_per_90": 5.01966830841651,
-        "subject_tackles_per_90": 4.93140609336181,
-        "subject_touches_per_90": 18.036383646428106
+        "team_goals_per_game": 1.7345,
+        "subject_goals_per_90": 0.5257525960058089,
+        "subject_assists_per_90": 0.2432219953484817,
+        "subject_shots_per_90": 3.667492875315288,
+        "subject_passes_per_90": 45.44566131268904,
+        "subject_tackles_per_90": 5.193158118864854,
+        "subject_touches_per_90": 64.12707598571787
       },
       {
         "arm": "shooting 80",
-        "team_goals_per_game": 1.734,
-        "subject_goals_per_90": 0.6673567789915279,
-        "subject_assists_per_90": 0.24271976899397968,
-        "subject_shots_per_90": 3.779073251791114,
-        "subject_passes_per_90": 5.016208559208914,
-        "subject_tackles_per_90": 4.951483287477186,
-        "subject_touches_per_90": 18.202021302677817
+        "team_goals_per_game": 1.7965,
+        "subject_goals_per_90": 0.6024602918934857,
+        "subject_assists_per_90": 0.2520898285002921,
+        "subject_shots_per_90": 3.8339275671720836,
+        "subject_passes_per_90": 45.4105673522651,
+        "subject_tackles_per_90": 5.196588569962162,
+        "subject_touches_per_90": 64.25931891520018
       },
       {
         "arm": "shooting 90",
-        "team_goals_per_game": 1.8135,
-        "subject_goals_per_90": 0.7565085227737011,
-        "subject_assists_per_90": 0.25347693212832373,
-        "subject_shots_per_90": 3.944336400333393,
-        "subject_passes_per_90": 5.010704538397425,
-        "subject_tackles_per_90": 4.955792707839644,
-        "subject_touches_per_90": 18.36261419536191
+        "team_goals_per_game": 1.8635,
+        "subject_goals_per_90": 0.6929882044560943,
+        "subject_assists_per_90": 0.2609764089121887,
+        "subject_shots_per_90": 4.031127129750983,
+        "subject_passes_per_90": 45.363204456094365,
+        "subject_tackles_per_90": 5.194462647444299,
+        "subject_touches_per_90": 64.37860419397117
       }
     ]
   },
@@ -61,53 +61,53 @@
     "arms": [
       {
         "arm": "passing/vision 50",
-        "team_goals_per_game": 1.7815,
-        "subject_goals_per_90": 0.010893725654173727,
-        "subject_assists_per_90": 0.034166685006272145,
-        "subject_shots_per_90": 0.12527784502299785,
-        "subject_passes_per_90": 6.673892471225159,
-        "subject_tackles_per_90": 10.907095226567487,
-        "subject_touches_per_90": 23.07687229032329
+        "team_goals_per_game": 1.82,
+        "subject_goals_per_90": 0.018244276063838532,
+        "subject_assists_per_90": 0.04240561463486793,
+        "subject_shots_per_90": 0.2233691096464555,
+        "subject_passes_per_90": 36.6325339820187,
+        "subject_tackles_per_90": 5.152282178136454,
+        "subject_touches_per_90": 50.540589405170856
       },
       {
         "arm": "passing/vision 60",
-        "team_goals_per_game": 1.786,
-        "subject_goals_per_90": 0.010397412199630314,
-        "subject_assists_per_90": 0.041589648798521256,
-        "subject_shots_per_90": 0.12526406126221284,
-        "subject_passes_per_90": 8.088196461579086,
-        "subject_tackles_per_90": 10.882624768946394,
-        "subject_touches_per_90": 24.461149986796933
+        "team_goals_per_game": 1.8315,
+        "subject_goals_per_90": 0.01772283455952739,
+        "subject_assists_per_90": 0.04824549407871345,
+        "subject_shots_per_90": 0.2175970243141974,
+        "subject_passes_per_90": 41.40447993873588,
+        "subject_tackles_per_90": 5.056915460985149,
+        "subject_touches_per_90": 55.241090720126905
       },
       {
         "arm": "passing/vision 70",
-        "team_goals_per_game": 1.7855,
-        "subject_goals_per_90": 0.011389584307683843,
-        "subject_assists_per_90": 0.05051033040798922,
-        "subject_shots_per_90": 0.12379982943134613,
-        "subject_passes_per_90": 9.64004511816006,
-        "subject_tackles_per_90": 10.871110622025364,
-        "subject_touches_per_90": 26.002420974442213
+        "team_goals_per_game": 1.8375,
+        "subject_goals_per_90": 0.012787024994808686,
+        "subject_assists_per_90": 0.05852522978393206,
+        "subject_shots_per_90": 0.21049410376069685,
+        "subject_passes_per_90": 46.39181848981956,
+        "subject_tackles_per_90": 5.057760194100482,
+        "subject_touches_per_90": 60.22393687362704
       },
       {
         "arm": "passing/vision 80",
-        "team_goals_per_game": 1.7765,
-        "subject_goals_per_90": 0.010383930729841988,
-        "subject_assists_per_90": 0.054392018108696136,
-        "subject_shots_per_90": 0.12411269586620662,
-        "subject_passes_per_90": 11.323923697338635,
-        "subject_tackles_per_90": 10.865052853658002,
-        "subject_touches_per_90": 27.670208557677515
+        "team_goals_per_game": 1.8205,
+        "subject_goals_per_90": 0.015770020533880904,
+        "subject_assists_per_90": 0.06554414784394251,
+        "subject_shots_per_90": 0.22078028747433268,
+        "subject_passes_per_90": 51.733552361396306,
+        "subject_tackles_per_90": 5.028665297741274,
+        "subject_touches_per_90": 65.52394250513346
       },
       {
         "arm": "passing/vision 90",
-        "team_goals_per_game": 1.792,
-        "subject_goals_per_90": 0.010887016957353685,
-        "subject_assists_per_90": 0.06086832207975015,
-        "subject_shots_per_90": 0.12272637297380519,
-        "subject_passes_per_90": 13.10252490817516,
-        "subject_tackles_per_90": 10.881078584467856,
-        "subject_touches_per_90": 29.46026788659907
+        "team_goals_per_game": 1.832,
+        "subject_goals_per_90": 0.01919784721576521,
+        "subject_assists_per_90": 0.08220616628289204,
+        "subject_shots_per_90": 0.22397488418392741,
+        "subject_passes_per_90": 57.05895544021047,
+        "subject_tackles_per_90": 4.995870548533361,
+        "subject_touches_per_90": 70.78443169449716
       }
     ]
   },
@@ -117,43 +117,43 @@
     "arms": [
       {
         "arm": "Poacher",
-        "team_goals_per_game": 1.834,
-        "subject_goals_per_90": 0.9378057530493771,
-        "subject_assists_per_90": 0.15752397103907118,
-        "subject_shots_per_90": 5.078925053812537,
-        "subject_passes_per_90": 1.3917878807644641,
-        "subject_tackles_per_90": 0.7181527623768834,
-        "subject_touches_per_90": 8.119333376818211
+        "team_goals_per_game": 2.076,
+        "subject_goals_per_90": 0.9561434078978894,
+        "subject_assists_per_90": 0.15437476857398008,
+        "subject_shots_per_90": 6.134314216636536,
+        "subject_passes_per_90": 21.10376598200867,
+        "subject_tackles_per_90": 1.5491385506741304,
+        "subject_touches_per_90": 32.0457515628063
       },
       {
         "arm": "TargetMan",
-        "team_goals_per_game": 1.85,
-        "subject_goals_per_90": 0.9213697065303126,
-        "subject_assists_per_90": 0.29031468436369573,
-        "subject_shots_per_90": 5.018576440830093,
-        "subject_passes_per_90": 5.067533385916719,
-        "subject_tackles_per_90": 2.6833301601980035,
-        "subject_touches_per_90": 15.352408409715235
+        "team_goals_per_game": 1.8995,
+        "subject_goals_per_90": 0.847739090191381,
+        "subject_assists_per_90": 0.28666321835951325,
+        "subject_shots_per_90": 5.359867149429668,
+        "subject_passes_per_90": 51.94729534750769,
+        "subject_tackles_per_90": 3.2434595595241333,
+        "subject_touches_per_90": 66.76704870280129
       },
       {
         "arm": "False9",
-        "team_goals_per_game": 1.7645,
-        "subject_goals_per_90": 0.6720447702578871,
-        "subject_assists_per_90": 0.3814308155517738,
-        "subject_shots_per_90": 3.5452938866343766,
-        "subject_passes_per_90": 14.359372954575207,
-        "subject_tackles_per_90": 6.302690142688833,
-        "subject_touches_per_90": 29.152703233407514
+        "team_goals_per_game": 1.742,
+        "subject_goals_per_90": 0.5701481796473783,
+        "subject_assists_per_90": 0.320892348958163,
+        "subject_shots_per_90": 3.466520558699421,
+        "subject_passes_per_90": 86.27146642242649,
+        "subject_tackles_per_90": 4.620555428347126,
+        "subject_touches_per_90": 102.63942952471297
       },
       {
         "arm": "CompleteForward",
-        "team_goals_per_game": 1.839,
-        "subject_goals_per_90": 0.9442716038638934,
-        "subject_assists_per_90": 0.33923287790444695,
-        "subject_shots_per_90": 5.179542685580019,
-        "subject_passes_per_90": 6.627034200678792,
-        "subject_tackles_per_90": 3.4358954834218083,
-        "subject_touches_per_90": 18.469345574797668
+        "team_goals_per_game": 1.9395,
+        "subject_goals_per_90": 0.8796114599686028,
+        "subject_assists_per_90": 0.34684065934065933,
+        "subject_shots_per_90": 5.656397174254317,
+        "subject_passes_per_90": 58.3320251177394,
+        "subject_tackles_per_90": 3.779434850863422,
+        "subject_touches_per_90": 74.96565934065934
       }
     ]
   },
@@ -163,33 +163,33 @@
     "arms": [
       {
         "arm": "none",
-        "team_goals_per_game": 1.7775,
-        "subject_goals_per_90": 0.7119973847662635,
-        "subject_assists_per_90": 0.2505720823798627,
-        "subject_shots_per_90": 3.869892121608369,
-        "subject_passes_per_90": 5.013893429225237,
-        "subject_tackles_per_90": 4.958483164432821,
-        "subject_touches_per_90": 18.28980058842759
+        "team_goals_per_game": 1.83,
+        "subject_goals_per_90": 0.6477471918395431,
+        "subject_assists_per_90": 0.25605181103824126,
+        "subject_shots_per_90": 3.931206212082325,
+        "subject_passes_per_90": 45.37670578341807,
+        "subject_tackles_per_90": 5.204093334134234,
+        "subject_touches_per_90": 64.3068471607136
       },
       {
         "arm": "Sharpshooter",
-        "team_goals_per_game": 1.887,
-        "subject_goals_per_90": 0.8221104322565526,
-        "subject_assists_per_90": 0.2688046043416413,
-        "subject_shots_per_90": 3.8432191149940866,
-        "subject_passes_per_90": 5.015069844505366,
-        "subject_tackles_per_90": 4.96797998681048,
-        "subject_touches_per_90": 18.25958284054306
+        "team_goals_per_game": 1.941,
+        "subject_goals_per_90": 0.7600329926640483,
+        "subject_assists_per_90": 0.2689120614406433,
+        "subject_shots_per_90": 3.93437518776868,
+        "subject_passes_per_90": 45.37780423988507,
+        "subject_tackles_per_90": 5.181104598762229,
+        "subject_touches_per_90": 64.263100108701
       },
       {
         "arm": "CoolHead",
-        "team_goals_per_game": 1.8475,
-        "subject_goals_per_90": 0.769800712596838,
-        "subject_assists_per_90": 0.2554561600400972,
-        "subject_shots_per_90": 3.8490035629841897,
-        "subject_passes_per_90": 5.008607821131656,
-        "subject_tackles_per_90": 4.961046885385227,
-        "subject_touches_per_90": 18.25408326704948
+        "team_goals_per_game": 1.8875,
+        "subject_goals_per_90": 0.7021927838370171,
+        "subject_assists_per_90": 0.26516370858181065,
+        "subject_shots_per_90": 3.956340740821571,
+        "subject_passes_per_90": 45.49030733892396,
+        "subject_tackles_per_90": 5.209484785823017,
+        "subject_touches_per_90": 64.40286333156921
       }
     ]
   }

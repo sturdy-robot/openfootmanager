@@ -2,38 +2,24 @@
 //!
 //! A minute of football is not a couple of isolated incidents; it is a handful
 //! of spells of possession, each a run of touches that ends when the ball is
-//! lost, goes out, or is put in the net. The engine used to resolve one to three
-//! actions per minute and leave it there, which produced roughly 180 actions a
-//! match against a real figure in the high hundreds — and meant a stat sheet
-//! where midfielders completed six passes in ninety minutes and forwards
-//! completed none.
+//! lost, goes out, or is put in the net.
 //!
-//! This module runs the ball instead. Each action takes time, the clock advances
-//! by that time, and play continues until the minute is used up. Every action
-//! still resolves through the same code as before; what changes is how many of
-//! them there are, and that most of them keep the ball rather than drive it
-//! forward.
+//! This module runs the clock. Each action takes a couple of seconds, the clock
+//! advances by that, and play continues until the minute's live football is
+//! used up — a little over a third of it, since the rest is the ball being out
+//! of play, retrieved, or waiting on a set piece. What the player on the ball
+//! actually *does* is chosen in `sim::action`.
 //!
-//! # Why retention matters
-//!
-//! Multiplying the action count without changing anything else would multiply
-//! chance creation with it: five times the actions would carry the ball into the
-//! box five times as often. Real football does not work that way, because most
-//! touches are sideways or backwards — keeping the ball, not progressing it.
-//!
-//! So a successful action now either **progresses** the ball or **retains** it.
-//! Retention is what lets pass volume rise to a realistic level while shots and
-//! goals stay where they were. It is the single knob that ties this stage's
-//! event volume to the calibration recorded in `sim-bench/baselines`.
+//! An action that starts before the minute boundary finishes rather than being
+//! cut short, which is what keeps `step_minute` a clean place to make a
+//! substitution: play is never interrupted mid-move.
 
 use rand::{Rng, RngExt};
 
-use crate::event::{EventType, MatchEvent};
+use crate::event::MatchEvent;
 use crate::sim::state::Band;
 use crate::shared::{tactics_break_speed_counter, tactics_counter_press_rewin};
-use crate::types::{
-    DefensiveShape, PressingIntensity, Side, TacticsBuildUpStyle, TacticsConfig, Tempo,
-};
+use crate::types::{Side, TacticsConfig};
 
 use super::LiveMatchState;
 
@@ -42,7 +28,7 @@ use super::LiveMatchState;
 /// The original design drew each event's duration from this range and advanced
 /// the clock by it, which is what makes the number of touches in a match fall
 /// out of the simulation rather than being asserted up front.
-const ACTION_SECONDS: std::ops::RangeInclusive<u32> = 2..=8;
+const ACTION_SECONDS: std::ops::RangeInclusive<u32> = 1..=4;
 
 /// Seconds of football in a minute of match time.
 ///
@@ -50,97 +36,10 @@ const ACTION_SECONDS: std::ops::RangeInclusive<u32> = 2..=8;
 /// waiting for a set piece, and none of that is touches. Real matches contain
 /// roughly an hour of stoppages across ninety minutes, so a little under half of
 /// each minute is live play.
-const LIVE_SECONDS_PER_MINUTE: u32 = 26;
+const LIVE_SECONDS_PER_MINUTE: u32 = 37;
 
 /// Chance that a successful action keeps the ball where it is instead of
 /// carrying it forward, by where the ball currently is.
-///
-/// Highest deep, where sides circulate the ball; lowest in the final third,
-/// where the point is to get a shot away. These are what hold shot volume at
-/// its calibrated level now that there are far more actions per match — see the
-/// module comment.
-fn base_retention(band: Band) -> f64 {
-    match band {
-        Band::OwnBox => 0.86,
-        Band::OwnThird => 0.915,
-        Band::Middle => 0.935,
-        Band::FinalThird => 0.915,
-        // The box resolves to a shot; nothing is retained there.
-        Band::OppBox => 0.0,
-    }
-}
-
-/// How likely this side is to circulate the ball rather than drive it forward,
-/// given how both sides are set up.
-///
-/// This is where tactics reach the football. They used to be modifiers on
-/// outcome rolls — a few percent on whether a pass came off — which is
-/// statistically invisible on a stat sheet: measured across all twenty dial
-/// settings, completed passes spanned six percent in total, and the dial named
-/// for how a team builds play moved them by one and a half.
-///
-/// Retention is a better place to apply them because it compounds. A side
-/// choosing to circulate makes that choice hundreds of times a match, so a
-/// modest per-action difference becomes a visible difference in passes,
-/// possession and where the ball spends the game.
-///
-/// Neutral options remain exactly 1.0, so a team that has not been given
-/// instructions plays the calibrated baseline. That is a normalisation, not the
-/// old problem: the magnitudes below are applied to a choice made every touch,
-/// not to a single success roll.
-fn retention_chance(band: Band, own: &TacticsConfig, opponent: &TacticsConfig) -> f64 {
-    let mut chance = base_retention(band);
-    if chance <= 0.0 {
-        return 0.0;
-    }
-
-    // Patient sides work the ball; direct sides move it on.
-    chance *= match own.tempo {
-        Tempo::Patient => 1.10,
-        Tempo::Direct => 1.0,
-    };
-
-    // Build-up style is about getting out of your own half specifically, so it
-    // only applies deep — a long-ball side still plays normally once up.
-    if matches!(band, Band::OwnBox | Band::OwnThird) {
-        chance *= match own.build_up_style {
-            TacticsBuildUpStyle::Short => 1.09,
-            TacticsBuildUpStyle::Mixed => 1.0,
-            TacticsBuildUpStyle::Long => 0.82,
-        };
-    }
-
-    // A compact block is harder to play through, so the ball goes sideways;
-    // a stretched one leaves gaps to run into.
-    chance *= match opponent.defensive_shape {
-        DefensiveShape::Compact => 1.05,
-        DefensiveShape::Normal => 1.0,
-        DefensiveShape::Stretched => 0.96,
-    };
-
-    // Being pressed forces the ball to be moved rather than held.
-    chance *= match opponent.pressing_intensity {
-        PressingIntensity::Aggressive => 0.95,
-        PressingIntensity::Medium => 1.0,
-        PressingIntensity::Passive => 1.04,
-    };
-
-    chance.clamp(0.0, 0.97)
-}
-
-
-/// How often a long-ball side skips a band when it does progress.
-const LONG_BALL_SKIP_CHANCE: f64 = 0.45;
-
-/// Whether this side plays through the middle or over it.
-///
-/// Only from deep: hitting it long is about bypassing midfield, not about how a
-/// side plays once it is already there.
-fn long_ball_skips_a_band(band: Band, own: &TacticsConfig) -> bool {
-    matches!(band, Band::OwnBox | Band::OwnThird)
-        && matches!(own.build_up_style, TacticsBuildUpStyle::Long)
-}
-
 impl LiveMatchState {
     /// What happens in the moments after the ball changes hands.
     ///
@@ -186,11 +85,9 @@ impl LiveMatchState {
 
         while seconds < LIVE_SECONDS_PER_MINUTE {
             let before = self.possession;
-            let band = Band::from_zone(self.ball_zone, before);
-            let own_tactics = self.team_ref(before).tactics.clone();
-            let opponent_tactics = self.team_ref(before.opposite()).tactics.clone();
+            let own_tactics = self.team_ref(before).tactics;
+            let opponent_tactics = self.team_ref(before.opposite()).tactics;
 
-            let events_before = events.len();
             events.extend(self.resolve_action(minute, rng));
             seconds += rng.random_range(ACTION_SECONDS);
 
@@ -200,164 +97,9 @@ impl LiveMatchState {
                 self.resolve_transition(before, &own_tactics, &opponent_tactics, rng);
             }
 
-            // The side still has the ball: did it commit forward, or work it?
-            //
-            // The resolver has already moved the ball by the time this runs, so
-            // declining to progress means putting it back. That is deliberate
-            // and it is what governs how often play reaches the box — the
-            // resolver decides whether an action *can* progress, this decides
-            // whether the side takes it.
-            //
-            // A set piece is exempt. A corner has been won; it is an outcome,
-            // not an option to decline, and pulling the ball back out would
-            // cancel a chance the match has already produced.
-            let won_set_piece = events[events_before..]
-                .iter()
-                .any(|event| matches!(event.event_type, EventType::Corner | EventType::FreeKick));
-            if self.possession == before && band != Band::OppBox && !won_set_piece {
-                if rng.random_range(0.0..1.0f64)
-                    < retention_chance(band, &own_tactics, &opponent_tactics)
-                {
-                    self.ball_zone = band.to_zone(before);
-                } else if long_ball_skips_a_band(band, &own_tactics)
-                    && rng.random_range(0.0..1.0f64) < LONG_BALL_SKIP_CHANCE
-                {
-                    // Hitting it long: the ball bypasses the middle rather than
-                    // being worked through it. This is the difference a
-                    // build-up instruction is supposed to make, and it only
-                    // shows up if the dial changes where the ball goes rather
-                    // than how likely a pass is to come off.
-                    let landed = Band::from_zone(self.ball_zone, before);
-                    if let Some(further) = landed.advanced() {
-                        self.ball_zone = further.to_zone(before);
-                    }
-                }
-            }
         }
 
         events
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn retention_is_a_probability_everywhere() {
-        for band in [
-            Band::OwnBox,
-            Band::OwnThird,
-            Band::Middle,
-            Band::FinalThird,
-            Band::OppBox,
-        ] {
-            let chance = base_retention(band);
-            assert!(
-                (0.0..=1.0).contains(&chance),
-                "{band:?} has retention {chance}"
-            );
-        }
-    }
-
-    #[test]
-    fn nothing_is_retained_in_the_box() {
-        // A possession that reaches the box resolves to a shot rather than
-        // circulating, or chances would never be taken.
-        assert_eq!(base_retention(Band::OppBox), 0.0);
-    }
-
-    #[test]
-    fn sides_circulate_more_deep_than_in_the_final_third() {
-        assert!(base_retention(Band::Middle) > base_retention(Band::FinalThird));
-    }
-
-    fn tactics(mutate: impl Fn(&mut TacticsConfig)) -> TacticsConfig {
-        let mut config = TacticsConfig::default();
-        mutate(&mut config);
-        config
-    }
-
-    #[test]
-    fn an_uninstructed_side_plays_the_calibrated_baseline() {
-        // Every neutral option is 1.0 by construction. If that stops being
-        // true, every default team in every save starts playing differently.
-        let neutral = TacticsConfig::default();
-        for band in [Band::OwnBox, Band::OwnThird, Band::Middle, Band::FinalThird] {
-            assert_eq!(
-                retention_chance(band, &neutral, &neutral),
-                base_retention(band),
-                "{band:?} is not neutral by default"
-            );
-        }
-    }
-
-    #[test]
-    fn patient_sides_circulate_more_than_direct_ones() {
-        let neutral = TacticsConfig::default();
-        let patient = tactics(|c| c.tempo = Tempo::Patient);
-        assert!(
-            retention_chance(Band::Middle, &patient, &neutral)
-                > retention_chance(Band::Middle, &neutral, &neutral)
-        );
-    }
-
-    #[test]
-    fn build_up_style_only_applies_in_a_sides_own_half() {
-        // Hitting it long is about bypassing midfield, not about how a side
-        // plays once it is already there.
-        let neutral = TacticsConfig::default();
-        let long = tactics(|c| c.build_up_style = TacticsBuildUpStyle::Long);
-        assert!(
-            retention_chance(Band::OwnThird, &long, &neutral)
-                < retention_chance(Band::OwnThird, &neutral, &neutral)
-        );
-        assert_eq!(
-            retention_chance(Band::FinalThird, &long, &neutral),
-            retention_chance(Band::FinalThird, &neutral, &neutral)
-        );
-    }
-
-    #[test]
-    fn the_opponents_shape_and_pressing_both_matter() {
-        let neutral = TacticsConfig::default();
-        let compact = tactics(|c| c.defensive_shape = DefensiveShape::Compact);
-        let pressing = tactics(|c| c.pressing_intensity = PressingIntensity::Aggressive);
-        assert!(
-            retention_chance(Band::Middle, &neutral, &compact)
-                > retention_chance(Band::Middle, &neutral, &neutral),
-            "a compact block should push the ball sideways"
-        );
-        assert!(
-            retention_chance(Band::Middle, &neutral, &pressing)
-                < retention_chance(Band::Middle, &neutral, &neutral),
-            "being pressed should force the ball to be moved"
-        );
-    }
-
-    #[test]
-    fn stacked_instructions_saturate_rather_than_exceeding_certainty() {
-        // Four multipliers compound, so the most extreme combination lands
-        // above 1.0 and is clamped. Worth pinning: past the ceiling the dials
-        // stop responding, which is a real limit on how far they stack.
-        let extreme = tactics(|c| {
-            c.tempo = Tempo::Patient;
-            c.build_up_style = TacticsBuildUpStyle::Short;
-        });
-        let inviting = tactics(|c| {
-            c.defensive_shape = DefensiveShape::Compact;
-            c.pressing_intensity = PressingIntensity::Passive;
-        });
-        let chance = retention_chance(Band::OwnThird, &extreme, &inviting);
-        assert!((0.0..=0.97).contains(&chance), "{chance} is not a probability");
-    }
-
-    #[test]
-    fn only_a_long_ball_side_skips_the_middle_and_only_from_deep() {
-        let long = tactics(|c| c.build_up_style = TacticsBuildUpStyle::Long);
-        let neutral = TacticsConfig::default();
-        assert!(long_ball_skips_a_band(Band::OwnThird, &long));
-        assert!(!long_ball_skips_a_band(Band::Middle, &long));
-        assert!(!long_ball_skips_a_band(Band::OwnThird, &neutral));
-    }
-}

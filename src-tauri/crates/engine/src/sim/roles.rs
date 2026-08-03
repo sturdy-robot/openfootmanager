@@ -34,8 +34,8 @@ fn position_occupancy(position: Position) -> [f32; 5] {
     match position {
         //                   OwnBox OwnThird Middle Final OppBox
         Position::Goalkeeper => [1.00, 0.18, 0.01, 0.00, 0.00],
-        Position::Defender => [0.90, 1.00, 0.45, 0.12, 0.05],
-        Position::Midfielder => [0.30, 0.75, 1.00, 0.70, 0.25],
+        Position::Defender => [0.90, 1.00, 0.50, 0.18, 0.14],
+        Position::Midfielder => [0.30, 0.75, 1.00, 0.80, 0.46],
         Position::Forward => [0.04, 0.18, 0.55, 1.00, 1.00],
     }
 }
@@ -52,16 +52,16 @@ fn slot_occupancy(slot: Slot) -> [f32; 5] {
     match slot {
         //                          OwnBox OwnThird Middle Final OppBox
         Slot::Goalkeeper           => [1.00, 0.18, 0.01, 0.00, 0.00],
-        Slot::CenterBack           => [1.00, 1.00, 0.35, 0.06, 0.04],
-        Slot::RightBack            => [0.85, 1.00, 0.60, 0.22, 0.06],
-        Slot::LeftBack             => [0.85, 1.00, 0.60, 0.22, 0.06],
+        Slot::CenterBack           => [1.00, 1.00, 0.40, 0.10, 0.16],
+        Slot::RightBack            => [0.85, 1.00, 0.65, 0.30, 0.10],
+        Slot::LeftBack             => [0.85, 1.00, 0.65, 0.30, 0.10],
         Slot::RightWingBack        => [0.60, 0.90, 0.85, 0.55, 0.15],
         Slot::LeftWingBack         => [0.60, 0.90, 0.85, 0.55, 0.15],
         Slot::DefensiveMidfielder  => [0.55, 1.00, 1.00, 0.30, 0.08],
-        Slot::CentralMidfielder    => [0.30, 0.75, 1.00, 0.65, 0.20],
-        Slot::AttackingMidfielder  => [0.10, 0.35, 0.85, 1.00, 0.55],
-        Slot::RightMidfielder      => [0.25, 0.65, 1.00, 0.75, 0.20],
-        Slot::LeftMidfielder       => [0.25, 0.65, 1.00, 0.75, 0.20],
+        Slot::CentralMidfielder    => [0.30, 0.75, 1.00, 0.75, 0.40],
+        Slot::AttackingMidfielder  => [0.10, 0.35, 0.85, 1.00, 0.72],
+        Slot::RightMidfielder      => [0.25, 0.65, 1.00, 0.80, 0.34],
+        Slot::LeftMidfielder       => [0.25, 0.65, 1.00, 0.80, 0.34],
         Slot::RightWinger          => [0.06, 0.20, 0.60, 1.00, 0.70],
         Slot::LeftWinger           => [0.06, 0.20, 0.60, 1.00, 0.70],
         Slot::Striker              => [0.03, 0.12, 0.45, 0.95, 1.00],

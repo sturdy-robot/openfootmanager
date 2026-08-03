@@ -1,7 +1,6 @@
 use crate::types::{
     BreakSpeed, CounterPressDuration, DefensiveLine, DefensiveShape, MarkingStyle, MatchConfig,
-    PlayStyle, PlayerData, PlayerRole, PressingIntensity, Side, TacticsBuildUpStyle, TacticsConfig,
-    TacticsPitchWidth, Tempo,
+    PlayStyle, PlayerData, PlayerRole, PressingIntensity, Side, TacticsConfig,
 };
 
 // ---------------------------------------------------------------------------
@@ -106,7 +105,6 @@ pub(crate) enum TraitContext {
     Tackling,
     Goalkeeping,
     Foul,
-    Midfield,
 }
 
 /// Compute a multiplicative trait bonus for a specific action context.
@@ -177,17 +175,6 @@ pub(crate) fn trait_bonus(snap: &PlayerSnap, context: TraitContext) -> f64 {
                 bonus *= 0.70;
             }
         }
-        TraitContext::Midfield => {
-            if snap.has_trait("Engine") {
-                bonus *= 1.06;
-            }
-            if snap.has_trait("TeamPlayer") {
-                bonus *= 1.04;
-            }
-            if snap.has_trait("Tireless") {
-                bonus *= 1.03;
-            }
-        }
     }
     bonus
 }
@@ -198,7 +185,6 @@ pub(crate) fn trait_bonus(snap: &PlayerSnap, context: TraitContext) -> f64 {
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum PlayStylePhase {
-    Midfield,
     Attack,
     Defense,
     Press,
@@ -217,10 +203,8 @@ pub(crate) fn play_style_modifier(
         (PlayStyle::Attacking, PlayStylePhase::Defense) => 0.93,
         (PlayStyle::Defensive, PlayStylePhase::Defense) => 1.12,
         (PlayStyle::Defensive, PlayStylePhase::Attack) => 0.93,
-        (PlayStyle::Possession, PlayStylePhase::Midfield) => 1.15,
         (PlayStyle::Possession, PlayStylePhase::Attack) => 0.97,
         (PlayStyle::Counter, PlayStylePhase::Attack) => 1.18,
-        (PlayStyle::Counter, PlayStylePhase::Midfield) => 0.92,
         (PlayStyle::HighPress, PlayStylePhase::Press) => 1.20,
         (PlayStyle::HighPress, PlayStylePhase::Defense) => 0.95,
         _ => 1.0,
@@ -238,10 +222,8 @@ pub(crate) fn role_attribute_modifier(role: PlayerRole, phase: PlayStylePhase) -
     match (role, phase) {
         // Goalkeepers
         (PlayerRole::SweeperKeeper, PlayStylePhase::Defense) => 1.06,
-        (PlayerRole::BallPlayingKeeper, PlayStylePhase::Midfield) => 1.06,
         // Center Backs
         (PlayerRole::Stopper, PlayStylePhase::Defense) => 1.08,
-        (PlayerRole::BallPlayingCB, PlayStylePhase::Midfield) => 1.05,
         (PlayerRole::CoverCB, PlayStylePhase::Defense) => 1.05,
         // Full Backs
         (PlayerRole::AttackingFB, PlayStylePhase::Attack) => 1.08,
@@ -250,15 +232,12 @@ pub(crate) fn role_attribute_modifier(role: PlayerRole, phase: PlayStylePhase) -
         (PlayerRole::DefensiveFB, PlayStylePhase::Attack) => 0.93,
         (PlayerRole::WingBack, PlayStylePhase::Attack) => 1.10,
         (PlayerRole::WingBack, PlayStylePhase::Defense) => 0.97,
-        (PlayerRole::InvertedFB, PlayStylePhase::Midfield) => 1.06,
         // Defensive Midfielders
         (PlayerRole::AnchorMan, PlayStylePhase::Defense) => 1.10,
         (PlayerRole::AnchorMan, PlayStylePhase::Attack) => 0.90,
         (PlayerRole::BallWinner, PlayStylePhase::Defense) => 1.08,
-        (PlayerRole::DeepLyingPlaymaker, PlayStylePhase::Midfield) => 1.10,
         (PlayerRole::DeepLyingPlaymaker, PlayStylePhase::Attack) => 0.93,
         // Central Midfielders
-        (PlayerRole::BoxToBox, PlayStylePhase::Midfield) => 1.06,
         (PlayerRole::BoxToBox, PlayStylePhase::Attack) => 1.05,
         (PlayerRole::Mezzala, PlayStylePhase::Attack) => 1.08,
         (PlayerRole::Carrilero, PlayStylePhase::Defense) => 1.06,
@@ -269,13 +248,10 @@ pub(crate) fn role_attribute_modifier(role: PlayerRole, phase: PlayStylePhase) -
         // Wide
         (PlayerRole::WideForward, PlayStylePhase::Attack) => 1.08,
         (PlayerRole::InsideForward, PlayStylePhase::Attack) => 1.10,
-        (PlayerRole::InvertedWinger, PlayStylePhase::Midfield) => 1.08,
         // Strikers
         (PlayerRole::Poacher, PlayStylePhase::Attack) => 1.12,
         (PlayerRole::Poacher, PlayStylePhase::Defense) => 0.85,
         (PlayerRole::TargetMan, PlayStylePhase::Attack) => 1.08,
-        (PlayerRole::DeepLyingForward, PlayStylePhase::Midfield) => 1.06,
-        (PlayerRole::False9, PlayStylePhase::Midfield) => 1.08,
         (PlayerRole::False9, PlayStylePhase::Attack) => 1.05,
         (PlayerRole::PressingForward, PlayStylePhase::Press) => 1.15,
         (PlayerRole::CompleteForward, PlayStylePhase::Attack) => 1.10,
@@ -303,14 +279,6 @@ pub(crate) fn tactics_foul_modifier(tactics: &TacticsConfig) -> f64 {
     press * marking
 }
 
-/// Cross attempt probability based on the attacking team's pitch width setting.
-pub(crate) fn tactics_cross_probability(tactics: &TacticsConfig) -> f64 {
-    match tactics.width {
-        TacticsPitchWidth::Wide => 0.38,
-        TacticsPitchWidth::Narrow => 0.23,
-        TacticsPitchWidth::Normal => 0.32,
-    }
-}
 
 /// Shot conversion multiplier from the defending team's defensive line depth.
 /// High line = more space in behind = easier for attackers to score.
@@ -323,15 +291,6 @@ pub(crate) fn tactics_defensive_conversion_mod(tactics: &TacticsConfig) -> f64 {
     }
 }
 
-/// Build-up pass success modifier based on the attacking team's build-up style.
-/// Short passing = safer in own half; Long ball = riskier.
-pub(crate) fn tactics_buildup_mod(tactics: &TacticsConfig) -> f64 {
-    match tactics.build_up_style {
-        TacticsBuildUpStyle::Short => 1.08,
-        TacticsBuildUpStyle::Long => 0.88,
-        TacticsBuildUpStyle::Mixed => 1.0,
-    }
-}
 
 // --- Extended phase dials (tempo / shape / pressing-possession / transitions) ---
 //
@@ -342,28 +301,7 @@ pub(crate) fn tactics_buildup_mod(tactics: &TacticsConfig) -> f64 {
 // they already have live effects above, and re-hooking would double-count.
 
 
-/// Tempo's retention side: Patient circulates and holds possession longer.
-/// Applied to the possessing side's weight in the per-minute possession contest.
-pub(crate) fn tactics_tempo_retention(tactics: &TacticsConfig) -> f64 {
-    match tactics.tempo {
-        // A side told to be patient should visibly hold the ball, not hold it
-        // three percent more. This is its only lever on possession — retention
-        // in the chain governs where the ball goes, not who has it — so at the
-        // old value the effect was inside the noise of a 200-seed run.
-        Tempo::Patient => 1.12,
-        Tempo::Direct => 1.0,
-    }
-}
 
-/// Pressing's ball-winning side in the per-minute possession contest: harder
-/// pressing recovers the ball more often. Applied to the defending side's weight.
-pub(crate) fn tactics_pressing_contest(tactics: &TacticsConfig) -> f64 {
-    match tactics.pressing_intensity {
-        PressingIntensity::Passive => 0.97,
-        PressingIntensity::Medium => 1.0,
-        PressingIntensity::Aggressive => 1.05,
-    }
-}
 
 /// Pressing scales the effectiveness of the press that opposes the opponent's
 /// build-up (a higher press forces more build-up turnovers).
@@ -443,8 +381,6 @@ mod phase_modifier_tests {
     #[test]
     fn default_config_is_fully_neutral() {
         let d = TacticsConfig::default();
-        assert_eq!(tactics_tempo_retention(&d), 1.0);
-        assert_eq!(tactics_pressing_contest(&d), 1.0);
         assert_eq!(tactics_pressing_press(&d), 1.0);
         assert_eq!(tactics_pressing_fatigue(&d), 1.0);
         assert_eq!(tactics_shape_modifier(&d), 1.0);
@@ -455,8 +391,6 @@ mod phase_modifier_tests {
     #[test]
     fn tempo_directions() {
         // Direct is neutral; Patient progresses slower but retains more.
-        assert!(tactics_tempo_retention(&cfg(|c| c.tempo = Tempo::Patient)) > 1.0);
-        assert_eq!(tactics_tempo_retention(&cfg(|c| c.tempo = Tempo::Direct)), 1.0);
     }
 
     #[test]
@@ -465,7 +399,6 @@ mod phase_modifier_tests {
         let medium = cfg(|c| c.pressing_intensity = PressingIntensity::Medium);
         let aggressive = cfg(|c| c.pressing_intensity = PressingIntensity::Aggressive);
         for f in [
-            tactics_pressing_contest,
             tactics_pressing_press,
             tactics_pressing_fatigue,
         ] {
