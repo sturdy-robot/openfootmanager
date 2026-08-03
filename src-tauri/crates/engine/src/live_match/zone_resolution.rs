@@ -171,7 +171,14 @@ impl LiveMatchState {
 
         let own_tactics = self.team_ref(att_side).tactics;
         let opponent_tactics = self.team_ref(def_side).tactics;
-        let action = choose_action(band, actor.role, &own_tactics, &opponent_tactics, rng);
+        let action = choose_action(
+            band,
+            actor.role,
+            actor.traits,
+            &own_tactics,
+            &opponent_tactics,
+            rng,
+        );
 
         let actor_index = actor.index;
         let events = match action {

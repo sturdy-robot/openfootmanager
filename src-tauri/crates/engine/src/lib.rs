@@ -19,7 +19,7 @@ pub mod types;
 ///
 /// Do **not** bump it for changes that cannot affect a simulated match, such as
 /// documentation, renames, or new APIs no simulation path calls.
-pub const ENGINE_VERSION: u32 = 13;
+pub const ENGINE_VERSION: u32 = 14;
 
 // Re-export key types for convenience
 pub use engine::simulate;

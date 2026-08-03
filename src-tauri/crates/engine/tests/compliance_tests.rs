@@ -61,9 +61,32 @@ fn player_in(id: &str, position: Position, slot: Option<Slot>, rating: u8) -> Pl
         handling: spread(id, rating, 16),
         reflexes: spread(id, rating, 17),
         aerial: spread(id, rating, 18),
-        traits: Vec::new(),
+        traits: traits_for(id),
         slot,
         role: PlayerRole::Standard,
+    }
+}
+
+/// Give some of the squad traits, deterministically from the player's id.
+///
+/// Every golden squad used to be traitless, so the fingerprints were blind to
+/// the whole trait system: a change to what a Sharpshooter does would leave them
+/// untouched and land silently. This is the fourth blind spot of its kind these
+/// goldens have had — uniform attributes, no deployed slots, default-only
+/// tactics — and each one hid a class of change until something else caught it.
+///
+/// Not everybody gets one, because a squad where every player is exceptional
+/// tests the trait system no better than a squad where nobody is.
+fn traits_for(id: &str) -> Vec<String> {
+    let hash = id.bytes().fold(2166136261u32, |acc, byte| {
+        (acc ^ byte as u32).wrapping_mul(16777619)
+    });
+    match hash % 5 {
+        0 => vec!["Sharpshooter".to_string()],
+        1 => vec!["Playmaker".to_string(), "Visionary".to_string()],
+        2 => vec!["Dribbler".to_string()],
+        3 => vec!["BallWinner".to_string(), "HotHead".to_string()],
+        _ => Vec::new(),
     }
 }
 
@@ -274,7 +297,7 @@ fn golden_report_is_unchanged() {
     let actual = hasher.finish();
 
     // Pinned behaviour fingerprint. See the doc comment before changing.
-    const GOLDEN: u64 = 0xfe2d_1d3e_2883_491a;
+    const GOLDEN: u64 = 0x0d40_53e6_97e1_318c;
 
     assert_eq!(
         actual, GOLDEN,
@@ -318,7 +341,7 @@ fn golden_report_is_unchanged_with_instructions() {
     let actual = hasher.finish();
 
     // Pinned behaviour fingerprint. See `golden_report_is_unchanged`.
-    const GOLDEN_WITH_INSTRUCTIONS: u64 = 0xbf21_0fde_3039_6f07;
+    const GOLDEN_WITH_INSTRUCTIONS: u64 = 0xa7cc_6f31_4040_6537;
 
     assert_eq!(
         actual, GOLDEN_WITH_INSTRUCTIONS,

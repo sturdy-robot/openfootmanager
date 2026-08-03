@@ -24,6 +24,7 @@
 
 use rand::{Rng, RngExt};
 
+use crate::sim::player_traits::TraitFlags;
 use crate::sim::state::Band;
 use crate::types::{
     DefensiveShape, PlayerRole, PressingIntensity, TacticsBuildUpStyle, TacticsConfig,
@@ -231,10 +232,84 @@ fn opposition_bias(opponent: &TacticsConfig, action: Action) -> f64 {
     weight
 }
 
+/// How a player's traits change what he chooses to do.
+///
+/// Traits used to be multipliers on whether an action came off — a Sharpshooter
+/// with the same number of shots as everyone else, converting a few percent
+/// more of them. Measured over a couple of thousand matches that moved a
+/// striker's goals by under a fifth, and it was the same mistake roles used to
+/// make: applied after the engine had already decided what happened.
+///
+/// A trait is a habit. A Sharpshooter shoots from places other players would
+/// lay it off; a Dribbler backs himself to beat his man; a Playmaker looks for
+/// the pass that breaks the line. So they belong here, in the choice, as well
+/// as in how it resolves.
+fn trait_bias(traits: TraitFlags, action: Action) -> f64 {
+    use Action::*;
+    let mut bias = 1.0;
+    match action {
+        Shot => {
+            if traits.sharpshooter() {
+                bias *= 1.55;
+            }
+            if traits.cool_head() {
+                bias *= 1.15;
+            }
+            if traits.complete_forward() {
+                bias *= 1.20;
+            }
+        }
+        TakeOn => {
+            if traits.dribbler() {
+                bias *= 1.70;
+            }
+            if traits.agile() {
+                bias *= 1.25;
+            }
+            if traits.speedster() {
+                bias *= 1.20;
+            }
+        }
+        Carry => {
+            if traits.speedster() {
+                bias *= 1.35;
+            }
+            if traits.dribbler() {
+                bias *= 1.25;
+            }
+        }
+        ProgressivePass => {
+            if traits.visionary() {
+                bias *= 1.60;
+            }
+            if traits.playmaker() {
+                bias *= 1.40;
+            }
+        }
+        LongPass => {
+            if traits.visionary() {
+                bias *= 1.30;
+            }
+        }
+        ShortPass => {
+            if traits.playmaker() {
+                bias *= 1.12;
+            }
+        }
+        Cross => {
+            if traits.set_piece_specialist() {
+                bias *= 1.30;
+            }
+        }
+    }
+    bias
+}
+
 /// Pick what this player does with the ball.
-pub fn choose_action<R: Rng + ?Sized>(
+pub(crate) fn choose_action<R: Rng + ?Sized>(
     band: Band,
     role: PlayerRole,
+    traits: TraitFlags,
     own: &TacticsConfig,
     opponent: &TacticsConfig,
     rng: &mut R,
@@ -244,6 +319,7 @@ pub fn choose_action<R: Rng + ?Sized>(
     for entry in weights.iter_mut() {
         if entry.1 > 0.0 {
             entry.1 *= role_bias(role, entry.0)
+                * trait_bias(traits, entry.0)
                 * tactical_bias(own, band, entry.0)
                 * opposition_bias(opponent, entry.0);
         }
@@ -279,7 +355,14 @@ mod tests {
         let mut counts = std::collections::HashMap::new();
         for _ in 0..20_000 {
             *counts
-                .entry(choose_action(band, role, own, opponent, &mut rng))
+                .entry(choose_action(
+                    band,
+                    role,
+                    TraitFlags::none(),
+                    own,
+                    opponent,
+                    &mut rng,
+                ))
                 .or_insert(0) += 1;
         }
         counts
