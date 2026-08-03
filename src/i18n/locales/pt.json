@@ -2676,7 +2676,29 @@
     "yourResult": "O teu resultado",
     "continue": "Continuar",
     "notableUpset": "Grande surpresa",
-    "pts": "pts"
+    "pts": "pts",
+    "statTable": {
+      "player": "Jogador",
+      "rating": "Nota",
+      "goalsShort": "G",
+      "assistsShort": "A",
+      "shotsShort": "ReB/Re",
+      "passesShort": "Passes",
+      "xg": "xG",
+      "xa": "xA",
+      "xgFull": "Golos esperados",
+      "xaFull": "Assistências esperadas",
+      "distance": "km",
+      "distanceEstimated": "Distância percorrida (estimada)",
+      "distanceFootnote": "A distância percorrida é estimada a partir da função e da preparação de cada jogador, não medida.",
+      "passAccuracy": "Acerto no passe",
+      "unavailable": "As estatísticas deste jogo já não estão disponíveis.",
+      "loading": "A carregar estatísticas do jogo…",
+      "goalsFull": "Golos",
+      "assistsFull": "Assistências",
+      "shotsFull": "Remates à baliza / total de remates",
+      "passesFull": "Passes certos / tentados"
+    }
   },
   "endOfSeason": {
     "seasonComplete": "Época Completa",

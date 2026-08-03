@@ -2677,7 +2677,29 @@
     "yourResult": "Váš výsledek",
     "continue": "Pokračovat",
     "notableUpset": "Velké překvapení",
-    "pts": "b."
+    "pts": "b.",
+    "statTable": {
+      "player": "Hráč",
+      "rating": "Známka",
+      "goalsShort": "G",
+      "assistsShort": "A",
+      "shotsShort": "SnB/Str",
+      "passesShort": "Přihrávky",
+      "xg": "xG",
+      "xa": "xA",
+      "xgFull": "Očekávané góly",
+      "xaFull": "Očekávané asistence",
+      "distance": "km",
+      "distanceEstimated": "Naběhaná vzdálenost (odhad)",
+      "distanceFootnote": "Naběhaná vzdálenost se odhaduje z role a výdrže hráče, neměří se.",
+      "passAccuracy": "Přesnost přihrávek",
+      "unavailable": "Statistiky tohoto zápasu už nejsou k dispozici.",
+      "loading": "Načítání statistik zápasu…",
+      "goalsFull": "Góly",
+      "assistsFull": "Asistence",
+      "shotsFull": "Střely na bránu / střely celkem",
+      "passesFull": "Přesné / celkem přihrávek"
+    }
   },
   "endOfSeason": {
     "seasonComplete": "Sezóna dokončena",

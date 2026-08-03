@@ -2676,7 +2676,29 @@
     "yourResult": "Sizin Sonucunuz",
     "continue": "Devam Et",
     "notableUpset": "Dikkat Çeken Sürpriz",
-    "pts": "P"
+    "pts": "P",
+    "statTable": {
+      "player": "Oyuncu",
+      "rating": "Puan",
+      "goalsShort": "G",
+      "assistsShort": "A",
+      "shotsShort": "İsb/Şut",
+      "passesShort": "Pas",
+      "xg": "xG",
+      "xa": "xA",
+      "xgFull": "Beklenen gol",
+      "xaFull": "Beklenen asist",
+      "distance": "km",
+      "distanceEstimated": "Koşulan mesafe (tahmini)",
+      "distanceFootnote": "Koşulan mesafe, oyuncunun rolü ve dayanıklılığından tahmin edilir; ölçülmez.",
+      "passAccuracy": "Pas isabeti",
+      "unavailable": "Bu maçın istatistikleri artık mevcut değil.",
+      "loading": "Maç istatistikleri yükleniyor…",
+      "goalsFull": "Goller",
+      "assistsFull": "Asistler",
+      "shotsFull": "İsabetli şut / toplam şut",
+      "passesFull": "İsabetli / denenen pas"
+    }
   },
   "endOfSeason": {
     "seasonComplete": "Sezon Tamamlandı",

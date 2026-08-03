@@ -2676,7 +2676,29 @@
     "yourResult": "Dein Ergebnis",
     "continue": "Weiter",
     "notableUpset": "Überraschungsergebnis",
-    "pts": "Pkt."
+    "pts": "Pkt.",
+    "statTable": {
+      "player": "Spieler",
+      "rating": "Note",
+      "goalsShort": "T",
+      "assistsShort": "V",
+      "shotsShort": "SaT/Sch",
+      "passesShort": "Pässe",
+      "xg": "xG",
+      "xa": "xA",
+      "xgFull": "Erwartete Tore",
+      "xaFull": "Erwartete Vorlagen",
+      "distance": "km",
+      "distanceEstimated": "Laufleistung (geschätzt)",
+      "distanceFootnote": "Die Laufleistung wird aus Rolle und Ausdauer des Spielers geschätzt, nicht gemessen.",
+      "passAccuracy": "Passquote",
+      "unavailable": "Die Statistiken zu diesem Spiel sind nicht mehr verfügbar.",
+      "loading": "Spielstatistiken werden geladen…",
+      "goalsFull": "Tore",
+      "assistsFull": "Vorlagen",
+      "shotsFull": "Schüsse aufs Tor / Schüsse gesamt",
+      "passesFull": "Angekommene / gespielte Pässe"
+    }
   },
   "endOfSeason": {
     "seasonComplete": "Saison beendet",

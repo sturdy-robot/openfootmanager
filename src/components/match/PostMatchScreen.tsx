@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { GameStateData } from "../../store/gameStore";
 import {
   MatchSnapshot,
+  MatchStatsResponse,
   MatchEvent,
   getTeamTalkOptions,
   TeamTalkTone,
@@ -38,6 +39,12 @@ interface PostMatchScreenProps {
   importantEvents: MatchEvent[];
   onContinue: () => void;
   onFinish: () => void;
+}
+
+/** One side's share of a two-sided total, for a comparison bar. */
+function share(home: number, away: number): number {
+  const total = home + away;
+  return total > 0 ? (home / total) * 100 : 50;
 }
 
 type PostMatchTab = "teamTalk" | "matchReport" | "playerRatings" | "tactics";
@@ -92,6 +99,30 @@ export default function PostMatchScreen({
 }: PostMatchScreenProps) {
   const { t } = useTranslation();
   const teamTalkOptions = getTeamTalkOptions(t);
+  // Fetched once when the screen mounts. The per-minute snapshot deliberately
+  // does not carry this: assembling it walks the whole event log.
+  // Three states, not two: `undefined` while the request is in flight, `null`
+  // when it failed. Collapsing them told anyone who opened the tab promptly
+  // that their statistics were gone, when they were merely still coming.
+  const [matchStats, setMatchStats] = useState<
+    MatchStatsResponse | null | undefined
+  >(undefined);
+  useEffect(() => {
+    let cancelled = false;
+    invoke<MatchStatsResponse>("get_match_stats")
+      .then((stats) => {
+        if (!cancelled) setMatchStats(stats);
+      })
+      .catch(() => {
+        // The session is gone — the match was already finished elsewhere. The
+        // screen still renders everything it can read off the snapshot.
+        if (!cancelled) setMatchStats(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const [activeTab, setActiveTab] = useState<PostMatchTab>(
     !isSpectator && userSide ? "teamTalk" : "matchReport",
   );
@@ -612,11 +643,32 @@ export default function PostMatchScreen({
                     label={t("match.possession")}
                   />
                 </div>
+                {matchStats && (
+                  <QuickStat
+                    label={t("match.statTable.xgFull")}
+                    home={matchStats.home_xg.toFixed(2)}
+                    away={matchStats.away_xg.toFixed(2)}
+                    // Given explicitly: the values are formatted strings, and
+                    // without this the bar would sit at half regardless.
+                    homePct={share(matchStats.home_xg, matchStats.away_xg)}
+                  />
+                )}
                 <QuickStat
                   label={t("match.shots")}
                   home={homeShots}
                   away={awayShots}
                 />
+                {matchStats && (
+                  <QuickStat
+                    label={t("match.statTable.passAccuracy")}
+                    home={`${matchStats.home_pass_accuracy.toFixed(0)}%`}
+                    away={`${matchStats.away_pass_accuracy.toFixed(0)}%`}
+                    // No bar. These are two independent percentages, not two
+                    // halves of a total: normalising them would draw 84 against
+                    // 79 as a dead heat and 90 against 10 as nine-to-one.
+                    withoutBar
+                  />
+                )}
                 <QuickStat
                   label={t("match.fouls")}
                   home={countType(homeEvents, "Foul")}
@@ -701,17 +753,33 @@ export default function PostMatchScreen({
             role="tabpanel"
             aria-labelledby="tab-playerRatings"
             hidden={activeTab !== "playerRatings"}
-            className="grid grid-cols-2 gap-6"
+            className="grid grid-cols-1 lg:grid-cols-2 gap-6"
           >
-            {(["Home", "Away"] as const).map((side) => (
-              <PlayerRatingsPanel
-                key={side}
-                snapshot={snapshot}
-                side={side}
-                teamColor={side === "Home" ? homeTeamColor : awayTeamColor}
-                userSide={userSide}
-              />
-            ))}
+            {matchStats === undefined ? (
+              <p
+                aria-busy="true"
+                className="col-span-2 text-xs text-gray-600 dark:text-gray-400"
+              >
+                {t("match.statTable.loading")}
+              </p>
+            ) : matchStats === null ? (
+              <p className="col-span-2 text-xs text-gray-600 dark:text-gray-400">
+                {t("match.statTable.unavailable")}
+              </p>
+            ) : (
+              (["Home", "Away"] as const).map((side) => (
+                <PlayerRatingsPanel
+                  key={side}
+                  stats={matchStats.players}
+                  side={side}
+                  teamName={
+                    side === "Home" ? snapshot.home_team.name : snapshot.away_team.name
+                  }
+                  teamColor={side === "Home" ? homeTeamColor : awayTeamColor}
+                  userSide={userSide}
+                />
+              ))
+            )}
           </div>
 
           {/* Tactics Tab */}

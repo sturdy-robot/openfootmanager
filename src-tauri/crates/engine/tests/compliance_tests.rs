@@ -297,7 +297,7 @@ fn golden_report_is_unchanged() {
     let actual = hasher.finish();
 
     // Pinned behaviour fingerprint. See the doc comment before changing.
-    const GOLDEN: u64 = 0xbac5_6c83_ff85_8caa;
+    const GOLDEN: u64 = 0x9bea_a33f_e1e4_772d;
 
     assert_eq!(
         actual, GOLDEN,
@@ -341,7 +341,7 @@ fn golden_report_is_unchanged_with_instructions() {
     let actual = hasher.finish();
 
     // Pinned behaviour fingerprint. See `golden_report_is_unchanged`.
-    const GOLDEN_WITH_INSTRUCTIONS: u64 = 0x7178_dede_fc9c_55ff;
+    const GOLDEN_WITH_INSTRUCTIONS: u64 = 0xbe58_6616_30de_36fc;
 
     assert_eq!(
         actual, GOLDEN_WITH_INSTRUCTIONS,

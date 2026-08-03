@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import PostMatchScreen, { computeGoalSources } from "./PostMatchScreen";
@@ -6,9 +6,59 @@ import type { GameStateData } from "../../store/gameStore";
 import type { MatchEvent } from "./types";
 import { ThemeProvider } from "../../context/ThemeContext";
 
+// The real `invoke` always returns a promise. A bare `vi.fn()` returns
+// undefined, which is not what the component is written against — and a mock
+// that cannot fail the way production does is worse than no mock.
 vi.mock("@tauri-apps/api/core", () => ({
-  invoke: vi.fn(),
+  invoke: vi.fn(() => Promise.resolve(matchStatsFixture)),
 }));
+
+const statsRow = (
+  player_id: string,
+  name: string,
+  side: "Home" | "Away",
+  overrides: Record<string, number> = {},
+) => ({
+  player_id,
+  name,
+  side,
+  position: "Forward",
+  rating: 7.2,
+  minutes_played: 90,
+  goals: 0,
+  assists: 0,
+  shots: 2,
+  shots_on_target: 1,
+  passes_completed: 30,
+  passes_attempted: 35,
+  tackles_won: 1,
+  interceptions: 2,
+  fouls_committed: 0,
+  xg: 0.21,
+  xa: 0.08,
+  xt: 0.44,
+  distance_km: 10.2,
+  ...overrides,
+});
+
+const matchStatsFixture = {
+  home_xg: 1.84,
+  away_xg: 0.92,
+  home_shots: 14,
+  away_shots: 8,
+  home_shots_on_target: 6,
+  away_shots_on_target: 3,
+  home_fouls: 11,
+  away_fouls: 13,
+  home_corners: 6,
+  away_corners: 3,
+  home_pass_accuracy: 84.2,
+  away_pass_accuracy: 79.5,
+  players: [
+    statsRow("p1", "Haaland", "Home", { goals: 2, rating: 8.6 }),
+    statsRow("p2", "Mbappe", "Away", { goals: 1, rating: 7.8 }),
+  ],
+};
 
 Object.defineProperty(window, "matchMedia", {
   writable: true,
@@ -695,5 +745,98 @@ describe("computeGoalSources", function (): void {
     expect(computeGoalSources(events, "Home")).toEqual({
       openPlay: 0, corners: 0, freekicks: 0, penalties: 1,
     });
+  });
+});
+
+describe("PostMatchScreen player ratings", () => {
+  const showRatings = async () => {
+    render(
+      <ThemeProvider>
+        <PostMatchScreen
+          snapshot={makeSnapshot()}
+          gameState={makeGameState()}
+          userSide="Home"
+          isSpectator={false}
+          importantEvents={[]}
+          onContinue={() => {}}
+          onFinish={() => {}}
+        />
+      </ThemeProvider>,
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "match.playerRatings" }));
+    // Queried by role on purpose: the point of this panel is that it is a
+    // table with named columns, and a text query would still pass if it were
+    // reverted to a grid of divs.
+    // eslint-disable-next-line no-console
+    return await screen.findByRole("table", { name: /match\.ratings.*Alpha/ });
+  };
+
+  it("shows the rating the engine computed, not one derived in the browser", async () => {
+    const table = await showRatings();
+    // 8.6 comes from the fixture, i.e. from the backend. The panel this
+    // replaced recomputed ratings from the event log and could not have
+    // produced it — and the engine's is the number that moves squad morale.
+    const row = within(table).getByRole("rowheader", { name: /Haaland/ });
+    expect(within(row.closest("tr")!).getByText("8.6")).toBeInTheDocument();
+  });
+
+  it("gives every column a header a screen reader can read", async () => {
+    const table = await showRatings();
+    for (const name of [
+      "match.statTable.player",
+      "match.statTable.rating",
+      "match.statTable.goalsShort",
+      "match.statTable.xg",
+      "match.statTable.xa",
+      "match.statTable.distance",
+    ]) {
+      expect(
+        within(table).getByRole("columnheader", { name }),
+      ).toBeInTheDocument();
+    }
+  });
+
+  it("shows expected goals and assists per player", async () => {
+    const table = await showRatings();
+    const row = within(table).getByRole("rowheader", { name: /Haaland/ }).closest("tr")!;
+    expect(within(row).getByText("0.21")).toBeInTheDocument();
+    expect(within(row).getByText("0.08")).toBeInTheDocument();
+  });
+
+  it("marks distance covered as an estimate", async () => {
+    await showRatings();
+    // Derived from role and stamina; it must never read as measured.
+    expect(
+      screen.getAllByText("match.statTable.distanceFootnote").length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("keeps a player who is no longer in the eleven", async () => {
+    // The backend resolves names and sides, so someone substituted off still
+    // has a row — a join against the current XI would silently drop him.
+    await showRatings();
+    const away = screen.getByRole("table", { name: /match\.ratings.*Beta/ });
+    expect(
+      within(away).getByRole("rowheader", { name: /Mbappe/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("says it is loading rather than claiming the stats are gone", async () => {
+    // `null` used to mean both "still fetching" and "failed", so opening the
+    // tab promptly told the user their statistics no longer existed.
+    render(
+      <ThemeProvider>
+        <PostMatchScreen
+          snapshot={makeSnapshot()}
+          gameState={makeGameState()}
+          userSide="Home"
+          isSpectator={false}
+          importantEvents={[]}
+          onContinue={() => {}}
+          onFinish={() => {}}
+        />
+      </ThemeProvider>,
+    );
+    expect(screen.getByText("match.statTable.loading")).toBeInTheDocument();
   });
 });

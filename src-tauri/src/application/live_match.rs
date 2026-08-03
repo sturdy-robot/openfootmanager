@@ -310,6 +310,125 @@ pub fn apply_match_command(
     Ok(snapshot)
 }
 
+/// One player's afternoon, ready to render.
+///
+/// The name and side are resolved here rather than left for the frontend to
+/// join against the current eleven. A player substituted off at the hour is no
+/// longer in `team.players`, so a join on that would quietly drop him — along
+/// with his goal and the four kilometres he ran.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MatchPlayerStatsRow {
+    pub player_id: String,
+    pub name: String,
+    pub side: String,
+    pub position: String,
+    pub rating: f32,
+    pub minutes_played: u8,
+    pub goals: u8,
+    pub assists: u8,
+    pub shots: u8,
+    pub shots_on_target: u8,
+    pub passes_completed: u8,
+    pub passes_attempted: u8,
+    pub tackles_won: u8,
+    pub interceptions: u8,
+    pub fouls_committed: u8,
+    pub xg: f32,
+    pub xa: f32,
+    pub xt: f32,
+    /// Estimated, not simulated. The engine has no model of off-ball movement.
+    pub distance_km: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MatchStatsResponse {
+    pub home_xg: f32,
+    pub away_xg: f32,
+    pub home_shots: u16,
+    pub away_shots: u16,
+    pub home_shots_on_target: u16,
+    pub away_shots_on_target: u16,
+    pub home_fouls: u16,
+    pub away_fouls: u16,
+    pub home_corners: u16,
+    pub away_corners: u16,
+    pub home_pass_accuracy: f64,
+    pub away_pass_accuracy: f64,
+    pub players: Vec<MatchPlayerStatsRow>,
+}
+
+/// Everything the post-match screen needs that the per-minute snapshot does not
+/// carry.
+///
+/// A one-shot request on purpose. Assembling this walks the whole event log —
+/// some sixteen hundred entries by full time — so it must not be folded into
+/// `get_match_snapshot`, which the live screen calls every minute.
+pub fn get_match_stats(state: &StateManager) -> Result<MatchStatsResponse, String> {
+    log::debug!("[cmd] get_match_stats");
+    let report = state
+        .with_live_match(|session| session.report())
+        .ok_or_else(|| "be.error.noActiveLiveMatch".to_string())?;
+    let snapshot = state
+        .with_live_match(|session| session.snapshot())
+        .ok_or_else(|| "be.error.noActiveLiveMatch".to_string())?;
+
+    // Everyone who played, including anyone taken off — they are on the bench
+    // now, but the afternoon still happened.
+    let mut players = Vec::new();
+    for (side, team, bench) in [
+        ("Home", &snapshot.home_team, &snapshot.home_bench),
+        ("Away", &snapshot.away_team, &snapshot.away_bench),
+    ] {
+        for player in team.players.iter().chain(bench.iter()) {
+            let Some(stats) = report.player_stats.get(&player.id) else {
+                continue;
+            };
+            if stats.minutes_played == 0 {
+                // An unused substitute has no performance to show, and padding
+                // the list with elevens of zeroes buries the players who played.
+                continue;
+            }
+            players.push(MatchPlayerStatsRow {
+                player_id: player.id.clone(),
+                name: player.name.clone(),
+                side: side.to_string(),
+                position: format!("{:?}", player.position),
+                rating: stats.rating,
+                minutes_played: stats.minutes_played,
+                goals: stats.goals,
+                assists: stats.assists,
+                shots: stats.shots,
+                shots_on_target: stats.shots_on_target,
+                passes_completed: stats.passes_completed,
+                passes_attempted: stats.passes_attempted,
+                tackles_won: stats.tackles_won,
+                interceptions: stats.interceptions,
+                fouls_committed: stats.fouls_committed,
+                xg: stats.xg,
+                xa: stats.xa,
+                xt: stats.xt,
+                distance_km: stats.distance_km,
+            });
+        }
+    }
+
+    Ok(MatchStatsResponse {
+        home_xg: report.home_stats.xg,
+        away_xg: report.away_stats.xg,
+        home_shots: report.home_stats.shots,
+        away_shots: report.away_stats.shots,
+        home_shots_on_target: report.home_stats.shots_on_target,
+        away_shots_on_target: report.away_stats.shots_on_target,
+        home_fouls: report.home_stats.fouls,
+        away_fouls: report.away_stats.fouls,
+        home_corners: report.home_stats.corners,
+        away_corners: report.away_stats.corners,
+        home_pass_accuracy: report.home_stats.pass_accuracy(),
+        away_pass_accuracy: report.away_stats.pass_accuracy(),
+        players,
+    })
+}
+
 pub fn get_match_snapshot(state: &StateManager) -> Result<engine::MatchSnapshot, String> {
     log::debug!("[cmd] get_match_snapshot");
     let snapshot = state

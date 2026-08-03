@@ -2676,7 +2676,29 @@
     "yourResult": "Ваш результат",
     "continue": "Продолжить",
     "notableUpset": "Неожиданный результат",
-    "pts": "очк."
+    "pts": "очк.",
+    "statTable": {
+      "player": "Игрок",
+      "rating": "Оценка",
+      "goalsShort": "Г",
+      "assistsShort": "П",
+      "shotsShort": "УдС/Уд",
+      "passesShort": "Пасы",
+      "xg": "xG",
+      "xa": "xA",
+      "xgFull": "Ожидаемые голы",
+      "xaFull": "Ожидаемые передачи",
+      "distance": "км",
+      "distanceEstimated": "Пройденная дистанция (оценка)",
+      "distanceFootnote": "Пройденная дистанция оценивается по роли и выносливости игрока, а не измеряется.",
+      "passAccuracy": "Точность передач",
+      "unavailable": "Статистика этого матча больше недоступна.",
+      "loading": "Загрузка статистики матча…",
+      "goalsFull": "Голы",
+      "assistsFull": "Передачи",
+      "shotsFull": "Удары в створ / всего ударов",
+      "passesFull": "Точные / всего передач"
+    }
   },
   "endOfSeason": {
     "seasonComplete": "Сезон завершён",

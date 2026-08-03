@@ -2676,7 +2676,29 @@
     "yourResult": "你的成绩",
     "continue": "继续",
     "notableUpset": "重大爆冷",
-    "pts": "分"
+    "pts": "分",
+    "statTable": {
+      "player": "球员",
+      "rating": "评分",
+      "goalsShort": "进球",
+      "assistsShort": "助攻",
+      "shotsShort": "射正/射门",
+      "passesShort": "传球",
+      "xg": "xG",
+      "xa": "xA",
+      "xgFull": "预期进球",
+      "xaFull": "预期助攻",
+      "distance": "公里",
+      "distanceEstimated": "跑动距离（估算）",
+      "distanceFootnote": "跑动距离根据球员的位置职责和体能推算，并非实测。",
+      "passAccuracy": "传球成功率",
+      "unavailable": "该场比赛的数据已不可用。",
+      "loading": "正在加载比赛数据…",
+      "goalsFull": "进球",
+      "assistsFull": "助攻",
+      "shotsFull": "射正 / 总射门",
+      "passesFull": "传球成功 / 传球次数"
+    }
   },
   "endOfSeason": {
     "seasonComplete": "赛季结束",

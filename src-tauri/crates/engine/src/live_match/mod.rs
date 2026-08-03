@@ -406,7 +406,24 @@ impl LiveMatchState {
     }
 
     /// Convert the finished match into a MatchReport.
+    /// Build the match report without consuming the match.
+    ///
+    /// The post-match screen wants everything the report holds while the
+    /// session is still live, so this borrows. It walks the whole event log, so
+    /// it is a one-shot request and emphatically not something to call once a
+    /// minute — [`snapshot`](Self::snapshot) is the cheap per-minute view.
+    pub fn report(&self) -> MatchReport {
+        self.build_report(self.events.clone())
+    }
+
     pub fn into_report(self) -> MatchReport {
+        let events = self.events.clone();
+        self.build_report(events)
+    }
+
+    /// The one place a report is assembled, so the borrowing and the consuming
+    /// entry points can never drift apart.
+    fn build_report(&self, events: Vec<MatchEvent>) -> MatchReport {
         let tracked_player_ids = self
             .home
             .players
@@ -419,7 +436,7 @@ impl LiveMatchState {
         let away_metrics = self.away_metrics.by_id(|index| self.away_cache.id(index));
 
         let mut report = MatchReport::from_events_with_players(
-            self.events,
+            events,
             self.home_possession_ticks,
             self.away_possession_ticks,
             self.current_minute,

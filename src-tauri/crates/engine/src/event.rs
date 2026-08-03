@@ -86,7 +86,9 @@ pub enum EventType {
 /// Truthful, engine-derived qualifiers used to colour commentary.
 /// Every variant carries only values the engine already computes, so prose
 /// built from it never claims something that was not simulated.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+// No `Eq`: expected goals is a float. Every comparison on this is an equality
+// check in a test, which `PartialEq` covers.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum EventDetail {
     Shot {
         danger: DangerBand,
@@ -94,11 +96,20 @@ pub enum EventDetail {
         /// before techniques existed still reads.
         #[serde(default)]
         technique: ShotTechnique,
+        /// What the chance was worth, valued with a reference finisher.
+        ///
+        /// Carried on the event so the match feed can plot how danger built up
+        /// over ninety minutes. The per-player totals live in the report; this
+        /// is the same number, attached to the moment it happened.
+        #[serde(default)]
+        xg: f32,
     },
     Save {
         quality: SaveQuality,
         #[serde(default)]
         technique: ShotTechnique,
+        #[serde(default)]
+        xg: f32,
     },
     Foul {
         severity: FoulSeverity,
@@ -107,6 +118,8 @@ pub enum EventDetail {
         context: GoalContext,
         #[serde(default)]
         technique: ShotTechnique,
+        #[serde(default)]
+        xg: f32,
     },
 }
 
@@ -234,6 +247,7 @@ mod tests {
             .with_detail(EventDetail::Goal {
                 context: GoalContext::Equaliser,
                 technique: ShotTechnique::Volley,
+                xg: 0.24,
             });
         let json = serde_json::to_string(&evt).unwrap();
         let back: MatchEvent = serde_json::from_str(&json).unwrap();
@@ -242,6 +256,7 @@ mod tests {
             Some(EventDetail::Goal {
                 context: GoalContext::Equaliser,
                 technique: ShotTechnique::Volley,
+                xg: 0.24,
             })
         );
     }
@@ -260,6 +275,7 @@ mod tests {
             Some(EventDetail::Goal {
                 context: GoalContext::Equaliser,
                 technique: ShotTechnique::Simple,
+                xg: 0.0,
             })
         );
     }

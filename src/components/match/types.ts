@@ -267,3 +267,48 @@ export const PLAY_STYLES = [
   "Counter",
   "HighPress",
 ] as const;
+
+/**
+ * One player's afternoon, as the engine recorded it.
+ *
+ * Fetched once when the match ends rather than carried on the per-minute
+ * snapshot: assembling it walks the whole event log.
+ */
+export interface MatchPlayerStatsRow {
+  player_id: string;
+  name: string;
+  side: "Home" | "Away";
+  position: string;
+  rating: number;
+  minutes_played: number;
+  goals: number;
+  assists: number;
+  shots: number;
+  shots_on_target: number;
+  passes_completed: number;
+  passes_attempted: number;
+  tackles_won: number;
+  interceptions: number;
+  fouls_committed: number;
+  xg: number;
+  xa: number;
+  xt: number;
+  /** Estimated from role and stamina, not simulated. */
+  distance_km: number;
+}
+
+export interface MatchStatsResponse {
+  home_xg: number;
+  away_xg: number;
+  home_shots: number;
+  away_shots: number;
+  home_shots_on_target: number;
+  away_shots_on_target: number;
+  home_fouls: number;
+  away_fouls: number;
+  home_corners: number;
+  away_corners: number;
+  home_pass_accuracy: number;
+  away_pass_accuracy: number;
+  players: MatchPlayerStatsRow[];
+}

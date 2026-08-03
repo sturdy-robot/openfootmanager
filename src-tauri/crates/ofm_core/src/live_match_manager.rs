@@ -286,6 +286,14 @@ impl LiveMatchSession {
         self.match_state.snapshot()
     }
 
+    /// The full match report, without ending the match.
+    ///
+    /// One-shot: it walks the whole event log. `snapshot` is the cheap
+    /// per-minute view.
+    pub fn report(&self) -> engine::MatchReport {
+        self.match_state.report()
+    }
+
     /// Apply a user command.
     ///
     /// This is the funnel for *human* decisions only — the in-match AI calls

@@ -484,6 +484,7 @@ impl LiveMatchState {
             let detail = EventDetail::Shot {
                 danger: danger_band(shoot_rating),
                 technique,
+                xg: xg as f32,
             };
             if rng.random_range(0.0..1.0f64) < 0.4 {
                 let evt = MatchEvent::new(minute, EventType::ShotBlocked, att_side, zone)
@@ -532,7 +533,11 @@ impl LiveMatchState {
             let evt = MatchEvent::new(minute, EventType::Goal, att_side, zone)
                 .with_player(shooter.id.clone())
                 .with_secondary(assister.id.clone())
-                .with_detail(EventDetail::Goal { context, technique });
+                .with_detail(EventDetail::Goal {
+                    context,
+                    technique,
+                    xg: xg as f32,
+                });
             self.events.push(evt.clone());
             events.push(evt);
             self.add_goal(att_side);
@@ -544,6 +549,7 @@ impl LiveMatchState {
                 .with_detail(EventDetail::Save {
                     quality: save_quality(gk_rating),
                     technique,
+                    xg: xg as f32,
                 });
             self.events.push(evt.clone());
             events.push(evt);

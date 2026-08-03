@@ -2695,7 +2695,29 @@
     "yourResult": "Il tuo risultato",
     "continue": "Continua",
     "notableUpset": "Sorpresa del turno",
-    "pts": "pts."
+    "pts": "pts.",
+    "statTable": {
+      "player": "Giocatore",
+      "rating": "Voto",
+      "goalsShort": "G",
+      "assistsShort": "A",
+      "shotsShort": "TiP/Tiri",
+      "passesShort": "Passaggi",
+      "xg": "xG",
+      "xa": "xA",
+      "xgFull": "Gol attesi",
+      "xaFull": "Assist attesi",
+      "distance": "km",
+      "distanceEstimated": "Distanza percorsa (stimata)",
+      "distanceFootnote": "La distanza percorsa è stimata dal ruolo e dalla resistenza di ogni giocatore, non è misurata.",
+      "passAccuracy": "Precisione nei passaggi",
+      "unavailable": "Le statistiche di questa partita non sono più disponibili.",
+      "loading": "Caricamento statistiche della partita…",
+      "goalsFull": "Gol",
+      "assistsFull": "Assist",
+      "shotsFull": "Tiri in porta / tiri totali",
+      "passesFull": "Passaggi riusciti / tentati"
+    }
   },
   "notifications": {
     "attentionRequired": "Attenzione Richiesta",

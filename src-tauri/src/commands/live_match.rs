@@ -9,7 +9,8 @@ pub use crate::application::live_match::FinishLiveMatchResponse;
 use crate::application::live_match::{
     apply_match_command as apply_match_command_service,
     finish_live_match as finish_live_match_service,
-    get_match_snapshot as get_match_snapshot_service, start_live_match as start_live_match_service,
+    MatchStatsResponse, get_match_snapshot as get_match_snapshot_service,
+    get_match_stats as get_match_stats_service, start_live_match as start_live_match_service,
     step_live_match as step_live_match_service,
 };
 use crate::application::team_talk::apply_team_talk as apply_team_talk_service;
@@ -103,6 +104,20 @@ pub fn get_match_snapshot(
     state: State<'_, Arc<StateManager>>,
 ) -> Result<engine::MatchSnapshot, String> {
     get_match_snapshot_service(&state)
+}
+
+/// Everything the post-match screen shows that the per-minute snapshot does not
+/// carry: real player ratings, per-player counting stats, and the advanced
+/// numbers the engine now keeps.
+///
+/// Deliberately its own command rather than a field on the snapshot. Building
+/// it walks the whole event log, and the live screen asks for a snapshot every
+/// minute.
+#[tauri::command]
+pub fn get_match_stats(
+    state: State<'_, Arc<StateManager>>,
+) -> Result<MatchStatsResponse, String> {
+    get_match_stats_service(&state)
 }
 
 /// Finish the live match: generate report, update game state, clean up.

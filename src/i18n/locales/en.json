@@ -2676,7 +2676,29 @@
     "yourResult": "Your Result",
     "continue": "Continue",
     "notableUpset": "Notable Upset",
-    "pts": "pts"
+    "pts": "pts",
+    "statTable": {
+      "player": "Player",
+      "rating": "Rating",
+      "goalsShort": "G",
+      "assistsShort": "A",
+      "shotsShort": "SoT/Sh",
+      "passesShort": "Pass",
+      "xg": "xG",
+      "xa": "xA",
+      "xgFull": "Expected goals",
+      "xaFull": "Expected assists",
+      "distance": "km",
+      "distanceEstimated": "Distance covered (estimated)",
+      "distanceFootnote": "Distance covered is estimated from each player's role and stamina, not tracked.",
+      "passAccuracy": "Pass accuracy",
+      "unavailable": "Match statistics are no longer available for this game.",
+      "loading": "Loading match statistics…",
+      "goalsFull": "Goals",
+      "assistsFull": "Assists",
+      "shotsFull": "Shots on target / total shots",
+      "passesFull": "Passes completed / attempted"
+    }
   },
   "endOfSeason": {
     "seasonComplete": "Season Complete",

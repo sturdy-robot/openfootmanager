@@ -24,7 +24,10 @@
     "worldEditor.playerId",
     "worldEditor.competitionId",
     "worldEditor.teamId",
-    "worldEditor.staffId"
+    "worldEditor.staffId",
+    "match.statTable.xg",
+    "match.statTable.xa",
+    "match.statTable.distance"
   ],
   "de": [
     "nations.eng",
@@ -323,7 +326,9 @@
     "worldEditor.sectionStaff",
     "worldEditor.staffClub",
     "worldEditor.staffRole.Scout",
-    "worldEditor.staffSpecialization.Fitness"
+    "worldEditor.staffSpecialization.Fitness",
+    "match.statTable.goalsShort",
+    "match.statTable.assistsShort"
   ],
   "es": [
     "nations.pt",
@@ -383,7 +388,9 @@
     "worldEditor.playerClub",
     "worldEditor.competitionSelector",
     "worldEditor.staffClub",
-    "worldEditor.staffSpecialization.Fitness"
+    "worldEditor.staffSpecialization.Fitness",
+    "match.statTable.goalsShort",
+    "match.statTable.assistsShort"
   ],
   "pt-BR": [
     "nations.pt",
@@ -426,7 +433,9 @@
     "match.phases.Finished",
     "match.commentary.Goal.hattrick.headline",
     "squad.kitPatterns.Diagonal",
-    "packageBuild.patches"
+    "packageBuild.patches",
+    "match.statTable.goalsShort",
+    "match.statTable.assistsShort"
   ],
   "pt": [
     "nations.pt",
@@ -467,7 +476,9 @@
     "match.phases.Finished",
     "match.commentary.Goal.hattrick.headline",
     "squad.kitPatterns.Diagonal",
-    "packageBuild.patches"
+    "packageBuild.patches",
+    "match.statTable.goalsShort",
+    "match.statTable.assistsShort"
   ],
   "ru": [
     "dashboard.recapTransferLine"
@@ -512,7 +523,9 @@
     "nations.gt",
     "nations.sv",
     "nations.sn",
-    "worldEditor.competitionFormat"
+    "worldEditor.competitionFormat",
+    "match.statTable.goalsShort",
+    "match.statTable.assistsShort"
   ],
   "cs": [
     "dashboard.recapTransferLine",
@@ -560,6 +573,8 @@
     "nations.gh",
     "worldEditor.competitionSelectorRegion",
     "worldEditor.staffRole.label",
-    "worldSelect.packageAuthor"
+    "worldSelect.packageAuthor",
+    "match.statTable.goalsShort",
+    "match.statTable.assistsShort"
   ]
 }

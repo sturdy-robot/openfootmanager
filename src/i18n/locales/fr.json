@@ -2676,7 +2676,29 @@
     "yourResult": "Votre résultat",
     "continue": "Continuer",
     "notableUpset": "Résultat surprise",
-    "pts": "pts"
+    "pts": "pts",
+    "statTable": {
+      "player": "Joueur",
+      "rating": "Note",
+      "goalsShort": "B",
+      "assistsShort": "PD",
+      "shotsShort": "TC/Tirs",
+      "passesShort": "Passes",
+      "xg": "xG",
+      "xa": "xA",
+      "xgFull": "Buts attendus",
+      "xaFull": "Passes décisives attendues",
+      "distance": "km",
+      "distanceEstimated": "Distance parcourue (estimée)",
+      "distanceFootnote": "La distance parcourue est estimée d'après le rôle et l'endurance de chaque joueur, elle n'est pas mesurée.",
+      "passAccuracy": "Précision des passes",
+      "unavailable": "Les statistiques de ce match ne sont plus disponibles.",
+      "loading": "Chargement des statistiques du match…",
+      "goalsFull": "Buts",
+      "assistsFull": "Passes décisives",
+      "shotsFull": "Tirs cadrés / tirs totaux",
+      "passesFull": "Passes réussies / tentées"
+    }
   },
   "endOfSeason": {
     "seasonComplete": "Saison Terminée",

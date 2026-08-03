@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { MatchSnapshot, MatchEvent } from "./types";
+import { MatchSnapshot, MatchEvent, MatchPlayerStatsRow } from "./types";
 import { getPlayerName } from "./helpers";
 import { Badge } from "../ui";
 import { Circle, Star } from "lucide-react";
@@ -14,11 +14,15 @@ export function QuickStat({
   home,
   away,
   homePct,
+  withoutBar,
 }: {
   label: string;
   home: number | string;
   away: number | string;
   homePct?: number;
+  /// For stats that are not two shares of one total — two independent
+  /// percentages, say — where a proportion bar would state something untrue.
+  withoutBar?: boolean;
 }) {
   const hv = typeof home === "number" ? home : 0;
   const av = typeof away === "number" ? away : 0;
@@ -38,13 +42,18 @@ export function QuickStat({
           {away}
         </span>
       </div>
-      <div className="flex h-1 bg-gray-300 dark:bg-navy-700 rounded-full overflow-hidden transition-colors duration-300">
-        <div className="h-full bg-primary-500" style={{ width: `${pct}%` }} />
+      {!withoutBar && (
         <div
-          className="h-full bg-indigo-500"
-          style={{ width: `${100 - pct}%` }}
-        />
-      </div>
+          aria-hidden="true"
+          className="flex h-1 bg-gray-300 dark:bg-navy-700 rounded-full overflow-hidden transition-colors duration-300"
+        >
+          <div className="h-full bg-primary-500" style={{ width: `${pct}%` }} />
+          <div
+            className="h-full bg-indigo-500"
+            style={{ width: `${100 - pct}%` }}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -100,73 +109,34 @@ export function renderScorers(
 // ---------------------------------------------------------------------------
 
 export function PlayerRatingsPanel({
-  snapshot,
+  stats,
   side,
+  teamName,
   teamColor,
   userSide,
 }: {
-  snapshot: MatchSnapshot;
+  stats: MatchPlayerStatsRow[];
   side: "Home" | "Away";
+  teamName: string;
   teamColor: string;
   userSide: "Home" | "Away" | null;
 }) {
   const { t } = useTranslation();
-  const team = side === "Home" ? snapshot.home_team : snapshot.away_team;
-  const ratings: Record<string, number> = {};
-  team.players.forEach((p) => {
-    ratings[p.id] = 6.0;
-  });
-  snapshot.events.forEach((evt) => {
-    if (evt.side !== side || !evt.player_id) return;
-    if (!ratings[evt.player_id] && ratings[evt.player_id] !== 0) return;
-    if (evt.event_type === "Goal" || evt.event_type === "PenaltyGoal")
-      ratings[evt.player_id] = (ratings[evt.player_id] || 6) + 1.2;
-    else if (evt.event_type === "ShotSaved")
-      ratings[evt.player_id] = (ratings[evt.player_id] || 6) + 0.2;
-    else if (evt.event_type === "ShotOffTarget")
-      ratings[evt.player_id] = (ratings[evt.player_id] || 6) - 0.1;
-    else if (evt.event_type === "PassCompleted")
-      ratings[evt.player_id] = (ratings[evt.player_id] || 6) + 0.02;
-    else if (evt.event_type === "Tackle" || evt.event_type === "Interception")
-      ratings[evt.player_id] = (ratings[evt.player_id] || 6) + 0.15;
-    else if (evt.event_type === "Foul")
-      ratings[evt.player_id] = (ratings[evt.player_id] || 6) - 0.2;
-    else if (
-      evt.event_type === "YellowCard" ||
-      evt.event_type === "SecondYellow"
-    )
-      ratings[evt.player_id] = (ratings[evt.player_id] || 6) - 0.5;
-    else if (evt.event_type === "RedCard")
-      ratings[evt.player_id] = (ratings[evt.player_id] || 6) - 1.5;
-    if (
-      evt.secondary_player_id &&
-      ratings[evt.secondary_player_id] !== undefined
-    ) {
-      if (evt.event_type === "Goal" || evt.event_type === "PenaltyGoal")
-        ratings[evt.secondary_player_id] += 0.7;
-    }
-  });
-  const won =
-    (side === "Home" && snapshot.home_score > snapshot.away_score) ||
-    (side === "Away" && snapshot.away_score > snapshot.home_score);
-  if (won)
-    Object.keys(ratings).forEach((id) => {
-      ratings[id] += 0.5;
-    });
-  Object.keys(ratings).forEach((id) => {
-    ratings[id] = Math.max(1, Math.min(10, ratings[id]));
-  });
-  const sorted = team.players
-    .map((p) => ({ ...p, rating: Math.round(ratings[p.id] * 10) / 10 }))
+  // Ratings come from the engine now. They used to be recomputed here from the
+  // event log, which meant the number a player saw and the number that moved
+  // his squad's morale were produced by two different models — and only the
+  // engine's reaches the save.
+  const sorted = [...stats]
+    .filter((row) => row.side === side)
     .sort((a, b) => b.rating - a.rating);
   const motm = sorted[0];
 
   return (
-    <div className="bg-white dark:bg-navy-800 rounded-xl border border-gray-200 dark:border-navy-700 shadow-sm p-4 transition-colors duration-300">
+    <div className="min-w-0 bg-white dark:bg-navy-800 rounded-xl border border-gray-200 dark:border-navy-700 shadow-sm p-4 transition-colors duration-300">
       <div className="flex items-center gap-2 mb-3">
         <Star className="w-4 h-4 text-accent-700 dark:text-accent-400" />
         <h3 className="text-xs font-heading font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
-          {t("match.ratings", { team: team.name })}
+          {t("match.ratings", { team: teamName })}
         </h3>
         <div
           className="w-2 h-2 rounded-full ml-auto"
@@ -188,34 +158,121 @@ export function PlayerRatingsPanel({
           </div>
         </div>
       )}
-      <div className="flex flex-col gap-0.5 max-h-40 overflow-auto">
-        {sorted.map((p) => (
-          <div
-            key={p.id}
-            className="flex items-center gap-2 px-1 py-0.5 text-xs"
-          >
-            <span
-              className={`font-heading font-bold tabular-nums w-8 ${
-                p.rating >= 8
-                  ? "text-accent-700 dark:text-accent-400"
-                  : p.rating >= 7
-                    ? "text-green-700 dark:text-green-400"
-                  : p.rating >= 6
-                      ? "text-gray-600 dark:text-gray-300"
-                  : p.rating >= 5
-                        ? "text-yellow-700 dark:text-yellow-400"
-                        : "text-red-400"
-              }`}
-            >
-              {p.rating.toFixed(1)}
-            </span>
-            <span className="text-gray-600 dark:text-gray-400 truncate flex-1">{p.name}</span>
-            <span className="text-gray-600 dark:text-gray-500 text-[10px] font-heading uppercase">
-              {translatePositionAbbreviation(t, p.position)}
-            </span>
-          </div>
-        ))}
+      {/* Focusable so a keyboard user can actually reach the columns that are
+          off-screen when the panel is narrow. A scroll container with nothing
+          tabbable inside it is unreachable without a pointer. */}
+      <div
+        className="overflow-x-auto focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-navy-800 rounded"
+        tabIndex={0}
+        role="region"
+        aria-label={t("match.ratings", { team: teamName })}
+      >
+        <table className="w-full text-xs">
+          <caption className="sr-only">
+            {t("match.ratings", { team: teamName })}
+          </caption>
+          <thead>
+            <tr className="text-gray-500 dark:text-gray-400 font-heading uppercase tracking-wider text-[10px]">
+              <th scope="col" className="text-left font-bold py-1 pr-2">
+                {t("match.statTable.player")}
+              </th>
+              <th scope="col" className="text-right font-bold py-1 px-1">
+                {t("match.statTable.rating")}
+              </th>
+              <th scope="col" className="text-right font-bold py-1 px-1">
+                <abbr title={t("match.statTable.goalsFull")} className="no-underline">
+                  {t("match.statTable.goalsShort")}
+                </abbr>
+              </th>
+              <th scope="col" className="text-right font-bold py-1 px-1">
+                <abbr title={t("match.statTable.assistsFull")} className="no-underline">
+                  {t("match.statTable.assistsShort")}
+                </abbr>
+              </th>
+              <th scope="col" className="text-right font-bold py-1 px-1">
+                <abbr title={t("match.statTable.shotsFull")} className="no-underline">
+                  {t("match.statTable.shotsShort")}
+                </abbr>
+              </th>
+              <th scope="col" className="text-right font-bold py-1 px-1">
+                <abbr title={t("match.statTable.passesFull")} className="no-underline">
+                  {t("match.statTable.passesShort")}
+                </abbr>
+              </th>
+              <th scope="col" className="text-right font-bold py-1 px-1">
+                <abbr title={t("match.statTable.xgFull")} className="no-underline">
+                  {t("match.statTable.xg")}
+                </abbr>
+              </th>
+              <th scope="col" className="text-right font-bold py-1 px-1">
+                <abbr title={t("match.statTable.xaFull")} className="no-underline">
+                  {t("match.statTable.xa")}
+                </abbr>
+              </th>
+              <th scope="col" className="text-right font-bold py-1 pl-1">
+                <abbr title={t("match.statTable.distanceEstimated")} className="no-underline">
+                  {t("match.statTable.distance")}
+                </abbr>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((p) => (
+              <tr
+                key={p.player_id}
+                className="border-t border-gray-100 dark:border-navy-700/60"
+              >
+                <th scope="row" className="text-left font-normal py-1 pr-2">
+                  <span className="text-gray-700 dark:text-gray-300">{p.name}</span>
+                  <span className="text-gray-500 dark:text-gray-400 text-[10px] font-heading uppercase ml-1">
+                    {translatePositionAbbreviation(t, p.position)}
+                  </span>
+                </th>
+                <td
+                  className={`text-right tabular-nums font-heading font-bold py-1 px-1 ${ratingTone(
+                    p.rating,
+                  )}`}
+                >
+                  {p.rating.toFixed(1)}
+                </td>
+                <td className="text-right tabular-nums py-1 px-1 text-gray-700 dark:text-gray-300">
+                  {p.goals}
+                </td>
+                <td className="text-right tabular-nums py-1 px-1 text-gray-700 dark:text-gray-300">
+                  {p.assists}
+                </td>
+                <td className="text-right tabular-nums py-1 px-1 text-gray-600 dark:text-gray-400">
+                  {p.shots_on_target}/{p.shots}
+                </td>
+                <td className="text-right tabular-nums py-1 px-1 text-gray-600 dark:text-gray-400">
+                  {p.passes_completed}/{p.passes_attempted}
+                </td>
+                <td className="text-right tabular-nums py-1 px-1 text-gray-600 dark:text-gray-400">
+                  {p.xg.toFixed(2)}
+                </td>
+                <td className="text-right tabular-nums py-1 px-1 text-gray-600 dark:text-gray-400">
+                  {p.xa.toFixed(2)}
+                </td>
+                <td className="text-right tabular-nums py-1 pl-1 text-gray-600 dark:text-gray-400">
+                  {p.distance_km.toFixed(1)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
+      <p className="mt-2 text-[10px] text-gray-500 dark:text-gray-400">
+        {t("match.statTable.distanceFootnote")}
+      </p>
     </div>
   );
+}
+
+/// Rating colour, matching the scale used elsewhere in the match screens.
+function ratingTone(rating: number): string {
+  if (rating >= 8) return "text-accent-700 dark:text-accent-400";
+  if (rating >= 7) return "text-primary-700 dark:text-primary-400";
+  if (rating >= 6) return "text-gray-600 dark:text-gray-300";
+  if (rating >= 5) return "text-yellow-700 dark:text-yellow-400";
+  return "text-red-700 dark:text-red-400";
 }
