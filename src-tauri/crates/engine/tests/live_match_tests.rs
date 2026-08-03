@@ -2,6 +2,7 @@ use ::engine::ai::{AiPersonality, AiProfile, ai_decide};
 use ::engine::*;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
+use std::collections::HashMap;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -1826,4 +1827,93 @@ fn very_weak_team_still_finishes() {
     let snap = state.snapshot();
     // Strong team should likely dominate
     assert!(snap.events.len() > 50, "Should generate plenty of events");
+}
+
+// ---------------------------------------------------------------------------
+// Who gets picked to act
+// ---------------------------------------------------------------------------
+//
+// The whole overhaul rests on selection: it is why forwards stopped finishing
+// matches with no passes, why a better player is involved more often, and why
+// roles do anything at all. It was covered only by 200-seed directional tests
+// and by reading the benchmark, so these pin the mechanism itself.
+
+/// Count how often each player is credited in a simulated match.
+fn involvement_by_player(home: TeamData, away: TeamData, seeds: u64) -> HashMap<String, u32> {
+    let mut counts: HashMap<String, u32> = HashMap::new();
+    for seed in 0..seeds {
+        let mut rng = StdRng::seed_from_u64(seed);
+        let report = engine::simulate_with_rng(&home, &away, &MatchConfig::default(), &mut rng);
+        for (id, stats) in &report.player_stats {
+            let touches = stats.passes_attempted as u32
+                + stats.shots as u32
+                + stats.tackles_won as u32
+                + stats.interceptions as u32;
+            *counts.entry(id.clone()).or_default() += touches;
+        }
+    }
+    counts
+}
+
+#[test]
+fn a_better_player_is_involved_more_than_a_weaker_one_in_the_same_role() {
+    // Before weighted selection this was flat: a 90-rated striker took exactly
+    // as many shots as a 55-rated one, because the pick was uniform within a
+    // position and quality only reached the outcome roll.
+    let mut home = make_team("home", "Home", 65, PlayStyle::Balanced);
+    let away = make_team("away", "Away", 65, PlayStyle::Balanced);
+    {
+        let forwards: Vec<usize> = home
+            .players
+            .iter()
+            .enumerate()
+            .filter(|(_, p)| p.position == Position::Forward)
+            .map(|(index, _)| index)
+            .collect();
+        assert!(forwards.len() >= 2, "need two forwards to compare");
+        let set = |player: &mut PlayerData, value: u8| {
+            player.shooting = value;
+            player.positioning = value;
+            player.composure = value;
+            player.decisions = value;
+        };
+        set(&mut home.players[forwards[0]], 92);
+        set(&mut home.players[forwards[1]], 45);
+    }
+    let good = home.players.iter().find(|p| p.shooting == 92).unwrap().id.clone();
+    let poor = home.players.iter().find(|p| p.shooting == 45).unwrap().id.clone();
+
+    let counts = involvement_by_player(home, away, 120);
+    let good_touches = counts.get(&good).copied().unwrap_or(0);
+    let poor_touches = counts.get(&poor).copied().unwrap_or(0);
+    assert!(
+        good_touches > poor_touches,
+        "the better forward should see more of the ball: {good_touches} vs {poor_touches}"
+    );
+}
+
+#[test]
+fn a_forward_touches_the_ball_outside_the_final_third() {
+    // Build-up only ever sampled defenders and midfield only midfielders, so a
+    // forward could not complete a pass no matter what.
+    let home = make_team("home", "Home", 65, PlayStyle::Balanced);
+    let away = make_team("away", "Away", 65, PlayStyle::Balanced);
+    let forward_ids: Vec<String> = home
+        .players
+        .iter()
+        .filter(|p| p.position == Position::Forward)
+        .map(|p| p.id.clone())
+        .collect();
+
+    let mut passes = 0u32;
+    for seed in 0..40 {
+        let mut rng = StdRng::seed_from_u64(seed);
+        let report = engine::simulate_with_rng(&home, &away, &MatchConfig::default(), &mut rng);
+        for id in &forward_ids {
+            if let Some(stats) = report.player_stats.get(id) {
+                passes += stats.passes_attempted as u32;
+            }
+        }
+    }
+    assert!(passes > 0, "forwards attempted no passes across 40 matches");
 }

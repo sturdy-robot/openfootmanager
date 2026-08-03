@@ -235,4 +235,93 @@ mod tests {
     fn sides_circulate_more_deep_than_in_the_final_third() {
         assert!(base_retention(Band::Middle) > base_retention(Band::FinalThird));
     }
+
+    fn tactics(mutate: impl Fn(&mut TacticsConfig)) -> TacticsConfig {
+        let mut config = TacticsConfig::default();
+        mutate(&mut config);
+        config
+    }
+
+    #[test]
+    fn an_uninstructed_side_plays_the_calibrated_baseline() {
+        // Every neutral option is 1.0 by construction. If that stops being
+        // true, every default team in every save starts playing differently.
+        let neutral = TacticsConfig::default();
+        for band in [Band::OwnBox, Band::OwnThird, Band::Middle, Band::FinalThird] {
+            assert_eq!(
+                retention_chance(band, &neutral, &neutral),
+                base_retention(band),
+                "{band:?} is not neutral by default"
+            );
+        }
+    }
+
+    #[test]
+    fn patient_sides_circulate_more_than_direct_ones() {
+        let neutral = TacticsConfig::default();
+        let patient = tactics(|c| c.tempo = Tempo::Patient);
+        assert!(
+            retention_chance(Band::Middle, &patient, &neutral)
+                > retention_chance(Band::Middle, &neutral, &neutral)
+        );
+    }
+
+    #[test]
+    fn build_up_style_only_applies_in_a_sides_own_half() {
+        // Hitting it long is about bypassing midfield, not about how a side
+        // plays once it is already there.
+        let neutral = TacticsConfig::default();
+        let long = tactics(|c| c.build_up_style = TacticsBuildUpStyle::Long);
+        assert!(
+            retention_chance(Band::OwnThird, &long, &neutral)
+                < retention_chance(Band::OwnThird, &neutral, &neutral)
+        );
+        assert_eq!(
+            retention_chance(Band::FinalThird, &long, &neutral),
+            retention_chance(Band::FinalThird, &neutral, &neutral)
+        );
+    }
+
+    #[test]
+    fn the_opponents_shape_and_pressing_both_matter() {
+        let neutral = TacticsConfig::default();
+        let compact = tactics(|c| c.defensive_shape = DefensiveShape::Compact);
+        let pressing = tactics(|c| c.pressing_intensity = PressingIntensity::Aggressive);
+        assert!(
+            retention_chance(Band::Middle, &neutral, &compact)
+                > retention_chance(Band::Middle, &neutral, &neutral),
+            "a compact block should push the ball sideways"
+        );
+        assert!(
+            retention_chance(Band::Middle, &neutral, &pressing)
+                < retention_chance(Band::Middle, &neutral, &neutral),
+            "being pressed should force the ball to be moved"
+        );
+    }
+
+    #[test]
+    fn stacked_instructions_saturate_rather_than_exceeding_certainty() {
+        // Four multipliers compound, so the most extreme combination lands
+        // above 1.0 and is clamped. Worth pinning: past the ceiling the dials
+        // stop responding, which is a real limit on how far they stack.
+        let extreme = tactics(|c| {
+            c.tempo = Tempo::Patient;
+            c.build_up_style = TacticsBuildUpStyle::Short;
+        });
+        let inviting = tactics(|c| {
+            c.defensive_shape = DefensiveShape::Compact;
+            c.pressing_intensity = PressingIntensity::Passive;
+        });
+        let chance = retention_chance(Band::OwnThird, &extreme, &inviting);
+        assert!((0.0..=0.97).contains(&chance), "{chance} is not a probability");
+    }
+
+    #[test]
+    fn only_a_long_ball_side_skips_the_middle_and_only_from_deep() {
+        let long = tactics(|c| c.build_up_style = TacticsBuildUpStyle::Long);
+        let neutral = TacticsConfig::default();
+        assert!(long_ball_skips_a_band(Band::OwnThird, &long));
+        assert!(!long_ball_skips_a_band(Band::Middle, &long));
+        assert!(!long_ball_skips_a_band(Band::OwnThird, &neutral));
+    }
 }
