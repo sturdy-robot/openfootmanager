@@ -36,7 +36,7 @@ fn position_occupancy(position: Position) -> [f32; 5] {
         Position::Goalkeeper => [1.00, 0.18, 0.01, 0.00, 0.00],
         Position::Defender => [0.90, 1.00, 0.45, 0.12, 0.05],
         Position::Midfielder => [0.30, 0.75, 1.00, 0.70, 0.25],
-        Position::Forward => [0.04, 0.15, 0.45, 1.00, 1.00],
+        Position::Forward => [0.04, 0.18, 0.55, 1.00, 1.00],
     }
 }
 
@@ -64,7 +64,7 @@ fn slot_occupancy(slot: Slot) -> [f32; 5] {
         Slot::LeftMidfielder       => [0.25, 0.65, 1.00, 0.75, 0.20],
         Slot::RightWinger          => [0.06, 0.20, 0.60, 1.00, 0.70],
         Slot::LeftWinger           => [0.06, 0.20, 0.60, 1.00, 0.70],
-        Slot::Striker              => [0.03, 0.10, 0.35, 0.95, 1.00],
+        Slot::Striker              => [0.03, 0.12, 0.45, 0.95, 1.00],
     }
 }
 

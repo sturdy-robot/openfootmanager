@@ -1,109 +1,109 @@
 {
   "games": 5000,
   "outcomes": {
-    "home_wins": 2070,
-    "draws": 1096,
-    "away_wins": 1834,
-    "home_win_pct": 41.4,
-    "draw_pct": 21.92,
-    "away_win_pct": 36.68
+    "home_wins": 2051,
+    "draws": 1138,
+    "away_wins": 1811,
+    "home_win_pct": 41.02,
+    "draw_pct": 22.759999999999998,
+    "away_win_pct": 36.22
   },
   "goals": {
-    "per_game": 3.5274,
-    "home_per_game": 1.8252,
-    "away_per_game": 1.7022,
-    "clean_sheet_home_pct": 18.6,
-    "clean_sheet_away_pct": 15.440000000000001,
-    "btts_pct": 68.56
+    "per_game": 3.3686,
+    "home_per_game": 1.7476,
+    "away_per_game": 1.621,
+    "clean_sheet_home_pct": 17.86,
+    "clean_sheet_away_pct": 15.18,
+    "btts_pct": 69.22
   },
   "shooting": {
-    "shots_per_game": 23.1244,
-    "shots_on_target_pct": 40.97144142118282,
-    "goal_conversion_pct": 37.23085366883391,
-    "xg_proxy_per_game": 2.7475759999999996,
-    "goals_vs_xg": 0.7798240000000005
+    "shots_per_game": 21.9582,
+    "shots_on_target_pct": 40.99152025211538,
+    "goal_conversion_pct": 37.4247305854905,
+    "xg_proxy_per_game": 2.6102899999999996,
+    "goals_vs_xg": 0.7583100000000003
   },
   "discipline": {
-    "yellow_cards_per_game": 3.086,
-    "red_cards_per_game": 0.1296,
-    "fouls_per_game": 24.2872,
-    "penalties_per_game": 0.416,
-    "penalty_conversion_pct": 77.98076923076923,
-    "injuries_per_game": 0.6942
+    "yellow_cards_per_game": 3.0656,
+    "red_cards_per_game": 0.1318,
+    "fouls_per_game": 24.5392,
+    "penalties_per_game": 0.4098,
+    "penalty_conversion_pct": 78.57491459248413,
+    "injuries_per_game": 0.7136
   },
   "set_pieces": {
-    "corners_per_game": 10.8944,
-    "free_kicks_per_game": 23.4642,
-    "goal_kicks_per_game": 11.6524,
-    "crosses_per_game": 22.1324
+    "corners_per_game": 12.4784,
+    "free_kicks_per_game": 23.7202,
+    "goal_kicks_per_game": 11.146,
+    "crosses_per_game": 26.7642
   },
   "goal_sources": {
-    "open_play_pct": 67.20530702500426,
-    "corner_pct": 18.410160458127798,
-    "free_kick_pct": 5.187957135567274,
-    "penalty_pct": 9.196575381300674
+    "open_play_pct": 65.88493736270262,
+    "corner_pct": 18.310277266520217,
+    "free_kick_pct": 6.24591818559639,
+    "penalty_pct": 9.558867185180787
   },
   "possession": {
-    "home_avg_pct": 51.544816292857284,
-    "away_avg_pct": 48.455183707142716,
-    "pass_accuracy_pct": 95.98843652232475
+    "home_avg_pct": 51.03151054740688,
+    "away_avg_pct": 48.96848945259312,
+    "pass_accuracy_pct": 94.440602898474
   },
   "defending": {
-    "tackles_per_game": 141.5254,
-    "interceptions_per_game": 77.3634
+    "tackles_per_game": 139.4224,
+    "interceptions_per_game": 73.6596
   },
   "positions": [
     {
       "position": "Goalkeeper",
       "appearances": 10000,
-      "passes_per_90": 0.3698089472785026,
+      "passes_per_90": 0.44658693972599756,
       "shots_per_90": 0.0,
-      "tackles_per_90": 0.6664591859719835,
-      "interceptions_per_90": 0.046324055101359035,
+      "tackles_per_90": 0.7982741547602207,
+      "interceptions_per_90": 0.03956603588800505,
       "goals_per_90": 0.0,
       "assists_per_90": 0.0,
-      "touches_per_90": 1.0825921883518452
+      "touches_per_90": 1.2844271303742234
     },
     {
       "position": "Defender",
       "appearances": 40000,
-      "passes_per_90": 6.024371638762605,
-      "shots_per_90": 0.1108100240115746,
-      "tackles_per_90": 6.569778576947575,
-      "interceptions_per_90": 2.719819727139208,
-      "goals_per_90": 0.009948277711261364,
-      "assists_per_90": 0.021841886955170368,
-      "touches_per_90": 15.424779966860962
+      "passes_per_90": 5.732948652251351,
+      "shots_per_90": 0.10515553537324956,
+      "tackles_per_90": 6.610699111488586,
+      "interceptions_per_90": 2.448551324605338,
+      "goals_per_90": 0.009095731962665048,
+      "assists_per_90": 0.02112477585908928,
+      "touches_per_90": 14.897354623718524
     },
     {
       "position": "Midfielder",
       "appearances": 40000,
-      "passes_per_90": 15.461615868270211,
-      "shots_per_90": 0.46602146417303536,
-      "tackles_per_90": 9.379843067458594,
-      "interceptions_per_90": 5.608241236707041,
-      "goals_per_90": 0.05155782420107744,
-      "assists_per_90": 0.22982388047083055,
-      "touches_per_90": 30.915721636608883
+      "passes_per_90": 14.116644925538349,
+      "shots_per_90": 0.4435107875775171,
+      "tackles_per_90": 8.835624724806696,
+      "interceptions_per_90": 5.194678430194518,
+      "goals_per_90": 0.05172605355313134,
+      "assists_per_90": 0.22238499491792552,
+      "touches_per_90": 28.590458868117082
     },
     {
       "position": "Forward",
       "appearances": 20000,
-      "passes_per_90": 4.161448956448883,
-      "shots_per_90": 4.520350839179836,
-      "tackles_per_90": 2.66239051246888,
-      "interceptions_per_90": 2.3948187470635918,
-      "goals_per_90": 0.7421062001150881,
-      "assists_per_90": 0.28540661664270356,
-      "touches_per_90": 13.739009055161192
+      "passes_per_90": 4.795187793746723,
+      "shots_per_90": 4.290317716020381,
+      "tackles_per_90": 3.0827257191605755,
+      "interceptions_per_90": 2.8499876689664636,
+      "goals_per_90": 0.7045348260507647,
+      "assists_per_90": 0.2630674929457233,
+      "touches_per_90": 15.018218897894142
     }
   ],
-  "forwards_with_zero_passes_pct": 1.595,
+  "forwards_with_zero_passes_pct": 1.23,
   "targets": [
     {
       "label": "Goals/game",
       "unit": "per_game",
-      "value": 3.5274,
+      "value": 3.3686,
       "low": 2.3,
       "high": 3.0,
       "passed": false,
@@ -113,7 +113,7 @@
     {
       "label": "Clean sheets (home)",
       "unit": "percent",
-      "value": 18.6,
+      "value": 17.86,
       "low": 22.0,
       "high": 35.0,
       "passed": false,
@@ -123,7 +123,7 @@
     {
       "label": "Clean sheets (away)",
       "unit": "percent",
-      "value": 15.440000000000001,
+      "value": 15.18,
       "low": 22.0,
       "high": 35.0,
       "passed": false,
@@ -133,7 +133,7 @@
     {
       "label": "Both teams scored",
       "unit": "percent",
-      "value": 68.56,
+      "value": 69.22,
       "low": 50.0,
       "high": 55.0,
       "passed": false,
@@ -143,7 +143,7 @@
     {
       "label": "Home win %",
       "unit": "percent",
-      "value": 41.4,
+      "value": 41.02,
       "low": 40.0,
       "high": 52.0,
       "passed": true,
@@ -153,7 +153,7 @@
     {
       "label": "Shots/game",
       "unit": "per_game",
-      "value": 23.1244,
+      "value": 21.9582,
       "low": 18.0,
       "high": 32.0,
       "passed": true,
@@ -162,7 +162,7 @@
     {
       "label": "Shots on target %",
       "unit": "percent",
-      "value": 40.97144142118282,
+      "value": 40.99152025211538,
       "low": 32.0,
       "high": 45.0,
       "passed": true,
@@ -171,7 +171,7 @@
     {
       "label": "Goal conversion %",
       "unit": "percent",
-      "value": 37.23085366883391,
+      "value": 37.4247305854905,
       "low": 20.0,
       "high": 40.0,
       "passed": true,
@@ -181,7 +181,7 @@
     {
       "label": "Yellow cards/game",
       "unit": "per_game",
-      "value": 3.086,
+      "value": 3.0656,
       "low": 2.0,
       "high": 4.0,
       "passed": true,
@@ -190,7 +190,7 @@
     {
       "label": "Red cards/game",
       "unit": "per_game",
-      "value": 0.1296,
+      "value": 0.1318,
       "low": 0.05,
       "high": 0.15,
       "passed": true,
@@ -199,7 +199,7 @@
     {
       "label": "Fouls/game",
       "unit": "per_game",
-      "value": 24.2872,
+      "value": 24.5392,
       "low": 18.0,
       "high": 28.0,
       "passed": true,
@@ -208,7 +208,7 @@
     {
       "label": "Penalties/game",
       "unit": "per_game",
-      "value": 0.416,
+      "value": 0.4098,
       "low": 0.2,
       "high": 0.5,
       "passed": true,
@@ -217,7 +217,7 @@
     {
       "label": "Penalty conversion %",
       "unit": "percent",
-      "value": 77.98076923076923,
+      "value": 78.57491459248413,
       "low": 65.0,
       "high": 85.0,
       "passed": true,
@@ -226,7 +226,7 @@
     {
       "label": "Corners/game",
       "unit": "per_game",
-      "value": 10.8944,
+      "value": 12.4784,
       "low": 8.0,
       "high": 14.0,
       "passed": true,
@@ -235,7 +235,7 @@
     {
       "label": "Goal kicks/game",
       "unit": "per_game",
-      "value": 11.6524,
+      "value": 11.146,
       "low": 8.0,
       "high": 14.0,
       "passed": true,
@@ -244,7 +244,7 @@
     {
       "label": "Crosses/game",
       "unit": "per_game",
-      "value": 22.1324,
+      "value": 26.7642,
       "low": 15.0,
       "high": 30.0,
       "passed": true,
@@ -253,7 +253,7 @@
     {
       "label": "Open play goals %",
       "unit": "percent",
-      "value": 67.20530702500426,
+      "value": 65.88493736270262,
       "low": 60.0,
       "high": 75.0,
       "passed": true,
@@ -262,7 +262,7 @@
     {
       "label": "Corner goals %",
       "unit": "percent",
-      "value": 18.410160458127798,
+      "value": 18.310277266520217,
       "low": 10.0,
       "high": 20.0,
       "passed": true,
@@ -271,7 +271,7 @@
     {
       "label": "Free kick goals %",
       "unit": "percent",
-      "value": 5.187957135567274,
+      "value": 6.24591818559639,
       "low": 5.0,
       "high": 15.0,
       "passed": true,
@@ -280,7 +280,7 @@
     {
       "label": "Penalty goals %",
       "unit": "percent",
-      "value": 9.196575381300674,
+      "value": 9.558867185180787,
       "low": 5.0,
       "high": 15.0,
       "passed": true,
@@ -289,7 +289,7 @@
     {
       "label": "Forwards with 0 passes %",
       "unit": "percent",
-      "value": 1.595,
+      "value": 1.23,
       "low": 0.0,
       "high": 2.0,
       "passed": true,
@@ -298,7 +298,7 @@
     }
   ],
   "performance": {
-    "total_time_secs": 4.340192965,
-    "games_per_sec": 1152.0225115152225
+    "total_time_secs": 3.285944251,
+    "games_per_sec": 1521.6326322269063
   }
 }

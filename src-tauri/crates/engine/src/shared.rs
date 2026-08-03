@@ -341,14 +341,6 @@ pub(crate) fn tactics_buildup_mod(tactics: &TacticsConfig) -> f64 {
 // build_up / width / def_line / marking are intentionally NOT re-hooked here:
 // they already have live effects above, and re-hooking would double-count.
 
-/// Tempo's progression side: Direct breaks through midfield faster, Patient is
-/// more measured. Applied to the attacker's midfield contest.
-pub(crate) fn tactics_tempo_progression(tactics: &TacticsConfig) -> f64 {
-    match tactics.tempo {
-        Tempo::Direct => 1.0,
-        Tempo::Patient => 0.92,
-    }
-}
 
 /// Tempo's retention side: Patient circulates and holds possession longer.
 /// Applied to the possessing side's weight in the per-minute possession contest.
@@ -451,7 +443,6 @@ mod phase_modifier_tests {
     #[test]
     fn default_config_is_fully_neutral() {
         let d = TacticsConfig::default();
-        assert_eq!(tactics_tempo_progression(&d), 1.0);
         assert_eq!(tactics_tempo_retention(&d), 1.0);
         assert_eq!(tactics_pressing_contest(&d), 1.0);
         assert_eq!(tactics_pressing_press(&d), 1.0);
@@ -464,8 +455,6 @@ mod phase_modifier_tests {
     #[test]
     fn tempo_directions() {
         // Direct is neutral; Patient progresses slower but retains more.
-        assert!(tactics_tempo_progression(&cfg(|c| c.tempo = Tempo::Patient)) < 1.0);
-        assert_eq!(tactics_tempo_progression(&cfg(|c| c.tempo = Tempo::Direct)), 1.0);
         assert!(tactics_tempo_retention(&cfg(|c| c.tempo = Tempo::Patient)) > 1.0);
         assert_eq!(tactics_tempo_retention(&cfg(|c| c.tempo = Tempo::Direct)), 1.0);
     }

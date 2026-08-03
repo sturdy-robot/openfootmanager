@@ -336,12 +336,6 @@ impl TeamData {
     }
 
 
-    /// Composite midfield rating, used by the possession contest.
-    pub fn midfield_rating(&self) -> f64 {
-        self.position_attr_avg(Position::Midfielder, |p| {
-            (p.passing as f64 + p.vision as f64 + p.decisions as f64 + p.stamina as f64) / 4.0
-        })
-    }
 
 
 }

@@ -5,7 +5,8 @@ use crate::event::{EventDetail, EventType, MatchEvent};
 use crate::shared::{
     PlayStylePhase, PlayerSnap, TraitContext, play_style_modifier, role_attribute_modifier,
     tactics_buildup_mod, tactics_cross_probability, tactics_defensive_conversion_mod,
-    tactics_foul_modifier, tactics_shape_modifier, tactics_tempo_progression, trait_bonus,
+    tactics_foul_modifier, tactics_pressing_contest, tactics_shape_modifier,
+    tactics_tempo_retention, trait_bonus,
 };
 use crate::types::{Side, Zone};
 
@@ -133,11 +134,21 @@ impl LiveMatchState {
             PlayStylePhase::Midfield,
             false,
         ) * role_attribute_modifier(defender.role, PlayStylePhase::Defense);
+        // This roll decides whether the ball is kept or lost — whether it
+        // *advances* is the retention layer's call, in `possession.rs`. So the
+        // tempo term here is retention, not progression: a patient side keeps
+        // the ball better. It used to be progression, which meant a patient
+        // side lost the ball *more* often and needed a compensating possession
+        // bonus elsewhere to cancel out. Pressing is the other side of the same
+        // roll: a side pressing hard wins it back more.
         let att_eff = att_rating
             * att_mod
             * crate::shared::home_mod(att_side, &self.config)
-            * tactics_tempo_progression(&self.team_ref(att_side).tactics);
-        let def_eff = def_rating * def_mod * crate::shared::home_mod(def_side, &self.config);
+            * tactics_tempo_retention(&self.team_ref(att_side).tactics);
+        let def_eff = def_rating
+            * def_mod
+            * crate::shared::home_mod(def_side, &self.config)
+            * tactics_pressing_contest(&self.team_ref(def_side).tactics);
         let success = att_eff / (att_eff + def_eff);
 
         if rng.random_range(0.0..1.0f64) < success {
@@ -288,7 +299,11 @@ impl LiveMatchState {
                 let evt = MatchEvent::new(minute, EventType::Corner, att_side, zone);
                 self.events.push(evt.clone());
                 events.push(evt);
-                if rng.random_range(0.0..1.0f64) < 0.30 {
+                // How often a corner actually produces a chance. Lower than it
+                // looks: most corners are cleared. Set pieces are exempt from
+                // the retain-or-progress decision, so whatever survives here
+                // reaches the box, where it used to be pulled back out again.
+                if rng.random_range(0.0..1.0f64) < 0.18 {
                     self.ball_zone = Zone::attacking_box(att_side);
                     return events;
                 }

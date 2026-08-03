@@ -30,7 +30,10 @@ use rand::{Rng, RngExt};
 
 use crate::event::{EventType, MatchEvent};
 use crate::sim::state::Band;
-use crate::types::{DefensiveShape, PressingIntensity, TacticsBuildUpStyle, TacticsConfig, Tempo};
+use crate::shared::{tactics_break_speed_counter, tactics_counter_press_rewin};
+use crate::types::{
+    DefensiveShape, PressingIntensity, Side, TacticsBuildUpStyle, TacticsConfig, Tempo,
+};
 
 use super::LiveMatchState;
 
@@ -58,10 +61,10 @@ const LIVE_SECONDS_PER_MINUTE: u32 = 26;
 /// module comment.
 fn base_retention(band: Band) -> f64 {
     match band {
-        Band::OwnBox => 0.71,
-        Band::OwnThird => 0.80,
-        Band::Middle => 0.82,
-        Band::FinalThird => 0.81,
+        Band::OwnBox => 0.86,
+        Band::OwnThird => 0.915,
+        Band::Middle => 0.935,
+        Band::FinalThird => 0.915,
         // The box resolves to a shot; nothing is retained there.
         Band::OppBox => 0.0,
     }
@@ -139,6 +142,34 @@ fn long_ball_skips_a_band(band: Band, own: &TacticsConfig) -> bool {
 }
 
 impl LiveMatchState {
+    /// What happens in the moments after the ball changes hands.
+    ///
+    /// The side that lost it may counter-press and win it straight back; if it
+    /// does not, the side that won it may break at speed. Both used to be rolled
+    /// once a minute by a separate contest that ran *after* the chain had
+    /// played the minute out, and which could flip possession and move the ball
+    /// to midfield regardless of what had actually just happened. Here they
+    /// attach to the turnover they are about.
+    fn resolve_transition<R: Rng + ?Sized>(
+        &mut self,
+        lost_by: Side,
+        lost_by_tactics: &TacticsConfig,
+        won_by_tactics: &TacticsConfig,
+        rng: &mut R,
+    ) {
+        let rewin = tactics_counter_press_rewin(lost_by_tactics);
+        if rewin > 0.0 && rng.random_range(0.0..1.0f64) < rewin {
+            // Won straight back. The ball stays where it was lost.
+            self.possession = lost_by;
+            return;
+        }
+
+        let breakaway = tactics_break_speed_counter(won_by_tactics);
+        if breakaway > 0.0 && rng.random_range(0.0..1.0f64) < breakaway {
+            self.ball_zone = Band::FinalThird.to_zone(self.possession);
+        }
+    }
+
     /// Play out one minute as spells of possession.
     ///
     /// Actions run until the minute's live seconds are spent. An action that
@@ -161,8 +192,13 @@ impl LiveMatchState {
 
             let events_before = events.len();
             events.extend(self.resolve_action(minute, rng));
-
             seconds += rng.random_range(ACTION_SECONDS);
+
+            // The ball changed hands: counter-press and break speed belong to
+            // this moment, not to a roll made once a minute.
+            if self.possession != before {
+                self.resolve_transition(before, &own_tactics, &opponent_tactics, rng);
+            }
 
             // The side still has the ball: did it commit forward, or work it?
             //

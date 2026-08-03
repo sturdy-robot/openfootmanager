@@ -85,12 +85,19 @@ fn team_position_counts() {
     assert_eq!(team.count_position(Position::Forward), 2);
 }
 
+/// The one composite the engine still computes, used for pressing strength.
+fn press_composite(team: &TeamData) -> f64 {
+    team.position_attr_avg(Position::Midfielder, |p| {
+        (p.stamina as f64 + p.tackling as f64 + p.pace as f64) / 3.0
+    })
+}
+
 #[test]
-fn midfield_rating_is_non_zero_and_scales_with_skill() {
+fn a_composite_rating_scales_with_skill() {
     let weak = make_team("w", "Weak", 30, PlayStyle::Balanced);
     let strong = make_team("s", "Strong", 90, PlayStyle::Balanced);
-    assert!(weak.midfield_rating() > 0.0);
-    assert!(strong.midfield_rating() > weak.midfield_rating());
+    assert!(press_composite(&weak) > 0.0);
+    assert!(press_composite(&strong) > press_composite(&weak));
 }
 
 #[test]
@@ -105,12 +112,11 @@ fn a_composite_rating_is_not_truncated_to_whole_numbers() {
         .enumerate()
     {
         // Attributes that average to something with a fractional part.
-        player.passing = 61;
-        player.vision = 62;
-        player.decisions = 62;
-        player.stamina = 62 + index as u8;
+        player.stamina = 61;
+        player.tackling = 62;
+        player.pace = 62 + index as u8;
     }
-    let rating = team.midfield_rating();
+    let rating = press_composite(&team);
     assert!(
         (rating - rating.round()).abs() > 1e-9,
         "expected a fractional rating, got {rating}"
@@ -121,7 +127,7 @@ fn a_composite_rating_is_not_truncated_to_whole_numbers() {
 fn a_position_nobody_plays_still_yields_a_rating() {
     let mut team = make_team("t", "Test FC", 60, PlayStyle::Balanced);
     team.players.retain(|p| p.position != Position::Midfielder);
-    assert!(team.midfield_rating() > 0.0);
+    assert!(press_composite(&team) > 0.0);
 }
 
 // ---------------------------------------------------------------------------
