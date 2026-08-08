@@ -5,6 +5,7 @@ import type {
 } from "../../store/gameStore";
 import { useTranslation } from "react-i18next";
 import { setPlayerRole } from "../../services/squadService";
+import { rolesByStartingPlayer } from "../../lib/playerRoles";
 
 import TacticsPitch from "./TacticsPitch";
 import TacticsPlayerList from "./TacticsPlayerList";
@@ -176,7 +177,7 @@ export default function TacticsTab({
                 console.error("Failed to set player role:", error);
               });
           }}
-          playerRoles={team?.player_roles}
+          playerRoles={team ? rolesByStartingPlayer(team.starting_xi_ids, team.slot_roles, team.player_roles) : undefined}
           tacticsPhase={team?.tactics_phase}
           teamKitPattern={team?.kit_pattern}
           teamPrimaryColor={team?.colors?.primary}

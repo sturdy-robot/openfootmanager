@@ -485,6 +485,93 @@ fn substitution_replaces_player() {
 }
 
 #[test]
+fn tactical_change_set_applies_multiple_substitutions_in_slot_order() {
+    let mut state = make_live_match(false);
+    state.step_minute(&mut seeded_rng(42));
+    let before = state.snapshot();
+    let changes = MatchTacticsChangeSet {
+        side: Side::Home,
+        formation: "4-4-2".into(),
+        play_style: PlayStyle::Possession,
+        tactics: TacticsConfig::default(),
+        slot_roles: vec![PlayerRole::Standard; 11],
+        lineup_changes: vec![
+            TacticalLineupChange {
+                slot_index: 5,
+                expected_outgoing_player_id: before.home_team.players[5].id.clone(),
+                incoming_player_id: "home_sub_mid".into(),
+            },
+            TacticalLineupChange {
+                slot_index: 9,
+                expected_outgoing_player_id: before.home_team.players[9].id.clone(),
+                incoming_player_id: "home_sub_fwd1".into(),
+            },
+        ],
+        assignments: SetPieceTakers {
+            captain: Some(before.home_team.players[0].id.clone()),
+            ..SetPieceTakers::default()
+        },
+    };
+
+    state.apply_tactics_change_set(changes).unwrap();
+    let after = state.snapshot();
+
+    assert_eq!(after.home_subs_made, 2);
+    assert_eq!(after.home_team.players[5].id, "home_sub_mid");
+    assert_eq!(after.home_team.players[9].id, "home_sub_fwd1");
+    assert_eq!(after.substitutions.len(), 2);
+    assert_eq!(after.home_team.play_style, PlayStyle::Possession);
+}
+
+#[test]
+fn invalid_later_tactical_change_rolls_back_the_entire_batch() {
+    let mut state = make_live_match(false);
+    state.step_minute(&mut seeded_rng(42));
+    let before = state.snapshot();
+    let changes = MatchTacticsChangeSet {
+        side: Side::Home,
+        formation: "4-4-2".into(),
+        play_style: PlayStyle::Attacking,
+        tactics: TacticsConfig::default(),
+        slot_roles: vec![PlayerRole::Standard; 11],
+        lineup_changes: vec![
+            TacticalLineupChange {
+                slot_index: 5,
+                expected_outgoing_player_id: before.home_team.players[5].id.clone(),
+                incoming_player_id: "home_sub_mid".into(),
+            },
+            TacticalLineupChange {
+                slot_index: 9,
+                expected_outgoing_player_id: before.home_team.players[9].id.clone(),
+                incoming_player_id: "not-on-bench".into(),
+            },
+        ],
+        assignments: SetPieceTakers::default(),
+    };
+
+    assert!(state.apply_tactics_change_set(changes).is_err());
+    let after = state.snapshot();
+
+    assert_eq!(after.home_subs_made, before.home_subs_made);
+    assert_eq!(after.substitutions.len(), before.substitutions.len());
+    assert_eq!(
+        after
+            .home_team
+            .players
+            .iter()
+            .map(|player| &player.id)
+            .collect::<Vec<_>>(),
+        before
+            .home_team
+            .players
+            .iter()
+            .map(|player| &player.id)
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(after.home_team.play_style, before.home_team.play_style);
+}
+
+#[test]
 fn max_substitutions_enforced() {
     let mut state = make_live_match(false);
     let mut rng = seeded_rng(42);

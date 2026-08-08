@@ -150,9 +150,19 @@ export interface TeamData {
   starting_xi_ids: string[];
   match_roles?: TeamMatchRolesData;
   player_roles?: Record<string, PlayerRole>;
+  slot_roles?: PlayerRole[];
   tactics_phase?: TacticsPhaseSettings;
   form: string[];
   history: TeamSeasonRecord[];
+}
+
+export interface TeamTacticsDraft {
+  formation: string;
+  play_style: string;
+  starting_xi_ids: string[];
+  slot_roles: PlayerRole[];
+  tactics_phase: TacticsPhaseSettings;
+  match_roles: TeamMatchRolesData;
 }
 
 export interface PlayerSeasonStats {

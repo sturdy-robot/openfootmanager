@@ -34,9 +34,14 @@ pub struct Team {
     pub formation: String,
     pub play_style: PlayStyle,
     /// Per-player tactical role assignments. Keyed by player ID.
-    /// Missing entries default to the position's standard role.
-    #[serde(default)]
+    /// Legacy read-only representation retained for pre-v043 saves. New saves
+    /// persist `slot_roles`, so roles stay attached to the formation slot when
+    /// players are swapped or substituted.
+    #[serde(default, skip_serializing)]
     pub player_roles: HashMap<String, PlayerRole>,
+    /// Tactical roles aligned with formation slot indices.
+    #[serde(default)]
+    pub slot_roles: Vec<PlayerRole>,
     #[serde(default)]
     pub tactics_phase: TacticsPhaseSettings,
 
@@ -82,6 +87,17 @@ pub struct MatchRoles {
     pub penalty_taker: Option<String>,
     pub free_kick_taker: Option<String>,
     pub corner_taker: Option<String>,
+}
+
+/// Complete, staged team setup submitted as one atomic update.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct TeamTacticsDraft {
+    pub formation: String,
+    pub play_style: PlayStyle,
+    pub starting_xi_ids: Vec<String>,
+    pub slot_roles: Vec<PlayerRole>,
+    pub tactics_phase: TacticsPhaseSettings,
+    pub match_roles: MatchRoles,
 }
 
 /// Tactical role for a player within the team's formation.
@@ -484,6 +500,7 @@ impl Team {
             formation: "4-4-2".to_string(),
             play_style: PlayStyle::Balanced,
             player_roles: HashMap::new(),
+            slot_roles: vec![PlayerRole::Standard; 11],
             tactics_phase: TacticsPhaseSettings::default(),
             training_focus: TrainingFocus::default(),
             training_intensity: TrainingIntensity::default(),

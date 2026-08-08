@@ -174,41 +174,22 @@ impl LiveMatchState {
         let team = self.team_mut(side);
         team.formation = formation.to_string();
 
-        // Collect outfield players (skip GK) sorted by defensive-ness
-        // (defenders first, then midfielders, then forwards) using a simple
-        // heuristic: defending+tackling vs shooting+dribbling
-        let mut outfield_indices: Vec<usize> = team
-            .players
-            .iter()
-            .enumerate()
-            .filter(|(_, p)| p.position != Position::Goalkeeper)
-            .map(|(i, _)| i)
-            .collect();
-
-        // Sort by defensive score descending (most defensive first)
-        outfield_indices.sort_by(|&a, &b| {
-            let pa = &team.players[a];
-            let pb = &team.players[b];
-            let def_a = (pa.defending as u16 + pa.tackling as u16 + pa.strength as u16) as f64;
-            let def_b = (pb.defending as u16 + pb.tackling as u16 + pb.strength as u16) as f64;
-            def_b
-                .partial_cmp(&def_a)
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
-
-        // Assign positions: first num_def → Defender, next num_mid → Midfielder, rest → Forward
-        for (slot, &idx) in outfield_indices.iter().enumerate() {
-            let new_pos = if slot < num_def {
+        // The XI is formation-slot aligned. A formation change preserves that
+        // ordering and changes the position represented by each destination
+        // slot; it must not stat-sort players into new slots behind the UI.
+        if let Some(goalkeeper) = team.players.first_mut() {
+            goalkeeper.position = Position::Goalkeeper;
+        }
+        for (slot, player) in team.players.iter_mut().skip(1).enumerate() {
+            player.position = if slot < num_def {
                 Position::Defender
             } else if slot < num_def + num_mid {
                 Position::Midfielder
             } else if slot < num_def + num_mid + num_fwd {
                 Position::Forward
             } else {
-                // Extra players (e.g. if team has <11 due to red cards) keep current
                 continue;
             };
-            team.players[idx].position = new_pos;
         }
     }
 }

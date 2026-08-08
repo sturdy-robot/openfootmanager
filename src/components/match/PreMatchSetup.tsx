@@ -17,7 +17,7 @@ import {
 } from "../squad/SquadTab.helpers";
 import { PhaseBlueprintPanel } from "../tactics/PhaseBlueprintPanel";
 import { setPlayerRole, setTacticsPhase } from "../../services/squadService";
-import { getRoleOptions } from "../../lib/playerRoles";
+import { getRoleOptions, rolesByStartingPlayer } from "../../lib/playerRoles";
 import type { PlayerRole, TacticsPhaseSettings } from "../../store/types";
 import { PitchToken, Select, TeamLogo, ThemeToggle, type PitchFitTone } from "../ui";
 import {
@@ -70,7 +70,10 @@ export default function PreMatchSetup({
   const [playerRoles, setPlayerRoles] = useState<Record<string, PlayerRole>>(() => {
     const uid =
       userSide === "Home" ? snapshot.home_team.id : snapshot.away_team.id;
-    return gameState.teams.find((tm) => tm.id === uid)?.player_roles ?? {};
+    const team = gameState.teams.find((tm) => tm.id === uid);
+    return team
+      ? rolesByStartingPlayer(team.starting_xi_ids, team.slot_roles, team.player_roles)
+      : {};
   });
 
   const handlePlayerRoleChange = (playerId: string, role: PlayerRole) => {

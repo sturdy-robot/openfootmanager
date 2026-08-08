@@ -46,16 +46,11 @@ pub(super) fn build_team_with_bench(game: &Game, team_id: &str) -> (TeamData, Ve
         .iter()
         .filter(|p| p.team_id.as_deref() == Some(team_id) && p.injury.is_none())
         .collect();
-    let player_roles = team.map(|t| &t.player_roles);
     // `deployed` is the granular slot the player occupies; `None` for the bench,
     // where the player's own position is used instead. The engine's coarse
     // position is derived from this so a player fielded out of position (e.g. a
     // striker at centre-back) is simulated in the position they actually play.
-    let convert_player = |p: &domain::player::Player, deployed: Option<&DomainPosition>| {
-        let role = player_roles
-            .and_then(|roles| roles.get(&p.id))
-            .map(domain_to_engine_role)
-            .unwrap_or(EnginePlayerRole::Standard);
+    let convert_player = |p: &domain::player::Player, deployed: Option<&DomainPosition>, role| {
         to_engine_player(p, role, deployed)
     };
 
@@ -80,7 +75,13 @@ pub(super) fn build_team_with_bench(game: &Game, team_id: &str) -> (TeamData, Ve
     let starting_xi = starting_players
         .into_iter()
         .enumerate()
-        .map(|(slot_index, p)| convert_player(p, slots.get(slot_index)))
+        .map(|(slot_index, p)| {
+            let role = team
+                .and_then(|team| team.slot_roles.get(slot_index))
+                .map(domain_to_engine_role)
+                .unwrap_or(EnginePlayerRole::Standard);
+            convert_player(p, slots.get(slot_index), role)
+        })
         .collect();
 
     let mut bench_domain: Vec<&domain::player::Player> = available_players
@@ -92,7 +93,10 @@ pub(super) fn build_team_with_bench(game: &Game, team_id: &str) -> (TeamData, Ve
             .partial_cmp(&natural_ovr(left))
             .unwrap_or(std::cmp::Ordering::Equal)
     });
-    let bench = bench_domain.into_iter().map(|p| convert_player(p, None)).collect();
+    let bench = bench_domain
+        .into_iter()
+        .map(|p| convert_player(p, None, EnginePlayerRole::Standard))
+        .collect();
 
     let team_data = TeamData {
         id: team_id.to_string(),

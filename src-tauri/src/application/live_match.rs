@@ -294,6 +294,21 @@ pub fn apply_match_command(
     Ok(snapshot)
 }
 
+pub fn apply_match_tactics(
+    state: &StateManager,
+    changes: engine::MatchTacticsChangeSet,
+) -> Result<engine::MatchSnapshot, String> {
+    state
+        .with_live_match(|session| {
+            if session.mode == MatchMode::Spectator || session.user_side != Some(changes.side) {
+                return Err("be.error.liveMatch.managementNotAllowed".to_string());
+            }
+            session.match_state.apply_tactics_change_set(changes)?;
+            Ok(session.snapshot())
+        })
+        .ok_or_else(|| "be.error.noActiveLiveMatch".to_string())?
+}
+
 pub fn get_match_snapshot(state: &StateManager) -> Result<engine::MatchSnapshot, String> {
     log::debug!("[cmd] get_match_snapshot");
     let snapshot = state

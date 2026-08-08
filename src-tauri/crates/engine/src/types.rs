@@ -236,7 +236,7 @@ pub enum BreakSpeed {
     Fast,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct TacticsConfig {
     pub pressing_intensity: PressingIntensity,
     pub defensive_line: DefensiveLine,

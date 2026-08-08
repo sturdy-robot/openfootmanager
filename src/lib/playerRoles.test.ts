@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getRoleOptions, getRolesForPosition } from "./playerRoles";
+import { getRoleOptions, getRolesForPosition, roleForStartingPlayer, rolesByStartingPlayer } from "./playerRoles";
 import type { PlayerRole } from "../store/types";
 
 // Canonical position -> valid-role table. This MUST stay in lock-step with the
@@ -74,5 +74,17 @@ describe("playerRoles position->roles parity", () => {
     const options = getRoleOptions("RightBack", "Poacher");
     expect(options[0]).toBe("Poacher");
     expect(options).toContain("DefensiveFB");
+  });
+});
+
+describe("slot-owned player roles", () => {
+  it("projects roles onto current slot occupants", () => {
+    expect(rolesByStartingPlayer(["gk", "lb"], ["SweeperKeeper", "AttackingFB"], undefined))
+      .toEqual({ gk: "SweeperKeeper", lb: "AttackingFB" });
+  });
+
+  it("falls back to readable legacy roles", () => {
+    expect(roleForStartingPlayer("st", ["st"], undefined, { st: "Poacher" }))
+      .toBe("Poacher");
   });
 });

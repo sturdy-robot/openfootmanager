@@ -8,6 +8,7 @@ use tauri::State;
 pub use crate::application::live_match::FinishLiveMatchResponse;
 use crate::application::live_match::{
     apply_match_command as apply_match_command_service,
+    apply_match_tactics as apply_match_tactics_service,
     finish_live_match as finish_live_match_service,
     get_match_snapshot as get_match_snapshot_service, start_live_match as start_live_match_service,
     step_live_match as step_live_match_service,
@@ -95,6 +96,14 @@ pub fn apply_match_command(
     command: engine::MatchCommand,
 ) -> Result<engine::MatchSnapshot, String> {
     apply_match_command_service(&state, command)
+}
+
+#[tauri::command]
+pub fn apply_match_tactics(
+    state: State<'_, Arc<StateManager>>,
+    changes: engine::MatchTacticsChangeSet,
+) -> Result<engine::MatchSnapshot, String> {
+    apply_match_tactics_service(&state, changes)
 }
 
 /// Get current match snapshot without advancing time.

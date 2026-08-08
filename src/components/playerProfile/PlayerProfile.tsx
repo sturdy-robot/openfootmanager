@@ -3,7 +3,7 @@ import { PlayerData, GameStateData } from "../../store/gameStore";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Select } from "../ui";
-import { getRoleOptions } from "../../lib/playerRoles";
+import { getRoleOptions, roleForStartingPlayer } from "../../lib/playerRoles";
 import { getDeployedPosition } from "../squad/SquadTab.helpers";
 import { setPlayerRole as setPlayerRoleService } from "../../services/squadService";
 import type { PlayerRole } from "../../store/types";
@@ -75,8 +75,9 @@ export default function PlayerProfile({
   const ovr = getPlayerOvr(player);
   const age = getPlayerAge(player.date_of_birth);
   const playerTeam = gameState.teams.find((team) => team.id === player.team_id);
-  const currentTacticalRole: PlayerRole =
-    playerTeam?.player_roles?.[player.id] ?? "Standard";
+  const currentTacticalRole: PlayerRole = playerTeam
+    ? roleForStartingPlayer(player.id, playerTeam.starting_xi_ids, playerTeam.slot_roles, playerTeam.player_roles)
+    : "Standard";
   // Offer roles for the deployed slot when the player is in the starting XI —
   // the backend validates set_player_role against it, so natural-position
   // roles would be rejected for an out-of-position starter (issue #272).
