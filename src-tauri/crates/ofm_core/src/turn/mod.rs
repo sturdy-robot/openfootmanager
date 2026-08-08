@@ -352,7 +352,6 @@ mod tests {
 
 fn build_engine_team(game: &Game, team_id: &str) -> engine::TeamData {
     let team = game.teams.iter().find(|t| t.id == team_id);
-    let player_roles = team.map(|t| &t.player_roles);
     let (name, formation, play_style, tactics) = match team {
         Some(t) => (
             t.name.clone(),
@@ -414,8 +413,13 @@ fn build_engine_team(game: &Game, team_id: &str) -> engine::TeamData {
                 reflexes: p.attributes.reflexes,
                 aerial: p.attributes.aerial,
                 traits: p.traits.iter().map(|t| format!("{:?}", t)).collect(),
-                role: player_roles
-                    .and_then(|roles| roles.get(&p.id))
+                role: team
+                    .and_then(|team| {
+                        team.starting_xi_ids
+                            .iter()
+                            .position(|id| id == &p.id)
+                            .and_then(|slot_index| team.slot_roles.get(slot_index))
+                    })
                     .map(domain_to_engine_role)
                     .unwrap_or(engine::PlayerRole::Standard),
             }

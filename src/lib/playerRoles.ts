@@ -68,3 +68,25 @@ export function getRoleOptions(position: string, currentRole?: string | null): P
   }
   return base;
 }
+
+export function rolesByStartingPlayer(
+  startingXiIds: string[] | undefined,
+  slotRoles: PlayerRole[] | undefined,
+  legacyRoles: Record<string, PlayerRole> | undefined,
+): Record<string, PlayerRole> {
+  return Object.fromEntries((startingXiIds ?? []).map((playerId, slotIndex) => [
+    playerId,
+    slotRoles?.[slotIndex] ?? legacyRoles?.[playerId] ?? "Standard",
+  ]));
+}
+
+export function roleForStartingPlayer(
+  playerId: string,
+  startingXiIds: string[] | undefined,
+  slotRoles: PlayerRole[] | undefined,
+  legacyRoles: Record<string, PlayerRole> | undefined,
+): PlayerRole {
+  const slotIndex = startingXiIds?.indexOf(playerId) ?? -1;
+  if (slotIndex < 0) return "Standard";
+  return slotRoles?.[slotIndex] ?? legacyRoles?.[playerId] ?? "Standard";
+}

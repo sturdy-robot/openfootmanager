@@ -59,6 +59,35 @@ export interface EngineTeamData {
   formation: string;
   play_style: string;
   players: EnginePlayerData[];
+  tactics?: TacticsConfig;
+}
+
+export interface TacticsConfig {
+  pressing_intensity: string;
+  defensive_line: string;
+  width: string;
+  build_up_style: string;
+  marking_style: string;
+  tempo: string;
+  defensive_shape: string;
+  counter_press_duration: string;
+  break_speed: string;
+}
+
+export interface TacticalLineupChange {
+  slot_index: number;
+  expected_outgoing_player_id: string;
+  incoming_player_id: string;
+}
+
+export interface MatchTacticsChangeSet {
+  side: "Home" | "Away";
+  formation: string;
+  play_style: string;
+  tactics: TacticsConfig;
+  slot_roles: string[];
+  lineup_changes: TacticalLineupChange[];
+  assignments: SetPieceTakers;
 }
 
 export interface SetPieceTakers {

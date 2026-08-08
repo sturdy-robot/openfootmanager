@@ -11,7 +11,9 @@ use std::collections::{HashMap, HashSet, VecDeque};
 
 use crate::event::MatchEvent;
 use crate::report::MatchReport;
-use crate::types::{MatchConfig, PlayStyle, PlayerData, PlayerRole, Side, TeamData, Zone};
+use crate::types::{
+    MatchConfig, PlayStyle, PlayerData, PlayerRole, Side, TacticsConfig, TeamData, Zone,
+};
 
 // ---------------------------------------------------------------------------
 // MatchPhase — tracks where we are in the match lifecycle
@@ -79,6 +81,24 @@ pub enum MatchCommand {
     },
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TacticalLineupChange {
+    pub slot_index: usize,
+    pub expected_outgoing_player_id: String,
+    pub incoming_player_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MatchTacticsChangeSet {
+    pub side: Side,
+    pub formation: String,
+    pub play_style: PlayStyle,
+    pub tactics: TacticsConfig,
+    pub slot_roles: Vec<PlayerRole>,
+    pub lineup_changes: Vec<TacticalLineupChange>,
+    pub assignments: SetPieceTakers,
+}
+
 // ---------------------------------------------------------------------------
 // SubstitutionRecord — tracks a substitution that was made
 // ---------------------------------------------------------------------------
@@ -95,7 +115,7 @@ pub struct SubstitutionRecord {
 // SetPieceTakers — designated set piece takers for a side
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SetPieceTakers {
     pub free_kick_taker: Option<String>,
     pub corner_taker: Option<String>,
@@ -183,6 +203,7 @@ struct PenaltyShootoutState {
 // LiveMatchState — the core step-by-step simulation engine
 // ---------------------------------------------------------------------------
 
+#[derive(Clone)]
 pub struct LiveMatchState {
     // Teams (owned — subs mutate the player list)
     home: TeamData,
@@ -369,6 +390,116 @@ impl LiveMatchState {
                 Ok(())
             }
         }
+    }
+
+    /// Apply a staged matchday change set to a clone, committing only after
+    /// every lineup, role, and assignment validation succeeds.
+    pub fn apply_tactics_change_set(
+        &mut self,
+        changes: MatchTacticsChangeSet,
+    ) -> Result<(), String> {
+        let mut candidate = self.clone();
+        candidate.apply_tactics_change_set_in_place(&changes)?;
+        *self = candidate;
+        Ok(())
+    }
+
+    fn apply_tactics_change_set_in_place(
+        &mut self,
+        changes: &MatchTacticsChangeSet,
+    ) -> Result<(), String> {
+        let formation_parts = changes
+            .formation
+            .split('-')
+            .map(str::parse::<usize>)
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|_| "be.error.invalidFormation".to_string())?;
+        if formation_parts.iter().sum::<usize>() != 10 {
+            return Err("be.error.invalidFormation".into());
+        }
+        let team = self.team_ref(changes.side);
+        let mut outgoing = HashSet::new();
+        let mut incoming = HashSet::new();
+        if changes.lineup_changes.len()
+            > self.max_subs.saturating_sub(match changes.side {
+                Side::Home => self.home_subs_made,
+                Side::Away => self.away_subs_made,
+            }) as usize
+        {
+            return Err("be.error.liveMatch.maxSubstitutionsReached".into());
+        }
+        for change in &changes.lineup_changes {
+            if team
+                .players
+                .get(change.slot_index)
+                .map(|player| player.id.as_str())
+                != Some(change.expected_outgoing_player_id.as_str())
+            {
+                return Err("be.error.liveMatch.staleLineupSlot".into());
+            }
+            if !outgoing.insert(change.expected_outgoing_player_id.as_str())
+                || !incoming.insert(change.incoming_player_id.as_str())
+            {
+                return Err("be.error.liveMatch.duplicateLineupChange".into());
+            }
+            if !self
+                .bench(changes.side)
+                .iter()
+                .any(|player| player.id == change.incoming_player_id)
+            {
+                return Err("be.error.liveMatch.playerNotOnBench".into());
+            }
+        }
+
+        for change in &changes.lineup_changes {
+            if self.phase == MatchPhase::PreKickOff {
+                self.do_pre_match_swap(
+                    changes.side,
+                    &change.expected_outgoing_player_id,
+                    &change.incoming_player_id,
+                )?;
+            } else {
+                self.do_substitution(
+                    changes.side,
+                    &change.expected_outgoing_player_id,
+                    &change.incoming_player_id,
+                )?;
+            }
+        }
+
+        self.apply_formation(changes.side, &changes.formation);
+        let team = self.team_mut(changes.side);
+        if changes.slot_roles.len() != team.players.len() {
+            return Err("be.error.liveMatch.invalidSlotRoles".into());
+        }
+        team.play_style = changes.play_style;
+        team.tactics = changes.tactics.clone();
+        for (player, role) in team.players.iter_mut().zip(&changes.slot_roles) {
+            if !is_role_valid_for_position(*role, player.position) {
+                return Err("be.error.roleNotValidForPosition".into());
+            }
+            player.role = *role;
+        }
+        let on_field = team
+            .players
+            .iter()
+            .map(|player| player.id.as_str())
+            .collect::<HashSet<_>>();
+        let assigned = [
+            &changes.assignments.captain,
+            &changes.assignments.penalty_taker,
+            &changes.assignments.free_kick_taker,
+            &changes.assignments.corner_taker,
+        ];
+        if assigned
+            .into_iter()
+            .flatten()
+            .any(|player_id| !on_field.contains(player_id.as_str()))
+        {
+            return Err("be.error.liveMatch.assignmentPlayerNotOnPitch".into());
+        }
+        *self.set_pieces_mut(changes.side) = changes.assignments.clone();
+        Ok(())
     }
 
     /// Convert the finished match into a MatchReport.

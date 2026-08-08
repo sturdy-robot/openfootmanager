@@ -341,6 +341,9 @@ impl GamePersistenceReader {
                     .map_err(|_| "be.error.gamePersistence.loadFailed".to_string())?
             },
         };
+        for team in &mut game.teams {
+            ofm_core::tactics::migrate_legacy_player_roles(team);
+        }
         game.promote_legacy_league();
         ofm_core::season_context::refresh_game_context(&mut game);
 

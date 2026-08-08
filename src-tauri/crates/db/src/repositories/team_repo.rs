@@ -27,7 +27,8 @@ pub fn upsert_team(conn: &Connection, t: &Team) -> Result<(), String> {
         .map_err(|_| GAME_PERSISTENCE_WRITE_ERROR.to_string())?;
     let media_json =
         serde_json::to_string(&t.media).map_err(|_| GAME_PERSISTENCE_WRITE_ERROR.to_string())?;
-    let player_roles_json = serde_json::to_string(&t.player_roles)
+    let player_roles_json = "{}";
+    let slot_roles_json = serde_json::to_string(&t.slot_roles)
         .map_err(|_| GAME_PERSISTENCE_WRITE_ERROR.to_string())?;
     let tactics_phase_json = serde_json::to_string(&t.tactics_phase)
         .map_err(|_| GAME_PERSISTENCE_WRITE_ERROR.to_string())?;
@@ -45,8 +46,8 @@ pub fn upsert_team(conn: &Connection, t: &Team) -> Result<(), String> {
          training_focus, training_intensity, training_schedule,
          founded_year, colors_primary, colors_secondary,
          starting_xi_ids, match_roles, form, history, training_groups, financial_ledger, sponsorship, facilities, media_json, kit_pattern,
-         player_roles_json, tactics_phase_json)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32, ?33, ?34, ?35)",
+         player_roles_json, tactics_phase_json, slot_roles_json)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32, ?33, ?34, ?35, ?36)",
         params![
             t.id,
             t.name,
@@ -83,6 +84,7 @@ pub fn upsert_team(conn: &Connection, t: &Team) -> Result<(), String> {
             kit_pattern_str,
             player_roles_json,
             tactics_phase_json,
+            slot_roles_json,
         ],
     )
     .map_err(|_| GAME_PERSISTENCE_WRITE_ERROR.to_string())?;
@@ -152,6 +154,7 @@ fn row_to_team(row: &rusqlite::Row) -> rusqlite::Result<Team> {
     let kit_pattern_str: String = row.get::<_, String>(32)?;
     let player_roles_json: String = row.get(33).unwrap_or_else(|_| "{}".to_string());
     let tactics_phase_json: String = row.get(34).unwrap_or_else(|_| "{}".to_string());
+    let slot_roles_json: String = row.get(35).unwrap_or_else(|_| "[]".to_string());
 
     Ok(Team {
         id: row.get(0)?,
@@ -205,6 +208,11 @@ fn row_to_team(row: &rusqlite::Row) -> rusqlite::Result<Team> {
         .into_iter()
         .filter_map(|(k, v)| serde_json::from_value::<PlayerRole>(v).ok().map(|r| (k, r)))
         .collect(),
+        slot_roles: serde_json::from_str::<Vec<serde_json::Value>>(&slot_roles_json)
+            .unwrap_or_default()
+            .into_iter()
+            .filter_map(|value| serde_json::from_value::<PlayerRole>(value).ok())
+            .collect(),
         tactics_phase: {
             let raw: serde_json::Value =
                 serde_json::from_str(&tactics_phase_json).unwrap_or_default();
@@ -261,7 +269,8 @@ pub fn load_all_teams(conn: &Connection) -> Result<Vec<Team>, String> {
                     founded_year, colors_primary, colors_secondary,
                     starting_xi_ids, match_roles, form, history, training_groups, financial_ledger, sponsorship, facilities,
                     COALESCE(media_json, '{}'), COALESCE(kit_pattern, 'Solid'),
-                    COALESCE(player_roles_json, '{}'), COALESCE(tactics_phase_json, '{}')
+                    COALESCE(player_roles_json, '{}'), COALESCE(tactics_phase_json, '{}'),
+                    COALESCE(slot_roles_json, '[]')
              FROM teams",
         )
         .map_err(|_| GAME_PERSISTENCE_LOAD_ERROR.to_string())?;
@@ -288,7 +297,8 @@ pub fn load_team(conn: &Connection, id: &str) -> Result<Option<Team>, String> {
                     founded_year, colors_primary, colors_secondary,
                     starting_xi_ids, match_roles, form, history, training_groups, financial_ledger, sponsorship, facilities,
                     COALESCE(media_json, '{}'), COALESCE(kit_pattern, 'Solid'),
-                    COALESCE(player_roles_json, '{}'), COALESCE(tactics_phase_json, '{}')
+                    COALESCE(player_roles_json, '{}'), COALESCE(tactics_phase_json, '{}'),
+                    COALESCE(slot_roles_json, '[]')
              FROM teams WHERE id = ?1",
         )
         .map_err(|_| GAME_PERSISTENCE_LOAD_ERROR.to_string())?;
@@ -556,27 +566,29 @@ mod tests {
     }
 
     #[test]
-    fn test_team_player_roles_roundtrip() {
+    fn test_team_slot_roles_roundtrip() {
         use domain::team::PlayerRole;
         let db = test_db();
         let mut team = sample_team("team-001", "Roles FC");
-        team.player_roles
-            .insert("player-1".to_string(), PlayerRole::PressingForward);
-        team.player_roles
-            .insert("player-2".to_string(), PlayerRole::Mezzala);
+        team.slot_roles = vec![
+            PlayerRole::BallPlayingKeeper,
+            PlayerRole::AttackingFB,
+            PlayerRole::Stopper,
+            PlayerRole::CoverCB,
+            PlayerRole::DefensiveFB,
+            PlayerRole::WideForward,
+            PlayerRole::BoxToBox,
+            PlayerRole::Mezzala,
+            PlayerRole::InsideForward,
+            PlayerRole::PressingForward,
+            PlayerRole::CompleteForward,
+        ];
 
         upsert_team(db.conn(), &team).unwrap();
         let loaded = load_team(db.conn(), "team-001").unwrap().unwrap();
 
-        assert_eq!(
-            loaded.player_roles.get("player-1"),
-            Some(&PlayerRole::PressingForward)
-        );
-        assert_eq!(
-            loaded.player_roles.get("player-2"),
-            Some(&PlayerRole::Mezzala)
-        );
-        assert_eq!(loaded.player_roles.len(), 2);
+        assert_eq!(loaded.slot_roles, team.slot_roles);
+        assert!(loaded.player_roles.is_empty());
     }
 
     #[test]
