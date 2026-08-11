@@ -235,8 +235,14 @@ jobs:
             # cannot upload a directory, so the archive carries the `.dmg` but not
             # the `.app.tar.gz` updater payload — which an immutable snapshot has
             # no use for anyway.
-            if [ ! -f "$path" ]; then
-              echo "Skipping non-file artifact: $path"
+            #
+            # Deliberately `-d` and not `! -f`: on a Windows runner `-f` returned
+            # false for an .msi that demonstrably existed (tauri-action had just
+            # uploaded it), and the skip silently dropped the asset while the job
+            # stayed green. Testing only for the case actually being excluded
+            # means anything else fails loudly at the upload instead.
+            if [ -d "$path" ]; then
+              echo "Skipping bundle directory: $path"
               continue
             fi
 
