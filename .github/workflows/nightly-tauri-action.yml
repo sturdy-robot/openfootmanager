@@ -203,7 +203,15 @@ jobs:
 
           # Bundle filenames contain spaces ("Openfoot Manager_0.3.0_amd64.deb"),
           # so the JSON array is read one path per line rather than word-split.
-          paths="$(jq -r '.[]' <<<"${ARTIFACT_PATHS:-[]}")"
+          #
+          # `tr -d '\r'` is not cosmetic. Tauri's bundler prints its "Finished N
+          # bundles at:" list with CRLF on Windows and tauri-action splits it on
+          # \n alone, so every artifactPaths entry *except the last* arrives with
+          # a trailing carriage return. The path then resolves for nothing —
+          # which is why the .msi (first) was unreachable while the .exe (last)
+          # uploaded fine, and why `gh` printed its closing backtick on the next
+          # line.
+          paths="$(jq -r '.[]' <<<"${ARTIFACT_PATHS:-[]}" | tr -d '\r')"
           if [ -z "$paths" ]; then
             echo "This platform produced no bundles; nothing to archive."
             exit 0
@@ -236,20 +244,19 @@ jobs:
             # the `.app.tar.gz` updater payload — which an immutable snapshot has
             # no use for anyway.
             #
-            # Deliberately `-d` and not `! -f`: on a Windows runner `-f` returned
-            # false for an .msi that demonstrably existed (tauri-action had just
-            # uploaded it), and the skip silently dropped the asset while the job
-            # stayed green. Testing only for the case actually being excluded
-            # means anything else fails loudly at the upload instead.
+            # Deliberately `-d` and not `! -f`: an earlier `! -f` guard here
+            # swallowed the carriage-return bug above, silently dropping the .msi
+            # while the job stayed green. Testing only for the case actually being
+            # excluded means anything else reaches the checks below and fails.
             if [ -d "$path" ]; then
               echo "Skipping bundle directory: $path"
               continue
             fi
 
-            # An artifact that tauri-action uploaded seconds ago should still be
-            # here. On the Windows runner the .msi is not, so say so with the
-            # directory listing attached rather than letting `gh` report an
-            # inscrutable "no matches found".
+            # An artifact tauri-action uploaded seconds ago should still be here.
+            # Kept as a tripwire: `gh` answers an unresolvable path with "no
+            # matches found", which reads like a glob bug and cost two rounds of
+            # debugging. The listing says whether the file or the string is wrong.
             if [ ! -e "$path" ]; then
               echo "::error::Artifact listed by tauri-action is missing: $path"
               ls -l "$(dirname "$path")" || true
