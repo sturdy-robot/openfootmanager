@@ -202,7 +202,8 @@ move fast because `release` is the thing that has to be trustworthy.
     nightly intact — which also means a platform that failed keeps its previous binary here.
   - to a permanent **archive** release, `nightly-<YYYYMMDD>-<HHMMSS>-<sha>`, holding exactly
     what that run built. The bundles are copied straight from each build runner, so nothing
-    stale can leak in.
+    stale can leak in. Archives carry the installers only — the `.app.tar.gz` updater
+    payloads stay on the rolling release, since nothing auto-updates *to* a snapshot.
 
   The timestamp in the archive tag is load-bearing, not decoration. GitHub orders the releases
   page by the target commit's *date* and then by tag string — never by publish time — so the

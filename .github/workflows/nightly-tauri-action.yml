@@ -232,10 +232,12 @@ jobs:
           printf '%s\n' "$paths" | while IFS= read -r path; do
             [ -n "$path" ] || continue
 
-            # Windows emits backslash paths, and `gh release upload` glob-expands
-            # its argument there — in a glob, `\` is an escape character, so the
-            # path dissolves into a pattern that matches nothing. Forward slashes
-            # work on every platform.
+            # Normalize the backslashes Windows emits. This was first added on the
+            # theory that `gh` glob-expands its argument and `\` escaped away the
+            # path — that theory is wrong: the run that proved it failed on a
+            # forward-slash path, and the real culprit was the carriage return
+            # handled above. Kept because the configuration verified end to end
+            # has it, and Git-Bash is happy either way. Do not read it as the fix.
             path="${path//\\//}"
 
             # artifactPaths is not all files: on macOS it lists the `.app` bundle
