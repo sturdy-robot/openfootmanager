@@ -26,6 +26,9 @@ jobs:
       display_version: ${{ steps.release_settings.outputs.display_version }}
       release_name: ${{ steps.release_settings.outputs.release_name }}
       release_body: ${{ steps.release_settings.outputs.release_body }}
+      archive_tag: ${{ steps.release_settings.outputs.archive_tag }}
+      archive_name: ${{ steps.release_settings.outputs.archive_name }}
+      archive_body: ${{ steps.release_settings.outputs.archive_body }}
     steps:
       # Read-only job: reads tauri.conf.json and calls gh api via GH_TOKEN, never
       # touches git, so the checkout credentials are not needed.
@@ -42,8 +45,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Fixed rolling tag: exactly one nightly release ever exists, so the
-          # releases page stays legible regardless of how GitHub sorts it.
+          # Fixed rolling tag, replaced in place, so "the latest nightly" always
+          # has one stable URL no matter how GitHub sorts the releases page.
           tag="${INPUT_RELEASE_TAG:-nightly}"
           nightly_date="$(date -u +%F)"
           compact_date="$(date -u +%Y%m%d)"
@@ -54,6 +57,22 @@ jobs:
           # The date/sha live in the release name because a rolling tag's
           # published_at never advances.
           release_name="Openfoot Manager Nightly ${display_version}"
+
+          # Alongside the rolling tag, every push also leaves a permanent archive
+          # release behind. GitHub orders the releases page by the target commit's
+          # *date* and then by tag string, not by publish time, so a tag ending in
+          # a bare sha shuffles same-day builds into a random order — which is why
+          # the old `nightly-develop-<date>-<sha>` scheme was abandoned. A UTC
+          # timestamp makes tag order and build order the same thing.
+          #
+          # One clock read, reused: a second `date -u` here could straddle a
+          # second boundary and stamp the tag differently from the title.
+          build_stamp="$(date -u +%Y%m%d-%H%M%S)"
+          archive_tag="nightly-${build_stamp}-${short_sha}"
+          # `T` rather than `.` keeps this a valid SemVer alphanumeric identifier;
+          # a time like `043512` would be an invalid numeric one (leading zero).
+          archive_version="${base_version}-nightly.${build_stamp/-/T}+${short_sha}"
+          archive_name="Openfoot Manager Nightly ${archive_version}"
 
           compare_line=""
           last_stable="$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq .tag_name 2>/dev/null || true)"
@@ -77,6 +96,19 @@ jobs:
             fi
             echo ""
             echo "This tag is replaced on every push to \`develop\`; the assets below always reflect the newest build."
+            echo ""
+            echo "Older builds are kept as \`nightly-<date>-<time>-<commit>\` releases."
+            echo "EOF"
+            echo "archive_tag=$archive_tag"
+            echo "archive_name=$archive_name"
+            echo "archive_body<<EOF"
+            echo "Archived nightly build from \`develop\` — **unstable**, expect breakage."
+            echo ""
+            echo "- Version: \`${archive_version}\`"
+            echo "- Commit: \`${short_sha}\`"
+            echo "- Built: ${nightly_date} (UTC)"
+            echo ""
+            echo "A snapshot of one commit, kept for history. Unlike [\`${tag}\`](https://github.com/${GITHUB_REPOSITORY}/releases/tag/${tag}) it is never replaced — and never updated either, so it will fall behind."
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
@@ -130,6 +162,7 @@ jobs:
         run: npm ci
 
       - uses: tauri-apps/tauri-action@v0
+        id: tauri
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Bakes the channel into the bundled frontend so the in-app version
@@ -147,6 +180,51 @@ jobs:
           releaseDraft: false
           prerelease: true
           args: ${{ matrix.args }}
+
+      # The bundles are already on this runner, so each platform copies its own
+      # into the archive release. Downloading them again in a central job would
+      # move the same few hundred megabytes twice for no gain, and would archive
+      # whatever happens to be attached to the rolling release — including a
+      # stale binary left there by an earlier build. Copying from source means an
+      # archive holds exactly what this run produced.
+      - name: Publish assets to the per-build nightly archive
+        # macOS ships bash 3.2, so nothing here may use bash 4 builtins.
+        # The Windows leg defaults to pwsh, hence the explicit shell.
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          ARCHIVE_TAG: ${{ needs.prepare-nightly.outputs.archive_tag }}
+          ARCHIVE_NAME: ${{ needs.prepare-nightly.outputs.archive_name }}
+          ARCHIVE_BODY: ${{ needs.prepare-nightly.outputs.archive_body }}
+          ARTIFACT_PATHS: ${{ steps.tauri.outputs.artifactPaths }}
+        run: |
+          set -euo pipefail
+
+          # Bundle filenames contain spaces ("Openfoot Manager_0.3.0_amd64.deb"),
+          # so the JSON array is read one path per line rather than word-split.
+          paths="$(jq -r '.[]' <<<"${ARTIFACT_PATHS:-[]}")"
+          if [ -z "$paths" ]; then
+            echo "This platform produced no bundles; nothing to archive."
+            exit 0
+          fi
+
+          # Created lazily by whichever platform gets here first — and only once
+          # there is something to put in it, so a run cancelled before any build
+          # finishes strands nothing. A losing racer's create fails with "already
+          # exists", which is the state it wanted anyway.
+          if ! gh release view "$ARCHIVE_TAG" >/dev/null 2>&1; then
+            gh release create "$ARCHIVE_TAG" \
+              --target "$GITHUB_SHA" \
+              --title "$ARCHIVE_NAME" \
+              --notes "$ARCHIVE_BODY" \
+              --prerelease || true
+          fi
+
+          printf '%s\n' "$paths" | while IFS= read -r path; do
+            [ -n "$path" ] || continue
+            gh release upload "$ARCHIVE_TAG" "$path" --clobber
+          done
 
   # The `nightly` release is upserted, never deleted: a failed build must not
   # destroy the last known-good nightly. The cost is that re-uploading assets to
@@ -210,3 +288,41 @@ jobs:
           gh workflow run nightly-release-manifest.yml \
             -f release_tag="$RELEASE_TAG" \
             -f release_version="$RELEASE_VERSION"
+
+  # `cancel-in-progress` kills this run the moment a newer push lands, and by then
+  # the archive release may already hold two of five platforms — a build that
+  # never really existed, presented as history. `always()` is the only condition
+  # that still runs after a cancellation; `!cancelled()`, used above, does not.
+  cleanup-nightly-archive:
+    needs: [prepare-nightly, publish-tauri-nightly]
+    if: ${{ always() && needs.prepare-nightly.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # No checkout: gh talks to the API directly, and GH_REPO tells it where.
+      - name: Drop superseded or empty archive releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          ARCHIVE_TAG: ${{ needs.prepare-nightly.outputs.archive_tag }}
+          BUILD_RESULT: ${{ needs.publish-tauri-nightly.result }}
+        run: |
+          set -euo pipefail
+
+          if ! gh release view "$ARCHIVE_TAG" >/dev/null 2>&1; then
+            echo "No $ARCHIVE_TAG release to clean up (result=$BUILD_RESULT)."
+            exit 0
+          fi
+
+          asset_count="$(gh release view "$ARCHIVE_TAG" --json assets --jq '.assets | length')"
+
+          if [ "$BUILD_RESULT" != "cancelled" ] && [ "$asset_count" -gt 0 ]; then
+            echo "Keeping $ARCHIVE_TAG ($asset_count assets, result=$BUILD_RESULT)."
+            exit 0
+          fi
+
+          # --cleanup-tag: `gh release create` created the tag, so deleting the
+          # release on its own would leave it dangling.
+          gh release delete "$ARCHIVE_TAG" --cleanup-tag --yes
+          echo "Deleted $ARCHIVE_TAG (result=$BUILD_RESULT, assets=$asset_count)."

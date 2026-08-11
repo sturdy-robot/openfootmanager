@@ -195,15 +195,30 @@ move fast because `release` is the thing that has to be trustworthy.
 
 ### Release workflows
 
-- `publish-nightly` runs on every push to `develop` and upserts a single **rolling** `nightly`
-  release: one entry that is replaced in place, so the releases page never fills with
-  indistinguishable builds. It is never deleted up front, so a failed build leaves the last
-  good nightly intact.
+- `publish-nightly` runs on every push to `develop` and publishes each build twice:
+
+  - to the **rolling** `nightly` release, upserted in place so "the latest nightly" always has
+    one stable URL. It is never deleted up front, so a failed build leaves the last good
+    nightly intact — which also means a platform that failed keeps its previous binary here.
+  - to a permanent **archive** release, `nightly-<YYYYMMDD>-<HHMMSS>-<sha>`, holding exactly
+    what that run built. The bundles are copied straight from each build runner, so nothing
+    stale can leak in.
+
+  The timestamp in the archive tag is load-bearing, not decoration. GitHub orders the releases
+  page by the target commit's *date* and then by tag string — never by publish time — so the
+  old `nightly-develop-<date>-<sha>` scheme shuffled same-day builds into an arbitrary order.
+  With a UTC timestamp, tag order is build order.
+
+  Runs are cancelled when a newer push lands, and the cancelled run's half-finished archive is
+  deleted along with its tag: an archive means a build that completed.
+
 - `publish` runs on pushes to `release` and creates `v__VERSION__` as a non-prerelease, which
-  is what gives the releases page its "Latest" badge.
+  is what gives the releases page its "Latest" badge. Both nightly tiers are prereleases and
+  can never take it.
 - The `*-release-manifest` workflows generate the download manifest consumed by the website.
-  Because upserting a release does not re-fire `release: published`, the nightly build
-  dispatches `nightly-release-manifest.yml` explicitly when it finishes.
+  Only the rolling `nightly` tag produces one — the archives are history, not a download the
+  website advertises. Because upserting a release does not re-fire `release: published`, the
+  nightly build dispatches `nightly-release-manifest.yml` explicitly when it finishes.
 
 ### Translations
 

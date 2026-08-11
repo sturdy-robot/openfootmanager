@@ -21,7 +21,11 @@ concurrency:
 
 jobs:
   publish-nightly-release-metadata:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.release.target_commitish == 'develop' || startsWith(github.event.release.tag_name, 'nightly') }}
+    # Only the rolling tag produces a manifest. The per-build `nightly-<date>-
+    # <time>-<sha>` archives are history, not the download the website points at,
+    # and this workflow cancels in progress — so an archive slipping through here
+    # would also kill the dispatch for the real nightly.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.release.tag_name == 'nightly' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
