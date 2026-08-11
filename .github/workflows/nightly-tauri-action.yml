@@ -246,6 +246,16 @@ jobs:
               continue
             fi
 
+            # An artifact that tauri-action uploaded seconds ago should still be
+            # here. On the Windows runner the .msi is not, so say so with the
+            # directory listing attached rather than letting `gh` report an
+            # inscrutable "no matches found".
+            if [ ! -e "$path" ]; then
+              echo "::error::Artifact listed by tauri-action is missing: $path"
+              ls -l "$(dirname "$path")" || true
+              exit 1
+            fi
+
             gh release upload "$ARCHIVE_TAG" "$path" --clobber
           done
 
