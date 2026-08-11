@@ -223,6 +223,23 @@ jobs:
 
           printf '%s\n' "$paths" | while IFS= read -r path; do
             [ -n "$path" ] || continue
+
+            # Windows emits backslash paths, and `gh release upload` glob-expands
+            # its argument there — in a glob, `\` is an escape character, so the
+            # path dissolves into a pattern that matches nothing. Forward slashes
+            # work on every platform.
+            path="${path//\\//}"
+
+            # artifactPaths is not all files: on macOS it lists the `.app` bundle
+            # directory, which tauri-action tars up itself before uploading. gh
+            # cannot upload a directory, so the archive carries the `.dmg` but not
+            # the `.app.tar.gz` updater payload — which an immutable snapshot has
+            # no use for anyway.
+            if [ ! -f "$path" ]; then
+              echo "Skipping non-file artifact: $path"
+              continue
+            fi
+
             gh release upload "$ARCHIVE_TAG" "$path" --clobber
           done
 
