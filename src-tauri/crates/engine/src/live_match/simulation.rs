@@ -168,11 +168,10 @@ impl LiveMatchState {
         self.current_minute += 1;
         let minute = self.current_minute;
 
-        // Track possession
-        match self.possession {
-            Side::Home => self.home_possession_ticks += 1,
-            Side::Away => self.away_possession_ticks += 1,
-        }
+        // Possession is accumulated inside the chain, a second at a time and
+        // credited to whoever was actually on the ball — see
+        // `play_possession_chain`. Counting it here, once a minute, could only
+        // ever say who started the minute with it.
 
         // Deplete stamina for all on-pitch players
         self.deplete_stamina_tick();

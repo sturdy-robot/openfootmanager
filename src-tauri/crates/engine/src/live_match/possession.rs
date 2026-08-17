@@ -89,7 +89,17 @@ impl LiveMatchState {
             let opponent_tactics = self.team_ref(before.opposite()).tactics;
 
             events.extend(self.resolve_action(minute, rng));
-            seconds += rng.random_range(ACTION_SECONDS);
+            let spent = rng.random_range(ACTION_SECONDS);
+            seconds += spent;
+            // Credited to whoever had the ball while the action was played, not
+            // to whoever happened to hold it when the minute began. Possession
+            // was a single tick per minute awarded on that basis, so a side that
+            // lost the ball to the first tackle and spent the next fifty
+            // seconds chasing it was still credited with the whole minute.
+            match before {
+                Side::Home => self.home_possession_ticks += spent,
+                Side::Away => self.away_possession_ticks += spent,
+            }
 
             // The ball changed hands: counter-press and break speed belong to
             // this moment, not to a roll made once a minute.

@@ -1072,6 +1072,32 @@ fn pre_match_swap_invalid_bench_player_fails() {
 }
 
 // ===========================================================================
+// Tests: possession
+// ===========================================================================
+
+#[test]
+fn possession_is_measured_in_time_on_the_ball() {
+    // One tick used to be awarded per minute, to whoever happened to have the
+    // ball when the minute began — so a side that lost it to the first tackle
+    // and spent the rest of the minute chasing was credited with all of it.
+    let mut state = make_live_match(false);
+    let mut rng = seeded_rng(3);
+    run_to_finish(&mut state, &mut rng);
+    let report = state.into_report();
+
+    let total = report.home_stats.possession_ticks + report.away_stats.possession_ticks;
+    assert!(
+        total > 90 * 20,
+        "possession totalled {total} across the match, which is a count of \
+         minutes rather than of seconds spent on the ball"
+    );
+    assert!(
+        report.home_stats.possession_ticks > 0 && report.away_stats.possession_ticks > 0,
+        "both sides had the ball at some point"
+    );
+}
+
+// ===========================================================================
 // Tests: deployed slots across a change of personnel
 // ===========================================================================
 
