@@ -65,8 +65,21 @@ pub fn simulate_setup<R: Rng + ?Sized>(setup: &MatchSetup, rng: &mut R) -> Match
     // Derived only when someone is actually in a dugout: seeding it
     // unconditionally would consume a draw from the match stream and change the
     // result of every match that has no managers at all.
-    let mut manager_rng = (setup.home_manager.is_some() || setup.away_manager.is_some())
-        .then(|| StdRng::seed_from_u64(rng.next_u64()));
+    //
+    // From the fixture seed when the caller has one, which is how the live
+    // session derives it — the two have to agree, or a fixture resolved
+    // unwatched and the same fixture watched back diverge from the first
+    // minute and the replay shows a match that never happened. Taking it off
+    // the top of the simulation stream, as this did, cannot agree with anything
+    // that has not consumed exactly the same draws first.
+    let mut manager_rng = (setup.home_manager.is_some() || setup.away_manager.is_some()).then(
+        || match setup.seed {
+            Some(seed) => StdRng::seed_from_u64(seed ^ crate::AI_STREAM_SALT),
+            // A caller with no seed — a benchmark, the compliance suite —
+            // cannot be replayed, so there is nothing for it to agree with.
+            None => StdRng::seed_from_u64(rng.next_u64()),
+        },
+    );
 
     const MAX_STEPS: u32 = 1_000;
     for _ in 0..MAX_STEPS {

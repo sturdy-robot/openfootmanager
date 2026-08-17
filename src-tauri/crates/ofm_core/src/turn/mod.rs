@@ -487,6 +487,9 @@ where
         // minute to the shootout below, and half an hour of football — goals,
         // substitutions, fatigue, bookings — simply never happened.
         .with_extra_time(is_knockout)
+        // So the dugout draws from the same stream it would if the player were
+        // watching this fixture rather than letting it resolve.
+        .with_seed(seed)
         .with_managers(
             crate::live_match_manager::ai_profile_for(game, &home_team_id),
             crate::live_match_manager::ai_profile_for(game, &away_team_id),

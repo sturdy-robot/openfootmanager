@@ -21,6 +21,20 @@ pub mod types;
 /// documentation, renames, or new APIs no simulation path calls.
 pub const ENGINE_VERSION: u32 = 19;
 
+/// Offset that derives the dugout's random stream from the fixture seed.
+///
+/// Lives here rather than beside either caller because both of them need it and
+/// they must agree: a fixture resolved unwatched and the same fixture watched
+/// live have to make the same substitutions at the same minutes, or a replay
+/// reconstructs a different match from the one that was played. They did not
+/// agree — the batch driver took the manager seed off the top of the simulation
+/// stream while the live session derived it from the fixture seed, so the two
+/// diverged from the first minute.
+///
+/// Changing it changes every AI decision for a given seed, so it is engine
+/// behaviour: treat it as pinned, and bump [`ENGINE_VERSION`] if it has to move.
+pub const AI_STREAM_SALT: u64 = 0xA15E_EDA1_5EED;
+
 // Re-export key types for convenience
 pub use engine::simulate;
 pub use engine::simulate_setup;

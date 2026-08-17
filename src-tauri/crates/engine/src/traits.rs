@@ -44,6 +44,8 @@ pub struct MatchSetup {
     /// engine benchmark wants and what an unattended fixture used to get.
     pub home_manager: Option<AiProfile>,
     pub away_manager: Option<AiProfile>,
+    /// The fixture seed, when the caller has one. See [`MatchSetup::with_seed`].
+    pub seed: Option<u64>,
 }
 
 impl MatchSetup {
@@ -61,7 +63,20 @@ impl MatchSetup {
             allows_extra_time: false,
             home_manager: None,
             away_manager: None,
+            seed: None,
         }
+    }
+
+    /// The fixture seed this match is being simulated from.
+    ///
+    /// Only needed so the dugout's stream can be derived the same way the live
+    /// session derives it — see [`crate::AI_STREAM_SALT`]. A caller with no
+    /// seed (a benchmark, the compliance suite) leaves it unset and the manager
+    /// stream is taken off the simulation stream as before; nothing that has no
+    /// seed can be replayed anyway.
+    pub fn with_seed(mut self, seed: u64) -> Self {
+        self.seed = Some(seed);
+        self
     }
 
     /// Whether a level score at ninety minutes goes to extra time.

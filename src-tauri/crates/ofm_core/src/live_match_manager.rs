@@ -116,13 +116,6 @@ fn capture_lineup(game: &Game, team_id: &str, xi: &engine::TeamData, bench: &[en
     }
 }
 
-/// Offset that derives the AI's random stream from the fixture seed.
-///
-/// Changing it changes every AI decision for a given seed, so it is engine
-/// behaviour: treat it as pinned, and bump `engine::ENGINE_VERSION` if it ever
-/// has to move.
-const AI_STREAM_SALT: u64 = 0xA15E_EDA1_5EED;
-
 const LIVE_MATCH_NO_LEAGUE_ERROR: &str = "be.error.liveMatch.noLeague";
 const LIVE_MATCH_FIXTURE_NOT_FOUND_ERROR: &str = "be.error.liveMatch.fixtureNotFound";
 
@@ -466,7 +459,7 @@ pub fn create_live_match(
         // be re-simulated later and replayed exactly as it was played. The two
         // streams are derived from the same seed but kept independent.
         rng: StdRng::seed_from_u64(seed),
-        ai_rng: StdRng::seed_from_u64(seed ^ AI_STREAM_SALT),
+        ai_rng: StdRng::seed_from_u64(seed ^ engine::AI_STREAM_SALT),
         seed,
         recorded_commands: Vec::new(),
         kickoff_home,
