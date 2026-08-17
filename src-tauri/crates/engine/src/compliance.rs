@@ -372,6 +372,25 @@ fn check_player_stats(
                 ),
             );
         }
+        // Ground covered has to be ground covered while on the pitch. A player
+        // sent off at a quarter past used to keep running until full time,
+        // because the distance pass walked the whole squad while only the
+        // stamina pass beside it knew who had been dismissed.
+        let furthest = crate::live_match::metrics::MAX_KM_PER_MINUTE
+            * f64::from(stats.minutes_played)
+            // A tenth of a kilometre of slack, so floating-point accumulation
+            // over ninety additions cannot trip this on its own.
+            + 0.1;
+        if f64::from(stats.distance_km) > furthest {
+            report.fail(
+                Invariant::PlayerStats,
+                format!(
+                    "seed {seed}: player {id} covered {:.2}km in {} minutes, \
+                     which is more than anybody can run in that time",
+                    stats.distance_km, stats.minutes_played
+                ),
+            );
+        }
         if stats.shots_on_target > stats.shots {
             report.fail(
                 Invariant::PlayerStats,

@@ -187,11 +187,6 @@ impl SquadCache {
         self.selection_weight.get(index).copied().unwrap_or(1.0)
     }
 
-    /// Everyone's live stamina, in squad order.
-    pub fn conditions(&self) -> impl Iterator<Item = f64> + '_ {
-        self.condition.iter().copied()
-    }
-
     pub fn deplete(&mut self, index: usize, amount: f64) {
         if let Some(condition) = self.condition.get_mut(index) {
             *condition = (*condition - amount).max(5.0);

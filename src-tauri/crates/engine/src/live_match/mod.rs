@@ -1,5 +1,5 @@
 mod helpers;
-mod metrics;
+pub(crate) mod metrics;
 mod penalty;
 mod possession;
 mod simulation;

@@ -31,7 +31,7 @@ pub(crate) struct PlayerMetrics {
     /// Expected threat: how much danger he added by moving the ball.
     pub xt: f64,
     /// Ground covered, in kilometres. Derived, not simulated — see
-    /// [`MetricTally::cover_ground`].
+    /// [`MetricTally::cover_ground_for`].
     pub distance_km: f64,
 }
 
@@ -56,6 +56,14 @@ pub(crate) fn threat(band: Band) -> f64 {
 /// Ten and a half kilometres over ninety minutes is a busy midfielder's
 /// afternoon; a centre-half covers nearer nine and a winger more.
 const KM_PER_MINUTE: f64 = 0.118;
+
+/// The most ground anybody can cover in a minute on the pitch.
+///
+/// `KM_PER_MINUTE` at the hardest-working end of the work-rate clamp in
+/// [`super::squad_cache::SquadCache::work_rates`] and at full freshness.
+/// Exposed so the compliance suite can check distance against minutes played
+/// without restating the arithmetic and drifting from it.
+pub(crate) const MAX_KM_PER_MINUTE: f64 = KM_PER_MINUTE * 1.45;
 
 #[derive(Debug, Clone, Default)]
 pub(crate) struct MetricTally {
@@ -95,7 +103,7 @@ impl MetricTally {
         }
     }
 
-    /// Add a minute's running to everyone still on the pitch.
+    /// Add one player's minute of running.
     ///
     /// This is **derived, not simulated**. The engine has no model of where a
     /// player is when he does not have the ball, so there is no distance here
@@ -104,13 +112,19 @@ impl MetricTally {
     /// figure that behaves sensibly — a wing-back outruns a centre-half, and
     /// everybody slows down after an hour — without pretending to be a
     /// measurement it is not.
-    pub fn cover_ground(&mut self, conditions: impl Iterator<Item = f64>) {
-        for ((metrics, work_rate), condition) in
-            self.current.iter_mut().zip(&self.work_rate).zip(conditions)
-        {
-            let freshness = 0.82 + 0.18 * (condition / 100.0);
-            metrics.distance_km += KM_PER_MINUTE * work_rate * freshness;
-        }
+    ///
+    /// Taken one player at a time rather than as a pass over the squad, because
+    /// that is how the caller knows who is still on the pitch. As a squad pass
+    /// it had no way to ask, and a man sent off at a quarter past kept running
+    /// until full time.
+    pub fn cover_ground_for(&mut self, index: usize, condition: f64) {
+        let (Some(metrics), Some(work_rate)) =
+            (self.current.get_mut(index), self.work_rate.get(index))
+        else {
+            return;
+        };
+        let freshness = 0.82 + 0.18 * (condition / 100.0);
+        metrics.distance_km += KM_PER_MINUTE * work_rate * freshness;
     }
 
     /// The side's expected goals so far.
@@ -218,7 +232,8 @@ mod tests {
     fn a_harder_working_role_covers_more_ground() {
         let mut tally = MetricTally::new(vec![1.3, 0.8]);
         for _ in 0..90 {
-            tally.cover_ground([100.0, 100.0].into_iter());
+            tally.cover_ground_for(0, 100.0);
+            tally.cover_ground_for(1, 100.0);
         }
         let by_id = tally.by_id(|index| Arc::from(if index == 0 { "grafter" } else { "anchor" }));
         let grafter = by_id[&Arc::from("grafter")].distance_km;
@@ -238,8 +253,8 @@ mod tests {
         let mut fresh = MetricTally::new(vec![1.0]);
         let mut spent = MetricTally::new(vec![1.0]);
         for _ in 0..90 {
-            fresh.cover_ground([100.0].into_iter());
-            spent.cover_ground([20.0].into_iter());
+            fresh.cover_ground_for(0, 100.0);
+            spent.cover_ground_for(0, 20.0);
         }
         let distance = |t: &MetricTally| t.by_id(|_| Arc::from("p"))[&Arc::from("p")].distance_km;
         assert!(distance(&fresh) > distance(&spent));

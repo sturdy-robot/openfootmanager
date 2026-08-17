@@ -117,11 +117,24 @@ impl LiveMatchState {
         let home_rate = base_rate * tactics_pressing_fatigue(&self.home.tactics);
         let away_rate = base_rate * tactics_pressing_fatigue(&self.away.tactics);
 
-        for (players, cache, fatigue_rate) in [
-            (&self.home.players, &mut self.home_cache, home_rate),
-            (&self.away.players, &mut self.away_cache, away_rate),
+        for (players, cache, metrics, fatigue_rate) in [
+            (
+                &self.home.players,
+                &mut self.home_cache,
+                &mut self.home_metrics,
+                home_rate,
+            ),
+            (
+                &self.away.players,
+                &mut self.away_cache,
+                &mut self.away_metrics,
+                away_rate,
+            ),
         ] {
             for (index, p) in players.iter().enumerate() {
+                // A dismissed player neither tires nor runs. Tiring was already
+                // skipped here; the running used to be a separate pass over the
+                // whole squad, which had no idea he had gone.
                 if !self.sent_off.is_empty() && self.sent_off.contains(&p.id) {
                     continue;
                 }
@@ -133,16 +146,11 @@ impl LiveMatchState {
                 let depletion =
                     fatigue_rate * (1.0 - stamina_factor * 0.5) * (1.3 - fitness_factor * 0.6);
                 cache.deplete(index, depletion);
+                // A minute of football is a minute of running, for everybody
+                // still on the pitch.
+                metrics.cover_ground_for(index, cache.condition(index));
             }
             cache.refresh_selection_weights();
-        }
-
-        // A minute of football is a minute of running, for everybody.
-        for (cache, metrics) in [
-            (&self.home_cache, &mut self.home_metrics),
-            (&self.away_cache, &mut self.away_metrics),
-        ] {
-            metrics.cover_ground(cache.conditions());
         }
     }
 
