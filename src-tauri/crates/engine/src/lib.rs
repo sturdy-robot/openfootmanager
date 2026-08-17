@@ -35,6 +35,8 @@ pub const ENGINE_VERSION: u32 = 19;
 /// behaviour: treat it as pinned, and bump [`ENGINE_VERSION`] if it has to move.
 pub const AI_STREAM_SALT: u64 = 0xA15E_EDA1_5EED;
 
+pub mod replay;
+
 // Re-export key types for convenience
 pub use engine::simulate;
 pub use engine::simulate_setup;

@@ -321,6 +321,20 @@ pub struct ReplayLineup {
     pub tactics: crate::team::TacticsPhaseSettings,
     /// Player id → condition at kick-off (0–100).
     pub conditions: Vec<(String, u8)>,
+    /// A fingerprint of the squad the engine was actually handed.
+    ///
+    /// The fields above say who started and how, but not what those players
+    /// *were*: attributes, traits and deployed slots are read from the squad as
+    /// it stands when the match is rebuilt, and training, ageing, injury and
+    /// transfers all move them. A replay recomputes this and compares — matching
+    /// means the reconstruction is sound, and not matching means the squad has
+    /// moved on and the match cannot honestly be watched back, only read from
+    /// its result. The same refusal the engine version stamp already gives.
+    ///
+    /// Zero means never computed: fixtures stored before this existed, which
+    /// simply cannot be verified.
+    #[serde(default)]
+    pub lineup_fingerprint: u64,
 }
 
 /// A user command, tagged with when it was applied.
@@ -702,5 +716,43 @@ impl Default for Fixture {
             engine_version: 0,
             replay: None,
         }
+    }
+}
+
+#[cfg(test)]
+mod replay_tests {
+    use super::*;
+
+    fn lineup() -> ReplayLineup {
+        ReplayLineup {
+            formation: "4-3-3".to_string(),
+            starting_xi_ids: vec!["p1".to_string()],
+            bench_ids: vec!["p2".to_string()],
+            lineup_fingerprint: 0xDEAD_BEEF_1234_5678,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn a_stored_line_up_keeps_its_fingerprint() {
+        let json = serde_json::to_string(&lineup()).unwrap();
+        let back: ReplayLineup = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.lineup_fingerprint, 0xDEAD_BEEF_1234_5678);
+        assert_eq!(back.formation, "4-3-3");
+    }
+
+    #[test]
+    fn a_fixture_saved_before_fingerprints_existed_still_loads() {
+        // Fixtures persist as a JSON blob, so this is the whole of the
+        // compatibility story — but it has to actually hold, and zero has to
+        // mean "cannot be verified" rather than "verified as zero".
+        let json = r#"{"formation":"4-4-2","starting_xi_ids":["p1"],"bench_ids":[],
+            "player_roles":[],"conditions":[]}"#;
+        let back: ReplayLineup = serde_json::from_str(json).unwrap();
+        assert_eq!(back.formation, "4-4-2");
+        assert_eq!(
+            back.lineup_fingerprint, 0,
+            "an unverifiable line-up must be distinguishable from a verified one"
+        );
     }
 }

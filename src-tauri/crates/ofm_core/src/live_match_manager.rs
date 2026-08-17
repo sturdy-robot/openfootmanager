@@ -113,6 +113,11 @@ fn capture_lineup(game: &Game, team_id: &str, xi: &engine::TeamData, bench: &[en
             .chain(bench.iter())
             .map(|p| (p.id.clone(), p.condition))
             .collect(),
+        // What the engine was actually handed. The fields above cannot capture
+        // attributes, traits or deployed slots without storing the whole squad
+        // on every fixture, so a replay verifies against this instead and
+        // refuses rather than reconstructing a match that never happened.
+        lineup_fingerprint: engine::replay::lineup_fingerprint(xi, bench),
     }
 }
 
