@@ -777,6 +777,55 @@ fn simulate_other_matches_settles_knockout_draws_with_shootout() {
 }
 
 #[test]
+fn a_level_knockout_tie_plays_extra_time_before_penalties() {
+    // The batch path built its setup with `MatchSetup::league`, which does not
+    // allow extra time, so an unwatched cup tie went from the ninetieth minute
+    // straight to the spot — skipping half an hour of goals, substitutions,
+    // fatigue and bookings that the watched path plays out. Whether a tie is
+    // settled in extra time or on penalties should not depend on whether the
+    // player happened to be looking.
+    let mut saw_draw = false;
+    for attempt in 0..200 {
+        let mut game = make_game_with_match();
+        let fixture_id = format!("cup-et-{attempt}");
+        {
+            let league = game.league.as_mut().unwrap();
+            league.fixtures[0].id = fixture_id.clone();
+            league.fixtures[0].competition = FixtureCompetition::Cup;
+            league.knockout_rounds = vec![KnockoutRoundState {
+                id: "round-1".to_string(),
+                name: "Final".to_string(),
+                fixture_ids: vec![fixture_id],
+                bye_team_ids: Vec::new(),
+                completed: false,
+            }];
+        }
+        let today = game.clock.current_date.format("%Y-%m-%d").to_string();
+        turn::simulate_other_matches(&mut game, &today, None);
+
+        let result = game.league.as_ref().unwrap().fixtures[0]
+            .result
+            .as_ref()
+            .expect("fixture should have a result");
+        if result.home_penalties.is_some() {
+            saw_draw = true;
+            let minutes = result
+                .report
+                .as_ref()
+                .expect("a full-engine fixture keeps its report")
+                .total_minutes;
+            assert!(
+                minutes > 100,
+                "a tie that went to penalties lasted {minutes} minutes, so it \
+                 never played extra time"
+            );
+            break;
+        }
+    }
+    assert!(saw_draw, "expected at least one shootout in 200 sims");
+}
+
+#[test]
 fn simulate_other_matches_no_league_no_crash() {
     let mut game = make_game_with_match();
     game.league = None;

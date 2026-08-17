@@ -64,6 +64,17 @@ impl MatchSetup {
         }
     }
 
+    /// Whether a level score at ninety minutes goes to extra time.
+    ///
+    /// A knockout tie does; a league fixture does not. Without this a cup tie
+    /// resolved in the batch path went from the ninetieth minute straight to
+    /// the shootout, while the same tie watched live played the extra half
+    /// hour — so how a tie was settled depended on whether anyone was looking.
+    pub fn with_extra_time(mut self, allows: bool) -> Self {
+        self.allows_extra_time = allows;
+        self
+    }
+
     /// Put a manager in each dugout.
     pub fn with_managers(mut self, home: AiProfile, away: AiProfile) -> Self {
         self.home_manager = Some(home);

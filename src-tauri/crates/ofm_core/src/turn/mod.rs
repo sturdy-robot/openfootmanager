@@ -482,6 +482,11 @@ where
     let (away_data, away_bench) = build_team_with_bench(game, &away_team_id);
     let setup = engine::MatchSetup::league(home_data, away_data, engine::MatchConfig::default())
         .with_benches(home_bench, away_bench)
+        // A cup tie goes to extra time here exactly as it does when the player
+        // watches it. Without this the batch path jumped from the ninetieth
+        // minute to the shootout below, and half an hour of football — goals,
+        // substitutions, fatigue, bookings — simply never happened.
+        .with_extra_time(is_knockout)
         .with_managers(
             crate::live_match_manager::ai_profile_for(game, &home_team_id),
             crate::live_match_manager::ai_profile_for(game, &away_team_id),
