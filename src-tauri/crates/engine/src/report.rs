@@ -553,6 +553,11 @@ fn populate_minutes_played(
                     // First departure wins: a substituted player cannot return,
                     // so a later event naming him is not him leaving again.
                     left.entry(player_off_id).or_insert(at);
+                    // He was on the pitch to be taken off it. The tracked list
+                    // does not necessarily still name him, and without this he
+                    // would be dropped from the minutes entirely — leaving him
+                    // credited with a full match of running and none of playing.
+                    entered.entry(player_off_id).or_insert(0);
                 }
                 if let Some(player_on_id) = event.player_id.as_deref() {
                     entered.insert(player_on_id, at);

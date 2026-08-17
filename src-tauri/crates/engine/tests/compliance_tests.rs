@@ -5,6 +5,7 @@
 //! match replay depends on), report/event agreement, discipline, substitution
 //! legality and shootout resolution.
 
+use engine::ai::{AiPersonality, AiProfile};
 use engine::compliance;
 use engine::traits::{DefaultEngine, MatchSetup};
 use engine::types::{MatchConfig, PlayStyle, PlayerData, PlayerRole, Position, Slot, TeamData};
@@ -221,6 +222,30 @@ fn setup(allows_extra_time: bool) -> MatchSetup {
     let mut setup =
         MatchSetup::league(home, away, MatchConfig::default()).with_benches(home_bench, away_bench);
     setup.allows_extra_time = allows_extra_time;
+    // Somebody in each dugout, so substitutions actually happen.
+    //
+    // Benches alone are not enough: the driver only builds a manager stream
+    // when a side has a manager, so without these nobody is ever replaced. The
+    // three substitution invariants were being satisfied vacuously and both
+    // goldens were blind to everything about a change of personnel — which is
+    // a strange blind spot for a suite whose engine now runs the dugout over
+    // every league fixture. This is the fifth of its kind here; see
+    // `traits_for` for the others.
+    //
+    // Two different personalities, because a bold manager and a cautious one
+    // do not make the same substitutions at the same time.
+    setup = setup.with_managers(
+        AiProfile {
+            reputation: 640,
+            experience: 70,
+            personality: AiPersonality::Visionary,
+        },
+        AiProfile {
+            reputation: 420,
+            experience: 35,
+            personality: AiPersonality::Pragmatist,
+        },
+    );
     setup
 }
 
@@ -337,7 +362,7 @@ fn golden_report_is_unchanged() {
     let actual = hasher.finish();
 
     // Pinned behaviour fingerprint, captured under GOLDEN_VERSION.
-    const GOLDEN: u64 = 0xaf86_530d_42b2_43dd;
+    const GOLDEN: u64 = 0x8842_9024_905c_c70e;
 
     assert_golden(actual, GOLDEN, "engine");
 }
@@ -377,7 +402,7 @@ fn golden_report_is_unchanged_with_instructions() {
     let actual = hasher.finish();
 
     // Pinned behaviour fingerprint. See `golden_report_is_unchanged`.
-    const GOLDEN_WITH_INSTRUCTIONS: u64 = 0xca38_cef5_050b_5327;
+    const GOLDEN_WITH_INSTRUCTIONS: u64 = 0xe9d4_4061_79bd_8411;
 
     assert_golden(actual, GOLDEN_WITH_INSTRUCTIONS, "instructed-team");
 }
