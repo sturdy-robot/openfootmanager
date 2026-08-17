@@ -139,12 +139,21 @@ fn rate(stats: &PlayerMatchStats, result_bonus: f32) -> f32 {
     // length rather than against ninety minutes of expectations.
     let share = (stats.minutes_played as f32 / 90.0).clamp(0.15, 1.2);
 
-    let mut score = 0.0f32;
+    // Decisive contributions: discrete things that either happened or did not.
+    // A goal is a goal whether it came in the first minute or the last, and
+    // being sent off is not less of an offence for having happened five minutes
+    // after coming on. These are kept out of `score` because everything in
+    // there is weighted by how much of the match the player was on the pitch
+    // for, and weighting a goal that way marks a substitute who won the game as
+    // though he had barely been involved.
+    let mut decisive = 0.0f32;
+    decisive += stats.goals as f32 * 1.0;
+    decisive += stats.assists as f32 * 0.7;
+    decisive -= stats.yellow_cards as f32 * 0.35;
+    decisive -= stats.red_cards as f32 * 1.5;
 
-    // Decisive contributions, which are not scaled — a goal is a goal whether
-    // it came in the first minute or the last.
-    score += stats.goals as f32 * 1.0;
-    score += stats.assists as f32 * 0.7;
+    // Accumulating work, judged against how long he had to do it.
+    let mut score = 0.0f32;
 
     // Attacking work.
     score += stats.shots_on_target as f32 * 0.12;
@@ -162,12 +171,11 @@ fn rate(stats: &PlayerMatchStats, result_bonus: f32) -> f32 {
         score += (accuracy - 0.78) * 3.0 * involvement;
     }
 
-    // Discipline.
+    // Persistent niggling, which is a rate rather than an incident — the cards
+    // it earns are counted above.
     score -= stats.fouls_committed as f32 * 0.06;
-    score -= stats.yellow_cards as f32 * 0.35;
-    score -= stats.red_cards as f32 * 1.5;
 
-    (BASE_RATING + score * share.min(1.0) + result_bonus * share).clamp(1.0, 10.0)
+    (BASE_RATING + score * share.min(1.0) + decisive + result_bonus * share).clamp(1.0, 10.0)
 }
 
 // ---------------------------------------------------------------------------
@@ -753,6 +761,52 @@ mod rating_tests {
         cameo.passes_completed = 4;
         let rating = rate(&cameo, 0.3);
         assert!((5.0..=7.5).contains(&rating), "{rating}");
+    }
+
+    // A goal is a goal whether it came in the first minute or the last. The
+    // scale used to multiply everything — decisive contributions included — by
+    // the share of the match played, so a substitute who came on and won the
+    // game was marked as though he had barely been there.
+    #[test]
+    fn a_substitute_who_scores_is_marked_for_it() {
+        let mut cameo = stats(10);
+        cameo.goals = 1;
+        let quiet_cameo = stats(10);
+        assert!(
+            rate(&cameo, 0.0) > rate(&quiet_cameo, 0.0) + 0.8,
+            "a ten-minute winner rated {} against {} for doing nothing",
+            rate(&cameo, 0.0),
+            rate(&quiet_cameo, 0.0),
+        );
+    }
+
+    #[test]
+    fn a_goal_is_worth_the_same_late_as_early() {
+        let mut early = stats(90);
+        early.goals = 1;
+        let mut late = stats(10);
+        late.goals = 1;
+        let baseline_gap = rate(&early, 0.0) - rate(&stats(90), 0.0);
+        let cameo_gap = rate(&late, 0.0) - rate(&stats(10), 0.0);
+        assert!(
+            (baseline_gap - cameo_gap).abs() < 0.01,
+            "the same goal was worth {baseline_gap} over ninety minutes and \
+             {cameo_gap} over ten"
+        );
+    }
+
+    // Cards are decisive in the same way and for the same reason: being sent
+    // off is not less of an offence for having happened five minutes after
+    // coming on.
+    #[test]
+    fn a_substitute_sent_off_is_punished_for_it() {
+        let mut disgrace = stats(10);
+        disgrace.red_cards = 1;
+        assert!(
+            rate(&disgrace, 0.0) < rate(&stats(10), 0.0) - 1.0,
+            "{}",
+            rate(&disgrace, 0.0)
+        );
     }
 
     #[test]
