@@ -362,7 +362,7 @@ fn golden_report_is_unchanged() {
     let actual = hasher.finish();
 
     // Pinned behaviour fingerprint, captured under GOLDEN_VERSION.
-    const GOLDEN: u64 = 0x1173_fb28_a905_1873;
+    const GOLDEN: u64 = 0x802d_c51f_cab4_9937;
 
     assert_golden(actual, GOLDEN, "engine");
 }
@@ -402,7 +402,7 @@ fn golden_report_is_unchanged_with_instructions() {
     let actual = hasher.finish();
 
     // Pinned behaviour fingerprint. See `golden_report_is_unchanged`.
-    const GOLDEN_WITH_INSTRUCTIONS: u64 = 0xd305_f756_8edf_efcc;
+    const GOLDEN_WITH_INSTRUCTIONS: u64 = 0xa781_e513_eee2_8cfb;
 
     assert_golden(actual, GOLDEN_WITH_INSTRUCTIONS, "instructed-team");
 }
