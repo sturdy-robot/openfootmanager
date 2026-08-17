@@ -521,41 +521,56 @@ fn populate_minutes_played(
     tracked_player_ids: &[String],
     player_stats: &mut HashMap<String, PlayerMatchStats>,
 ) {
-    let mut minutes_by_player: HashMap<String, u8> = tracked_player_ids
+    // When each player arrived and when he left, tracked apart.
+    //
+    // These are different quantities — a clock reading and a clock reading —
+    // but the minutes a player is credited with is the interval between them.
+    // Holding a single number per player is what used to go wrong: a starter's
+    // slot held a clock reading while a substitute's held a duration, so a
+    // substitute who was himself replaced ended up credited with the time on
+    // the clock when he left rather than the spell he had played.
+    let mut entered: HashMap<&str, u8> = tracked_player_ids
         .iter()
-        .cloned()
-        .map(|player_id| (player_id, total_minutes))
+        .map(|player_id| (player_id.as_str(), 0u8))
         .collect();
+    let mut left: HashMap<&str, u8> = HashMap::new();
 
     for event in events {
+        // An event in stoppage time can carry a minute past the nominal
+        // ninety; nobody is on the pitch after the final whistle.
+        let at = event.minute.min(total_minutes);
         match event.event_type {
             EventType::Substitution => {
-                if let Some(ref player_off_id) = event.secondary_player_id {
-                    minutes_by_player
-                        .insert(player_off_id.to_string(), event.minute.min(total_minutes));
+                if let Some(player_off_id) = event.secondary_player_id.as_deref() {
+                    // First departure wins: a substituted player cannot return,
+                    // so a later event naming him is not him leaving again.
+                    left.entry(player_off_id).or_insert(at);
                 }
-                if let Some(ref player_on_id) = event.player_id {
-                    minutes_by_player.insert(
-                        player_on_id.to_string(),
-                        total_minutes.saturating_sub(event.minute),
-                    );
+                if let Some(player_on_id) = event.player_id.as_deref() {
+                    entered.insert(player_on_id, at);
                 }
             }
             EventType::RedCard | EventType::SecondYellow => {
-                if let Some(ref player_id) = event.player_id {
-                    let dismissed_at = event.minute.min(total_minutes);
-                    minutes_by_player
-                        .entry(player_id.to_string())
-                        .and_modify(|minutes| *minutes = (*minutes).min(dismissed_at))
-                        .or_insert(dismissed_at);
+                if let Some(player_id) = event.player_id.as_deref() {
+                    // A dismissal can only bring a departure forward.
+                    left.entry(player_id)
+                        .and_modify(|minute| *minute = (*minute).min(at))
+                        .or_insert(at);
+                    // Defensive: a dismissal implies he was on the pitch, even
+                    // if nothing else in this log says when he arrived.
+                    entered.entry(player_id).or_insert(0);
                 }
             }
             _ => {}
         }
     }
 
-    for (player_id, minutes_played) in minutes_by_player {
-        player_stats.entry(player_id).or_default().minutes_played = minutes_played;
+    for (player_id, entry) in entered {
+        let exit = left.get(player_id).copied().unwrap_or(total_minutes);
+        player_stats
+            .entry(player_id.to_string())
+            .or_default()
+            .minutes_played = exit.saturating_sub(entry);
     }
 }
 
@@ -598,6 +613,82 @@ mod tests {
         );
         // In-match penalties still count.
         assert_eq!(report.goals[1].goal_source, GoalSource::Penalty);
+    }
+}
+
+#[cfg(test)]
+mod minutes_tests {
+    use super::*;
+
+    fn tracked(ids: &[&str]) -> Vec<String> {
+        ids.iter().map(|id| id.to_string()).collect()
+    }
+
+    fn minutes(events: Vec<MatchEvent>, total: u8, ids: &[&str]) -> HashMap<String, u8> {
+        let mut stats: HashMap<String, PlayerMatchStats> = HashMap::new();
+        populate_minutes_played(&events, total, &tracked(ids), &mut stats);
+        stats
+            .into_iter()
+            .map(|(id, s)| (id, s.minutes_played))
+            .collect()
+    }
+
+    fn sub(minute: u8, on: &str, off: &str) -> MatchEvent {
+        MatchEvent::new(minute, EventType::Substitution, Side::Home, Zone::Midfield)
+            .with_player(on)
+            .with_secondary(off)
+    }
+
+    fn red(minute: u8, player: &str) -> MatchEvent {
+        MatchEvent::new(minute, EventType::RedCard, Side::Home, Zone::Midfield).with_player(player)
+    }
+
+    #[test]
+    fn a_starter_who_lasts_is_credited_the_whole_match() {
+        let m = minutes(vec![], 90, &["h1"]);
+        assert_eq!(m["h1"], 90);
+    }
+
+    #[test]
+    fn a_starter_taken_off_is_credited_up_to_that_point() {
+        let m = minutes(vec![sub(60, "h2", "h1")], 90, &["h1"]);
+        assert_eq!(m["h1"], 60);
+    }
+
+    #[test]
+    fn a_substitute_is_credited_from_when_he_came_on() {
+        let m = minutes(vec![sub(60, "h2", "h1")], 90, &["h1"]);
+        assert_eq!(m["h2"], 30);
+    }
+
+    #[test]
+    fn a_starter_sent_off_is_credited_up_to_the_dismissal() {
+        let m = minutes(vec![red(30, "h1")], 90, &["h1"]);
+        assert_eq!(m["h1"], 30);
+    }
+
+    // The two below are why this module exists. `minutes_by_player` held two
+    // different quantities in one slot — a duration for a substitute, a clock
+    // reading for a starter — so any player who both came on and left again was
+    // credited with the clock rather than with what he actually played.
+    #[test]
+    fn a_substitute_who_is_himself_taken_off_is_credited_only_his_spell() {
+        let m = minutes(vec![sub(60, "h2", "h1"), sub(80, "h3", "h2")], 90, &["h1"]);
+        assert_eq!(m["h2"], 20, "on at 60, off at 80 is twenty minutes");
+    }
+
+    #[test]
+    fn a_substitute_sent_off_is_credited_only_his_spell() {
+        let m = minutes(vec![sub(60, "h2", "h1"), red(70, "h2")], 90, &["h1"]);
+        assert_eq!(m["h2"], 10, "on at 60, dismissed at 70 is ten minutes");
+    }
+
+    #[test]
+    fn nobody_is_credited_beyond_the_final_whistle() {
+        // Stoppage-time events can carry a minute past the nominal ninety.
+        let m = minutes(vec![sub(95, "h2", "h1")], 93, &["h1"]);
+        assert_eq!(m["h1"], 93);
+        assert_eq!(m["h2"], 0);
     }
 }
 
