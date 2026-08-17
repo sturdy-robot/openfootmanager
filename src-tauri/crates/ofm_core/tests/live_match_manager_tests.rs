@@ -401,6 +401,32 @@ fn create_live_match_user_side_none_neutral() {
     assert_eq!(session.user_side, None);
 }
 
+// Watching is not managing. `user_side` is what tells the engine to leave a
+// side alone because a human is running it — so a spectator who is nominally
+// the manager of one of these teams had his own eleven left unmanaged, tiring
+// for ninety minutes with nobody to bring them off, while the opposition made
+// substitutions. `create_live_match_user_side_none_neutral` above only covers a
+// spectator watching two *other* clubs, which is the case that was already
+// right for a different reason.
+#[test]
+fn a_spectator_watching_his_own_club_still_has_a_manager() {
+    let game = make_game_with_fixture();
+    let session =
+        live_match_manager::create_live_match(&game, 0, MatchMode::Spectator, false).unwrap();
+    assert_eq!(
+        session.user_side, None,
+        "watching is not managing: both sides must be run by the AI"
+    );
+}
+
+#[test]
+fn instantly_simulating_your_own_club_leaves_nobody_in_charge_of_it() {
+    let game = make_game_with_fixture();
+    let session =
+        live_match_manager::create_live_match(&game, 0, MatchMode::Instant, false).unwrap();
+    assert_eq!(session.user_side, None);
+}
+
 #[test]
 fn create_live_match_no_league_errors() {
     let mut game = make_game_with_fixture();

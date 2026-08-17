@@ -435,16 +435,27 @@ pub fn create_live_match(
         away_auto_selection,
     );
 
-    // Determine user side
-    let user_side = game.manager.team_id.as_ref().and_then(|tid| {
-        if *tid == home_team_id {
-            Some(Side::Home)
-        } else if *tid == away_team_id {
-            Some(Side::Away)
-        } else {
-            None
-        }
-    });
+    // Which side, if any, the AI must keep its hands off.
+    //
+    // Only when the user is actually managing. Watching is not managing: a
+    // spectator issues no commands, so naming his side here left it with nobody
+    // in charge — his eleven tired for ninety minutes and were never replaced
+    // while the opposition made substitutions. Instant simulation is the same
+    // case, which is why every caller passing it had learned to null this field
+    // out by hand afterwards. Decided from the mode here instead, so nobody has
+    // to remember.
+    let user_side = match mode {
+        MatchMode::Live => game.manager.team_id.as_ref().and_then(|tid| {
+            if *tid == home_team_id {
+                Some(Side::Home)
+            } else if *tid == away_team_id {
+                Some(Side::Away)
+            } else {
+                None
+            }
+        }),
+        MatchMode::Spectator | MatchMode::Instant => None,
+    };
 
     let ai_home = ai_profile_for(game, &home_team_id);
     let ai_away = ai_profile_for(game, &away_team_id);
