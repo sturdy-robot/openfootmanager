@@ -62,6 +62,10 @@ impl LiveMatchState {
         // players are simulated where they actually play, not where they'd
         // naturally play.
         player_on.position = player_off.position;
+        // The deployed slot goes with it. Actor placement prefers `slot` over
+        // the coarse position, so leaving it behind quietly demoted a
+        // replacement holding midfielder to a generic one.
+        player_on.slot = player_off.slot;
 
         // The substitute takes over the vacated index outright — his id, his
         // traits and his fresh legs all replace the man who went off. What the
@@ -139,13 +143,18 @@ impl LiveMatchState {
         // last one — the lineup visibly "reorganized" after a swap. Keep the
         // vacated index and adopt the slot's position instead.
         player_on.position = player_off.position;
+        player_on.slot = player_off.slot;
 
-        // The substitute takes over the vacated index outright — his id, his
-        // traits and his fresh legs all replace the man who went off. What the
-        // departing player did has to be banked under his own name first, or it
-        // would be credited to the man who replaced him.
-        let departing = self.cache(side).id(off_idx);
-        self.metrics_mut(side).retire(off_idx, departing);
+        // The swapped-in player takes over the vacated index outright — his id,
+        // his traits and his legs all replace the man who was named there.
+        //
+        // Discarded rather than banked, unlike a substitution: this is before
+        // kick-off, so there is nothing to keep, and keeping it would leave a
+        // row in the match statistics for a man who never came out of the
+        // tunnel. Downstream an appearance is anyone with a row, so that row
+        // counted him a game, could hand a goalkeeper a clean sheet, and could
+        // satisfy a playing-time promise.
+        self.metrics_mut(side).discard(off_idx);
         self.cache_mut(side).replace(off_idx, &player_on);
         let work_rates = self.cache(side).work_rates();
         self.metrics_mut(side).set_work_rate(work_rates);

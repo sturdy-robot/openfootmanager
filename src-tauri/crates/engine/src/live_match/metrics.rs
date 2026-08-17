@@ -146,6 +146,18 @@ impl MetricTally {
         }
     }
 
+    /// A player is leaving before a ball has been kicked.
+    ///
+    /// Nothing has accumulated, so there is nothing to keep — and unlike
+    /// [`MetricTally::retire`] this must not write him into `departed`, because
+    /// everyone in there ends up with a row in the match statistics and a row is
+    /// what downstream reads as having played.
+    pub fn discard(&mut self, index: usize) {
+        if let Some(metrics) = self.current.get_mut(index) {
+            *metrics = PlayerMetrics::default();
+        }
+    }
+
     /// Where a player's work rate changes without him leaving the pitch — a
     /// substitution, or a change of shape.
     pub fn set_work_rate(&mut self, work_rate: Vec<f64>) {

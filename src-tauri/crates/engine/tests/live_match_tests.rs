@@ -1072,6 +1072,136 @@ fn pre_match_swap_invalid_bench_player_fails() {
 }
 
 // ===========================================================================
+// Tests: deployed slots across a change of personnel
+// ===========================================================================
+
+/// A line-up carrying the slots a real formation deploys.
+///
+/// Every other fixture in this file leaves `slot` as `None`, which is exactly
+/// why nothing here noticed that changing personnel dropped it: with no slots
+/// to lose, the slot-aware selection path is never taken. Production line-ups
+/// always carry them.
+fn slotted_team(id: &str) -> TeamData {
+    const SLOTS: [Slot; 11] = [
+        Slot::Goalkeeper,
+        Slot::LeftBack,
+        Slot::CenterBack,
+        Slot::CenterBack,
+        Slot::RightBack,
+        Slot::LeftMidfielder,
+        Slot::CentralMidfielder,
+        Slot::DefensiveMidfielder,
+        Slot::RightMidfielder,
+        Slot::Striker,
+        Slot::Striker,
+    ];
+    let mut team = make_team(id, "Slotted FC", 70, PlayStyle::Balanced);
+    for (player, slot) in team.players.iter_mut().zip(SLOTS) {
+        player.slot = Some(slot);
+    }
+    team
+}
+
+fn slotted_live_match() -> LiveMatchState {
+    LiveMatchState::new(
+        slotted_team("home"),
+        slotted_team("away"),
+        MatchConfig::default(),
+        make_bench("home", 65),
+        make_bench("away", 65),
+        false,
+    )
+}
+
+#[test]
+fn a_substitute_takes_over_the_slot_he_came_into() {
+    let mut state = slotted_live_match();
+    let mut rng = seeded_rng(7);
+    state.step_minute(&mut rng);
+
+    let snap = state.snapshot();
+    // Index 7 is the holding midfielder in the shape above.
+    let starter = snap.home_team.players[7].clone();
+    assert_eq!(starter.slot, Some(Slot::DefensiveMidfielder));
+    let bench_id = state.bench(Side::Home)[2].id.clone();
+
+    state
+        .apply_command(MatchCommand::Substitute {
+            side: Side::Home,
+            player_off_id: starter.id.clone(),
+            player_on_id: bench_id.clone(),
+        })
+        .unwrap();
+
+    let snap = state.snapshot();
+    let replacement = snap
+        .home_team
+        .players
+        .iter()
+        .find(|p| p.id == bench_id)
+        .expect("the substitute is on the pitch");
+    assert_eq!(
+        replacement.slot, starter.slot,
+        "a substitute is deployed where the man he replaced was, not wherever \
+         his own position happens to put him"
+    );
+}
+
+#[test]
+fn a_pre_match_swap_hands_over_the_slot_too() {
+    let mut state = slotted_live_match();
+    let snap = state.snapshot();
+    let starter = snap.home_team.players[7].clone();
+    let bench_id = state.bench(Side::Home)[2].id.clone();
+
+    state
+        .apply_command(MatchCommand::PreMatchSwap {
+            side: Side::Home,
+            player_off_id: starter.id.clone(),
+            player_on_id: bench_id.clone(),
+        })
+        .unwrap();
+
+    let snap = state.snapshot();
+    let replacement = snap
+        .home_team
+        .players
+        .iter()
+        .find(|p| p.id == bench_id)
+        .expect("the swapped-in player is in the eleven");
+    assert_eq!(replacement.slot, starter.slot);
+}
+
+#[test]
+fn a_player_swapped_out_before_kick_off_did_not_play() {
+    // A pre-match swap is a change of mind, not an appearance. Banking the
+    // outgoing player's (empty) tally left him with a row in the match stats,
+    // and downstream an appearance is anyone who has a row.
+    let mut state = make_live_match(false);
+    let snap = state.snapshot();
+    let starter_id = snap.home_team.players[5].id.clone();
+    let bench_id = state.bench(Side::Home)[2].id.clone();
+
+    state
+        .apply_command(MatchCommand::PreMatchSwap {
+            side: Side::Home,
+            player_off_id: starter_id.clone(),
+            player_on_id: bench_id,
+        })
+        .unwrap();
+
+    let mut rng = seeded_rng(11);
+    run_to_finish(&mut state, &mut rng);
+    let report = state.into_report();
+
+    assert!(
+        !report.player_stats.contains_key(&starter_id),
+        "{starter_id} was taken out of the side before kick-off and has no \
+         business in the match statistics"
+    );
+}
+
+// ===========================================================================
 // Tests: Formation changes
 // ===========================================================================
 
