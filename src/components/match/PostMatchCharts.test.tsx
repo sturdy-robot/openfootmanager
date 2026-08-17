@@ -45,6 +45,29 @@ describe("buildXgRace", () => {
     expect(points[points.length - 1].minute).toBe(94);
   });
 
+  // A penalty is the best chance in football and the engine values it at 0.75.
+  // The race read only EventDetail, and penalties used to carry none — so a
+  // match whose only chance was a spot kick drew nothing at all while the
+  // summary beside it reported 0.75.
+  it("counts penalties, which are the best chance there is", () => {
+    const penalty = (minute: number, side: "Home" | "Away", scored: boolean): MatchEvent =>
+      ({
+        minute,
+        event_type: scored ? "PenaltyGoal" : "PenaltyMiss",
+        side,
+        zone: "AwayBox",
+        player_id: "p1",
+        secondary_player_id: null,
+        detail: scored
+          ? { Goal: { context: "Opener", technique: "Simple", xg: 0.75 } }
+          : { Shot: { danger: "BigChance", technique: "Simple", xg: 0.75 } },
+      }) as unknown as MatchEvent;
+
+    const points = buildXgRace([penalty(20, "Home", true), penalty(60, "Away", false)], 90);
+    expect(points[points.length - 1].home).toBeCloseTo(0.75);
+    expect(points[points.length - 1].away).toBeCloseTo(0.75);
+  });
+
   it("ignores events that carry no chance value", () => {
     const foul = {
       minute: 5,

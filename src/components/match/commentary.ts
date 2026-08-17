@@ -186,6 +186,15 @@ function variantKey(evt: MatchEvent, snapshot: MatchSnapshot): string | null {
     if (tally === 3) return "hattrick";
     if (tally === 2) return "brace";
   }
+  // A penalty is described as a penalty. It has its own base key and no
+  // opener/equaliser or technique sub-variants — there is nothing to say about
+  // how a spot kick was struck that the word "penalty" has not already said.
+  //
+  // This used to be arranged by the engine withholding the detail from penalty
+  // events, which also hid what the chance was worth from everything else
+  // reading the feed. The events carry their value now, and the rule that
+  // wanted them silent lives here, where it is about commentary.
+  if (evt.event_type === "PenaltyGoal" || evt.event_type === "PenaltyMiss") return null;
   return detailVariant(evt.detail);
 }
 

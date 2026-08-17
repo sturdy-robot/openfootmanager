@@ -1,6 +1,6 @@
 use rand::{Rng, RngExt};
 
-use crate::event::{EventType, MatchEvent};
+use crate::event::{DangerBand, EventDetail, EventType, MatchEvent, ShotTechnique};
 use crate::types::{Position, Side, Zone};
 
 use super::{LiveMatchState, MinuteResult, PenaltyShootoutState};
@@ -128,19 +128,35 @@ impl LiveMatchState {
         const PENALTY_XG: f64 = 0.75;
         self.metrics_mut(att_side).add_xg(taker.index, PENALTY_XG);
 
+        // What the chance was worth travels on the event, not only in the
+        // taker's running total. Anything reading the feed rather than the
+        // totals — the expected-goals chart on the post-match screen, for one —
+        // could not see a penalty at all, and finished three-quarters of a goal
+        // short for every one of them.
+        //
+        // Penalty commentary still uses its own base key with no
+        // opener/equaliser sub-variants. That used to be arranged by withholding
+        // the detail entirely; it is now stated where it is meant, in
+        // `variantKey` on the frontend, rather than enforced by an absence.
         if rng.random_range(0.0..1.0f64) < conversion {
-            // PenaltyGoal intentionally carries no EventDetail::Goal context: penalty
-            // commentary uses its own base key (match.commentary.PenaltyGoal) with no
-            // opener/equaliser/... sub-variants. Brace/hat-trick is still detected on
-            // the frontend via goal tally, which counts PenaltyGoal events.
             let evt = MatchEvent::new(minute, EventType::PenaltyGoal, att_side, zone)
-                .with_player(taker.id.clone());
+                .with_player(taker.id.clone())
+                .with_detail(EventDetail::Goal {
+                    context: self.goal_context(att_side),
+                    technique: ShotTechnique::Simple,
+                    xg: PENALTY_XG as f32,
+                });
             self.events.push(evt.clone());
             events.push(evt);
             self.add_goal(att_side);
         } else {
             let evt = MatchEvent::new(minute, EventType::PenaltyMiss, att_side, zone)
-                .with_player(taker.id.clone());
+                .with_player(taker.id.clone())
+                .with_detail(EventDetail::Shot {
+                    danger: DangerBand::BigChance,
+                    technique: ShotTechnique::Simple,
+                    xg: PENALTY_XG as f32,
+                });
             self.events.push(evt.clone());
             events.push(evt);
         }

@@ -1072,6 +1072,49 @@ fn pre_match_swap_invalid_bench_player_fails() {
 }
 
 // ===========================================================================
+// Tests: penalties
+// ===========================================================================
+
+#[test]
+fn a_penalty_says_what_the_chance_was_worth() {
+    // The engine values a penalty at a flat 0.75 and adds it to the taker's
+    // expected goals, but the event it emitted carried no detail at all — so
+    // anything reading the feed rather than the totals could not see it. The
+    // expected-goals chart on the post-match screen is exactly that, and it
+    // finished three-quarters of a goal short for every spot kick.
+    let mut found = false;
+    for seed in 0..60u64 {
+        let mut state = make_live_match(false);
+        let mut rng = seeded_rng(seed);
+        run_to_finish(&mut state, &mut rng);
+        let report = state.into_report();
+
+        for event in &report.events {
+            if !matches!(
+                event.event_type,
+                EventType::PenaltyGoal | EventType::PenaltyMiss
+            ) {
+                continue;
+            }
+            found = true;
+            let detail = event
+                .detail
+                .as_ref()
+                .unwrap_or_else(|| panic!("{:?} at {} carries no detail", event.event_type, event.minute));
+            let xg = match detail {
+                EventDetail::Goal { xg, .. } | EventDetail::Shot { xg, .. } => *xg,
+                other => panic!("unexpected detail on a penalty: {other:?}"),
+            };
+            assert!(xg > 0.0, "a penalty is worth something");
+        }
+        if found {
+            break;
+        }
+    }
+    assert!(found, "no penalty in sixty matches");
+}
+
+// ===========================================================================
 // Tests: possession
 // ===========================================================================
 
