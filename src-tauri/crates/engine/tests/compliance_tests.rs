@@ -11,6 +11,46 @@ use engine::types::{MatchConfig, PlayStyle, PlayerData, PlayerRole, Position, Sl
 
 const SEED: u64 = 0xDEC0_DE01;
 
+/// The engine version the golden fingerprints below were captured under.
+///
+/// Pinned *with* the fingerprints rather than beside them, because the version
+/// stamp is the thing that actually matters. Fixtures are stamped with
+/// `engine::ENGINE_VERSION` when they are simulated, and a replay re-simulates
+/// from that stamp — so a behaviour change that ships without a bump leaves
+/// every stored fixture claiming to be reproducible by an engine that no longer
+/// reproduces it, and the replay silently reconstructs a different match.
+///
+/// The previous form of this check was a bare fingerprint constant and a
+/// failure message *asking* the next person to bump the version. Nothing
+/// verified that they had. Repinning a fingerprint here without bumping
+/// `ENGINE_VERSION` now leaves this constant disagreeing with the engine, and
+/// [`assert_golden`] fails on that before it ever looks at the fingerprint.
+const GOLDEN_VERSION: u32 = 18;
+
+/// Assert a pinned behaviour fingerprint, and that the version stamp still
+/// matches the one it was captured under.
+///
+/// Checked in that order deliberately: if both moved, the version mismatch is
+/// the more useful message, because it tells you the repin is the *expected*
+/// next step rather than a regression to investigate.
+fn assert_golden(actual: u64, expected: u64, label: &str) {
+    assert_eq!(
+        engine::ENGINE_VERSION,
+        GOLDEN_VERSION,
+        "engine::ENGINE_VERSION is {} but the golden fingerprints were captured \
+         under {GOLDEN_VERSION}. Re-run this test, then update GOLDEN_VERSION \
+         and the fingerprints together.",
+        engine::ENGINE_VERSION,
+    );
+    assert_eq!(
+        actual, expected,
+        "{label} behaviour changed (fingerprint {actual:#x}). If this was \
+         intentional, bump engine::ENGINE_VERSION, set GOLDEN_VERSION to match, \
+         and set this fingerprint to {actual:#x} — all three, or the stamp and \
+         the behaviour drift apart."
+    );
+}
+
 fn player(id: &str, position: Position, rating: u8) -> PlayerData {
     player_in(id, position, None, rating)
 }
@@ -296,14 +336,10 @@ fn golden_report_is_unchanged() {
     compliance::fingerprint(&result).hash(&mut hasher);
     let actual = hasher.finish();
 
-    // Pinned behaviour fingerprint. See the doc comment before changing.
+    // Pinned behaviour fingerprint, captured under GOLDEN_VERSION.
     const GOLDEN: u64 = 0xdc24_ce48_cfd3_c5ac;
 
-    assert_eq!(
-        actual, GOLDEN,
-        "engine behaviour changed (fingerprint {actual:#x}). If this was \
-         intentional, bump the engine version stamp and set GOLDEN to {actual:#x}."
-    );
+    assert_golden(actual, GOLDEN, "engine");
 }
 
 /// A second golden, for a side that has actually been given instructions.
@@ -343,12 +379,7 @@ fn golden_report_is_unchanged_with_instructions() {
     // Pinned behaviour fingerprint. See `golden_report_is_unchanged`.
     const GOLDEN_WITH_INSTRUCTIONS: u64 = 0x4d9a_107a_dbe4_9f0b;
 
-    assert_eq!(
-        actual, GOLDEN_WITH_INSTRUCTIONS,
-        "instructed-team behaviour changed (fingerprint {actual:#x}). If this \
-         was intentional, bump the engine version stamp and set \
-         GOLDEN_WITH_INSTRUCTIONS to {actual:#x}."
-    );
+    assert_golden(actual, GOLDEN_WITH_INSTRUCTIONS, "instructed-team");
 }
 
 /// Ratings must actually discriminate.
