@@ -124,29 +124,44 @@ fn cap_full_engine_competitions(game: &Game, due: Vec<usize>) -> (Vec<usize>, Ve
     }
 
     let team_id = game.manager.team_id.as_deref();
-    let involves_user = |index: &usize| -> bool {
+    // Whether the player's club is in this competition at all.
+    //
+    // Read from the fixtures, not the standings. A knockout cup has no
+    // standings — the generator leaves them empty — so a promise that the
+    // player's own football always gets the full engine could not see the one
+    // competition it most needed to, and a busy day dropped the user's cup tie
+    // to a scoreline with no events, no player stats and no news.
+    let involves_user = |index: usize| -> bool {
         let Some(team_id) = team_id else {
             return false;
         };
-        game.competitions
-            .get(*index)
-            .is_some_and(|competition| {
-                competition
-                    .standings
+        game.competitions.get(index).is_some_and(|competition| {
+            competition
+                .standings
+                .iter()
+                .any(|entry| entry.team_id == team_id)
+                || competition
+                    .fixtures
                     .iter()
-                    .any(|entry| entry.team_id == team_id)
-            })
+                    .any(|fixture| fixture.home_team_id == team_id || fixture.away_team_id == team_id)
+        })
     };
 
-    let mut ordered = due;
+    // Worked out once per competition rather than inside the comparator, which
+    // would rescan every fixture list O(n log n) times.
+    let mut ordered: Vec<(bool, u32, usize)> = due
+        .into_iter()
+        .map(|index| {
+            let priority = game
+                .competitions
+                .get(index)
+                .map_or(u32::MAX, |competition| competition.priority);
+            (!involves_user(index), priority, index)
+        })
+        .collect();
     // The player's competitions first, then by the competition's own priority.
-    ordered.sort_by_key(|index| {
-        let priority = game
-            .competitions
-            .get(*index)
-            .map_or(u32::MAX, |competition| competition.priority);
-        (!involves_user(index), priority)
-    });
+    ordered.sort();
+    let mut ordered: Vec<usize> = ordered.into_iter().map(|(_, _, index)| index).collect();
     let overflow = ordered.split_off(MAX_FULL_ENGINE_COMPETITIONS_PER_DAY);
     (ordered, overflow)
 }
@@ -291,6 +306,7 @@ pub fn finish_live_match_day(game: &mut Game) {
 #[allow(clippy::items_after_test_module)]
 mod tests {
     use super::finish_live_match_day;
+    use super::{MAX_FULL_ENGINE_COMPETITIONS_PER_DAY, cap_full_engine_competitions};
     use crate::clock::GameClock;
     use crate::game::Game;
     use chrono::{TimeZone, Utc};
@@ -298,6 +314,79 @@ mod tests {
     use domain::player::{Player, PlayerAttributes, Position};
     use domain::staff::{Staff, StaffAttributes, StaffRole};
     use domain::team::Team;
+
+    /// A competition the user's club is playing in today.
+    ///
+    /// `standings` is left empty for a cup, which is how the generator builds
+    /// knockouts — that is the whole point of this test.
+    fn competition(id: &str, priority: u32, with_standings: bool, user_plays: bool) -> domain::league::League {
+        let entrant = if user_plays { "team1" } else { "other" };
+        domain::league::League {
+            id: id.to_string(),
+            priority,
+            standings: if with_standings {
+                vec![domain::league::StandingEntry::new(entrant.to_string())]
+            } else {
+                Vec::new()
+            },
+            fixtures: vec![domain::league::Fixture {
+                home_team_id: entrant.to_string(),
+                away_team_id: "opponent".to_string(),
+                ..Default::default()
+            }],
+            ..Default::default()
+        }
+    }
+
+    fn game_with(competitions: Vec<domain::league::League>) -> Game {
+        let clock = GameClock::new(Utc.with_ymd_and_hms(2025, 8, 1, 0, 0, 0).unwrap());
+        let mut manager = Manager::new(
+            "m1".to_string(),
+            "Boss".to_string(),
+            "Manager".to_string(),
+            "1980-01-01".to_string(),
+            "England".to_string(),
+        );
+        manager.hire("team1".to_string());
+        let mut game = Game::new(clock, manager, vec![make_team()], vec![], vec![], vec![]);
+        game.competitions = competitions;
+        game
+    }
+
+    // The cap promises the player's own football always gets the full engine.
+    // It decided what was "the player's" by looking for him in the standings,
+    // and a knockout cup deliberately has none — so the one competition the
+    // promise exists to protect was the one it could not see, and a busy day
+    // could push the user's cup tie into scoreline-only simulation.
+    #[test]
+    fn the_users_cup_is_never_pushed_out_of_the_full_engine() {
+        let over = MAX_FULL_ENGINE_COMPETITIONS_PER_DAY + 1;
+        let mut competitions: Vec<domain::league::League> = (0..over - 1)
+            .map(|i| competition(&format!("league-{i}"), i as u32, true, false))
+            .collect();
+        // Last in the list, lowest priority, no standings, and the user is in it.
+        competitions.push(competition("user-cup", 999, false, true));
+        let user_cup = competitions.len() - 1;
+
+        let game = game_with(competitions);
+        let (full, overflow) = cap_full_engine_competitions(&game, (0..over).collect());
+
+        assert!(
+            full.contains(&user_cup),
+            "the user's cup was dropped to a scoreline: full={full:?} overflow={overflow:?}"
+        );
+    }
+
+    #[test]
+    fn a_quiet_day_simulates_everything_in_full() {
+        let competitions: Vec<domain::league::League> = (0..3)
+            .map(|i| competition(&format!("league-{i}"), i as u32, true, false))
+            .collect();
+        let game = game_with(competitions);
+        let (full, overflow) = cap_full_engine_competitions(&game, vec![0, 1, 2]);
+        assert_eq!(full, vec![0, 1, 2]);
+        assert!(overflow.is_empty());
+    }
 
     fn make_team() -> Team {
         let mut team = Team::new(
