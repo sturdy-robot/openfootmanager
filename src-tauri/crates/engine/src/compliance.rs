@@ -272,6 +272,27 @@ fn check_one(result: &MatchReport, setup: &MatchSetup, seed: u64, report: &mut C
 }
 
 fn check_report_consistency(result: &MatchReport, seed: u64, report: &mut ComplianceReport) {
+    // Nobody sets himself up. The scorer and the assister used to be drawn
+    // independently from overlapping pools, so the same player could win both
+    // draws and be credited with a goal and the assist for it.
+    for event in &result.events {
+        let (Some(player), Some(secondary)) =
+            (event.player_id.as_deref(), event.secondary_player_id.as_deref())
+        else {
+            continue;
+        };
+        if player == secondary {
+            report.fail(
+                Invariant::ReportConsistency,
+                format!(
+                    "seed {seed}: minute {} {:?} names {player} as both the \
+                     player and the second player",
+                    event.minute, event.event_type
+                ),
+            );
+        }
+    }
+
     for side in [Side::Home, Side::Away] {
         let goal_events = result
             .events

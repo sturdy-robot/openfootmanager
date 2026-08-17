@@ -410,7 +410,15 @@ impl LiveMatchState {
         }
 
         let shooter = self.pick_actor(att_side, Band::OppBox, Need::Shoot, rng);
-        let assister = self.pick_actor(att_side, Band::FinalThird, Need::Progress, rng);
+        // Drawn with the shooter ruled out: a player cannot square the ball to
+        // himself, and picking the two independently from overlapping pools let
+        // the same man be credited with a goal and the assist for it.
+        //
+        // Optional rather than guaranteed, because a lone forward who beats the
+        // last man and finishes has genuinely not been set up by anybody, and
+        // an unassisted goal is a real thing to report.
+        let assister =
+            self.try_pick_actor(att_side, Band::FinalThird, Need::Progress, Some(shooter.index), rng);
         let goalkeeper = self.pick_actor(def_side, Band::OwnBox, Need::Keep, rng);
 
         let shoot_raw =
@@ -482,7 +490,9 @@ impl LiveMatchState {
         self.credit_momentum(att_side, minute, xg);
         // The man who made it gets the same credit: expected assists is the
         // expected goals of the chance you created.
-        self.metrics_mut(att_side).add_xa(assister.index, xg);
+        if let Some(ref assister) = assister {
+            self.metrics_mut(att_side).add_xa(assister.index, xg);
+        }
 
         if rng.random_range(0.0..1.0f64) > accuracy {
             let detail = EventDetail::Shot {
@@ -534,14 +544,16 @@ impl LiveMatchState {
 
         if rng.random_range(0.0..1.0f64) < conversion {
             let context = self.goal_context(att_side);
-            let evt = MatchEvent::new(minute, EventType::Goal, att_side, zone)
+            let mut evt = MatchEvent::new(minute, EventType::Goal, att_side, zone)
                 .with_player(shooter.id.clone())
-                .with_secondary(assister.id.clone())
                 .with_detail(EventDetail::Goal {
                     context,
                     technique,
                     xg: xg as f32,
                 });
+            if let Some(ref assister) = assister {
+                evt = evt.with_secondary(assister.id.clone());
+            }
             self.events.push(evt.clone());
             events.push(evt);
             self.add_goal(att_side);

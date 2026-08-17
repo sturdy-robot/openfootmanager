@@ -221,6 +221,39 @@ impl LiveMatchState {
         need: Need,
         rng: &mut R,
     ) -> PlayerSnap {
+        self.pick_actor_excluding(side, band, need, None, rng)
+    }
+
+    /// Pick an actor, optionally ruling one squad index out.
+    ///
+    /// Used where two players must be different people — a scorer and the man
+    /// who set him up, say. The exclusion zeroes a weight rather than redrawing
+    /// on a collision, so exactly one number is taken from the stream either
+    /// way: a redraw would make the draw count depend on the outcome, which is
+    /// what desynchronises two runs that differ only in who was on the pitch.
+    ///
+    /// Returns `None` when nobody else is a plausible pick, so the caller can
+    /// say there was no second player rather than inventing one.
+    pub(super) fn pick_actor_excluding<R: Rng + ?Sized>(
+        &self,
+        side: Side,
+        band: Band,
+        need: Need,
+        exclude: Option<usize>,
+        rng: &mut R,
+    ) -> PlayerSnap {
+        self.try_pick_actor(side, band, need, exclude, rng)
+            .unwrap_or_else(|| self.snap_player(side, need.fallback_position(), rng))
+    }
+
+    pub(super) fn try_pick_actor<R: Rng + ?Sized>(
+        &self,
+        side: Side,
+        band: Band,
+        need: Need,
+        exclude: Option<usize>,
+        rng: &mut R,
+    ) -> Option<PlayerSnap> {
         let team = self.team_ref(side);
         let dismissals = &self.sent_off;
 
@@ -231,6 +264,9 @@ impl LiveMatchState {
         let counted = team.players.len().min(MAX_WEIGHTED_SQUAD);
         let mut total = 0.0f64;
         for (index, player) in team.players.iter().take(counted).enumerate() {
+            if exclude == Some(index) {
+                continue;
+            }
             let weight = self.selection_weight(index, player, side, band, need, dismissals);
             weights[index] = weight;
             total += weight;
@@ -238,31 +274,25 @@ impl LiveMatchState {
 
         if total <= 0.0 {
             // Nobody is a plausible choice — an eleven reduced to nothing in
-            // this band. Fall back to the old uniform behaviour so play
-            // continues rather than stalling.
-            return self.snap_player(side, need.fallback_position(), rng);
+            // this band.
+            return None;
         }
 
         let mut roll = rng.random_range(0.0..total);
         for (index, weight) in weights.iter().enumerate().take(counted) {
             roll -= weight;
             if roll <= 0.0 {
-                return self.snap_at(side, index);
+                return Some(self.snap_at(side, index));
             }
         }
         // Floating-point drift only; the last eligible player is the answer.
-        match weights
+        weights
             .iter()
             .enumerate()
             .take(counted)
             .rev()
             .find(|(_, weight)| **weight > 0.0)
-            .map(|(index, _)| index)
-        {
-            Some(index) => self.snap_at(side, index),
-            None if !team.players.is_empty() => self.snap_at(side, 0),
-            None => PlayerSnap::placeholder(),
-        }
+            .map(|(index, _)| self.snap_at(side, index))
     }
 
     /// How likely this player is to be the one the engine picks.
