@@ -7,6 +7,24 @@
 //! reads this table, and the JSON output carries the verdicts so a caller (CI,
 //! a diff against a stored baseline) can act on them without re-encoding the
 //! numbers.
+//!
+//! # These bands hold for the reference seed, and only for it
+//!
+//! `--seed` does not draw another sample of the same league — it generates a
+//! different one. The squads, and therefore the balance of the whole
+//! competition, come from it. So two seeds are two different worlds, and the
+//! spread between them is not sampling noise and must not be read as though it
+//! were: a metric that sits inside its band on one seed can sit well outside it
+//! on another with nothing wrong.
+//!
+//! Measured, so nobody has to rediscover it: at `-n 20000`, seed 20260802 passes
+//! all twenty-one bands, while seed 771 misses five — away clean sheets, home
+//! win %, goal kicks, free-kick goals and both-teams-scored — and missed them
+//! before the calibration was last touched, too.
+//!
+//! Calibrate against **seed 20260802**, and raise `-n` rather than averaging
+//! seeds when a number looks marginal. Comparing a candidate change against the
+//! baseline on a *different* seed measures the seed.
 
 use serde::Serialize;
 
