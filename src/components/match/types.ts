@@ -1,6 +1,33 @@
 // Shared types for match simulation components — mirrors Rust engine types
 
 import type { TFunction } from "i18next";
+import type { PlayerRole } from "../../store/types";
+
+export type Side = "Home" | "Away";
+
+// Serde externally-tagged representation of the Rust MatchCommand enum.
+export type MatchCommand =
+  | {
+      Substitute: {
+        side: Side;
+        player_off_id: string;
+        player_on_id: string;
+      };
+    }
+  | { ChangeFormation: { side: Side; formation: string } }
+  | { ChangePlayStyle: { side: Side; play_style: string } }
+  | { SetFreeKickTaker: { side: Side; player_id: string } }
+  | { SetCornerTaker: { side: Side; player_id: string } }
+  | { SetPenaltyTaker: { side: Side; player_id: string } }
+  | { SetCaptain: { side: Side; player_id: string } }
+  | {
+      PreMatchSwap: {
+        side: Side;
+        player_off_id: string;
+        player_on_id: string;
+      };
+    }
+  | { ChangePlayerRole: { side: Side; player_id: string; role: PlayerRole } };
 
 export type DangerBand = "Speculative" | "Decent" | "BigChance";
 export type SaveQuality = "Routine" | "Strong" | "WorldClass";

@@ -1,6 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { invoke } from "@tauri-apps/api/core";
 
 import MatchSimulation from "./MatchSimulation";
 
@@ -12,8 +11,16 @@ let gameStoreState: {
   setGameState: typeof setGameStateMock;
 };
 
-vi.mock("@tauri-apps/api/core", () => ({
-  invoke: vi.fn(),
+const matchServiceMocks = vi.hoisted(() => ({
+  finishLiveMatch: vi.fn(),
+  getMatchSnapshot: vi.fn(),
+  startLiveMatch: vi.fn(),
+}));
+
+vi.mock("../services/matchService", () => ({
+  finishLiveMatch: matchServiceMocks.finishLiveMatch,
+  getMatchSnapshot: matchServiceMocks.getMatchSnapshot,
+  startLiveMatch: matchServiceMocks.startLiveMatch,
 }));
 
 vi.mock("react-router-dom", () => ({
@@ -137,8 +144,6 @@ vi.mock("../components/match/RoundDigestScreen", () => ({
 vi.mock("../components/match/PressConference", () => ({
   default: () => <div data-testid="press" />,
 }));
-
-const mockedInvoke = vi.mocked(invoke);
 
 function makeEnginePlayer(
   overrides: Partial<Record<string, unknown>> = {},
@@ -343,7 +348,9 @@ function makeGameStateWithFriendly() {
 
 describe("MatchSimulation", function (): void {
   beforeEach(function resetState(): void {
-    mockedInvoke.mockReset();
+    matchServiceMocks.finishLiveMatch.mockReset();
+    matchServiceMocks.getMatchSnapshot.mockReset();
+    matchServiceMocks.startLiveMatch.mockReset();
     navigateMock.mockReset();
     setGameStateMock.mockReset();
     locationState = null;
@@ -354,12 +361,12 @@ describe("MatchSimulation", function (): void {
   });
 
   it("renders the current live snapshot when get_match_snapshot succeeds", async function (): Promise<void> {
-    mockedInvoke.mockResolvedValueOnce(makeSnapshot());
+    matchServiceMocks.getMatchSnapshot.mockResolvedValueOnce(makeSnapshot());
 
     render(<MatchSimulation />);
 
     await waitFor(function (): void {
-      expect(mockedInvoke).toHaveBeenCalledWith("get_match_snapshot");
+      expect(matchServiceMocks.getMatchSnapshot).toHaveBeenCalledWith();
     });
 
     await waitFor(function (): void {
@@ -386,8 +393,10 @@ describe("MatchSimulation", function (): void {
         }),
       };
 
-      mockedInvoke.mockRejectedValueOnce(new Error("No active live match"));
-      mockedInvoke.mockResolvedValueOnce(
+      matchServiceMocks.getMatchSnapshot.mockRejectedValueOnce(
+        new Error("No active live match"),
+      );
+      matchServiceMocks.startLiveMatch.mockResolvedValueOnce(
         makeSnapshot({
           home_team: {
             id: "home1",
@@ -404,7 +413,7 @@ describe("MatchSimulation", function (): void {
       render(<MatchSimulation />);
 
       await waitFor(function (): void {
-        expect(mockedInvoke).toHaveBeenCalledWith("start_live_match", {
+        expect(matchServiceMocks.startLiveMatch).toHaveBeenCalledWith({
           allowsExtraTime: false,
           fixtureIndex: 4,
           mode: "live",
@@ -425,7 +434,7 @@ describe("MatchSimulation", function (): void {
       snapshot: makeSnapshot(),
     };
 
-    mockedInvoke.mockResolvedValueOnce(makeSnapshot());
+    matchServiceMocks.getMatchSnapshot.mockResolvedValueOnce(makeSnapshot());
 
     render(<MatchSimulation />);
 
@@ -441,7 +450,8 @@ describe("MatchSimulation", function (): void {
     };
 
     const finishedGame = makeGameState();
-    mockedInvoke.mockResolvedValueOnce(makeSnapshot()).mockResolvedValueOnce({
+    matchServiceMocks.getMatchSnapshot.mockResolvedValueOnce(makeSnapshot());
+    matchServiceMocks.finishLiveMatch.mockResolvedValueOnce({
       game: finishedGame,
       round_summary: {
         matchday: 1,
@@ -463,7 +473,7 @@ describe("MatchSimulation", function (): void {
     fireEvent.click(screen.getByTestId("match-live"));
 
     await waitFor(function (): void {
-      expect(mockedInvoke).toHaveBeenLastCalledWith("finish_live_match");
+      expect(matchServiceMocks.finishLiveMatch).toHaveBeenCalledWith();
       expect(screen.getByTestId("postmatch-finish")).toBeInTheDocument();
     });
 
@@ -492,7 +502,8 @@ describe("MatchSimulation", function (): void {
       notable_upset: null,
       top_scorer_delta: [],
     };
-    mockedInvoke.mockResolvedValueOnce(makeSnapshot()).mockResolvedValueOnce({
+    matchServiceMocks.getMatchSnapshot.mockResolvedValueOnce(makeSnapshot());
+    matchServiceMocks.finishLiveMatch.mockResolvedValueOnce({
       game: finishedGame,
       round_summary: roundSummary,
     });
@@ -513,7 +524,7 @@ describe("MatchSimulation", function (): void {
     fireEvent.click(screen.getByTestId("match-live"));
 
     await waitFor(function (): void {
-      expect(mockedInvoke).toHaveBeenLastCalledWith("finish_live_match");
+      expect(matchServiceMocks.finishLiveMatch).toHaveBeenCalledWith();
       expect(screen.getByTestId("postmatch-finish")).toBeInTheDocument();
     });
 
@@ -549,12 +560,11 @@ describe("MatchSimulation", function (): void {
       setGameState: setGameStateMock,
     };
 
-    mockedInvoke
-      .mockResolvedValueOnce(makeSnapshot())
-      .mockResolvedValueOnce({
-        game: makeGameState(),
-        round_summary: null,
-      });
+    matchServiceMocks.getMatchSnapshot.mockResolvedValueOnce(makeSnapshot());
+    matchServiceMocks.finishLiveMatch.mockResolvedValueOnce({
+      game: makeGameState(),
+      round_summary: null,
+    });
 
     render(<MatchSimulation />);
 
@@ -583,8 +593,7 @@ describe("MatchSimulation", function (): void {
   });
 
   it("preserves user-selected match speed from first half into second half", async function (): Promise<void> {
-    const mockedInvoke = vi.mocked(invoke);
-    mockedInvoke.mockResolvedValueOnce(makeSnapshot());
+    matchServiceMocks.getMatchSnapshot.mockResolvedValueOnce(makeSnapshot());
 
     render(<MatchSimulation />);
 

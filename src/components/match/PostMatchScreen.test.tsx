@@ -6,10 +6,6 @@ import type { GameStateData } from "../../store/gameStore";
 import type { MatchEvent } from "./types";
 import { ThemeProvider } from "../../context/ThemeContext";
 
-vi.mock("@tauri-apps/api/core", () => ({
-  invoke: vi.fn(),
-}));
-
 Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: vi.fn().mockImplementation((query: string) => ({

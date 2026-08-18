@@ -1,8 +1,11 @@
 import { useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { GameStateData } from "../../store/gameStore";
+import {
+  submitPressConference,
+  type PressConferenceAnswer,
+} from "../../services/matchService";
 import { MatchSnapshot } from "./types";
 import { Badge, ThemeToggle } from "../ui";
 import { ChevronRight, Mic, MessageSquare } from "lucide-react";
@@ -29,17 +32,6 @@ interface PressResponse {
   text: string;
   textKey: string;
   textParams?: Record<string, string>;
-}
-
-interface AnswerPayload {
-  question_id: string;
-  response_id: string;
-  response_tone: string;
-  response_text: string;
-  response_text_key: string;
-  response_text_params?: Record<string, string>;
-  question_text: string;
-  player_id?: string;
 }
 
 interface PlayerFocusQuestion extends PressQuestion {
@@ -281,7 +273,7 @@ export default function PressConference({
   const submitToBackend = async () => {
     setSubmitting(true);
     try {
-      const payloads: AnswerPayload[] = questions
+      const payloads: PressConferenceAnswer[] = questions
         .map((q) => {
           const rid = answers[q.id];
           const resp = q.responses.find((r) => r.id === rid);
@@ -333,17 +325,14 @@ export default function PressConference({
         prerenderedBody = t("match.pressReport.bodyNone", { team: userTeamName, result: resultStr });
       }
 
-      const result = await invoke<{
-        game: GameStateData;
-        morale_delta: number;
-      }>("submit_press_conference", {
+      const result = await submitPressConference({
         answers: payloads,
         homeTeam: snapshot.home_team.name,
         awayTeam: snapshot.away_team.name,
         homeScore: snapshot.home_score,
         awayScore: snapshot.away_score,
-        userTeamName: userTeamName,
-        userTeamId: userTeamId,
+        userTeamName,
+        userTeamId,
         prerenderedBody,
         prerenderedHeadline,
       });

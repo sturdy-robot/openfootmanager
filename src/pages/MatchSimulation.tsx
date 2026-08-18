@@ -1,9 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
-import { useGameStore, GameStateData } from "../store/gameStore";
+import { useGameStore } from "../store/gameStore";
 import { useSettingsStore } from "../store/settingsStore";
+import {
+  finishLiveMatch,
+  getMatchSnapshot,
+  startLiveMatch,
+} from "../services/matchService";
 import {
   MatchSnapshot,
   MatchEvent,
@@ -27,11 +31,6 @@ interface MatchRouteState {
   fixtureIndex?: number;
   mode?: string;
   snapshot?: MatchSnapshot;
-}
-
-interface FinishLiveMatchResponse {
-  game: GameStateData;
-  round_summary?: RoundSummary | null;
 }
 
 export default function MatchSimulation() {
@@ -116,7 +115,7 @@ export default function MatchSimulation() {
         matchMode,
       });
       try {
-        const snap = await invoke<MatchSnapshot | null>("get_match_snapshot");
+        const snap = await getMatchSnapshot();
         if (!snap) throw new Error("No active match snapshot");
         console.info("[MatchSimulation] fetchSnapshot:success", {
           awayPlayers: snap.away_team.players.length,
@@ -149,16 +148,13 @@ export default function MatchSimulation() {
           // Identify the fixture by its teams so the backend can resolve it
           // across all competitions — the raw index may point into a cup while
           // game.league mirrors the domestic league after a restart.
-          const restoredSnapshot = await invoke<MatchSnapshot>(
-            "start_live_match",
-            {
-              allowsExtraTime,
-              fixtureIndex: routeState.fixtureIndex,
-              mode: matchMode,
-              homeTeamId: routeState?.snapshot?.home_team?.id ?? null,
-              awayTeamId: routeState?.snapshot?.away_team?.id ?? null,
-            },
-          );
+          const restoredSnapshot = await startLiveMatch({
+            allowsExtraTime,
+            fixtureIndex: routeState.fixtureIndex,
+            mode: matchMode,
+            homeTeamId: routeState?.snapshot?.home_team?.id ?? null,
+            awayTeamId: routeState?.snapshot?.away_team?.id ?? null,
+          });
 
           console.info("[MatchSimulation] restoreLiveMatch:success", {
             awayPlayers: restoredSnapshot.away_team.players.length,
@@ -224,8 +220,7 @@ export default function MatchSimulation() {
 
     try {
       console.info("[MatchSimulation] finalizeMatch:start");
-      const response =
-        await invoke<FinishLiveMatchResponse>("finish_live_match");
+      const response = await finishLiveMatch();
       console.info("[MatchSimulation] finalizeMatch:success", {
         hasRoundSummary: !!response.round_summary,
         hasUpdatedGame: !!response.game,

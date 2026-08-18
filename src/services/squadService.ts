@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 
 import type { GameStateData, PlayerData } from "../store/gameStore";
-import type { KitPattern, PlayerRole, PlayerSquadRole, TacticsPhaseSettings, TeamTacticsDraft } from "../store/types";
+import type { KitPattern, PlayerRole, PlayerSquadRole, TacticsPhaseSettings, TeamMatchRolesData, TeamTacticsDraft } from "../store/types";
 
 export async function getSquad(teamId: string): Promise<PlayerData[]> {
     return invoke<PlayerData[]>("get_squad", { teamId });
@@ -25,6 +25,20 @@ export async function setStartingXi(
 
 export async function applyTeamTactics(draft: TeamTacticsDraft): Promise<GameStateData> {
     return invoke<GameStateData>("apply_team_tactics", { draft });
+}
+
+export async function setFormation(formation: string): Promise<GameStateData> {
+    return invoke<GameStateData>("set_formation", { formation });
+}
+
+export async function setPlayStyle(playStyle: string): Promise<GameStateData> {
+    return invoke<GameStateData>("set_play_style", { playStyle });
+}
+
+export async function setTeamMatchRoles(
+    matchRoles: TeamMatchRolesData,
+): Promise<GameStateData> {
+    return invoke<GameStateData>("set_team_match_roles", { matchRoles });
 }
 
 export async function setPlayerRole(

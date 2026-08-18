@@ -6,9 +6,18 @@ import {
   within,
 } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { invoke } from "@tauri-apps/api/core";
 import type { GameStateData, PlayerData, TeamData } from "../../store/gameStore";
 import TacticsTab from "./TacticsTab";
+
+const squadServiceMocks = vi.hoisted(() => ({
+  getSquad: vi.fn(),
+  setFormation: vi.fn(),
+  setPlayerRole: vi.fn(),
+  setPlayStyle: vi.fn(),
+  setStartingXi: vi.fn(),
+  setTacticsPhase: vi.fn(),
+  setTeamMatchRoles: vi.fn(),
+}));
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -28,11 +37,15 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
-vi.mock("@tauri-apps/api/core", () => ({
-  invoke: vi.fn(),
+vi.mock("../../services/squadService", () => ({
+  getSquad: squadServiceMocks.getSquad,
+  setFormation: squadServiceMocks.setFormation,
+  setPlayerRole: squadServiceMocks.setPlayerRole,
+  setPlayStyle: squadServiceMocks.setPlayStyle,
+  setStartingXi: squadServiceMocks.setStartingXi,
+  setTacticsPhase: squadServiceMocks.setTacticsPhase,
+  setTeamMatchRoles: squadServiceMocks.setTeamMatchRoles,
 }));
-
-const mockedInvoke = vi.mocked(invoke);
 
 const makePlayer = (
   id: string,
@@ -250,15 +263,18 @@ const createDataTransfer = () => {
 describe("TacticsTab", () => {
   beforeEach(() => {
     localStorage.clear();
-    mockedInvoke.mockReset();
     const defaultGameState = makeGameState();
     const defaultRoster = defaultGameState.players.filter(
       (p) => p.team_id === "team1",
     );
-    mockedInvoke.mockImplementation(async (command: string) => {
-      if (command === "get_squad") return defaultRoster;
-      return defaultGameState;
-    });
+    Object.values(squadServiceMocks).forEach((mock) => mock.mockReset());
+    squadServiceMocks.getSquad.mockResolvedValue(defaultRoster);
+    squadServiceMocks.setFormation.mockResolvedValue(defaultGameState);
+    squadServiceMocks.setPlayerRole.mockResolvedValue(defaultGameState);
+    squadServiceMocks.setPlayStyle.mockResolvedValue(defaultGameState);
+    squadServiceMocks.setStartingXi.mockResolvedValue(defaultGameState);
+    squadServiceMocks.setTacticsPhase.mockResolvedValue(defaultGameState);
+    squadServiceMocks.setTeamMatchRoles.mockResolvedValue(defaultGameState);
   });
 
   it("renders the top tactical controls plus bench player in the left panel", () => {
@@ -351,12 +367,8 @@ describe("TacticsTab", () => {
     fireEvent.click(screen.getByRole("option", { name: /high-press/i }));
 
     await waitFor(() => {
-      expect(mockedInvoke).toHaveBeenCalledWith("set_formation", {
-        formation: "3-4-3",
-      });
-      expect(mockedInvoke).toHaveBeenCalledWith("set_play_style", {
-        playStyle: "HighPress",
-      });
+      expect(squadServiceMocks.setFormation).toHaveBeenCalledWith("3-4-3");
+      expect(squadServiceMocks.setPlayStyle).toHaveBeenCalledWith("HighPress");
     });
   });
 
@@ -394,11 +406,9 @@ describe("TacticsTab", () => {
     );
     // Override so get_squad returns the full roster including the youth player,
     // exercising the client-side isSeniorSquadPlayer filter.
-    mockedInvoke.mockImplementation(async (command: string) => {
-      if (command === "get_squad")
-        return gameState.players.filter((p) => p.team_id === "team1");
-      return gameState;
-    });
+    squadServiceMocks.getSquad.mockResolvedValue(
+      gameState.players.filter((p) => p.team_id === "team1"),
+    );
 
     render(
       <TacticsTab
@@ -430,8 +440,7 @@ describe("TacticsTab", () => {
     fireEvent.drop(pitchSlot, { dataTransfer });
 
     await waitFor(() => {
-      expect(mockedInvoke).toHaveBeenCalledWith("set_starting_xi", {
-        playerIds: [
+      expect(squadServiceMocks.setStartingXi).toHaveBeenCalledWith([
           "gk1",
           "d5",
           "d2",
@@ -443,8 +452,7 @@ describe("TacticsTab", () => {
           "m4",
           "f1",
           "f2",
-        ],
-      });
+        ]);
     });
   });
 
@@ -482,11 +490,9 @@ describe("TacticsTab", () => {
     );
     // Override so get_squad returns the modified players (d5 with Midfielder
     // position), ensuring the natural position display is tested post-fetch.
-    mockedInvoke.mockImplementation(async (command: string) => {
-      if (command === "get_squad")
-        return gameState.players.filter((p) => p.team_id === "team1");
-      return gameState;
-    });
+    squadServiceMocks.getSquad.mockResolvedValue(
+      gameState.players.filter((p) => p.team_id === "team1"),
+    );
 
     render(
       <TacticsTab
@@ -624,17 +630,10 @@ describe("TacticsTab", () => {
 
   it("does not mark a preset as active when applying it fails", async () => {
     const gameState = makeGameState();
-    mockedInvoke.mockImplementation(async (command) => {
-      if (command === "set_formation") {
-        throw new Error("boom");
-      }
-
-      if (command === "get_squad") {
-        return gameState.players.filter((p) => p.team_id === "team1");
-      }
-
-      return gameState;
-    });
+    squadServiceMocks.setFormation.mockRejectedValue(new Error("boom"));
+    squadServiceMocks.getSquad.mockResolvedValue(
+      gameState.players.filter((p) => p.team_id === "team1"),
+    );
 
     render(
       <TacticsTab
@@ -654,9 +653,7 @@ describe("TacticsTab", () => {
     fireEvent.click(screen.getByRole("option", { name: /high-press/i }));
 
     await waitFor(() => {
-      expect(mockedInvoke).toHaveBeenCalledWith("set_formation", {
-        formation: "3-4-3",
-      });
+      expect(squadServiceMocks.setFormation).toHaveBeenCalledWith("3-4-3");
     });
 
     expect(
@@ -697,7 +694,7 @@ describe("TacticsTab", () => {
 
     fireEvent.click(screen.getByTestId("pitch-player-d2"));
 
-    expect(mockedInvoke).not.toHaveBeenCalledWith("set_starting_xi", expect.anything());
+    expect(squadServiceMocks.setStartingXi).not.toHaveBeenCalled();
     expect(screen.getByText("tactics.comparePlayer")).toBeInTheDocument();
 
     fireEvent.click(
@@ -705,8 +702,7 @@ describe("TacticsTab", () => {
     );
 
     await waitFor(() => {
-      expect(mockedInvoke).toHaveBeenCalledWith("set_starting_xi", {
-        playerIds: [
+      expect(squadServiceMocks.setStartingXi).toHaveBeenCalledWith([
           "gk1",
           "d1",
           "d5",
@@ -718,8 +714,7 @@ describe("TacticsTab", () => {
           "m4",
           "f1",
           "f2",
-        ],
-      });
+        ]);
     });
   });
 
@@ -743,7 +738,7 @@ describe("TacticsTab", () => {
     fireEvent.click(screen.getByTestId("pitch-player-d2"));
 
     expect(onSelectPlayer).not.toHaveBeenCalled();
-    expect(mockedInvoke).not.toHaveBeenCalledWith("set_starting_xi", expect.anything());
+    expect(squadServiceMocks.setStartingXi).not.toHaveBeenCalled();
     expect(screen.getByText("tactics.comparePlayer")).toBeInTheDocument();
 
     fireEvent.click(
@@ -751,8 +746,7 @@ describe("TacticsTab", () => {
     );
 
     await waitFor(() => {
-      expect(mockedInvoke).toHaveBeenCalledWith("set_starting_xi", {
-        playerIds: [
+      expect(squadServiceMocks.setStartingXi).toHaveBeenCalledWith([
           "gk1",
           "d2",
           "d1",
@@ -764,8 +758,7 @@ describe("TacticsTab", () => {
           "m4",
           "f1",
           "f2",
-        ],
-      });
+        ]);
     });
   });
 
@@ -838,11 +831,9 @@ describe("TacticsTab", () => {
 
   it("shows the deployed slot position for a starter played out of his natural position", () => {
     const gameState = makeOutOfPositionGameState();
-    mockedInvoke.mockImplementation(async (command: string) => {
-      if (command === "get_squad")
-        return gameState.players.filter((p) => p.team_id === "team1");
-      return gameState;
-    });
+    squadServiceMocks.getSquad.mockResolvedValue(
+      gameState.players.filter((p) => p.team_id === "team1"),
+    );
 
     render(
       <TacticsTab
@@ -863,11 +854,9 @@ describe("TacticsTab", () => {
 
   it("offers pitch roles for the deployed slot, not the natural position", () => {
     const gameState = makeOutOfPositionGameState();
-    mockedInvoke.mockImplementation(async (command: string) => {
-      if (command === "get_squad")
-        return gameState.players.filter((p) => p.team_id === "team1");
-      return gameState;
-    });
+    squadServiceMocks.getSquad.mockResolvedValue(
+      gameState.players.filter((p) => p.team_id === "team1"),
+    );
 
     render(
       <TacticsTab
@@ -913,7 +902,7 @@ describe("TacticsTab", () => {
     expect(
       screen.queryByRole("button", { name: "tactics.promoteToLineup" }),
     ).not.toBeInTheDocument();
-    expect(mockedInvoke).not.toHaveBeenCalledWith("set_starting_xi", expect.anything());
+    expect(squadServiceMocks.setStartingXi).not.toHaveBeenCalled();
   });
 
   it("does not allow swapping an injured bench player into the starting XI", () => {
@@ -959,8 +948,7 @@ describe("TacticsTab", () => {
     );
 
     await waitFor(() => {
-      expect(mockedInvoke).toHaveBeenCalledWith("set_starting_xi", {
-        playerIds: [
+      expect(squadServiceMocks.setStartingXi).toHaveBeenCalledWith([
           "gk1",
           "d5",
           "d2",
@@ -972,8 +960,7 @@ describe("TacticsTab", () => {
           "m4",
           "f1",
           "f2",
-        ],
-      });
+        ]);
     });
   });
 
@@ -992,8 +979,7 @@ describe("TacticsTab", () => {
     );
 
     await waitFor(() => {
-      expect(mockedInvoke).toHaveBeenCalledWith("set_starting_xi", {
-        playerIds: [
+      expect(squadServiceMocks.setStartingXi).toHaveBeenCalledWith([
           "gk1",
           "d5",
           "d2",
@@ -1005,8 +991,7 @@ describe("TacticsTab", () => {
           "m4",
           "f1",
           "f2",
-        ],
-      });
+        ]);
     });
   });
 
@@ -1025,11 +1010,11 @@ describe("TacticsTab", () => {
     );
 
     await waitFor(() => {
-      expect(mockedInvoke).toHaveBeenCalledWith("set_team_match_roles", {
-        matchRoles: expect.objectContaining({
+      expect(squadServiceMocks.setTeamMatchRoles).toHaveBeenCalledWith(
+        expect.objectContaining({
           captain: "d1",
         }),
-      });
+      );
     });
   });
 
@@ -1048,11 +1033,11 @@ describe("TacticsTab", () => {
     );
 
     await waitFor(() => {
-      expect(mockedInvoke).toHaveBeenCalledWith("set_team_match_roles", {
-        matchRoles: expect.objectContaining({
+      expect(squadServiceMocks.setTeamMatchRoles).toHaveBeenCalledWith(
+        expect.objectContaining({
           captain: "d1",
         }),
-      });
+      );
     });
   });
 
@@ -1070,15 +1055,15 @@ describe("TacticsTab", () => {
     );
 
     await waitFor(() => {
-      expect(mockedInvoke).toHaveBeenCalledWith("set_team_match_roles", {
-        matchRoles: expect.objectContaining({
+      expect(squadServiceMocks.setTeamMatchRoles).toHaveBeenCalledWith(
+        expect.objectContaining({
           captain: expect.any(String),
           vice_captain: expect.any(String),
           penalty_taker: expect.any(String),
           free_kick_taker: expect.any(String),
           corner_taker: expect.any(String),
         }),
-      });
+      );
     });
   });
 });

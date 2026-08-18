@@ -1,7 +1,11 @@
 import { useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { GameStateData } from "../../store/gameStore";
+import {
+  applyMatchCommand,
+  applyTeamTalk,
+  type TeamTalkMoraleChange,
+} from "../../services/matchService";
 import {
   MatchSnapshot,
   MatchEvent,
@@ -58,15 +62,7 @@ export default function HalfTimeBreak({
   const [selectedTalk, setSelectedTalk] = useState<TeamTalkTone | null>(null);
   const [showSubPanel, setShowSubPanel] = useState(false);
   const [talkDelivered, setTalkDelivered] = useState(false);
-  const [talkResults, setTalkResults] = useState<
-    {
-      player_id: string;
-      player_name: string;
-      old_morale: number;
-      new_morale: number;
-      delta: number;
-    }[]
-  >([]);
+  const [talkResults, setTalkResults] = useState<TeamTalkMoraleChange[]>([]);
 
   const homeFullTeam = gameState.teams.find((t) => t.id === snapshot.home_team.id);
   const awayFullTeam = gameState.teams.find((t) => t.id === snapshot.away_team.id);
@@ -91,8 +87,8 @@ export default function HalfTimeBreak({
 
   const handleFormationChange = async (formation: string) => {
     try {
-      const snap = await invoke<MatchSnapshot>("apply_match_command", {
-        command: { ChangeFormation: { side: userSide, formation } },
+      const snap = await applyMatchCommand({
+        ChangeFormation: { side: userSide, formation },
       });
       onUpdateSnapshot(snap);
     } catch (err) {
@@ -102,8 +98,8 @@ export default function HalfTimeBreak({
 
   const handlePlayStyleChange = async (playStyle: string) => {
     try {
-      const snap = await invoke<MatchSnapshot>("apply_match_command", {
-        command: { ChangePlayStyle: { side: userSide, play_style: playStyle } },
+      const snap = await applyMatchCommand({
+        ChangePlayStyle: { side: userSide, play_style: playStyle },
       });
       onUpdateSnapshot(snap);
     } catch (err) {
@@ -116,13 +112,11 @@ export default function HalfTimeBreak({
     playerOnId: string,
   ) => {
     try {
-      const snap = await invoke<MatchSnapshot>("apply_match_command", {
-        command: {
-          Substitute: {
-            side: userSide,
-            player_off_id: playerOffId,
-            player_on_id: playerOnId,
-          },
+      const snap = await applyMatchCommand({
+        Substitute: {
+          side: userSide,
+          player_off_id: playerOffId,
+          player_on_id: playerOnId,
         },
       });
       onUpdateSnapshot(snap);
@@ -145,15 +139,7 @@ export default function HalfTimeBreak({
           ? "losing"
           : "drawing";
     try {
-      const results = await invoke<
-        {
-          player_id: string;
-          player_name: string;
-          old_morale: number;
-          new_morale: number;
-          delta: number;
-        }[]
-      >("apply_team_talk", { tone: selectedTalk, context });
+      const results = await applyTeamTalk(selectedTalk, context);
       setTalkResults(results);
     } catch (err) {
       console.error("Team talk failed:", err);

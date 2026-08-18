@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { FixtureData, GameStateData } from "../../store/gameStore";
+import { applyMatchCommand, autoSelectSetPieces } from "../../services/matchService";
 import { getFixtureDisplayLabel } from "../../lib/helpers";
-import { MatchSnapshot, EnginePlayerData, FORMATIONS, PLAY_STYLES } from "./types";
+import { MatchSnapshot, EnginePlayerData, FORMATIONS, PLAY_STYLES, type MatchCommand, type Side } from "./types";
 import PreMatchLineup, { parseFormationNeeds, POSITION_KEY_STATS, statColor, starterOvrColor, getStatVal } from "./PreMatchLineup";
 import { condColor } from "../../lib/playerConditionDisplay";
 import { getSetPieceStats } from "./SetPieceSelector";
@@ -37,6 +37,8 @@ interface PreMatchSetupProps {
   onStart: () => void;
   onUpdateSnapshot: (snap: MatchSnapshot) => void;
 }
+
+type SetPieceRole = "penalty" | "freekick" | "corner" | "captain";
 
 export default function PreMatchSetup({
   snapshot,
@@ -244,8 +246,8 @@ export default function PreMatchSetup({
 
   const handleFormationChange = async (formation: string) => {
     try {
-      const snap = await invoke<MatchSnapshot>("apply_match_command", {
-        command: { ChangeFormation: { side: userSide, formation } },
+      const snap = await applyMatchCommand({
+        ChangeFormation: { side: userSide, formation },
       });
       onUpdateSnapshot(snap);
     } catch (err) {
@@ -255,8 +257,8 @@ export default function PreMatchSetup({
 
   const handlePlayStyleChange = async (playStyle: string) => {
     try {
-      const snap = await invoke<MatchSnapshot>("apply_match_command", {
-        command: { ChangePlayStyle: { side: userSide, play_style: playStyle } },
+      const snap = await applyMatchCommand({
+        ChangePlayStyle: { side: userSide, play_style: playStyle },
       });
       onUpdateSnapshot(snap);
     } catch (err) {
@@ -267,13 +269,11 @@ export default function PreMatchSetup({
   const handleSwap = async (benchPlayerId: string) => {
     if (!selectedStarterId) return;
     try {
-      const snap = await invoke<MatchSnapshot>("apply_match_command", {
-        command: {
-          PreMatchSwap: {
-            side: userSide,
-            player_off_id: selectedStarterId,
-            player_on_id: benchPlayerId,
-          },
+      const snap = await applyMatchCommand({
+        PreMatchSwap: {
+          side: userSide,
+          player_off_id: selectedStarterId,
+          player_on_id: benchPlayerId,
         },
       });
       onUpdateSnapshot(snap);
@@ -283,19 +283,25 @@ export default function PreMatchSetup({
     setSelectedStarterId(null);
   };
 
-  const handleSetPieceTaker = async (role: string, playerId: string) => {
-    const commandMap: Record<string, string> = {
-      penalty: "SetPenaltyTaker",
-      freekick: "SetFreeKickTaker",
-      corner: "SetCornerTaker",
-      captain: "SetCaptain",
+  const handleSetPieceTaker = async (role: SetPieceRole, playerId: string) => {
+    const commandMap: Record<
+      SetPieceRole,
+      (side: Side, id: string) => MatchCommand
+    > = {
+      penalty: (side, id) => ({
+        SetPenaltyTaker: { side, player_id: id },
+      }),
+      freekick: (side, id) => ({
+        SetFreeKickTaker: { side, player_id: id },
+      }),
+      corner: (side, id) => ({
+        SetCornerTaker: { side, player_id: id },
+      }),
+      captain: (side, id) => ({ SetCaptain: { side, player_id: id } }),
     };
-    const cmdKey = commandMap[role];
-    if (!cmdKey) return;
     try {
-      const snap = await invoke<MatchSnapshot>("apply_match_command", {
-        command: { [cmdKey]: { side: userSide, player_id: playerId } },
-      });
+      const command = commandMap[role](userSide, playerId);
+      const snap = await applyMatchCommand(command);
       onUpdateSnapshot(snap);
     } catch (err) {
       console.error("Set piece taker change failed:", err);
@@ -334,13 +340,11 @@ export default function PreMatchSetup({
 
       let snap: MatchSnapshot | null = null;
       for (let i = 0; i < Math.min(toAdd.length, toRemove.length); i++) {
-        snap = await invoke<MatchSnapshot>("apply_match_command", {
-          command: {
-            PreMatchSwap: {
-              side: userSide,
-              player_off_id: toRemove[i],
-              player_on_id: toAdd[i],
-            },
+        snap = await applyMatchCommand({
+          PreMatchSwap: {
+            side: userSide,
+            player_off_id: toRemove[i],
+            player_on_id: toAdd[i],
           },
         });
       }
@@ -356,12 +360,7 @@ export default function PreMatchSetup({
   const handleAutoSelectSetPieces = async () => {
     try {
       const ids = userTeam.players.map((p) => p.id);
-      const result = await invoke<{
-        captain: string | null;
-        penalty_taker: string | null;
-        free_kick_taker: string | null;
-        corner_taker: string | null;
-      }>("auto_select_set_pieces", { playerIds: ids });
+      const result = await autoSelectSetPieces(ids);
       if (result.captain) await handleSetPieceTaker("captain", result.captain);
       if (result.penalty_taker) await handleSetPieceTaker("penalty", result.penalty_taker);
       if (result.free_kick_taker) await handleSetPieceTaker("freekick", result.free_kick_taker);
@@ -634,7 +633,7 @@ export default function PreMatchSetup({
       Icon: CornerDownRight,
       current: userSetPieces.corner_taker,
     },
-  ];
+  ] as const;
 
   return (
     <div className="flex h-screen flex-col bg-gray-100 dark:bg-navy-900 text-gray-900 dark:text-white transition-colors duration-300">

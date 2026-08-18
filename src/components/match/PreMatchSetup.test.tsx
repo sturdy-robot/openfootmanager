@@ -5,7 +5,6 @@ import PreMatchSetup from "./PreMatchSetup";
 
 // Mock the few external dependencies PreMatchSetup pulls in at render time so we
 // can exercise the real component tree (the opponent scout panel in particular).
-vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string, opts?: unknown) => {

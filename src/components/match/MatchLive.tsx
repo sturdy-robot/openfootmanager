@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { GameStateData } from "../../store/gameStore";
-import { MatchSnapshot, MatchEvent, MinuteResult, SimSpeed, SPEED_MS, MINUTES_PER_TICK, FORMATIONS, isPersistableSpeed } from "./types";
+import { applyMatchCommand, getMatchSnapshot, stepLiveMatch } from "../../services/matchService";
+import { MatchSnapshot, MatchEvent, SimSpeed, SPEED_MS, MINUTES_PER_TICK, FORMATIONS, isPersistableSpeed, type Side } from "./types";
 import { getEventDisplay, getPlayerName, makeTeamFallback, phaseLabel } from "./helpers";
 import { Badge, TeamLogo } from "../ui";
 import { useSettingsStore } from "../../store/settingsStore";
@@ -21,7 +21,7 @@ type ActivePanel = "events" | "stats" | "lineups";
 interface MatchLiveProps {
   snapshot: MatchSnapshot;
   gameState: GameStateData;
-  userSide: "Home" | "Away" | null;
+  userSide: Side | null;
   isSpectator: boolean;
   importantEvents: MatchEvent[];
   preferredSpeed?: "slow" | "normal" | "fast";
@@ -73,7 +73,7 @@ export default function MatchLive({
   // ofm_core/live_match_manager.rs; MINUTES_PER_TICK on this side is what makes batches possible.
   const stepMatch = useCallback(async (minutes: number) => {
     try {
-      const results = await invoke<MinuteResult[]>("step_live_match", { minutes });
+      const results = await stepLiveMatch(minutes);
       if (results.length > 0) {
         const lastResult = results[results.length - 1];
 
@@ -88,8 +88,8 @@ export default function MatchLive({
         }
 
         // Fetch full snapshot
-        const snap = await invoke<MatchSnapshot>("get_match_snapshot");
-        onSnapshotUpdate(snap);
+        const snap = await getMatchSnapshot();
+        onSnapshotUpdate(snap!);
 
         // Check for phase transitions that should pause
         const phase = lastResult.phase;
@@ -161,8 +161,8 @@ export default function MatchLive({
   const handleSubstitution = async (playerOffId: string, playerOnId: string) => {
     if (!userSide || isSpectator) return;
     try {
-      const snap = await invoke<MatchSnapshot>("apply_match_command", {
-        command: { Substitute: { side: userSide, player_off_id: playerOffId, player_on_id: playerOnId } }
+      const snap = await applyMatchCommand({
+        Substitute: { side: userSide, player_off_id: playerOffId, player_on_id: playerOnId }
       });
       onSnapshotUpdate(snap);
       setShowSubPanel(false);
@@ -174,8 +174,8 @@ export default function MatchLive({
   const handleFormationChange = async (formation: string) => {
     if (!userSide || isSpectator) return;
     try {
-      const snap = await invoke<MatchSnapshot>("apply_match_command", {
-        command: { ChangeFormation: { side: userSide, formation } }
+      const snap = await applyMatchCommand({
+        ChangeFormation: { side: userSide, formation }
       });
       onSnapshotUpdate(snap);
     } catch (err) {
@@ -186,8 +186,8 @@ export default function MatchLive({
   const handlePlayStyleChange = async (playStyle: string) => {
     if (!userSide || isSpectator) return;
     try {
-      const snap = await invoke<MatchSnapshot>("apply_match_command", {
-        command: { ChangePlayStyle: { side: userSide, play_style: playStyle } }
+      const snap = await applyMatchCommand({
+        ChangePlayStyle: { side: userSide, play_style: playStyle }
       });
       onSnapshotUpdate(snap);
     } catch (err) {
@@ -444,4 +444,3 @@ export default function MatchLive({
     </MatchScreenLayout>
   );
 }
-
