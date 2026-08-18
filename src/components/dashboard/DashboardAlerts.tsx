@@ -28,7 +28,10 @@ export default function DashboardAlerts({
   }
 
   return (
-    <div className="mb-4 flex flex-col gap-1.5">
+    // shrink-0 because the alerts sit as pinned chrome above the workspace's
+    // scroll region now, and a flex child defaults to shrinking: without it a
+    // short window compresses the rows instead of the content below them.
+    <div className="mb-4 flex shrink-0 flex-col gap-1.5">
       {alerts.map((alert) => (
         <button
           key={alert.id}

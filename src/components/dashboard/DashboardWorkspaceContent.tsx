@@ -6,6 +6,7 @@ import type { DashboardAlert } from "./dashboardHelpers";
 import type { DashboardProfileNavigationState } from "./dashboardProfileNavigation";
 import DashboardTabContent from "./DashboardTabContent";
 import type { DashboardTabContentModel } from "./dashboardTabContentModel";
+import WorkspaceScroll from "./WorkspaceScroll";
 import { ShieldX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -46,9 +47,9 @@ export default function DashboardWorkspaceContent({
     : null;
 
   return (
-    <div className="flex-1 overflow-auto p-6 bg-gray-100 dark:bg-navy-900">
+    <div className="flex-1 min-h-0 flex flex-col bg-gray-100 dark:bg-navy-900">
       {isUnemployed && (
-        <div className="mx-6 mt-4 flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-950/30">
+        <div className="mx-6 mt-4 flex shrink-0 items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-950/30">
           <ShieldX className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-500" />
           <p className="text-sm text-amber-800 dark:text-amber-300">
             {t("dashboard.unemployedBanner")}
@@ -61,30 +62,34 @@ export default function DashboardWorkspaceContent({
       ) : null}
 
       {selectedPlayer && !selectedTeam ? (
-        <PlayerProfile
-          player={selectedPlayer}
-          gameState={gameState}
-          isOwnClub={selectedPlayer.team_id === gameState.manager.team_id}
-          startWithRenewalModal={
-            profileNavigation.selectedPlayerOptions?.openRenewal === true
-          }
-          startWithTerminationModal={
-            profileNavigation.selectedPlayerOptions?.openTermination === true
-          }
-          onClose={onBack}
-          onSelectTeam={onSelectTeam}
-          onGameUpdate={onGameUpdate}
-        />
+        <WorkspaceScroll>
+          <PlayerProfile
+            player={selectedPlayer}
+            gameState={gameState}
+            isOwnClub={selectedPlayer.team_id === gameState.manager.team_id}
+            startWithRenewalModal={
+              profileNavigation.selectedPlayerOptions?.openRenewal === true
+            }
+            startWithTerminationModal={
+              profileNavigation.selectedPlayerOptions?.openTermination === true
+            }
+            onClose={onBack}
+            onSelectTeam={onSelectTeam}
+            onGameUpdate={onGameUpdate}
+          />
+        </WorkspaceScroll>
       ) : null}
 
       {selectedTeam ? (
-        <TeamProfile
-          team={selectedTeam}
-          gameState={gameState}
-          isOwnTeam={selectedTeam.id === gameState.manager.team_id}
-          onClose={onBack}
-          onSelectPlayer={onSelectPlayer}
-        />
+        <WorkspaceScroll>
+          <TeamProfile
+            team={selectedTeam}
+            gameState={gameState}
+            isOwnTeam={selectedTeam.id === gameState.manager.team_id}
+            onClose={onBack}
+            onSelectPlayer={onSelectPlayer}
+          />
+        </WorkspaceScroll>
       ) : null}
 
       {!selectedPlayer && !selectedTeam ? (

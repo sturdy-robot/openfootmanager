@@ -2,6 +2,9 @@ import { lazy, Suspense } from "react";
 import EndOfSeasonScreen from "../EndOfSeasonScreen";
 import HomeTab from "../home/HomeTab";
 import type { DashboardTabContentModel } from "./dashboardTabContentModel";
+import WorkspaceFrame from "./WorkspaceFrame";
+import { FRAME_TABS, FULL_HEIGHT_TABS } from "./workspaceLayout";
+import WorkspaceScroll from "./WorkspaceScroll";
 
 const SquadTab = lazy(() => import("../squad/SquadTab"));
 const TacticsTab = lazy(() => import("../tactics/TacticsTab"));
@@ -197,6 +200,14 @@ export default function DashboardTabContent({
   }
 
   return (
-    <Suspense fallback={<DashboardTabFallback />}>{content}</Suspense>
+    <Suspense fallback={<DashboardTabFallback />}>
+      {FRAME_TABS.has(activeTab) ? (
+        <WorkspaceFrame>{content}</WorkspaceFrame>
+      ) : (
+        <WorkspaceScroll fullHeight={FULL_HEIGHT_TABS.has(activeTab)}>
+          {content}
+        </WorkspaceScroll>
+      )}
+    </Suspense>
   );
 }

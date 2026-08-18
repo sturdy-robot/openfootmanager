@@ -358,4 +358,83 @@ describe("DashboardWorkspaceContent", () => {
     expect(screen.getByText("Team Profile Mock")).toBeInTheDocument();
     expect(screen.queryByText("Tab Content Teams")).not.toBeInTheDocument();
   });
+
+  // The unemployed banner and the alerts list are siblings of the tab content
+  // inside the workspace. Bounding the workspace's height is exactly the kind
+  // of change that leaves a sibling with nowhere to go, so both are pinned
+  // against a workbench tab as well as a document tab.
+  it("keeps the alerts and the unemployed banner with a full-height tab", () => {
+    const gameState = createGameState();
+    const onNavigate = vi.fn();
+
+    render(
+      <DashboardWorkspaceContent
+        dashboardAlerts={[]}
+        gameState={gameState}
+        profileNavigation={createDashboardProfileNavigationState("Tactics")}
+        dashboardTabContentModel={createDashboardTabContentModel({
+          activeTab: "Tactics",
+          gameState,
+          seasonComplete: false,
+          visitedOnboardingTabs: new Set<string>(),
+          initialMessageId: null,
+          handlers: {
+            onSelectPlayer: vi.fn(),
+            onSelectTeam: vi.fn(),
+            onGameUpdate: vi.fn(),
+            onNavigate,
+          },
+        })}
+        onBack={vi.fn()}
+        onNavigate={onNavigate}
+        onSelectPlayer={vi.fn()}
+        onSelectTeam={vi.fn()}
+        onGameUpdate={vi.fn()}
+        isUnemployed
+      />,
+    );
+
+    expect(screen.getByText("dashboard.unemployedBanner")).toBeInTheDocument();
+    expect(screen.getByText("alerts-mock")).toBeInTheDocument();
+    expect(screen.getByText("Tab Content Tactics")).toBeInTheDocument();
+  });
+
+  it("shows a profile in place of the tab whichever layout the tab wanted", () => {
+    // Selecting a player while Tactics is open must not leave the workbench
+    // layout wrapped around a profile that expects to scroll.
+    const gameState = createGameState();
+
+    render(
+      <DashboardWorkspaceContent
+        dashboardAlerts={[]}
+        gameState={gameState}
+        profileNavigation={selectDashboardPlayer(
+          createDashboardProfileNavigationState("Tactics"),
+          "player-1",
+        )}
+        dashboardTabContentModel={createDashboardTabContentModel({
+          activeTab: "Tactics",
+          gameState,
+          seasonComplete: false,
+          visitedOnboardingTabs: new Set<string>(),
+          initialMessageId: null,
+          handlers: {
+            onSelectPlayer: vi.fn(),
+            onSelectTeam: vi.fn(),
+            onGameUpdate: vi.fn(),
+            onNavigate: vi.fn(),
+          },
+        })}
+        onBack={vi.fn()}
+        onNavigate={vi.fn()}
+        onSelectPlayer={vi.fn()}
+        onSelectTeam={vi.fn()}
+        onGameUpdate={vi.fn()}
+        isUnemployed={false}
+      />,
+    );
+
+    expect(screen.getByText("Player Profile Mock")).toBeInTheDocument();
+    expect(screen.queryByText("Tab Content Tactics")).not.toBeInTheDocument();
+  });
 });
