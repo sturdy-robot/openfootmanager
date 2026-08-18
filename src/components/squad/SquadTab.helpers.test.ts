@@ -396,6 +396,36 @@ describe("SquadTab helpers", () => {
     ).toEqual(["gk", "d2", "d1"]);
   });
 
+  // The case above replaces the LAST entry, where inserting at the vacated index
+  // and appending give the same answer — so it cannot tell the XI slot invariant
+  // from a violation of it. These replace a middle entry, where they differ:
+  // appending would yield ["gk", "d2", "d3", "b1"] and silently re-deploy three
+  // players into the wrong formation slots.
+  //
+  // Both selection orders are covered because they take different branches, and
+  // starter-first — click a starter, then click his replacement — had none.
+  it("puts a bench player into the vacated slot, not on the end of the XI", () => {
+    // bench selected first, starter second
+    expect(
+      applyLineupSwap(
+        ["gk", "d1", "d2", "d3"],
+        { id: "b1", from: "bench" },
+        "d1",
+        "xi",
+      ),
+    ).toEqual(["gk", "b1", "d2", "d3"]);
+
+    // starter selected first, bench player second
+    expect(
+      applyLineupSwap(
+        ["gk", "d1", "d2", "d3"],
+        { id: "d1", from: "xi" },
+        "b1",
+        "bench",
+      ),
+    ).toEqual(["gk", "b1", "d2", "d3"]);
+  });
+
   it("returns core position codes", () => {
     expect(positionCode("Center Back")).toBe("CB");
     expect(positionCode("Striker")).toBe("ST");

@@ -3,6 +3,7 @@ import { isSeniorSquadPlayer } from "../../lib/playerSquad";
 import type { PlayerData } from "../../store/gameStore";
 import {
   buildPitchRows,
+  applyLineupSwap,
   buildStartingXIIds,
   type PitchSlotRow,
   canonicalPosition,
@@ -110,8 +111,12 @@ interface ResolveStartingXiIdsOptions {
 
 export function buildTacticsRoster(
   players: PlayerData[],
-  teamId: string,
+  teamId: string | null,
 ): PlayerData[] {
+  if (!teamId) {
+    return [];
+  }
+
   return players
     .filter(
       (player) => player.team_id === teamId && isSeniorSquadPlayer(player),
@@ -146,8 +151,12 @@ export function resolveStartingXiIds({
   const validPendingIds = pendingStartingXiIds.filter((id) => playersById.has(id));
   const usedPlayerIds = new Set(validPendingIds);
   const fillPlayerIds: string[] = [];
+  // The formation owns how many slots there are. Every shipped formation has
+  // eleven, but a definition file can describe otherwise and filling to a
+  // hard-coded eleven would invent slots the pitch cannot draw.
+  const slotCount = slotPositions.length;
 
-  while (validPendingIds.length + fillPlayerIds.length < 11) {
+  while (validPendingIds.length + fillPlayerIds.length < slotCount) {
     const slotPosition = slotPositions[validPendingIds.length + fillPlayerIds.length];
     const bestPlayer = availablePlayers
       .filter((player) => !usedPlayerIds.has(player.id))
@@ -158,7 +167,215 @@ export function resolveStartingXiIds({
     usedPlayerIds.add(bestPlayer.id);
   }
 
-  return [...validPendingIds, ...fillPlayerIds].slice(0, 11);
+  return [...validPendingIds, ...fillPlayerIds].slice(0, slotCount);
+}
+
+/**
+ * Whether a player may enter the first-team XI at all.
+ *
+ * `buildPromoteToStartingXi` already refuses an injured player and remains the
+ * mutation authority. This is the decision guard the UI asks *before* offering
+ * the move, and it additionally excludes youth-squad and missing players so a
+ * bench list cannot offer somebody the mutation would then reject.
+ */
+export function isPlayerEligibleForTacticsLineup(
+  player: PlayerData | null | undefined,
+): boolean {
+  if (!player) {
+    return false;
+  }
+
+  return isSeniorSquadPlayer(player) && !player.injury;
+}
+
+export interface ResolveTacticsStartingXiIdsOptions {
+  roster: readonly PlayerData[];
+  formation: string;
+  pendingStartingXiIds: readonly string[] | null;
+  savedStartingXiIds: readonly string[];
+}
+
+/**
+ * The XI the tactics board should draw right now.
+ *
+ * A pending XI is the optimistic result of a change the server has not
+ * acknowledged yet. It is honoured only for players who are actually eligible —
+ * being present in the roster map is not enough, or an injured player could be
+ * held on the pitch by a stale optimistic write.
+ */
+export function resolveTacticsStartingXiIds({
+  roster,
+  formation,
+  pendingStartingXiIds,
+  savedStartingXiIds,
+}: ResolveTacticsStartingXiIdsOptions): string[] {
+  const availablePlayers = roster.filter(isPlayerEligibleForTacticsLineup);
+
+  if (availablePlayers.length === 0) {
+    return [];
+  }
+
+  const playersById = new Map(
+    availablePlayers.map((player) => [player.id, player] as const),
+  );
+  const eligiblePendingIds = pendingStartingXiIds
+    ? pendingStartingXiIds.filter((id) => playersById.has(id))
+    : null;
+
+  return resolveStartingXiIds({
+    availablePlayers: [...availablePlayers],
+    formation,
+    pendingStartingXiIds:
+      eligiblePendingIds && eligiblePendingIds.length > 0
+        ? eligiblePendingIds
+        : null,
+    playersById,
+    savedStartingXiIds: [...savedStartingXiIds],
+  });
+}
+
+/**
+ * Whether the optimistic XI may be dropped in favour of the server's copy.
+ *
+ * The same ids in a different order is *not* an acknowledgement: the array
+ * index owns the formation slot, so a reorder is a different lineup.
+ */
+export function reconcilePendingStartingXiIds(
+  pendingStartingXiIds: readonly string[] | null,
+  savedStartingXiIds: readonly string[],
+): string[] | null {
+  if (!pendingStartingXiIds) {
+    return null;
+  }
+
+  const acknowledged =
+    pendingStartingXiIds.length === savedStartingXiIds.length &&
+    pendingStartingXiIds.every((id, index) => savedStartingXiIds[index] === id);
+
+  return acknowledged ? null : [...pendingStartingXiIds];
+}
+
+export interface TacticsLineupSelection {
+  selectedPlayerId: string | null;
+  selectedPlayerSection: SquadSection | null;
+  comparePlayerId: string | null;
+  comparePlayerSection: SquadSection | null;
+}
+
+const EMPTY_TACTICS_LINEUP_SELECTION: TacticsLineupSelection = {
+  selectedPlayerId: null,
+  selectedPlayerSection: null,
+  comparePlayerId: null,
+  comparePlayerSection: null,
+};
+
+/** The click state machine behind picking two players to swap. */
+export function updateTacticsLineupSelection(
+  selection: TacticsLineupSelection,
+  playerId: string,
+  section: SquadSection,
+): TacticsLineupSelection {
+  const { selectedPlayerId, comparePlayerId } = selection;
+
+  if (!selectedPlayerId || !selection.selectedPlayerSection) {
+    return {
+      selectedPlayerId: playerId,
+      selectedPlayerSection: section,
+      comparePlayerId: null,
+      comparePlayerSection: null,
+    };
+  }
+
+  if (playerId === comparePlayerId) {
+    return {
+      ...selection,
+      comparePlayerId: null,
+      comparePlayerSection: null,
+    };
+  }
+
+  if (playerId === selectedPlayerId) {
+    // Clicking the first pick again hands the selection to whoever was being
+    // compared, so a second click walks the pair forward instead of dead-ending.
+    if (comparePlayerId && selection.comparePlayerSection) {
+      return {
+        selectedPlayerId: comparePlayerId,
+        selectedPlayerSection: selection.comparePlayerSection,
+        comparePlayerId: null,
+        comparePlayerSection: null,
+      };
+    }
+
+    return { ...EMPTY_TACTICS_LINEUP_SELECTION };
+  }
+
+  return {
+    ...selection,
+    comparePlayerId: playerId,
+    comparePlayerSection: section,
+  };
+}
+
+/**
+ * Whether the current pair can actually be swapped.
+ *
+ * Decision only — `applyLineupSwap` performs the move and stays the authority
+ * on where each player lands.
+ */
+export function canConfirmTacticsLineupSwap(
+  currentXiIds: readonly string[],
+  playersById: ReadonlyMap<string, PlayerData>,
+  selection: TacticsLineupSelection,
+): boolean {
+  const {
+    selectedPlayerId,
+    selectedPlayerSection,
+    comparePlayerId,
+    comparePlayerSection,
+  } = selection;
+
+  if (
+    !selectedPlayerId ||
+    !selectedPlayerSection ||
+    !comparePlayerId ||
+    !comparePlayerSection ||
+    selectedPlayerId === comparePlayerId
+  ) {
+    return false;
+  }
+
+  const participants = [
+    { id: selectedPlayerId, from: selectedPlayerSection },
+    { id: comparePlayerId, from: comparePlayerSection },
+  ];
+
+  for (const participant of participants) {
+    const player = playersById.get(participant.id);
+    if (!player) {
+      return false;
+    }
+    // Only somebody coming off the bench has to earn a place; a player already
+    // in the XI keeps his, injured or not, until he is substituted out.
+    if (
+      participant.from === "bench" &&
+      !isPlayerEligibleForTacticsLineup(player)
+    ) {
+      return false;
+    }
+  }
+
+  const nextXiIds = applyLineupSwap(
+    [...currentXiIds],
+    { id: selectedPlayerId, from: selectedPlayerSection },
+    comparePlayerId,
+    comparePlayerSection,
+  );
+
+  if (!nextXiIds) {
+    return false;
+  }
+
+  return nextXiIds.some((id, index) => currentXiIds[index] !== id);
 }
 
 export function getSectionPlayerPosition(

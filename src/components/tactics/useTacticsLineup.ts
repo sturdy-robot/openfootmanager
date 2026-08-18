@@ -33,10 +33,14 @@ import {
 import {
   buildTacticsPitchSlots,
   buildTacticsRoster,
+  canConfirmTacticsLineupSwap,
+  isPlayerEligibleForTacticsLineup,
+  reconcilePendingStartingXiIds,
+  resolveTacticsStartingXiIds,
+  updateTacticsLineupSelection,
   countOutOfPositionPlayers,
   findTacticsPresetBySetup,
   getSelectedAndComparePlayers,
-  resolveStartingXiIds,
 } from "./TacticsTab.helpers";
 import {
   buildUpdatedMatchRolesForAssignment,
@@ -46,12 +50,6 @@ import {
 interface UseTacticsLineupArgs {
   gameState: GameStateData | null;
   onGameUpdate: (g: GameStateData) => void;
-}
-
-function isPlayerEligibleForLineup(
-  player: PlayerData | null | undefined,
-): boolean {
-  return Boolean(player && !player.injury);
 }
 
 export function useTacticsLineup({
@@ -90,7 +88,7 @@ export function useTacticsLineup({
 
   const team = sessionState?.team ?? gameState?.teams?.find((t) => t.id === teamId) ?? null;
   const players = fetchedSquad ?? gameState?.players ?? [];
-  const roster = team ? buildTacticsRoster(players, team.id) : [];
+  const roster = buildTacticsRoster(players, team?.id ?? null);
 
   const formation = team?.formation || "4-4-2";
   const activePlayStyle = team?.play_style || "Balanced";
@@ -104,11 +102,10 @@ export function useTacticsLineup({
 
   const startingXiIds = useMemo(
     () =>
-      resolveStartingXiIds({
-        availablePlayers: available,
+      resolveTacticsStartingXiIds({
         formation,
         pendingStartingXiIds,
-        playersById,
+        roster,
         savedStartingXiIds: team?.starting_xi_ids || [],
       }),
     [
@@ -130,7 +127,15 @@ export function useTacticsLineup({
 
   useEffect(() => {
     if (!pendingStartingXiIds) return;
-    if (savedStartingXiKey === pendingStartingXiIds.join(",")) {
+    // Only the acknowledgement is acted on. Writing the pending XI back when it
+    // has *not* been acknowledged would store a fresh array each pass, and this
+    // effect depends on that array — an endless re-render.
+    if (
+      reconcilePendingStartingXiIds(
+        pendingStartingXiIds,
+        team?.starting_xi_ids || [],
+      ) === null
+    ) {
       setPendingStartingXiIds(null);
     }
   }, [pendingStartingXiIds, savedStartingXiKey]);
@@ -156,45 +161,23 @@ export function useTacticsLineup({
     selectedPlayerId,
   );
 
-  const canConfirmSwap = useMemo(() => {
-    if (
-      !selectedPlayerId ||
-      !selectedPlayerSection ||
-      !comparePlayerId ||
-      !comparePlayerSection
-    ) {
-      return false;
-    }
-
-    if (
-      (selectedPlayerSection === "bench" &&
-        !isPlayerEligibleForLineup(
-          selectedPlayerId ? playersById.get(selectedPlayerId) : null,
-        )) ||
-      (comparePlayerSection === "bench" &&
-        !isPlayerEligibleForLineup(
-          comparePlayerId ? playersById.get(comparePlayerId) : null,
-        ))
-    ) {
-      return false;
-    }
-
-    const nextXiIds = applyLineupSwap(
-      startingXiIds,
-      { id: selectedPlayerId, from: selectedPlayerSection },
+  const canConfirmSwap = useMemo(
+    () =>
+      canConfirmTacticsLineupSwap(startingXiIds, playersById, {
+        comparePlayerId,
+        comparePlayerSection,
+        selectedPlayerId,
+        selectedPlayerSection,
+      }),
+    [
       comparePlayerId,
       comparePlayerSection,
-    );
-
-    return !!nextXiIds && nextXiIds.join(",") !== startingXiIds.join(",");
-  }, [
-    comparePlayerId,
-    comparePlayerSection,
-    playersById,
-    selectedPlayerId,
-    selectedPlayerSection,
-    startingXiIds,
-  ]);
+      playersById,
+      selectedPlayerId,
+      selectedPlayerSection,
+      startingXiIds,
+    ],
+  );
 
   const outOfPositionCount = countOutOfPositionPlayers(
     startingXI,
@@ -255,7 +238,7 @@ export function useTacticsLineup({
   }
 
   async function handlePromoteBenchPlayer(playerId: string): Promise<void> {
-    if (!isPlayerEligibleForLineup(playersById.get(playerId))) {
+    if (!isPlayerEligibleForTacticsLineup(playersById.get(playerId))) {
       return;
     }
 
@@ -378,7 +361,7 @@ export function useTacticsLineup({
 
     if (
       resolvedDragState.from === "bench" &&
-      !isPlayerEligibleForLineup(playersById.get(resolvedDragState.playerId))
+      !isPlayerEligibleForTacticsLineup(playersById.get(resolvedDragState.playerId))
     ) {
       resetDragState();
       return;
@@ -403,33 +386,21 @@ export function useTacticsLineup({
     playerId: string,
     section: SquadSection,
   ): Promise<void> {
-    if (!selectedPlayerId || !selectedPlayerSection) {
-      setSelectedPlayerId(playerId);
-      setSelectedPlayerSection(section);
-      return;
-    }
+    const next = updateTacticsLineupSelection(
+      {
+        comparePlayerId,
+        comparePlayerSection,
+        selectedPlayerId,
+        selectedPlayerSection,
+      },
+      playerId,
+      section,
+    );
 
-    if (selectedPlayerId === playerId && selectedPlayerSection === section) {
-      if (comparePlayerId && comparePlayerSection) {
-        setSelectedPlayerId(comparePlayerId);
-        setSelectedPlayerSection(comparePlayerSection);
-        setComparePlayerId(null);
-        setComparePlayerSection(null);
-        return;
-      }
-
-      clearLineupSelection();
-      return;
-    }
-
-    if (comparePlayerId === playerId && comparePlayerSection === section) {
-      setComparePlayerId(null);
-      setComparePlayerSection(null);
-      return;
-    }
-
-    setComparePlayerId(playerId);
-    setComparePlayerSection(section);
+    setSelectedPlayerId(next.selectedPlayerId);
+    setSelectedPlayerSection(next.selectedPlayerSection);
+    setComparePlayerId(next.comparePlayerId);
+    setComparePlayerSection(next.comparePlayerSection);
   }
 
   async function handleConfirmSwap(): Promise<void> {
@@ -444,11 +415,11 @@ export function useTacticsLineup({
 
     if (
       (selectedPlayerSection === "bench" &&
-        !isPlayerEligibleForLineup(
+        !isPlayerEligibleForTacticsLineup(
           selectedPlayerId ? playersById.get(selectedPlayerId) : null,
         )) ||
       (comparePlayerSection === "bench" &&
-        !isPlayerEligibleForLineup(
+        !isPlayerEligibleForTacticsLineup(
           comparePlayerId ? playersById.get(comparePlayerId) : null,
         ))
     ) {
