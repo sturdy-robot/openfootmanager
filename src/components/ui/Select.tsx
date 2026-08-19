@@ -138,15 +138,18 @@ export function Select({
    * presentation, and must not be able to disagree about what is selectable.
    */
   const groupedOptions = useMemo(() => {
-    const sections: { label: string | undefined; options: SelectOption[] }[] = [];
-    for (const option of options) {
+    const sections: {
+      label: string | undefined;
+      options: { option: SelectOption; index: number }[];
+    }[] = [];
+    options.forEach((option, index) => {
       const last = sections[sections.length - 1];
       if (last && last.label === option.group) {
-        last.options.push(option);
+        last.options.push({ option, index });
       } else {
-        sections.push({ label: option.group, options: [option] });
+        sections.push({ label: option.group, options: [{ option, index }] });
       }
-    }
+    });
     return sections;
   }, [options]);
 
@@ -162,6 +165,7 @@ export function Select({
     return options[0]?.value ?? "";
   });
   const [isOpen, setIsOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   const currentValue = controlledValue ?? uncontrolledValue;
   const selectedOption =
@@ -169,7 +173,23 @@ export function Select({
     options[0] ??
     null;
   const selectedValue = selectedOption?.value ?? "";
-  const enabledOptions = options.filter((option) => !option.disabled);
+  const enabledOptionIndices = useMemo(
+    () =>
+      options.flatMap((option, index) => (option.disabled ? [] : [index])),
+    [options],
+  );
+  const committedEnabledIndex = enabledOptionIndices.find(
+    (index) => options[index]?.value === currentValue,
+  );
+  const initialActiveIndex =
+    committedEnabledIndex ?? enabledOptionIndices[0] ?? null;
+  const activeOptionId =
+    isOpen &&
+    activeIndex !== null &&
+    options[activeIndex] &&
+    !options[activeIndex].disabled
+      ? `${listboxId}-option-${activeIndex}`
+      : undefined;
 
   useEffect(() => {
     if (controlledValue !== undefined || options.length === 0) {
@@ -191,6 +211,7 @@ export function Select({
         !menuRef.current?.contains(target)
       ) {
         setIsOpen(false);
+        setActiveIndex(null);
       }
     };
 
@@ -283,6 +304,16 @@ export function Select({
     };
   }, [isOpen, options]);
 
+  useLayoutEffect(() => {
+    if (!activeOptionId) {
+      return;
+    }
+
+    document
+      .getElementById(activeOptionId)
+      ?.scrollIntoView?.({ block: "nearest" });
+  }, [activeOptionId]);
+
   const handleSelect = (nextValue: string) => {
     if (controlledValue === undefined) {
       setUncontrolledValue(nextValue);
@@ -294,6 +325,21 @@ export function Select({
     } as ChangeEvent<HTMLSelectElement>);
 
     setIsOpen(false);
+    setActiveIndex(null);
+  };
+
+  const openMenu = (nextActiveIndex = initialActiveIndex) => {
+    if (disabled || options.length === 0) {
+      return;
+    }
+
+    setActiveIndex(nextActiveIndex);
+    setIsOpen(true);
+  };
+
+  const closeMenu = () => {
+    setIsOpen(false);
+    setActiveIndex(null);
   };
 
   const toggleOpen = () => {
@@ -301,44 +347,86 @@ export function Select({
       return;
     }
 
-    setIsOpen((open) => !open);
+    if (isOpen) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
   };
 
-  const moveSelection = (direction: 1 | -1) => {
-    if (enabledOptions.length === 0) {
+  const moveActiveOption = (direction: 1 | -1) => {
+    if (!isOpen) {
+      openMenu();
       return;
     }
 
-    const currentIndex = enabledOptions.findIndex(
-      (option) => option.value === selectedValue,
-    );
-    const baseIndex = currentIndex >= 0 ? currentIndex : 0;
-    const nextIndex =
-      (baseIndex + direction + enabledOptions.length) % enabledOptions.length;
-    handleSelect(enabledOptions[nextIndex].value);
+    if (enabledOptionIndices.length === 0) {
+      return;
+    }
+
+    const enabledPosition =
+      activeIndex === null ? -1 : enabledOptionIndices.indexOf(activeIndex);
+    const nextEnabledPosition =
+      enabledPosition === -1
+        ? direction === 1
+          ? 0
+          : enabledOptionIndices.length - 1
+        : (enabledPosition + direction + enabledOptionIndices.length) %
+          enabledOptionIndices.length;
+    setActiveIndex(enabledOptionIndices[nextEnabledPosition]);
   };
 
   const handleTriggerKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      moveSelection(1);
+      moveActiveOption(1);
       return;
     }
 
     if (event.key === "ArrowUp") {
       event.preventDefault();
-      moveSelection(-1);
+      moveActiveOption(-1);
       return;
     }
 
-    if (event.key === "Enter" || event.key === " ") {
+    if (event.key === "Home" || event.key === "End") {
       event.preventDefault();
-      setIsOpen(true);
+      const nextActiveIndex =
+        event.key === "Home"
+          ? enabledOptionIndices[0]
+          : enabledOptionIndices[enabledOptionIndices.length - 1];
+      openMenu(nextActiveIndex ?? null);
+      return;
+    }
+
+    if (event.key === "Enter") {
+      event.preventDefault();
+      if (!isOpen) {
+        openMenu();
+        return;
+      }
+
+      const activeOption =
+        activeIndex === null ? undefined : options[activeIndex];
+      if (activeOption && !activeOption.disabled) {
+        handleSelect(activeOption.value);
+      }
+      return;
+    }
+
+    if (event.key === " ") {
+      event.preventDefault();
+      if (!isOpen) {
+        openMenu();
+      }
       return;
     }
 
     if (event.key === "Escape") {
-      setIsOpen(false);
+      if (isOpen) {
+        event.preventDefault();
+        closeMenu();
+      }
     }
   };
 
@@ -416,6 +504,7 @@ export function Select({
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-controls={listboxId}
+        aria-activedescendant={activeOptionId}
         tabIndex={tabIndex}
         autoFocus={autoFocus}
         className={`${base} ${variants[variant]} ${sizes[selectSize]} ${leftPadding} ${rightPadding} ${fullWidth ? "w-full" : ""} ${className} flex items-center justify-between text-left`}
@@ -449,31 +538,37 @@ export function Select({
             className="max-h-60 overflow-y-auto p-1"
           >
             {groupedOptions.map((section, sectionIndex) => {
-              const rendered = section.options.map((option) => {
-              const isSelected = option.value === currentValue;
+              const rendered = section.options.map(
+                ({ option, index: optionIndex }) => {
+                  const isSelected = option.value === currentValue;
+                  const isActive = optionIndex === activeIndex;
 
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="option"
-                  aria-selected={isSelected}
-                  disabled={option.disabled}
-                  className={`${optionTextSize} flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors ${isSelected ? "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400" : "text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-navy-700"} ${option.disabled ? "cursor-not-allowed opacity-50" : ""}`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    if (!option.disabled) {
-                      handleSelect(option.value);
-                    }
-                  }}
-                >
-                  <span className="truncate">{option.label}</span>
-                  {isSelected ? (
-                    <Check className="ml-2 h-4 w-4 shrink-0" />
-                  ) : null}
-                </button>
+                  return (
+                    <button
+                      key={option.value}
+                      id={`${listboxId}-option-${optionIndex}`}
+                      type="button"
+                      role="option"
+                      aria-selected={isSelected}
+                      disabled={option.disabled}
+                      tabIndex={-1}
+                      className={`${optionTextSize} flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors ${isSelected ? "bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400" : "text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-navy-700"} ${isActive ? "ring-2 ring-inset ring-primary-500 dark:ring-primary-400" : ""} ${option.disabled ? "cursor-not-allowed opacity-50" : ""}`}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (!option.disabled) {
+                          handleSelect(option.value);
+                        }
+                      }}
+                    >
+                      <span className="truncate">{option.label}</span>
+                      {isSelected ? (
+                        <Check className="ml-2 h-4 w-4 shrink-0" />
+                      ) : null}
+                    </button>
+                  );
+                },
               );
-              });
 
               // Ungrouped options sit directly in the listbox, exactly as
               // before — only a named `<optgroup>` adds a wrapper.

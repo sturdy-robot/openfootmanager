@@ -209,3 +209,175 @@ describe("Select", () => {
     );
   });
 });
+
+/**
+ * APG combobox keyboard semantics — issue #361.
+ *
+ * NVDA announces nothing when arrowing this control, because there is no
+ * *active* option: arrowing commits a new value outright and the popup has no
+ * `aria-activedescendant` for a screen reader to follow.
+ *
+ * That is also a live bug with nothing to do with assistive tech. The tactics
+ * formation picker is a `Select`, so arrowing through it committed a formation
+ * per keypress — a backend mutation and a full game-state round trip for every
+ * press of the down arrow. Moving is not choosing.
+ */
+describe("Select keyboard navigation", () => {
+  function renderSelect(onChange = vi.fn()) {
+    render(
+      <Select value="4-4-2" aria-label="Formation" onChange={onChange}>
+        <option value="4-4-2">4-4-2</option>
+        <option value="4-3-3">4-3-3</option>
+        <option value="3-5-2">3-5-2</option>
+      </Select>,
+    );
+
+    return { combobox: screen.getByRole("combobox", { name: "Formation" }), onChange };
+  }
+
+  function activeOption(combobox: HTMLElement): HTMLElement | null {
+    const id = combobox.getAttribute("aria-activedescendant");
+    return id ? document.getElementById(id) : null;
+  }
+
+  it("opens the list on ArrowDown instead of committing the next option", () => {
+    const { combobox, onChange } = renderSelect();
+
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+
+    expect(combobox).toHaveAttribute("aria-expanded", "true");
+    expect(onChange).not.toHaveBeenCalled();
+    expect(combobox).toHaveTextContent("4-4-2");
+  });
+
+  it("moves through options without committing any of them", () => {
+    const { combobox, onChange } = renderSelect();
+
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+
+    // Three presses, zero mutations. This is the assertion that would have
+    // caught the formation picker firing a backend call per keystroke.
+    expect(onChange).not.toHaveBeenCalled();
+    expect(activeOption(combobox)).toHaveTextContent("3-5-2");
+  });
+
+  it("points aria-activedescendant at the active option and starts on the committed one", () => {
+    const { combobox } = renderSelect();
+
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+
+    // Opening lands on what is already chosen, so the first arrow press moves
+    // from there rather than from the top of the list.
+    expect(activeOption(combobox)).toHaveTextContent("4-4-2");
+
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+    expect(activeOption(combobox)).toHaveTextContent("4-3-3");
+  });
+
+  it("keeps aria-selected on the committed option while the active one moves", () => {
+    const { combobox } = renderSelect();
+
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+
+    const selected = screen
+      .getAllByRole("option")
+      .filter((option) => option.getAttribute("aria-selected") === "true");
+
+    expect(selected).toHaveLength(1);
+    expect(selected[0]).toHaveTextContent("4-4-2");
+    expect(activeOption(combobox)).toHaveTextContent("4-3-3");
+  });
+
+  it("commits the active option on Enter and closes", () => {
+    const { combobox, onChange } = renderSelect();
+
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+    fireEvent.keyDown(combobox, { key: "Enter" });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0].target.value).toBe("4-3-3");
+    expect(combobox).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("abandons the move on Escape, leaving the committed value alone", () => {
+    const { combobox, onChange } = renderSelect();
+
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+    fireEvent.keyDown(combobox, { key: "Escape" });
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(combobox).toHaveAttribute("aria-expanded", "false");
+    expect(combobox).toHaveTextContent("4-4-2");
+  });
+
+  it("reopens on the committed option after an abandoned move", () => {
+    const { combobox } = renderSelect();
+
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+    fireEvent.keyDown(combobox, { key: "Escape" });
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+
+    // A discarded move must not leave the cursor where it was abandoned.
+    expect(activeOption(combobox)).toHaveTextContent("4-4-2");
+  });
+
+  it("wraps at both ends and jumps with Home and End", () => {
+    const { combobox } = renderSelect();
+
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+    fireEvent.keyDown(combobox, { key: "ArrowUp" });
+    expect(activeOption(combobox)).toHaveTextContent("3-5-2");
+
+    fireEvent.keyDown(combobox, { key: "Home" });
+    expect(activeOption(combobox)).toHaveTextContent("4-4-2");
+
+    fireEvent.keyDown(combobox, { key: "End" });
+    expect(activeOption(combobox)).toHaveTextContent("3-5-2");
+  });
+
+  it("steps over a disabled option rather than landing on it", () => {
+    const onChange = vi.fn();
+    render(
+      <Select value="a" aria-label="Taker" onChange={onChange}>
+        <option value="a">Alves</option>
+        <option value="b" disabled>
+          Bruno
+        </option>
+        <option value="c">Costa</option>
+      </Select>,
+    );
+    const combobox = screen.getByRole("combobox", { name: "Taker" });
+
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+
+    expect(activeOption(combobox)).toHaveTextContent("Costa");
+
+    fireEvent.keyDown(combobox, { key: "Enter" });
+    expect(onChange.mock.calls[0][0].target.value).toBe("c");
+  });
+
+  it("keeps focus on the combobox so the active option is what is announced", () => {
+    const { combobox } = renderSelect();
+
+    combobox.focus();
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+
+    // aria-activedescendant only works while DOM focus stays put; moving focus
+    // into the list is a different pattern and would silence the announcement.
+    expect(document.activeElement).toBe(combobox);
+  });
+
+  it("has no active descendant while closed", () => {
+    const { combobox } = renderSelect();
+
+    expect(combobox).not.toHaveAttribute("aria-activedescendant");
+  });
+});
