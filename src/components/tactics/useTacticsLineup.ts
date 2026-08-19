@@ -9,13 +9,9 @@ import type {
 import { useGameStore } from "../../store/gameStore";
 import {
   getSquad,
-  setFormation,
-  setPlayStyle,
   setStartingXi,
-  setTacticsPhase as setTacticsPhaseService,
   setTeamMatchRoles,
 } from "../../services/squadService";
-import type { TacticsPhaseSettings } from "../../store/types";
 
 import {
   applyLineupDrop,
@@ -48,11 +44,18 @@ import {
 } from "./TacticsRoles.helpers";
 
 interface UseTacticsLineupArgs {
+  /**
+   * The shape the pitch should draw — the staged formation when one is pending,
+   * otherwise the team's own. The lineup is laid out against what the manager
+   * is looking at, not against what the server last stored.
+   */
+  formation: string;
   gameState: GameStateData | null;
   onGameUpdate: (g: GameStateData) => void;
 }
 
 export function useTacticsLineup({
+  formation,
   gameState,
   onGameUpdate,
 }: UseTacticsLineupArgs) {
@@ -90,8 +93,6 @@ export function useTacticsLineup({
   const players = fetchedSquad ?? gameState?.players ?? [];
   const roster = buildTacticsRoster(players, team?.id ?? null);
 
-  const formation = team?.formation || "4-4-2";
-  const activePlayStyle = team?.play_style || "Balanced";
   const savedStartingXiKey = (team?.starting_xi_ids || []).join(",");
   const playersById = useMemo(
     () => new Map(roster.map((player) => [player.id, player])),
@@ -196,28 +197,6 @@ export function useTacticsLineup({
     } catch (error) {
       setPendingStartingXiIds(null);
       console.error("Failed to set starting XI:", error);
-    }
-  }
-
-  async function handleFormationChange(nextFormation: string): Promise<boolean> {
-    try {
-      const updated = await setFormation(nextFormation);
-      onGameUpdate(updated);
-      return true;
-    } catch (error) {
-      console.error("Failed to set formation:", error);
-      return false;
-    }
-  }
-
-  async function handlePlayStyleChange(playStyle: string): Promise<boolean> {
-    try {
-      const updated = await setPlayStyle(playStyle);
-      onGameUpdate(updated);
-      return true;
-    } catch (error) {
-      console.error("Failed to set play style:", error);
-      return false;
     }
   }
 
@@ -466,21 +445,8 @@ export function useTacticsLineup({
     );
   }
 
-  async function handleTacticsPhaseChange(
-    patch: Partial<TacticsPhaseSettings>,
-  ): Promise<void> {
-    try {
-      const updated = await setTacticsPhaseService(patch);
-      onGameUpdate(updated);
-    } catch (error) {
-      console.error("Failed to set tactics phase:", error);
-    }
-  }
-
   return {
     team,
-    formation,
-    activePlayStyle,
     initialPreset,
     roster,
     startingXI,
@@ -497,8 +463,6 @@ export function useTacticsLineup({
     dragState,
     hoveredSlot,
     dragPreviewRef,
-    handleFormationChange,
-    handlePlayStyleChange,
     handleAssignBestFit,
     handlePromoteBenchPlayer,
     handleDemoteStarter,
@@ -511,6 +475,5 @@ export function useTacticsLineup({
     handleConfirmSwap,
     resetDragState,
     handleAssignMatchRole,
-    handleTacticsPhaseChange,
   };
 }

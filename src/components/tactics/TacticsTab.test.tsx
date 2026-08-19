@@ -10,6 +10,7 @@ import type { GameStateData, PlayerData, TeamData } from "../../store/gameStore"
 import TacticsTab from "./TacticsTab";
 
 const squadServiceMocks = vi.hoisted(() => ({
+  applyTeamTactics: vi.fn(),
   getSquad: vi.fn(),
   setFormation: vi.fn(),
   setPlayerRole: vi.fn(),
@@ -46,6 +47,7 @@ vi.mock("react-i18next", () => ({
 }));
 
 vi.mock("../../services/squadService", () => ({
+  applyTeamTactics: squadServiceMocks.applyTeamTactics,
   getSquad: squadServiceMocks.getSquad,
   setFormation: squadServiceMocks.setFormation,
   setPlayerRole: squadServiceMocks.setPlayerRole,
@@ -288,6 +290,7 @@ describe("TacticsTab", () => {
       (p) => p.team_id === "team1",
     );
     Object.values(squadServiceMocks).forEach((mock) => mock.mockReset());
+    squadServiceMocks.applyTeamTactics.mockResolvedValue(defaultGameState);
     squadServiceMocks.getSquad.mockResolvedValue(defaultRoster);
     squadServiceMocks.setFormation.mockResolvedValue(defaultGameState);
     squadServiceMocks.setPlayerRole.mockResolvedValue(defaultGameState);
@@ -372,7 +375,7 @@ describe("TacticsTab", () => {
     ).not.toHaveTextContent("balanced-control");
   });
 
-  it("applies a preset by updating formation and play style", async () => {
+  it("stages a preset locally and applies it as a single change", async () => {
     render(
       <TacticsTab
         gameState={makeGameState()}
@@ -386,9 +389,22 @@ describe("TacticsTab", () => {
     );
     fireEvent.click(screen.getByRole("option", { name: /high-press/i }));
 
+    // Choosing a tactic is a decision, not a save. Nothing may reach the
+    // backend until the manager says so.
+    expect(squadServiceMocks.applyTeamTactics).not.toHaveBeenCalled();
+    expect(squadServiceMocks.setFormation).not.toHaveBeenCalled();
+    expect(squadServiceMocks.setPlayStyle).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "tactics.applyChanges" }),
+    );
+
     await waitFor(() => {
-      expect(squadServiceMocks.setFormation).toHaveBeenCalledWith("3-4-3");
-      expect(squadServiceMocks.setPlayStyle).toHaveBeenCalledWith("HighPress");
+      expect(squadServiceMocks.applyTeamTactics).toHaveBeenCalledTimes(1);
+    });
+    expect(squadServiceMocks.applyTeamTactics.mock.calls[0]?.[0]).toMatchObject({
+      formation: "3-4-3",
+      play_style: "HighPress",
     });
   });
 
@@ -648,9 +664,9 @@ describe("TacticsTab", () => {
     ).toBeInTheDocument();
   }, 15000);
 
-  it("does not mark a preset as active when applying it fails", async () => {
+  it("keeps a rejected draft staged so it can be applied again", async () => {
     const gameState = makeGameState();
-    squadServiceMocks.setFormation.mockRejectedValue(new Error("boom"));
+    squadServiceMocks.applyTeamTactics.mockRejectedValue(new Error("boom"));
     squadServiceMocks.getSquad.mockResolvedValue(
       gameState.players.filter((p) => p.team_id === "team1"),
     );
@@ -663,22 +679,24 @@ describe("TacticsTab", () => {
       />,
     );
 
-    expect(
-      screen.getByRole("button", { name: "tactics.chooseTactic" }),
-    ).toHaveTextContent("balanced-control");
-
     fireEvent.click(
       screen.getByRole("button", { name: "tactics.chooseTactic" }),
     );
     fireEvent.click(screen.getByRole("option", { name: /high-press/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "tactics.applyChanges" }),
+    );
 
     await waitFor(() => {
-      expect(squadServiceMocks.setFormation).toHaveBeenCalledWith("3-4-3");
+      expect(squadServiceMocks.applyTeamTactics).toHaveBeenCalledTimes(1);
     });
 
+    // The manager is told, and their work survives: a rejected apply that
+    // silently discarded the draft would cost them every dial they had set.
+    expect(await screen.findByText("tactics.applyError")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "tactics.chooseTactic" }),
-    ).toHaveTextContent("balanced-control");
+      screen.getByRole("button", { name: "tactics.applyChanges" }),
+    ).toBeEnabled();
   });
 
   it("localizes the selected player position in the comparison panel", () => {

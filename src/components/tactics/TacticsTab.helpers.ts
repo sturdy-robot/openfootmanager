@@ -1,6 +1,7 @@
 import { getPlayerOvr } from "../../lib/helpers";
 import { isSeniorSquadPlayer } from "../../lib/playerSquad";
 import type { PlayerData } from "../../store/gameStore";
+import type { TacticsPhaseSettings } from "../../store/types";
 import {
   buildPitchRows,
   applyLineupSwap,
@@ -27,6 +28,15 @@ export interface TacticsPresetDefinition {
   descriptionKey: string;
   formation: string;
   id: string;
+  /**
+   * The nine phase dials this preset stands for.
+   *
+   * A preset used to be only a formation and a play style, which left the
+   * blueprint carrying over from whatever was selected before — a tactic named
+   * "High press" could sit on passive pressing (#365). Owning the whole shape
+   * is what makes the name true.
+   */
+  phaseBlueprint: TacticsPhaseSettings;
   playStyle: string;
 }
 
@@ -50,30 +60,92 @@ export const TACTICS_PRESETS: TacticsPresetDefinition[] = [
     formation: "4-4-2",
     playStyle: "Balanced",
     descriptionKey: "tactics.presetDescriptions.balanced-control",
+    // The neutral reference the other four are read against.
+    phaseBlueprint: {
+      build_up_style: "Mixed",
+      width: "Normal",
+      tempo: "Direct",
+      defensive_line: "Medium",
+      pressing_intensity: "Medium",
+      defensive_shape: "Normal",
+      marking_style: "Zonal",
+      counter_press_duration: "Short",
+      break_speed: "Medium",
+    },
   },
   {
     id: "wing-play",
     formation: "4-3-3",
     playStyle: "Attacking",
     descriptionKey: "tactics.presetDescriptions.wing-play",
+    // Width is the whole idea: stay wide, stretch the block, break quickly.
+    phaseBlueprint: {
+      build_up_style: "Mixed",
+      width: "Wide",
+      tempo: "Direct",
+      defensive_line: "High",
+      pressing_intensity: "Medium",
+      defensive_shape: "Stretched",
+      marking_style: "Zonal",
+      counter_press_duration: "Short",
+      break_speed: "Fast",
+    },
   },
   {
     id: "high-press",
     formation: "3-4-3",
     playStyle: "HighPress",
     descriptionKey: "tactics.presetDescriptions.high-press",
+    // Hunt the ball high and win it back at once; man-marking is what makes
+    // the press bite rather than merely follow the ball.
+    phaseBlueprint: {
+      build_up_style: "Short",
+      width: "Wide",
+      tempo: "Direct",
+      defensive_line: "High",
+      pressing_intensity: "Aggressive",
+      defensive_shape: "Compact",
+      marking_style: "ManToMan",
+      counter_press_duration: "Long",
+      break_speed: "Fast",
+    },
   },
   {
     id: "counter-attack",
     formation: "4-2-3-1",
     playStyle: "Counter",
     descriptionKey: "tactics.presetDescriptions.counter-attack",
+    // Patient with the ball and fast without it — the two are not in tension,
+    // they are the counter-attack: wait, win it, go.
+    phaseBlueprint: {
+      build_up_style: "Long",
+      width: "Narrow",
+      tempo: "Patient",
+      defensive_line: "Low",
+      pressing_intensity: "Passive",
+      defensive_shape: "Compact",
+      marking_style: "Zonal",
+      counter_press_duration: "None",
+      break_speed: "Fast",
+    },
   },
   {
     id: "low-block",
     formation: "5-3-2",
     playStyle: "Defensive",
     descriptionKey: "tactics.presetDescriptions.low-block",
+    // Concede the ball, concede the half, concede nothing else.
+    phaseBlueprint: {
+      build_up_style: "Long",
+      width: "Narrow",
+      tempo: "Patient",
+      defensive_line: "VeryLow",
+      pressing_intensity: "Passive",
+      defensive_shape: "Compact",
+      marking_style: "Zonal",
+      counter_press_duration: "None",
+      break_speed: "Slow",
+    },
   },
 ];
 

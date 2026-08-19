@@ -4,14 +4,10 @@ import type { GameStateData } from "../../store/gameStore";
 import type { TacticsLibraryEntry } from "./TacticsCommandBar";
 import {
   buildCustomTacticsStorageKey,
-  buildTacticApplicationPlan,
   isTacticsCommandBarDirty,
   loadCustomTactics,
   resolveActiveTactic,
-  resolveTacticsSelectionAfterPersistence,
   saveCustomTactics,
-  type TacticsApplicationOutcome,
-  type TacticsLibrarySelectionState,
 } from "./TacticsCustomTactics.helpers";
 import {
   findTacticsPresetBySetup,
@@ -200,87 +196,6 @@ describe("tactics command-bar dirty tracking", () => {
         presetAnchor: balancedAnchor,
       }),
     ).toBe(false);
-  });
-});
-
-describe("preset persistence decisions", () => {
-  const previousState: TacticsLibrarySelectionState = {
-    activeTacticId: balancedPreset.id,
-    draftTacticName: balancedPreset.name,
-    presetAnchorId: "balanced-control",
-  };
-
-  it("plans only required persistence calls and keeps formation before play style", () => {
-    expect(
-      buildTacticApplicationPlan(
-        { formation: "4-4-2", playStyle: "Balanced" },
-        highPressPreset,
-      ),
-    ).toEqual([
-      { kind: "formation", value: "3-4-3" },
-      { kind: "playStyle", value: "HighPress" },
-    ]);
-    expect(
-      buildTacticApplicationPlan(
-        { formation: "3-4-3", playStyle: "Balanced" },
-        highPressPreset,
-      ),
-    ).toEqual([{ kind: "playStyle", value: "HighPress" }]);
-    expect(
-      buildTacticApplicationPlan(
-        { formation: "3-4-3", playStyle: "HighPress" },
-        highPressPreset,
-      ),
-    ).toEqual([]);
-  });
-
-  it("marks a preset active only after every required persistence call succeeds", () => {
-    const outcome: TacticsApplicationOutcome = {
-      formation: "succeeded",
-      playStyle: "succeeded",
-    };
-
-    expect(
-      resolveTacticsSelectionAfterPersistence(
-        previousState,
-        highPressPreset,
-        outcome,
-      ),
-    ).toEqual({
-      activeTacticId: highPressPreset.id,
-      draftTacticName: highPressPreset.name,
-      presetAnchorId: "high-press",
-    });
-  });
-
-  it("leaves selection state unchanged when the first persistence call fails", () => {
-    const outcome: TacticsApplicationOutcome = {
-      formation: "failed",
-      playStyle: "not-attempted",
-    };
-
-    expect(
-      resolveTacticsSelectionAfterPersistence(
-        previousState,
-        highPressPreset,
-        outcome,
-      ),
-    ).toBe(previousState);
-  });
-
-  it("leaves selection state unchanged when the second persistence call fails", () => {
-    const outcome: TacticsApplicationOutcome = {
-      formation: "succeeded",
-      playStyle: "failed",
-    };
-
-    expect(
-      resolveTacticsSelectionAfterPersistence(
-        previousState,
-        highPressPreset,
-        outcome,
-      ),
-    ).toBe(previousState);
   });
 });
 

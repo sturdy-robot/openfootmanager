@@ -9,6 +9,7 @@ import {
 } from "./TacticsTab.helpers";
 import {
   buildCustomTacticsStorageKey,
+  getCustomTacticUpdateControls,
   loadCustomTactics,
   saveCustomTactics,
 } from "./TacticsCustomTactics.helpers";
@@ -19,8 +20,12 @@ interface UseTacticsLibraryArgs {
   formation: string;
   activePlayStyle: string;
   initialPreset: TacticsPresetDefinition | null;
-  onFormationChange: (nextFormation: string) => Promise<boolean>;
-  onPlayStyleChange: (playStyle: string) => Promise<boolean>;
+  /**
+   * Put the chosen tactic into the draft. Choosing a tactic is an edit like any
+   * other now — it is staged and lands with the rest on Apply, rather than
+   * writing itself to the server the moment it is clicked.
+   */
+  onStageTactic: (nextTactic: TacticsLibraryEntry) => void;
 }
 
 export function useTacticsLibrary({
@@ -28,8 +33,7 @@ export function useTacticsLibrary({
   formation,
   activePlayStyle,
   initialPreset,
-  onFormationChange,
-  onPlayStyleChange,
+  onStageTactic,
 }: UseTacticsLibraryArgs) {
   const { t } = useTranslation();
   const [customTactics, setCustomTactics] = useState<TacticsLibraryEntry[]>(() =>
@@ -46,6 +50,10 @@ export function useTacticsLibrary({
   const [presetAnchorId, setPresetAnchorId] = useState<string | null>(
     initialPreset?.id ?? null,
   );
+  // Which tactic the last save wrote. Kept as an id rather than a timer so the
+  // "saved" cue disappears the moment the tactic drifts again or another one is
+  // chosen — the manager should never read a confirmation that has gone stale.
+  const [savedTacticId, setSavedTacticId] = useState<string | null>(null);
   const hydratedCustomTacticsScopeRef = useRef<string | null>(null);
 
   const customTacticsStorageKey = gameState
@@ -181,21 +189,8 @@ export function useTacticsLibrary({
     };
   }
 
-  async function applyTacticSelection(nextTactic: TacticsLibraryEntry): Promise<void> {
-    if (formation !== nextTactic.formation) {
-      const didUpdateFormation = await onFormationChange(nextTactic.formation);
-      if (!didUpdateFormation) {
-        return;
-      }
-    }
-
-    if (activePlayStyle !== nextTactic.playStyle) {
-      const didUpdatePlayStyle = await onPlayStyleChange(nextTactic.playStyle);
-      if (!didUpdatePlayStyle) {
-        return;
-      }
-    }
-
+  function applyTacticSelection(nextTactic: TacticsLibraryEntry): void {
+    onStageTactic(nextTactic);
     setActiveTacticId(nextTactic.id);
     setDraftTacticName(nextTactic.name);
 
@@ -230,6 +225,8 @@ export function useTacticsLibrary({
   function handleSaveTactic(): void {
     const nextName = draftTacticName.trim() || t("tactics.customTactic");
 
+    setSavedTacticId(activeTactic?.id ?? null);
+
     if (isActiveCustomTactic && activeTactic && customTactics.some((e) => e.id === activeTactic.id)) {
       setCustomTactics((current) =>
         current.map((entry) =>
@@ -260,6 +257,13 @@ export function useTacticsLibrary({
     setDraftTacticName(nextTactic.name);
   }
 
+  const saveControls = getCustomTacticUpdateControls({
+    activeTactic,
+    didSave: savedTacticId === activeTactic.id && !isCommandBarDirty,
+    isLibraryDirty: isCommandBarDirty,
+    isSaving: false,
+  });
+
   return {
     activeTactic,
     tacticLibrary,
@@ -268,5 +272,6 @@ export function useTacticsLibrary({
     handleCreateCustomTactic,
     handleDuplicateTactic,
     handleSaveTactic,
+    saveControls,
   };
 }

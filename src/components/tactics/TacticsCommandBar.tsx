@@ -1,13 +1,16 @@
 import {
+  Check,
   Copy,
   Crosshair,
   Flag,
   Plus,
   RefreshCw,
+  RotateCcw,
   Save,
   Search,
   Shield,
   Target,
+  Undo2,
   Zap,
 } from "lucide-react";
 import {
@@ -21,6 +24,7 @@ import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 
 import { Badge, Button, Card, Select } from "../ui";
+import type { TacticsDraftControls } from "./TacticsCustomTactics.helpers";
 import { FORMATIONS } from "./TacticsTab.helpers";
 
 export interface TacticsLibraryEntry {
@@ -36,14 +40,23 @@ export interface TacticsLibraryEntry {
 interface TacticsCommandBarProps {
   activeTactic: TacticsLibraryEntry;
   activePlayStyle: string;
+  /** Apply / Revert / Reset availability, from the staged draft. */
+  draftControls: TacticsDraftControls;
+  /** Translation key for the outcome of the last apply or save, if any. */
+  feedbackKey: string | null;
   formation: string;
+  isApplying: boolean;
   isDirty: boolean;
+  onApply: () => void;
   onCreateNew: () => void;
   onDuplicate: () => void;
   onFormationChange: (formation: string) => void;
   onPlayStyleChange: (playStyle: string) => void;
+  onReset: () => void;
+  onRevert: () => void;
   onSave: () => void;
   onSelectTactic: (id: string) => void;
+  saveDisabled: boolean;
   tacticLibrary: TacticsLibraryEntry[];
 }
 
@@ -63,14 +76,21 @@ function summarizeTactic(entry: TacticsLibraryEntry, t: TFunction): string {
 export default function TacticsCommandBar({
   activeTactic,
   activePlayStyle,
+  draftControls,
+  feedbackKey,
   formation,
+  isApplying,
   isDirty,
+  onApply,
   onCreateNew,
   onDuplicate,
   onFormationChange,
   onPlayStyleChange,
+  onReset,
+  onRevert,
   onSave,
   onSelectTactic,
+  saveDisabled,
   tacticLibrary,
 }: TacticsCommandBarProps): JSX.Element {
   const { t } = useTranslation();
@@ -141,6 +161,18 @@ export default function TacticsCommandBar({
                   {isDirty ? t("tactics.unsavedChanges") : t("tactics.synced")}
                 </Badge>
               </div>
+              {/*
+                The one place the screen speaks back. It has to be a live region
+                because the manager's attention is on the pitch, not on the
+                button they just pressed — the complaint in #377 was that a
+                successful save looked exactly like a broken one.
+              */}
+              <p
+                aria-live="polite"
+                className="mt-2 min-h-5 text-sm text-gray-600 dark:text-gray-300"
+              >
+                {feedbackKey ? t(feedbackKey) : ""}
+              </p>
               <p className="mt-2 max-w-3xl text-sm text-gray-500 dark:text-gray-400">
                 {activeTactic.description}
               </p>
@@ -167,12 +199,45 @@ export default function TacticsCommandBar({
               </Button>
               <Button
                 type="button"
-                variant="accent"
+                variant="ghost"
                 size="sm"
                 icon={<Save />}
+                disabled={saveDisabled}
                 onClick={onSave}
               >
                 {saveLabel}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                icon={<Undo2 />}
+                disabled={!draftControls.canReset}
+                onClick={onReset}
+              >
+                {t("tactics.resetToPreset")}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                icon={<RotateCcw />}
+                disabled={!draftControls.canRevert}
+                onClick={onRevert}
+              >
+                {t("tactics.revertChanges")}
+              </Button>
+              <Button
+                type="button"
+                variant="accent"
+                size="sm"
+                icon={<Check />}
+                disabled={!draftControls.canApply}
+                onClick={onApply}
+              >
+                {isApplying
+                  ? t("tactics.applyingChanges")
+                  : t("tactics.applyChanges")}
               </Button>
             </div>
           </div>

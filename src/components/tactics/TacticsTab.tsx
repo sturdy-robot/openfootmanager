@@ -12,9 +12,11 @@ import TacticsPlayerList from "./TacticsPlayerList";
 import TacticsRightPanel from "./TacticsRightPanel";
 import TacticsCommandBar from "./TacticsCommandBar";
 import TacticsPlayerFocusPanel from "./TacticsPlayerFocusPanel";
+import { useTacticsDraft } from "./useTacticsDraft";
 import { useTacticsLibrary } from "./useTacticsLibrary";
 import { useTacticsFilters } from "./useTacticsFilters";
 import { useTacticsLineup } from "./useTacticsLineup";
+import { TACTICS_PRESETS } from "./TacticsTab.helpers";
 
 interface TacticsTabProps {
   gameState: GameStateData | null;
@@ -30,9 +32,23 @@ export default function TacticsTab({
   const { t } = useTranslation();
 
   const {
-    team,
+    apply,
+    controls: draftControls,
+    feedbackKey: draftFeedbackKey,
     formation,
-    activePlayStyle,
+    isApplying,
+    playStyle: activePlayStyle,
+    reset,
+    revert,
+    stageFormation,
+    stagePhase,
+    stagePlayStyle,
+    stagePreset,
+    tacticsPhase,
+  } = useTacticsDraft({ gameState, onGameUpdate });
+
+  const {
+    team,
     initialPreset,
     roster,
     startingXI,
@@ -49,8 +65,6 @@ export default function TacticsTab({
     dragState,
     hoveredSlot,
     dragPreviewRef,
-    handleFormationChange,
-    handlePlayStyleChange,
     handleAssignBestFit,
     handlePromoteBenchPlayer,
     handleDemoteStarter,
@@ -63,8 +77,7 @@ export default function TacticsTab({
     handleConfirmSwap,
     resetDragState,
     handleAssignMatchRole,
-    handleTacticsPhaseChange,
-  } = useTacticsLineup({ gameState, onGameUpdate });
+  } = useTacticsLineup({ formation, gameState, onGameUpdate });
 
   const {
     playerSearch,
@@ -84,13 +97,27 @@ export default function TacticsTab({
     handleCreateCustomTactic,
     handleDuplicateTactic,
     handleSaveTactic,
+    saveControls,
   } = useTacticsLibrary({
     gameState,
     formation,
     activePlayStyle,
     initialPreset,
-    onFormationChange: handleFormationChange,
-    onPlayStyleChange: handlePlayStyleChange,
+    onStageTactic: (nextTactic) => {
+      const preset = TACTICS_PRESETS.find(
+        (candidate) => `preset:${candidate.id}` === nextTactic.id,
+      );
+
+      if (preset) {
+        stagePreset(preset);
+        return;
+      }
+
+      // A custom tactic records only a shape and a style — it has no blueprint
+      // of its own, so the phase dials stay where the manager left them.
+      stageFormation(nextTactic.formation);
+      stagePlayStyle(nextTactic.playStyle);
+    },
   });
 
   if (!team) {
@@ -109,24 +136,29 @@ export default function TacticsTab({
       <TacticsCommandBar
         activeTactic={activeTactic}
         activePlayStyle={activePlayStyle}
+        draftControls={draftControls}
+        feedbackKey={draftFeedbackKey ?? saveControls.feedbackKey}
         formation={formation}
+        isApplying={isApplying}
         isDirty={isCommandBarDirty}
+        onApply={() => {
+          void apply();
+        }}
         onCreateNew={handleCreateCustomTactic}
         onDuplicate={handleDuplicateTactic}
-        onFormationChange={(nextFormation) => {
-          void handleFormationChange(nextFormation);
-        }}
-        onPlayStyleChange={(playStyle) => {
-          void handlePlayStyleChange(playStyle);
-        }}
+        onFormationChange={stageFormation}
+        onPlayStyleChange={stagePlayStyle}
+        onReset={reset}
+        onRevert={revert}
         onSave={handleSaveTactic}
+        saveDisabled={saveControls.disabled}
         onSelectTactic={(id) => {
           const nextTactic = tacticLibrary.find((entry) => entry.id === id);
           if (!nextTactic) {
             return;
           }
 
-          void applyTacticSelection(nextTactic);
+          applyTacticSelection(nextTactic);
         }}
         tacticLibrary={tacticLibrary}
       />
@@ -219,11 +251,9 @@ export default function TacticsTab({
           allSquad={roster}
           matchRoles={team.match_roles}
           onGameUpdate={onGameUpdate}
-          onTacticsPhaseChange={(patch) => {
-            void handleTacticsPhaseChange(patch);
-          }}
+          onTacticsPhaseChange={stagePhase}
           startingPlayers={startingXI}
-          tacticsPhase={team?.tactics_phase}
+          tacticsPhase={tacticsPhase}
         />
       </div>
 
