@@ -217,22 +217,41 @@ export function resolveMatchFixture(
   snapshot: MatchSnapshot | null,
   fixtureIndex?: number,
 ): FixtureData | null {
-  const fixtures = gameState?.league?.fixtures;
-  if (!fixtures || !snapshot) return null;
+  if (!gameState || !snapshot) return null;
+
+  // The route index is an index into ONE competition's fixture list, but a
+  // cup tie and a league game can both be at index 0. Trusting the index alone
+  // resolved a cup match to whatever the domestic league had in that slot —
+  // wrong opponents, wrong competition. The teams in the snapshot are the only
+  // thing that identifies the fixture across competitions, so the index is now
+  // a hint that has to agree with them.
+  const matchesSnapshot = (fixture: FixtureData): boolean =>
+    fixture.home_team_id === snapshot.home_team.id &&
+    fixture.away_team_id === snapshot.away_team.id;
+
+  const leagueFixtures = gameState.league?.fixtures ?? [];
 
   if (
     typeof fixtureIndex === "number" &&
     fixtureIndex >= 0 &&
-    fixtureIndex < fixtures.length
+    fixtureIndex < leagueFixtures.length &&
+    matchesSnapshot(leagueFixtures[fixtureIndex])
   ) {
-    return fixtures[fixtureIndex];
+    return leagueFixtures[fixtureIndex];
   }
 
+  // `gameState.league` is a mirror of the domestic league and can go stale, and
+  // that same league usually also appears in `competitions`. Searching the
+  // mirror first would let a stale copy answer for a tie played elsewhere, so
+  // the league is searched last, from one place, and skipped here.
+  const leagueId = gameState.league?.id;
+  const competitionFixtures = (gameState.competitions ?? [])
+    .filter((competition) => competition.id !== leagueId)
+    .flatMap((competition) => competition.fixtures ?? []);
+
   return (
-    fixtures.find(
-      (fixture) =>
-        fixture.home_team_id === snapshot.home_team.id &&
-        fixture.away_team_id === snapshot.away_team.id,
-    ) || null
+    competitionFixtures.find(matchesSnapshot) ??
+    leagueFixtures.find(matchesSnapshot) ??
+    null
   );
 }

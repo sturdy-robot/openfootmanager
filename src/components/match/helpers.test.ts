@@ -167,6 +167,45 @@ describe("resolveMatchFixture", () => {
   it("returns null when no league fixtures are available", () => {
     expect(resolveMatchFixture({ league: null } as unknown as GameStateData, makeSnapshot())).toBeNull();
   });
+
+  it("prefers the snapshot teams across competitions over a colliding league index", () => {
+    const domesticFixture = gameState.league!.fixtures[0];
+    const cupFixture = {
+      ...domesticFixture,
+      id: "cup-fixture-1",
+      competition_id: "cup-1",
+      competition: "Cup" as const,
+      home_team_id: "home1",
+      away_team_id: "away1",
+    };
+    const state = {
+      ...gameState,
+      league: {
+        ...gameState.league!,
+        fixtures: [
+          {
+            ...domesticFixture,
+            home_team_id: "other-home",
+            away_team_id: "other-away",
+          },
+        ],
+      },
+      competitions: [
+        gameState.league!,
+        {
+          id: "cup-1",
+          name: "National Cup",
+          season: 1,
+          fixtures: [cupFixture],
+          standings: [],
+        },
+      ],
+    } as unknown as GameStateData;
+
+    expect(resolveMatchFixture(state, makeSnapshot(), 0)?.id).toBe(
+      "cup-fixture-1",
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GameStateData } from "../../store/gameStore";
+import type { MatchdayIdentity } from "../../lib/competitionName";
+import MatchdayShell from "./MatchdayShell";
 import { getMatchSnapshot, stepLiveMatch } from "../../services/matchService";
 import {
   MatchSnapshot,
@@ -14,6 +16,7 @@ import {
 import { TeamLogo } from "../ui";
 
 interface PenaltyShootoutScreenProps {
+  matchdayIdentity: MatchdayIdentity;
   snapshot: MatchSnapshot;
   gameState: GameStateData;
   userSide: "Home" | "Away" | null;
@@ -32,6 +35,7 @@ const SHOOTOUT_EVENTS = new Set([
 ]);
 
 export default function PenaltyShootoutScreen({
+  matchdayIdentity,
   snapshot,
   gameState,
   onSnapshotUpdate,
@@ -107,7 +111,8 @@ export default function PenaltyShootoutScreen({
   );
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-navy-900 flex flex-col items-center justify-center px-4 py-8 transition-colors duration-300">
+    <MatchdayShell bodyMode="centered" identity={matchdayIdentity}>
+      <div className="flex flex-col items-center">
       {/* Header */}
       <div className="w-full max-w-lg mb-6 text-center">
         <p className="text-xs font-heading uppercase tracking-widest text-accent-600 dark:text-accent-400 mb-1">
@@ -240,7 +245,8 @@ export default function PenaltyShootoutScreen({
           <SkipForward className="w-5 h-5 text-gray-700 dark:text-gray-200" />
         </button>
       </div>
-    </div>
+      </div>
+    </MatchdayShell>
   );
 }
 

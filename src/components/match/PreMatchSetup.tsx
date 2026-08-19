@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FixtureData, GameStateData } from "../../store/gameStore";
+import type { MatchdayIdentity } from "../../lib/competitionName";
+import MatchdayShell from "./MatchdayShell";
 import { applyMatchCommand, autoSelectSetPieces } from "../../services/matchService";
 import { getFixtureDisplayLabel } from "../../lib/helpers";
 import { MatchSnapshot, EnginePlayerData, FORMATIONS, PLAY_STYLES, type MatchCommand, type Side } from "./types";
@@ -19,7 +21,7 @@ import { PhaseBlueprintPanel } from "../tactics/PhaseBlueprintPanel";
 import { setPlayerRole, setTacticsPhase } from "../../services/squadService";
 import { getRoleOptions, rolesByStartingPlayer } from "../../lib/playerRoles";
 import type { PlayerRole, TacticsPhaseSettings } from "../../store/types";
-import { PitchToken, Select, TeamLogo, ThemeToggle, type PitchFitTone } from "../ui";
+import { PitchToken, Select, TeamLogo, type PitchFitTone } from "../ui";
 import {
   ChevronRight,
   Crown,
@@ -30,6 +32,7 @@ import {
 } from "lucide-react";
 
 interface PreMatchSetupProps {
+  matchdayIdentity: MatchdayIdentity;
   snapshot: MatchSnapshot;
   gameState: GameStateData;
   currentFixture?: FixtureData | null;
@@ -41,6 +44,7 @@ interface PreMatchSetupProps {
 type SetPieceRole = "penalty" | "freekick" | "corner" | "captain";
 
 export default function PreMatchSetup({
+  matchdayIdentity,
   snapshot,
   gameState,
   currentFixture,
@@ -431,7 +435,7 @@ export default function PreMatchSetup({
   // YOUR TEAM tab: fixed 3-panel (subs+fit / pitch / set-pieces). The page never
   // scrolls — each panel scrolls internally.
   const renderTeamView = () => (
-    <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-hidden p-4 xl:grid-cols-[300px_1fr_320px]">
+    <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 p-4 xl:grid-cols-[300px_1fr_320px] xl:overflow-hidden">
       {/* Left: formation fit + auto-select + substitutes */}
       <div className="min-h-0 overflow-y-auto">
         <PreMatchLineup
@@ -518,7 +522,7 @@ export default function PreMatchSetup({
 
   // OPPONENT tab: full-width scouting (their shape + squad scouting list).
   const renderOpponentView = () => (
-    <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-hidden p-4 lg:grid-cols-2">
+    <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 p-4 lg:grid-cols-2 lg:overflow-hidden">
       {/* Left: opponent shape */}
       <div className="flex min-h-0 flex-col gap-2 overflow-hidden">
         <div>
@@ -636,7 +640,7 @@ export default function PreMatchSetup({
   ] as const;
 
   return (
-    <div className="flex h-screen flex-col bg-gray-100 dark:bg-navy-900 text-gray-900 dark:text-white transition-colors duration-300">
+    <MatchdayShell bodyMode="frame" identity={matchdayIdentity}>
       {/* Header */}
       <header className="shrink-0 border-b border-gray-200 dark:border-navy-700 bg-white dark:bg-navy-800 transition-colors duration-300">
         <div className="flex items-center gap-6 px-6 pt-5 pb-4">
@@ -706,7 +710,6 @@ export default function PreMatchSetup({
           </div>
 
           <div className="shrink-0">
-            <ThemeToggle />
           </div>
         </div>
       </header>
@@ -733,6 +736,6 @@ export default function PreMatchSetup({
       </div>
 
       {activeTab === "team" ? renderTeamView() : renderOpponentView()}
-    </div>
+    </MatchdayShell>
   );
 }

@@ -23,6 +23,9 @@ vi.mock("../ui", () => ({
   TeamLogo: ({ team }: { team: { name?: string; short_name?: string } }) => (
     <span>{team?.short_name ?? team?.name}</span>
   ),
+  // The shared matchday shell owns the theme control now, so this mock has to
+  // cover it even though the digest itself never renders one.
+  ThemeToggle: () => <button type="button">theme</button>,
 }));
 
 vi.mock("./PostMatchHelpers", () => ({
@@ -318,14 +321,16 @@ const defaultProps = {
 
 describe("RoundDigestScreen", function () {
   it("renders the matchday heading and league name for a league fixture", function () {
-    render(<RoundDigestScreen {...defaultProps} />);
+    render(<RoundDigestScreen
+      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }} {...defaultProps} />);
 
     expect(screen.getByText(/Matchday 1/)).toBeInTheDocument();
     expect(screen.getByText("match.roundSummary")).toBeInTheDocument();
   });
 
   it("renders the hero result card with score and win badge", function () {
-    render(<RoundDigestScreen {...defaultProps} />);
+    render(<RoundDigestScreen
+      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }} {...defaultProps} />);
 
     expect(screen.getByText("match.yourResult")).toBeInTheDocument();
     expect(screen.getByText("match.victory")).toBeInTheDocument();
@@ -334,7 +339,8 @@ describe("RoundDigestScreen", function () {
   });
 
   it("renders the standings and top scorers for a league fixture", function () {
-    render(<RoundDigestScreen {...defaultProps} />);
+    render(<RoundDigestScreen
+      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }} {...defaultProps} />);
 
     expect(screen.getByText("tournaments.leagueTable")).toBeInTheDocument();
     expect(screen.getByText("tournaments.topScorers")).toBeInTheDocument();
@@ -344,6 +350,7 @@ describe("RoundDigestScreen", function () {
   it("does not render standings or top scorers for a friendly", function () {
     render(
       <RoundDigestScreen
+      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }}
         {...defaultProps}
         isLeagueFixture={false}
         roundSummary={null}
@@ -360,7 +367,8 @@ describe("RoundDigestScreen", function () {
   });
 
   it("renders position context with points when standings are available", function () {
-    render(<RoundDigestScreen {...defaultProps} />);
+    render(<RoundDigestScreen
+      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }} {...defaultProps} />);
 
     expect(screen.getByText(/match\.pts/)).toBeInTheDocument();
   });
@@ -382,7 +390,8 @@ describe("RoundDigestScreen", function () {
       },
     };
 
-    render(<RoundDigestScreen {...defaultProps} roundSummary={summary} />);
+    render(<RoundDigestScreen
+      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }} {...defaultProps} roundSummary={summary} />);
 
     expect(screen.getByText("match.notableUpset")).toBeInTheDocument();
     expect(screen.getAllByText(/Beta FC/).length).toBeGreaterThan(0);
@@ -391,7 +400,8 @@ describe("RoundDigestScreen", function () {
   it("calls onPressConference when the press conference button is clicked", function () {
     const onPressConference = vi.fn();
     render(
-      <RoundDigestScreen {...defaultProps} onPressConference={onPressConference} />,
+      <RoundDigestScreen
+      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }} {...defaultProps} onPressConference={onPressConference} />,
     );
 
     fireEvent.click(screen.getByText("match.pressConference"));
@@ -400,7 +410,8 @@ describe("RoundDigestScreen", function () {
 
   it("calls onFinish when the skip button is clicked", function () {
     const onFinish = vi.fn();
-    render(<RoundDigestScreen {...defaultProps} onFinish={onFinish} />);
+    render(<RoundDigestScreen
+      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }} {...defaultProps} onFinish={onFinish} />);
 
     fireEvent.click(screen.getByText("match.skip"));
     expect(onFinish).toHaveBeenCalledOnce();
@@ -453,6 +464,7 @@ describe("RoundDigestScreen", function () {
 
     render(
       <RoundDigestScreen
+      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }}
         {...defaultProps}
         gameState={gameStateWithReport}
       />,

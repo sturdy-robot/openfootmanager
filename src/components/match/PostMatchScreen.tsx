@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GameStateData } from "../../store/gameStore";
+import type { MatchdayIdentity } from "../../lib/competitionName";
+import MatchdayShell from "./MatchdayShell";
 import { applyTeamTalk, type TeamTalkMoraleChange } from "../../services/matchService";
 import {
   MatchSnapshot,
@@ -10,7 +12,7 @@ import {
 } from "./types";
 import { getEventDisplay, getPlayerName, makeTeamFallback } from "./helpers";
 import { getTalkIcon } from "./TeamTalkIcons";
-import { Badge, TeamLogo, ThemeToggle } from "../ui";
+import { Badge, TeamLogo } from "../ui";
 import {
   QuickStat,
   renderScorers,
@@ -31,6 +33,7 @@ import {
 } from "lucide-react";
 
 interface PostMatchScreenProps {
+  matchdayIdentity: MatchdayIdentity;
   snapshot: MatchSnapshot;
   gameState: GameStateData;
   userSide: "Home" | "Away" | null;
@@ -82,6 +85,7 @@ export function computeGoalSources(
 }
 
 export default function PostMatchScreen({
+  matchdayIdentity,
   snapshot,
   gameState,
   userSide,
@@ -221,7 +225,7 @@ export default function PostMatchScreen({
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 dark:bg-navy-900 dark:text-white flex flex-col transition-colors duration-300">
+    <MatchdayShell bodyMode="frame" identity={matchdayIdentity}>
       {/* Result Header */}
       <header
         className={`border-b border-gray-200 dark:border-navy-700 px-4 py-6 transition-colors duration-300 ${
@@ -233,7 +237,6 @@ export default function PostMatchScreen({
         }`}
       >
         <div className="text-center relative">
-          <ThemeToggle className="absolute right-0 top-0" />
 
           {/* Result badge */}
           {!isSpectator && userSide && (
@@ -798,6 +801,6 @@ export default function PostMatchScreen({
 
         </div>
       </div>
-    </div>
+    </MatchdayShell>
   );
 }

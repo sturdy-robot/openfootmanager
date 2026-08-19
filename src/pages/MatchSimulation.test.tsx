@@ -30,7 +30,19 @@ vi.mock("react-router-dom", () => ({
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
-    t: (key: string, fallback?: string) => fallback ?? key,
+    t: (key: string, options?: string | Record<string, unknown>) => {
+      if (key === "common.matchday" && typeof options === "object") {
+        return `Matchday ${options.n}`;
+      }
+      if (key === "season.friendly") return "Friendly";
+      if (key === "season.preseasonTournament") return "Pre-season Tournament";
+      if (key === "match.matchDay") return "Match Day";
+      if (key === "nations.br") return "Brazil";
+      if (key === "competitionNames.firstDivision") {
+        return "Brazil First Division";
+      }
+      return typeof options === "string" ? options : key;
+    },
     i18n: { language: "en" },
   }),
 }));
@@ -48,83 +60,136 @@ vi.mock("../store/settingsStore", () => ({
 vi.mock("../components/match/PreMatchSetup", () => ({
   default: ({
     snapshot,
+    matchdayIdentity,
     onStart,
   }: {
     snapshot: { home_team: { name: string } };
+    matchdayIdentity?: { competitionName: string | null; roundLabel: string };
     onStart?: () => void;
   }) => (
-    <div data-testid="prematch">
+    <section aria-label="Pre-match" data-testid="prematch">
       {snapshot.home_team.name}
+      {matchdayIdentity && (
+        <output aria-label="Matchday identity">
+          {[matchdayIdentity.competitionName, matchdayIdentity.roundLabel]
+            .filter(Boolean)
+            .join(" · ")}
+        </output>
+      )}
       <button data-testid="prematch-start" onClick={onStart}>
         Start
       </button>
-    </div>
+    </section>
   ),
 }));
 
 vi.mock("../components/match/MatchLive", () => ({
   default: ({
     snapshot,
+    matchdayIdentity,
     preferredSpeed,
     onPreferredSpeedChange,
     onHalfTime,
     onFullTime,
+    onPenaltyShootout,
   }: {
     snapshot: { home_team: { name: string } };
+    matchdayIdentity?: { competitionName: string | null; roundLabel: string };
     preferredSpeed?: string;
     onPreferredSpeedChange?: (speed: string) => void;
-    onHalfTime?: () => void;
+    onHalfTime?: (phase: "HalfTime" | "ExtraTimeHalfTime") => void;
     onFullTime?: () => void;
+    onPenaltyShootout?: () => void;
   }) => (
-    <div data-testid="match-live-container" data-preferred-speed={preferredSpeed ?? "normal"}>
+    <section aria-label="Live match" data-testid="match-live-container" data-preferred-speed={preferredSpeed ?? "normal"}>
       {snapshot.home_team.name}
+      {matchdayIdentity && (
+        <output aria-label="Matchday identity">
+          {[matchdayIdentity.competitionName, matchdayIdentity.roundLabel]
+            .filter(Boolean)
+            .join(" · ")}
+        </output>
+      )}
       <button data-testid="match-live" onClick={onFullTime}>Full Time</button>
-      <button data-testid="match-trigger-halftime" onClick={onHalfTime}>Half Time</button>
+      <button data-testid="match-trigger-halftime" onClick={() => onHalfTime?.("HalfTime")}>Half Time</button>
+      <button type="button" onClick={() => onHalfTime?.("ExtraTimeHalfTime")}>Extra-time half-time</button>
+      <button type="button" onClick={onPenaltyShootout}>Penalty shootout</button>
       <button data-testid="match-trigger-speed-fast" onClick={() => onPreferredSpeedChange?.("fast")}>Fast</button>
-    </div>
+    </section>
   ),
 }));
 
 vi.mock("../components/match/HalfTimeBreak", () => ({
-  default: ({ onResume }: { onResume?: () => void }) => (
-    <div data-testid="halftime">
+  default: ({
+    matchdayIdentity,
+    onResume,
+  }: {
+    matchdayIdentity?: { competitionName: string | null; roundLabel: string };
+    onResume?: () => void;
+  }) => (
+    <section aria-label="Half-time" data-testid="halftime">
+      {matchdayIdentity && (
+        <output aria-label="Matchday identity">
+          {[matchdayIdentity.competitionName, matchdayIdentity.roundLabel]
+            .filter(Boolean)
+            .join(" · ")}
+        </output>
+      )}
       <button data-testid="halftime-resume" onClick={onResume}>Resume</button>
-    </div>
+    </section>
   ),
 }));
 
 vi.mock("../components/match/PostMatchScreen", () => ({
   default: ({
+    matchdayIdentity,
     onContinue,
     onFinish,
   }: {
+    matchdayIdentity?: { competitionName: string | null; roundLabel: string };
     onContinue?: () => void;
     onFinish?: () => void;
   }) => (
-    <div>
+    <section aria-label="Post-match">
+      {matchdayIdentity && (
+        <output aria-label="Matchday identity">
+          {[matchdayIdentity.competitionName, matchdayIdentity.roundLabel]
+            .filter(Boolean)
+            .join(" · ")}
+        </output>
+      )}
       <button data-testid="postmatch-continue" onClick={onContinue}>
         Continue
       </button>
       <button data-testid="postmatch-finish" onClick={onFinish}>
         Finish Match
       </button>
-    </div>
+    </section>
   ),
 }));
 
 vi.mock("../components/match/RoundDigestScreen", () => ({
   default: ({
+    matchdayIdentity,
     roundSummary,
     isLeagueFixture,
     onPressConference,
     onFinish,
   }: {
+    matchdayIdentity?: { competitionName: string | null; roundLabel: string };
     roundSummary?: unknown;
     isLeagueFixture?: boolean;
     onPressConference?: () => void;
     onFinish?: () => void;
   }) => (
-    <div>
+    <section aria-label="Round digest">
+      {matchdayIdentity && (
+        <output aria-label="Matchday identity">
+          {[matchdayIdentity.competitionName, matchdayIdentity.roundLabel]
+            .filter(Boolean)
+            .join(" · ")}
+        </output>
+      )}
       <div data-testid="digest-round-summary">
         {roundSummary ? JSON.stringify(roundSummary) : "null"}
       </div>
@@ -137,12 +202,47 @@ vi.mock("../components/match/RoundDigestScreen", () => ({
       <button data-testid="digest-finish" onClick={onFinish}>
         Skip
       </button>
-    </div>
+    </section>
   ),
 }));
 
 vi.mock("../components/match/PressConference", () => ({
-  default: () => <div data-testid="press" />,
+  default: ({
+    matchdayIdentity,
+  }: {
+    matchdayIdentity?: { competitionName: string | null; roundLabel: string };
+  }) => (
+    <section aria-label="Press conference" data-testid="press">
+      {matchdayIdentity && (
+        <output aria-label="Matchday identity">
+          {[matchdayIdentity.competitionName, matchdayIdentity.roundLabel]
+            .filter(Boolean)
+            .join(" · ")}
+        </output>
+      )}
+    </section>
+  ),
+}));
+
+vi.mock("../components/match/PenaltyShootoutScreen", () => ({
+  default: ({
+    importantEvents,
+    matchdayIdentity,
+  }: {
+    importantEvents: unknown[];
+    matchdayIdentity?: { competitionName: string | null; roundLabel: string };
+  }) => (
+    <section aria-label="Penalty shootout">
+      {matchdayIdentity && (
+        <output aria-label="Matchday identity">
+          {[matchdayIdentity.competitionName, matchdayIdentity.roundLabel]
+            .filter(Boolean)
+            .join(" · ")}
+        </output>
+      )}
+      <p>{importantEvents.length} events</p>
+    </section>
+  ),
 }));
 
 function makeEnginePlayer(
@@ -343,6 +443,37 @@ function makeGameStateWithFriendly() {
       standings: [],
       top_scorers: [],
     },
+  };
+}
+
+function makeGameStateWithCompetition() {
+  const base = makeGameState();
+  const league = {
+    id: "brazil-1",
+    name: "Stored Division Name",
+    name_key: "competitionNames.firstDivision",
+    season: 2026,
+    country_id: "BR",
+    fixtures: [
+      {
+        id: "fix-12",
+        competition_id: "brazil-1",
+        competition: "League",
+        home_team_id: "home1",
+        away_team_id: "away1",
+        date: "2026-08-19",
+        status: "Scheduled",
+        result: null,
+        matchday: 12,
+      },
+    ],
+    standings: [],
+  };
+
+  return {
+    ...base,
+    competitions: [league],
+    league,
   };
 }
 
@@ -633,5 +764,166 @@ describe("MatchSimulation", function (): void {
         "fast",
       );
     });
+  });
+
+  it("keeps localized competition and round identity through all five manager stages", async function (): Promise<void> {
+    locationState = {
+      mode: "live",
+      fixtureIndex: 0,
+      snapshot: makeSnapshot(),
+    };
+    gameStoreState = {
+      gameState: makeGameStateWithCompetition(),
+      setGameState: setGameStateMock,
+    };
+    matchServiceMocks.getMatchSnapshot.mockResolvedValueOnce(makeSnapshot());
+    matchServiceMocks.finishLiveMatch.mockResolvedValueOnce({
+      game: makeGameStateWithCompetition(),
+      round_summary: {
+        matchday: 12,
+        is_complete: true,
+        pending_fixture_count: 0,
+        completed_results: [],
+        standings_delta: [],
+        notable_upset: null,
+        top_scorer_delta: [],
+      },
+    });
+
+    render(<MatchSimulation />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "Pre-match" })).toBeInTheDocument();
+    });
+    expect(screen.getByRole("status", { name: "Matchday identity" })).toHaveTextContent(
+      "Brazil First Division · Matchday 12",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Start" }));
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "Live match" })).toBeInTheDocument();
+    });
+    expect(screen.getByRole("status", { name: "Matchday identity" })).toHaveTextContent(
+      "Brazil First Division · Matchday 12",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Full Time" }));
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "Post-match" })).toBeInTheDocument();
+    });
+    expect(screen.getByRole("status", { name: "Matchday identity" })).toHaveTextContent(
+      "Brazil First Division · Matchday 12",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "Round digest" })).toBeInTheDocument();
+    });
+    expect(screen.getByRole("status", { name: "Matchday identity" })).toHaveTextContent(
+      "Brazil First Division · Matchday 12",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Press Conference" }));
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "Press conference" })).toBeInTheDocument();
+    });
+    expect(screen.getByRole("status", { name: "Matchday identity" })).toHaveTextContent(
+      "Brazil First Division · Matchday 12",
+    );
+  });
+
+  it("shows competition and round identity when a spectator skips pre-match", async function (): Promise<void> {
+    locationState = {
+      mode: "spectator",
+      fixtureIndex: 0,
+      snapshot: makeSnapshot(),
+    };
+    gameStoreState = {
+      gameState: makeGameStateWithCompetition(),
+      setGameState: setGameStateMock,
+    };
+    matchServiceMocks.getMatchSnapshot.mockResolvedValueOnce(makeSnapshot());
+
+    render(<MatchSimulation />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "Live match" })).toBeInTheDocument();
+    });
+    expect(screen.getByRole("status", { name: "Matchday identity" })).toHaveTextContent(
+      "Brazil First Division · Matchday 12",
+    );
+  });
+
+  it("shows only the fixture label for a friendly with no competition to name", async function (): Promise<void> {
+    locationState = {
+      mode: "live",
+      fixtureIndex: 0,
+      snapshot: makeSnapshot(),
+    };
+    gameStoreState = {
+      gameState: makeGameStateWithFriendly(),
+      setGameState: setGameStateMock,
+    };
+    matchServiceMocks.getMatchSnapshot.mockResolvedValueOnce(makeSnapshot());
+
+    render(<MatchSimulation />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "Pre-match" })).toBeInTheDocument();
+    });
+    expect(screen.getByRole("status", { name: "Matchday identity" })).toHaveTextContent(
+      "Friendly",
+    );
+    expect(screen.getByRole("status", { name: "Matchday identity" })).not.toHaveTextContent(
+      "Test League",
+    );
+  });
+
+  it("keeps the identity through extra time and reaches an empty penalty shootout", async function (): Promise<void> {
+    locationState = {
+      mode: "live",
+      fixtureIndex: 0,
+      snapshot: makeSnapshot({ allows_extra_time: true, events: [] }),
+    };
+    gameStoreState = {
+      gameState: makeGameStateWithCompetition(),
+      setGameState: setGameStateMock,
+    };
+    matchServiceMocks.getMatchSnapshot.mockResolvedValueOnce(
+      makeSnapshot({ allows_extra_time: true, events: [] }),
+    );
+
+    render(<MatchSimulation />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "Pre-match" })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Start" }));
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "Live match" })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Extra-time half-time" }));
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "Half-time" })).toBeInTheDocument();
+    });
+    expect(screen.getByRole("status", { name: "Matchday identity" })).toHaveTextContent(
+      "Brazil First Division · Matchday 12",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Resume" }));
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "Live match" })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Penalty shootout" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "Penalty shootout" })).toHaveTextContent(
+        "0 events",
+      );
+    });
+    expect(screen.getByRole("status", { name: "Matchday identity" })).toHaveTextContent(
+      "Brazil First Division · Matchday 12",
+    );
   });
 });

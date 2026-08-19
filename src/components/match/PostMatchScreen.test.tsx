@@ -408,6 +408,7 @@ describe("PostMatchScreen", function (): void {
     render(
       <ThemeProvider>
         <PostMatchScreen
+      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }}
           snapshot={makeSnapshot()}
           gameState={makeGameState()}
           userSide="Home"
@@ -430,6 +431,7 @@ describe("PostMatchScreen", function (): void {
     render(
       <ThemeProvider>
         <PostMatchScreen
+      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }}
           snapshot={makeSnapshot()}
           gameState={makeGameState()}
           userSide="Home"
@@ -451,6 +453,7 @@ describe("PostMatchScreen", function (): void {
     render(
       <ThemeProvider>
         <PostMatchScreen
+      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }}
           snapshot={makeSnapshot()}
           gameState={makeGameState()}
           userSide={null}
@@ -471,6 +474,7 @@ describe("PostMatchScreen", function (): void {
     render(
       <ThemeProvider>
         <PostMatchScreen
+      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }}
           snapshot={makeSnapshot()}
           gameState={makeGameState()}
           userSide="Home"
@@ -493,6 +497,7 @@ describe("PostMatchScreen", function (): void {
     render(
       <ThemeProvider>
         <PostMatchScreen
+      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }}
           snapshot={makeSnapshot()}
           gameState={makeGameState()}
           userSide={null}
@@ -528,6 +533,7 @@ describe("PostMatchScreen", function (): void {
     render(
       <ThemeProvider>
         <PostMatchScreen
+      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }}
           snapshot={snapshot}
           gameState={makeGameState()}
           userSide="Home"
@@ -553,6 +559,7 @@ describe("PostMatchScreen", function (): void {
     render(
       <ThemeProvider>
         <PostMatchScreen
+      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }}
           snapshot={snapshot}
           gameState={makeGameState()}
           userSide="Home"
@@ -585,6 +592,7 @@ describe("PostMatchScreen", function (): void {
     render(
       <ThemeProvider>
         <PostMatchScreen
+      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }}
           snapshot={snapshot}
           gameState={makeGameState()}
           userSide="Home"
@@ -605,6 +613,7 @@ describe("PostMatchScreen", function (): void {
     render(
       <ThemeProvider>
         <PostMatchScreen
+      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }}
           snapshot={makeSnapshot()}
           gameState={makeGameState()}
           userSide="Home"

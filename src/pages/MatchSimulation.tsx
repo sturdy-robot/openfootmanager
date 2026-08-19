@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { matchdayIdentity } from "../lib/competitionName";
 import { useGameStore } from "../store/gameStore";
 import { useSettingsStore } from "../store/settingsStore";
 import {
@@ -311,12 +312,21 @@ export default function MatchSimulation() {
     routeState?.fixtureIndex,
   );
 
+  // Resolved once and handed to every stage, so the competition and round read
+  // the same from kick-off to the press room (issue #369).
+  const identity = matchdayIdentity(
+    gameState ?? { competitions: [], league: null },
+    currentFixture,
+    t,
+  );
+
   // Render the current stage
   switch (stage) {
     case "prematch":
       if (!userSide) return null;
       return (
         <PreMatchSetup
+          matchdayIdentity={identity}
           snapshot={snapshot}
           gameState={gameState}
           currentFixture={currentFixture}
@@ -331,6 +341,7 @@ export default function MatchSimulation() {
     case "extra_time_second_half":
       return (
         <MatchLive
+          matchdayIdentity={identity}
           key={stage}
           snapshot={snapshot}
           gameState={gameState}
@@ -352,6 +363,7 @@ export default function MatchSimulation() {
       if (!userSide) return null;
       return (
         <HalfTimeBreak
+          matchdayIdentity={identity}
           key={stage}
           snapshot={snapshot}
           gameState={gameState}
@@ -366,6 +378,7 @@ export default function MatchSimulation() {
     case "penalty_shootout":
       return (
         <PenaltyShootoutScreen
+          matchdayIdentity={identity}
           snapshot={snapshot}
           gameState={gameState}
           userSide={userSide}
@@ -380,6 +393,7 @@ export default function MatchSimulation() {
     case "postmatch":
       return (
         <PostMatchScreen
+          matchdayIdentity={identity}
           snapshot={snapshot}
           gameState={gameState}
           userSide={userSide}
@@ -397,6 +411,7 @@ export default function MatchSimulation() {
         : roundSummary !== null;
       return (
         <RoundDigestScreen
+          matchdayIdentity={identity}
           snapshot={snapshot}
           gameState={gameState}
           currentFixture={currentFixture}
@@ -413,6 +428,7 @@ export default function MatchSimulation() {
       if (!userSide) return null;
       return (
         <PressConference
+          matchdayIdentity={identity}
           snapshot={snapshot}
           gameState={gameState}
           userSide={userSide}

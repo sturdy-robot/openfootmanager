@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GameStateData } from "../../store/gameStore";
+import type { MatchdayIdentity } from "../../lib/competitionName";
+import MatchdayShell from "./MatchdayShell";
 import {
   applyMatchCommand,
   applyTeamTalk,
@@ -17,7 +19,7 @@ import {
 import { getEventDisplay, getPlayerName, makeTeamFallback } from "./helpers";
 import { getTalkIcon } from "./TeamTalkIcons";
 import { SubPanel } from "./SubPanel";
-import { Badge, TeamLogo, ThemeToggle } from "../ui";
+import { Badge, TeamLogo } from "../ui";
 import {
   Play,
   RefreshCw,
@@ -30,6 +32,7 @@ import {
 } from "lucide-react";
 
 interface HalfTimeBreakProps {
+  matchdayIdentity: MatchdayIdentity;
   snapshot: MatchSnapshot;
   gameState: GameStateData;
   userSide: "Home" | "Away";
@@ -49,6 +52,7 @@ const PLAY_STYLE_ICONS: Record<string, React.ReactNode> = {
 };
 
 export default function HalfTimeBreak({
+  matchdayIdentity,
   snapshot,
   gameState,
   userSide,
@@ -148,7 +152,7 @@ export default function HalfTimeBreak({
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 dark:bg-navy-900 dark:text-white flex flex-col transition-colors duration-300">
+    <MatchdayShell bodyMode="frame" identity={matchdayIdentity}>
       {/* Header scoreboard */}
       <header className="bg-linear-to-r from-gray-200 via-white to-gray-200 dark:from-navy-800 dark:via-navy-900 dark:to-navy-800 border-b border-gray-200 dark:border-navy-700 px-4 py-4 transition-colors duration-300">
         <div className="relative">
@@ -160,7 +164,6 @@ export default function HalfTimeBreak({
               <Play className="w-4 h-4" />
               {t("match.resumeMatch")}
             </button>
-            <ThemeToggle />
           </div>
           <div className="flex items-center justify-center gap-8">
             <div className="flex items-center gap-3">
@@ -485,6 +488,6 @@ export default function HalfTimeBreak({
           onClose={() => setShowSubPanel(false)}
         />
       )}
-    </div>
+    </MatchdayShell>
   );
 }

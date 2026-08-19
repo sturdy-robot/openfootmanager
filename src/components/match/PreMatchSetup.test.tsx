@@ -90,6 +90,7 @@ function gameState(): Record<string, unknown> {
 function renderSetup() {
   return render(
     <PreMatchSetup
+      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       snapshot={snapshot() as any}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

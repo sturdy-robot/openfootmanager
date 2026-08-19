@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FixtureData, GameStateData } from "../../store/gameStore";
+import type { MatchdayIdentity } from "../../lib/competitionName";
+import MatchdayShell from "./MatchdayShell";
 import type { CompactMatchEventData } from "../../store/types";
 import { MatchSnapshot, MatchEvent, RoundSummary } from "./types";
 import { getEventDisplay, makeTeamFallback } from "./helpers";
@@ -17,6 +19,7 @@ import {
 } from "lucide-react";
 
 interface RoundDigestScreenProps {
+  matchdayIdentity: MatchdayIdentity;
   snapshot: MatchSnapshot;
   gameState: GameStateData;
   currentFixture: FixtureData | null;
@@ -27,6 +30,7 @@ interface RoundDigestScreenProps {
   onFinish: () => void;
 }
 export default function RoundDigestScreen({
+  matchdayIdentity,
   snapshot,
   gameState,
   currentFixture,
@@ -198,7 +202,7 @@ export default function RoundDigestScreen({
   const headingParts = [matchdayLabel, leagueName].filter(Boolean).join(" — ");
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 dark:bg-navy-900 dark:text-white flex flex-col transition-colors duration-300">
+    <MatchdayShell bodyMode="frame" identity={matchdayIdentity}>
       {/* Header */}
       <header className="bg-white dark:bg-navy-800 border-b border-gray-200 dark:border-navy-700 px-6 py-4 transition-colors duration-300">
         <div className="flex items-center justify-between">
@@ -651,6 +655,6 @@ export default function RoundDigestScreen({
           </div>
         </div>
       )}
-    </div>
+    </MatchdayShell>
   );
 }

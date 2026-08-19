@@ -2,15 +2,18 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { GameStateData } from "../../store/gameStore";
+import type { MatchdayIdentity } from "../../lib/competitionName";
+import MatchdayShell from "./MatchdayShell";
 import {
   submitPressConference,
   type PressConferenceAnswer,
 } from "../../services/matchService";
 import { MatchSnapshot } from "./types";
-import { Badge, ThemeToggle } from "../ui";
+import { Badge } from "../ui";
 import { ChevronRight, Mic, MessageSquare } from "lucide-react";
 
 interface PressConferenceProps {
+  matchdayIdentity: MatchdayIdentity;
   snapshot: MatchSnapshot;
   gameState: GameStateData;
   userSide: "Home" | "Away";
@@ -247,6 +250,7 @@ function generateQuestions(
 }
 
 export default function PressConference({
+  matchdayIdentity,
   snapshot,
   gameState,
   userSide,
@@ -359,11 +363,10 @@ export default function PressConference({
     userSide === "Home" ? snapshot.home_team.name : snapshot.away_team.name;
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 dark:bg-navy-900 dark:text-white flex flex-col transition-colors duration-300">
+    <MatchdayShell bodyMode="centered" identity={matchdayIdentity}>
       {/* Header */}
       <header className="bg-linear-to-r from-gray-200 via-white to-gray-200 dark:from-navy-800 dark:via-navy-900 dark:to-navy-800 border-b border-gray-200 dark:border-navy-700 px-4 py-6 transition-colors duration-300">
         <div className="max-w-3xl mx-auto text-center relative">
-          <ThemeToggle className="absolute right-0 top-0" />
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gray-200 dark:bg-navy-700 rounded-full mb-3 transition-colors duration-300">
             <Mic className="w-4 h-4 text-accent-400" />
             <span className="font-heading font-bold text-xs uppercase tracking-widest text-gray-700 dark:text-gray-300">
@@ -480,6 +483,6 @@ export default function PressConference({
           </button>
         </div>
       </footer>
-    </div>
+    </MatchdayShell>
   );
 }

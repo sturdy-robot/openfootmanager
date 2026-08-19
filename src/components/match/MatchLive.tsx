@@ -7,7 +7,8 @@ import { getEventDisplay, getPlayerName, makeTeamFallback, phaseLabel } from "./
 import { Badge, TeamLogo } from "../ui";
 import { useSettingsStore } from "../../store/settingsStore";
 import { EventFeed, MatchStats, Lineups } from "./MatchPanels";
-import MatchScreenLayout from "./MatchScreenLayout";
+import type { MatchdayIdentity } from "../../lib/competitionName";
+import MatchdayShell from "./MatchdayShell";
 import { SubPanel } from "./SubPanel";
 import {
   Play, Pause, FastForward, SkipForward,
@@ -19,6 +20,7 @@ import {
 type ActivePanel = "events" | "stats" | "lineups";
 
 interface MatchLiveProps {
+  matchdayIdentity: MatchdayIdentity;
   snapshot: MatchSnapshot;
   gameState: GameStateData;
   userSide: Side | null;
@@ -34,6 +36,7 @@ interface MatchLiveProps {
 }
 
 export default function MatchLive({
+  matchdayIdentity,
   snapshot, gameState, userSide, isSpectator,
   importantEvents, preferredSpeed, onPreferredSpeedChange,
   onSnapshotUpdate, onImportantEvent,
@@ -196,10 +199,9 @@ export default function MatchLive({
   };
 
   return (
-    <MatchScreenLayout
-      headerClassName="bg-linear-to-r from-gray-200 via-white to-gray-200 dark:from-navy-800 dark:via-navy-900 dark:to-navy-800"
-      headerContentClassName="max-w-7xl py-3"
-      contentClassName="overflow-hidden"
+    <MatchdayShell
+      bodyMode="frame"
+      identity={matchdayIdentity}
       header={
         <>
           <div className="flex items-center justify-between gap-4">
@@ -207,7 +209,7 @@ export default function MatchLive({
             <div className="flex items-center gap-2">
               {isRunning && (
                 <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                  <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
                 </span>
               )}
@@ -441,6 +443,6 @@ export default function MatchLive({
           onClose={() => setShowSubPanel(false)}
         />
       )}
-    </MatchScreenLayout>
+    </MatchdayShell>
   );
 }
