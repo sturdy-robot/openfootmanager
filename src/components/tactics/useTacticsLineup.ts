@@ -31,7 +31,7 @@ import {
   type SquadSection,
 } from "../squad/SquadTab.helpers";
 import {
-  buildTacticsPitchSlots,
+  flattenPitchSlotRows,
   buildTacticsRoster,
   canConfirmTacticsLineupSwap,
   isPlayerEligibleForTacticsLineup,
@@ -145,7 +145,7 @@ export function useTacticsLineup({
     [pitchRows, playersById, startingXiIds],
   );
   const pitchSlots = useMemo(
-    () => buildTacticsPitchSlots(pitchSlotRows),
+    () => flattenPitchSlotRows(pitchSlotRows),
     [pitchSlotRows],
   );
   const xiIds = new Set(startingXiIds);

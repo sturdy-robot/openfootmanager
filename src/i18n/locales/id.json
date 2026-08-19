@@ -4013,5 +4013,11 @@
   "generation": {
     "title": "Pembuatan & Penyelesaian",
     "coverage": "Paket kamu mencakup"
+  },
+  "pitchToken": {
+    "accessibleName": "{{name}} · {{condition}} · {{fit}}",
+    "conditionValue": "Kondisi {{condition}}%",
+    "adaptedToSlot": "Menyesuaikan posisi",
+    "fitUnavailable": "Kecocokan posisi tidak tersedia"
   }
 }

@@ -35,8 +35,6 @@ export interface TacticsPitchSlot {
   player: PlayerData | null;
   position: string;
   rowLabel: string;
-  x: number;
-  y: number;
 }
 
 export interface TacticsFormationSlotOption {
@@ -509,40 +507,25 @@ export function getSelectedAndComparePlayers(
   };
 }
 
-function parseCoordinateValue(value: string): number {
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : 50;
-}
 
-function getSlotXCoordinates(slotCount: number): number[] {
-  // Rows of five (back/mid fives in 4-5-1, 3-5-2, 5-4-1…) get pushed toward
-  // the touchlines so neighbouring markers don't overlap; smaller rows keep
-  // the centered even spread.
-  if (slotCount >= 5) {
-    return Array.from({ length: slotCount }, (_, index) =>
-      Math.round((10 + (index * 80) / (slotCount - 1)) * 10) / 10,
-    );
-  }
 
-  return Array.from({ length: slotCount }, (_, index) =>
-    Math.round((((index + 1) / (slotCount + 1)) * 100) * 10) / 10,
-  );
-}
-
-export function buildTacticsPitchSlots(rows: PitchSlotRow[]): TacticsPitchSlot[] {
-  return rows.flatMap((row) => {
-    const rowY = parseCoordinateValue(row.y);
-    const rowXCoordinates = getSlotXCoordinates(row.slots.length);
-
-    return row.slots.map((slot, slotIndex) => ({
+/**
+ * The formation's slots in index order.
+ *
+ * There used to be a second set of pitch coordinates computed here, which
+ * disagreed with the match pitch about where a five-wide row sits. Placement
+ * belongs to the board; this only flattens the rows, preserving slot index so
+ * entry `i` stays formation slot `i`.
+ */
+export function flattenPitchSlotRows(rows: PitchSlotRow[]): TacticsPitchSlot[] {
+  return rows.flatMap((row) =>
+    row.slots.map((slot) => ({
       index: slot.index,
       player: slot.player,
       position: slot.position,
       rowLabel: row.label,
-      x: rowXCoordinates[slotIndex] ?? 50,
-      y: rowY,
-    }));
-  });
+    })),
+  );
 }
 
 function getDuplicatedSlotShortLabel(

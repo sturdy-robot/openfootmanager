@@ -4013,5 +4013,11 @@
   "generation": {
     "title": "Génération et Complétion",
     "coverage": "Vos paquets couvrent"
+  },
+  "pitchToken": {
+    "accessibleName": "{{name}} · {{condition}} · {{fit}}",
+    "conditionValue": "Condition {{condition}} %",
+    "adaptedToSlot": "Adapté au poste",
+    "fitUnavailable": "Aptitude au poste indisponible"
   }
 }

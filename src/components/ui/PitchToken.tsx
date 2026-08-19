@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import type { KitPattern } from "../../store/types";
+import { condBgColor } from "../../lib/playerConditionDisplay";
 import { getPositionColor } from "../../lib/positionColors";
 import { PlayerAvatar } from "./PlayerAvatar";
 import JerseyIcon from "./JerseyIcon";
@@ -46,29 +48,25 @@ export interface PitchTokenProps {
 function fitRingClass(fitTone: PitchFitTone): string {
   switch (fitTone) {
     case "exact":
-      return "ring-2 ring-success-400";
+      return "ring-2 ring-success-400 dark:ring-success-400";
     case "adapted":
-      return "ring-2 ring-accent-400";
+      return "ring-2 ring-accent-400 dark:ring-accent-400";
     case "out":
-      return "ring-2 ring-red-400";
+      return "ring-2 ring-red-400 dark:ring-red-400";
     default:
-      return "ring-1 ring-white/25";
+      return "ring-1 ring-white/25 dark:ring-white/25";
   }
 }
 
-function conditionFillClass(condition: number, fitTone: PitchFitTone): string {
-  // The fit tone caps the bar COLOUR (not its width): an out-of-position
-  // player shows a warning-coloured bar even when fully fresh, signalling
-  // reduced effectiveness in that slot.
-  const capped = Math.min(
-    condition,
-    fitTone === "out" ? 56 : fitTone === "adapted" ? 74 : 100,
-  );
-  if (capped >= 90) return "bg-success-400";
-  if (capped >= 75) return "bg-primary-300";
-  if (capped >= 60) return "bg-accent-300";
-  return "bg-red-400";
-}
+/** Which translation names each fit tone, for the token's spoken description. */
+const FIT_LABEL_KEYS: Record<PitchFitTone, string> = {
+  exact: "squad.naturalFit",
+  adapted: "pitchToken.adaptedToSlot",
+  out: "squad.outOfPosition",
+  empty: "pitchToken.fitUnavailable",
+};
+
+
 
 /**
  * Presentational pitch token shared by the tactics board and the pre-match
@@ -92,8 +90,32 @@ export function PitchToken({
   markers,
   children,
 }: PitchTokenProps) {
+  const { t } = useTranslation();
+  // Clamped once: a condition outside 0-100 would otherwise produce a bar wider
+  // than its track and a value a screen reader cannot place on the scale.
+  const clampedCondition = Math.min(100, Math.max(0, Math.round(condition)));
+  const conditionLabel = t("pitchToken.conditionValue", {
+    condition: clampedCondition,
+  });
+  // One localized template rather than fragments joined in code, so a language
+  // can order name, condition and fit however it reads best.
+  const tokenLabel = t("pitchToken.accessibleName", {
+    condition: conditionLabel,
+    fit: t(FIT_LABEL_KEYS[fitTone]),
+    name,
+  });
+
   return (
-    <>
+    // A labelled group, not role="img": the tactics token still embeds a role
+    // combobox, and role="img" would make every descendant presentational and
+    // hide it. The group contributes its name to the interactive parent while
+    // leaving what is inside reachable.
+    <div
+      aria-label={tokenLabel}
+      className="flex w-full flex-col items-center gap-1"
+      role="group"
+      title={tokenLabel}
+    >
       {/* Avatar with overlaid badges */}
       <div className="relative">
         {markers && markers.length > 0 && (
@@ -147,11 +169,16 @@ export function PitchToken({
       <div className="w-full">
         <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
           <div
-            className={`h-full rounded-full ${conditionFillClass(condition, fitTone)}`}
-            style={{ width: `${Math.max(20, condition)}%` }}
+            aria-label={conditionLabel}
+            aria-valuemax={100}
+            aria-valuemin={0}
+            aria-valuenow={clampedCondition}
+            className={`h-full rounded-full ${condBgColor(clampedCondition)}`}
+            role="progressbar"
+            style={{ width: `${clampedCondition}%` }}
           />
         </div>
       </div>
-    </>
+    </div>
   );
 }

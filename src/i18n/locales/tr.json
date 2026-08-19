@@ -4013,5 +4013,11 @@
   "generation": {
     "title": "Oluşturma ve Tamamlama",
     "coverage": "Paketlerinizin kapsadıkları"
+  },
+  "pitchToken": {
+    "accessibleName": "{{name}} · {{condition}} · {{fit}}",
+    "conditionValue": "Kondisyon %{{condition}}",
+    "adaptedToSlot": "Mevkiye uyum sağlamış",
+    "fitUnavailable": "Mevki uygunluğu bilinmiyor"
   }
 }

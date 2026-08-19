@@ -4013,5 +4013,11 @@
   "generation": {
     "title": "Генерация и завершение",
     "coverage": "Ваши пакеты охватывают"
+  },
+  "pitchToken": {
+    "accessibleName": "{{name}} · {{condition}} · {{fit}}",
+    "conditionValue": "Состояние {{condition}} %",
+    "adaptedToSlot": "Приспособлен к позиции",
+    "fitUnavailable": "Пригодность к позиции неизвестна"
   }
 }

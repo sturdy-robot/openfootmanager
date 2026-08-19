@@ -4013,5 +4013,11 @@
   "generation": {
     "title": "Generierung & Vervollständigung",
     "coverage": "Deine Pakete umfassen"
+  },
+  "pitchToken": {
+    "accessibleName": "{{name}} · {{condition}} · {{fit}}",
+    "conditionValue": "Verfassung {{condition}} %",
+    "adaptedToSlot": "An die Position angepasst",
+    "fitUnavailable": "Positionseignung nicht verfügbar"
   }
 }

@@ -22,6 +22,14 @@ const squadServiceMocks = vi.hoisted(() => ({
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string, fallback?: string | Record<string, unknown>) => {
+      if (key === "pitchToken.accessibleName") {
+        const options = fallback as Record<string, unknown> | undefined;
+        return `${String(options?.name)} · ${String(options?.condition)} · ${String(options?.fit)}`;
+      }
+      if (key === "pitchToken.conditionValue") {
+        const options = fallback as Record<string, unknown> | undefined;
+        return `Condition ${String(options?.condition)}%`;
+      }
       if (key === "playerProfile.daysRemaining") {
         return `${String((fallback as Record<string, unknown> | undefined)?.count ?? "")} days remaining`;
       }
@@ -260,6 +268,18 @@ const createDataTransfer = () => {
   };
 };
 
+/**
+ * The pitch slot holding a given player.
+ *
+ * The shared board names each slot from the token inside it, so this finds the
+ * control by its accessible name — `match_name` is the uppercased id.
+ */
+function pitchPlayer(playerId: string): HTMLElement {
+  return screen.getByRole("button", {
+    name: new RegExp(`^${playerId.toUpperCase()} · `),
+  });
+}
+
 describe("TacticsTab", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -433,7 +453,7 @@ describe("TacticsTab", () => {
     );
 
     const benchPlayer = screen.getByTestId("pitch-bench-player-d5");
-    const pitchSlot = screen.getByTestId("pitch-slot-1");
+    const pitchSlot = pitchPlayer("d1");
     const dataTransfer = createDataTransfer();
 
     fireEvent.dragStart(benchPlayer, { dataTransfer });
@@ -671,8 +691,8 @@ describe("TacticsTab", () => {
     );
 
     // Modal requires two players — select f1 then m1 to open comparison
-    fireEvent.click(screen.getByTestId("pitch-player-f1"));
-    fireEvent.click(screen.getByTestId("pitch-player-m1"));
+    fireEvent.click(pitchPlayer("f1"));
+    fireEvent.click(pitchPlayer("m1"));
 
     expect(screen.getByText("common.positions.Forward")).toBeInTheDocument();
     expect(screen.queryByText("Forward")).not.toBeInTheDocument();
@@ -692,7 +712,7 @@ describe("TacticsTab", () => {
     // Modal only opens after both players are selected
     expect(screen.queryByText("tactics.selectedPlayer")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByTestId("pitch-player-d2"));
+    fireEvent.click(pitchPlayer("d2"));
 
     expect(squadServiceMocks.setStartingXi).not.toHaveBeenCalled();
     expect(screen.getByText("tactics.comparePlayer")).toBeInTheDocument();
@@ -729,13 +749,13 @@ describe("TacticsTab", () => {
       />,
     );
 
-    fireEvent.click(screen.getByTestId("pitch-player-d1"));
+    fireEvent.click(pitchPlayer("d1"));
 
     expect(onSelectPlayer).not.toHaveBeenCalled();
     // Modal only opens after both players are selected
     expect(screen.queryByText("tactics.selectedPlayer")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByTestId("pitch-player-d2"));
+    fireEvent.click(pitchPlayer("d2"));
 
     expect(onSelectPlayer).not.toHaveBeenCalled();
     expect(squadServiceMocks.setStartingXi).not.toHaveBeenCalled();
@@ -771,8 +791,8 @@ describe("TacticsTab", () => {
       />,
     );
 
-    fireEvent.click(screen.getByTestId("pitch-player-d1"));
-    fireEvent.click(screen.getByTestId("pitch-player-m1"));
+    fireEvent.click(pitchPlayer("d1"));
+    fireEvent.click(pitchPlayer("m1"));
 
     expect(screen.getByText("tactics.comparePlayer")).toBeInTheDocument();
     expect(screen.getAllByText("Player m1").length).toBeGreaterThan(0);
@@ -866,7 +886,7 @@ describe("TacticsTab", () => {
       />,
     );
 
-    const card = screen.getByTestId("pitch-player-m4");
+    const card = pitchPlayer("m4");
     fireEvent.click(within(card).getByRole("combobox"));
 
     // Right-midfield roles are on offer; striker-only roles are not.
@@ -925,7 +945,7 @@ describe("TacticsTab", () => {
     );
 
     fireEvent.click(screen.getByTestId("pitch-bench-player-d5"));
-    fireEvent.click(screen.getByTestId("pitch-player-d2"));
+    fireEvent.click(pitchPlayer("d2"));
 
     expect(
       screen.getByRole("button", { name: "tactics.confirmSwap" }),
@@ -973,7 +993,7 @@ describe("TacticsTab", () => {
       />,
     );
 
-    fireEvent.contextMenu(screen.getByTestId("pitch-player-d1"));
+    fireEvent.contextMenu(within(pitchPlayer("d1")).getByRole("group"));
     fireEvent.click(
       screen.getByRole("menuitem", { name: "tactics.moveToBench" }),
     );
@@ -1027,7 +1047,7 @@ describe("TacticsTab", () => {
       />,
     );
 
-    fireEvent.contextMenu(screen.getByTestId("pitch-player-d1"));
+    fireEvent.contextMenu(within(pitchPlayer("d1")).getByRole("group"));
     fireEvent.click(
       screen.getByRole("menuitem", { name: "tactics.makeCaptain" }),
     );

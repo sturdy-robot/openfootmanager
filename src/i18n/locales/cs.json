@@ -4013,5 +4013,11 @@
   "generation": {
     "title": "Generování a dokončení",
     "coverage": "Vaše balíčky pokrývají"
+  },
+  "pitchToken": {
+    "accessibleName": "{{name}} · {{condition}} · {{fit}}",
+    "conditionValue": "Kondice {{condition}} %",
+    "adaptedToSlot": "Přizpůsoben pozici",
+    "fitUnavailable": "Vhodnost na pozici není známa"
   }
 }

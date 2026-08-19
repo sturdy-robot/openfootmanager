@@ -8,6 +8,7 @@ import { getPlayerOvr } from "../../lib/helpers";
 import type { PlayerData, TeamMatchRolesData } from "../../store/gameStore";
 import ContextMenu from "../ContextMenu";
 import { Badge, Card, PitchToken, Select } from "../ui";
+import { FormationBoard } from "../match/FormationBoard";
 import {
   isPlayerExactForSlot,
   isPlayerOutOfPosition,
@@ -136,61 +137,8 @@ function getRoleMarkers(
   return markers;
 }
 
-function getPitchMarkerClassName(options: {
-  comparePlayerId: string | null;
-  draggedPlayerId: string | null;
-  hoveredSlot: number | null;
-  player: PlayerData;
-  selectedPlayerId: string | null;
-  slot: TacticsPitchSlot;
-}): string {
-  const {
-    comparePlayerId,
-    draggedPlayerId,
-    hoveredSlot,
-    player,
-    selectedPlayerId,
-    slot,
-  } = options;
-  const isDragged = draggedPlayerId === player.id;
-  const isSelected = selectedPlayerId === player.id;
-  const isComparing = comparePlayerId === player.id;
-  const isHovered = hoveredSlot === slot.index;
-
-  const base =
-    "absolute z-20 flex w-[6rem] -translate-x-1/2 -translate-y-1/2 cursor-grab flex-col items-center gap-0.5 rounded-2xl px-1 py-1 text-center transition-all active:cursor-grabbing";
-
-  if (isDragged) {
-    return `${base} opacity-60`;
-  }
-
-  if (isSelected) {
-    return `${base} bg-accent-500/15 ring-2 ring-accent-300/60 shadow-lg`;
-  }
-
-  if (isComparing) {
-    return `${base} bg-primary-500/10 ring-2 ring-primary-300/50 shadow-lg`;
-  }
-
-  if (isHovered) {
-    return `${base} bg-primary-500/10 shadow-lg`;
-  }
-
-  return `${base} hover:-translate-y-[54%]`;
-}
 
 
-function getSlotTargetClassName(isHovered: boolean, hasPlayer: boolean): string {
-  if (isHovered) {
-    return "absolute z-10 h-[4.5rem] w-[4.5rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary-300 bg-primary-500/10";
-  }
-
-  if (hasPlayer) {
-    return "absolute z-10 h-[4.5rem] w-[4.5rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10 bg-transparent";
-  }
-
-  return "absolute z-10 h-[4.5rem] w-[4.5rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-white/25 bg-black/10";
-}
 
 function getPitchDisplayName(player: PlayerData): string {
   return (player.match_name || player.full_name).toUpperCase();
@@ -291,6 +239,103 @@ export default function TacticsPitch({
   const { t } = useTranslation();
   const draggedPlayerId = dragState?.playerId ?? null;
 
+  const boardSlots = pitchSlots.map((slot) => ({
+    occupant: slot.player,
+    ariaLabel: slot.player ? undefined : `${translatePositionAbbreviation(t, slot.position)} · ${t("squad.dropPlayerHere")}`,
+  }));
+
+  const findSlotIndex = (playerId: string | null): number | null => {
+    if (!playerId) {
+      return null;
+    }
+    const index = pitchSlots.findIndex((slot) => slot.player?.id === playerId);
+    return index >= 0 ? index : null;
+  };
+
+  const renderPitchToken = (player: PlayerData, slotPosition: string) => (
+    <ContextMenu
+      items={buildTacticsPlayerContextMenuItems({
+        isSelected: selectedPlayerId === player.id,
+        matchRoles,
+        onAssignBestFit,
+        onAssignMatchRole,
+        onClearSelection,
+        onDemoteStarter,
+        onOpenProfile: (playerId) => {
+          if (onOpenPlayerProfile) {
+            onOpenPlayerProfile(playerId);
+          } else {
+            onLineupPlayerClick(playerId, "xi");
+          }
+        },
+        onPromoteBench,
+        onTacticalSelect: onLineupPlayerClick,
+        player,
+        section: "xi",
+        selectedPlayerId,
+        t,
+      })}
+    >
+      {/* ContextMenu injects its handler by cloning this child, so it has to be
+          a DOM element — cloning a component drops the prop silently. */}
+      <div className="contents">
+      <PitchToken
+        avatar={player}
+        condition={player.condition}
+        fitTone={getFitTone(player, slotPosition)}
+        jersey={
+          teamSecondaryColor
+            ? {
+                primaryColor: teamPrimaryColor ?? "#1a3a6b",
+                secondaryColor: teamSecondaryColor,
+                pattern: teamKitPattern ?? "Solid",
+                number: player.jersey_number,
+              }
+            : undefined
+        }
+        jerseyNumber={player.jersey_number}
+        markers={getRoleMarkers(matchRoles, player.id)}
+        name={getPitchDisplayName(player)}
+        ovr={getPlayerOvr(player)}
+        position={slotPosition}
+        positionAbbr={translatePositionAbbreviation(t, slotPosition)}
+      >
+        {onRoleChange && (
+          <div
+            className="w-full"
+            draggable={false}
+            onKeyDown={(event) => event.stopPropagation()}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <Select
+              fullWidth
+              onChange={(event) => {
+                onRoleChange(player.id, event.target.value as PlayerRole);
+              }}
+              selectSize="sm"
+              value={playerRoles?.[player.id] ?? "Standard"}
+              variant="ghost"
+            >
+              {getRoleOptions(
+                // Roles follow the deployed slot, which is what the backend
+                // validates against — natural-position roles for an
+                // out-of-position player would be rejected and silently
+                // revert (#272).
+                slotPosition,
+                playerRoles?.[player.id] ?? "Standard",
+              ).map((role) => (
+                <option key={role} value={role}>
+                  {t(`tactics.playerRoles.${role}`, role)}
+                </option>
+              ))}
+            </Select>
+          </div>
+        )}
+      </PitchToken>
+      </div>
+    </ContextMenu>
+  );
+
   return (
     <Card className="overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-t-xl border-b border-gray-100 bg-linear-to-r from-navy-700 to-navy-800 px-5 py-4 dark:border-navy-600">
@@ -335,257 +380,51 @@ export default function TacticsPitch({
       </div>
 
       <div className="p-5 sm:p-6 lg:p-7">
-        <div className="relative mx-auto w-full max-w-[36rem] overflow-hidden rounded-[1.5rem] border border-primary-500/20 bg-linear-to-b from-primary-500 to-primary-700 shadow-inner">
-          <div className="aspect-[8/10] min-h-[35rem] w-full">
-            <svg
-              viewBox="0 0 100 140"
-              preserveAspectRatio="none"
-              className="absolute inset-0 h-full w-full"
-              aria-hidden="true"
-            >
-              <defs>
-                <linearGradient id="tactics-pitch-surface" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="rgba(63, 172, 99, 0.94)" />
-                  <stop offset="100%" stopColor="rgba(31, 109, 61, 0.98)" />
-                </linearGradient>
-                <pattern
-                  id="tactics-pitch-stripes"
-                  width="100"
-                  height="20"
-                  patternUnits="userSpaceOnUse"
-                >
-                  <rect width="100" height="10" fill="rgba(255,255,255,0.04)" />
-                </pattern>
-              </defs>
-              <rect x="0" y="0" width="100" height="140" fill="url(#tactics-pitch-surface)" />
-              <rect x="0" y="0" width="100" height="140" fill="url(#tactics-pitch-stripes)" />
-              <rect
-                x="4"
-                y="4"
-                width="92"
-                height="132"
-                fill="none"
-                stroke="rgba(255,255,255,0.55)"
-                strokeWidth="0.6"
-              />
-              <line
-                x1="4"
-                y1="70"
-                x2="96"
-                y2="70"
-                stroke="rgba(255,255,255,0.55)"
-                strokeWidth="0.6"
-              />
-              <circle
-                cx="50"
-                cy="70"
-                r="11"
-                fill="none"
-                stroke="rgba(255,255,255,0.55)"
-                strokeWidth="0.6"
-              />
-              <circle cx="50" cy="70" r="0.8" fill="rgba(255,255,255,0.75)" />
-              <rect
-                x="18"
-                y="4"
-                width="64"
-                height="18"
-                fill="none"
-                stroke="rgba(255,255,255,0.55)"
-                strokeWidth="0.6"
-              />
-              <rect
-                x="31"
-                y="4"
-                width="38"
-                height="8"
-                fill="none"
-                stroke="rgba(255,255,255,0.55)"
-                strokeWidth="0.6"
-              />
-              <rect
-                x="18"
-                y="118"
-                width="64"
-                height="18"
-                fill="none"
-                stroke="rgba(255,255,255,0.55)"
-                strokeWidth="0.6"
-              />
-              <rect
-                x="31"
-                y="128"
-                width="38"
-                height="8"
-                fill="none"
-                stroke="rgba(255,255,255,0.55)"
-                strokeWidth="0.6"
-              />
-              <path
-                d="M 38 22 A 12 12 0 0 0 62 22"
-                fill="none"
-                stroke="rgba(255,255,255,0.55)"
-                strokeWidth="0.6"
-              />
-              <path
-                d="M 38 118 A 12 12 0 0 1 62 118"
-                fill="none"
-                stroke="rgba(255,255,255,0.55)"
-                strokeWidth="0.6"
-              />
-              {tacticsPhase ? <TacticalOverlays phase={tacticsPhase} /> : null}
-            </svg>
-
-            {pitchSlots.map((slot) => {
-              const player = slot.player;
-              const fitTone = getFitTone(player, slot.position);
-              const isHovered = hoveredSlot === slot.index;
-
-              return (
-                <div
-                  key={slot.index}
-                  className="absolute"
-                  style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
-                >
-                  <div
-                    data-testid={`pitch-slot-${slot.index}`}
-                    className={getSlotTargetClassName(isHovered, !!player)}
-                    onDragOver={(event) => onSlotDragOver(event, slot.index)}
-                    onDragLeave={() => onSlotDragLeave(slot.index)}
-                    onDrop={(event) => onSlotDrop(event, slot.index)}
-                  />
-
-                  {player ? (
-                    (() => {
-                      const roleMarkers = getRoleMarkers(matchRoles, player.id);
-
-                      return (
-                        <ContextMenu
-                          items={buildTacticsPlayerContextMenuItems({
-                            isSelected: selectedPlayerId === player.id,
-                            matchRoles,
-                            onAssignBestFit,
-                            onAssignMatchRole,
-                            onClearSelection,
-                            onDemoteStarter,
-                            onOpenProfile: (playerId) => {
-                              if (onOpenPlayerProfile) {
-                                onOpenPlayerProfile(playerId);
-                              } else {
-                                onLineupPlayerClick(playerId, "xi");
-                              }
-                            },
-                            onPromoteBench,
-                            onTacticalSelect: onLineupPlayerClick,
-                            player,
-                            section: "xi",
-                            selectedPlayerId,
-                            t,
-                          })}
-                        >
-                          <div
-                            role="button"
-                            tabIndex={0}
-                            draggable
-                            data-testid={`pitch-player-${player.id}`}
-                            onClick={() => onLineupPlayerClick(player.id, "xi")}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                onLineupPlayerClick(player.id, "xi");
-                              }
-                            }}
-                            onDragOver={(event) => onSlotDragOver(event, slot.index)}
-                            onDragLeave={() => onSlotDragLeave(slot.index)}
-                            onDrop={(event) => onSlotDrop(event, slot.index)}
-                            onDragStart={(event) =>
-                              onDragStart(event, player.id, "xi", slot.index)
-                            }
-                            onDragEnd={onDragEnd}
-                            className={getPitchMarkerClassName({
-                              comparePlayerId,
-                              draggedPlayerId,
-                              hoveredSlot,
-                              player,
-                              selectedPlayerId,
-                              slot,
-                            })}
-                          >
-                            <PitchToken
-                              name={getPitchDisplayName(player)}
-                              positionAbbr={translatePositionAbbreviation(t, slot.position)}
-                              position={slot.position}
-                              ovr={getPlayerOvr(player)}
-                              condition={player.condition}
-                              fitTone={fitTone}
-                              avatar={player}
-                              markers={roleMarkers}
-                              jersey={
-                                teamSecondaryColor
-                                  ? {
-                                      primaryColor: teamPrimaryColor ?? "#1a3a6b",
-                                      secondaryColor: teamSecondaryColor,
-                                      pattern: teamKitPattern ?? "Solid",
-                                      number: player.jersey_number,
-                                    }
-                                  : undefined
-                              }
-                              jerseyNumber={player.jersey_number}
-                            >
-                              {/* Role combobox */}
-                              {onRoleChange && (
-                                <div
-                                  draggable={false}
-                                  onMouseDown={(e) => e.stopPropagation()}
-                                  onKeyDown={(e) => e.stopPropagation()}
-                                  className="w-full"
-                                >
-                                  <Select
-                                    selectSize="sm"
-                                    variant="ghost"
-                                    fullWidth
-                                    value={playerRoles?.[player.id] ?? "Standard"}
-                                    onChange={(e) => {
-                                      onRoleChange(player.id, e.target.value as PlayerRole);
-                                    }}
-                                  >
-                                    {getRoleOptions(
-                                      // Roles follow the deployed slot, which is
-                                      // what the backend validates against —
-                                      // natural-position roles for an
-                                      // out-of-position player would be
-                                      // rejected and silently revert (#272).
-                                      slot.position,
-                                      playerRoles?.[player.id] ?? "Standard",
-                                    ).map((role) => (
-                                      <option key={role} value={role}>
-                                        {t(`tactics.playerRoles.${role}`, role)}
-                                      </option>
-                                    ))}
-                                  </Select>
-                                </div>
-                              )}
-                            </PitchToken>
-                          </div>
-                        </ContextMenu>
-                      );
-                    })()
-                  ) : (
-                    <div className="absolute z-20 flex w-[4.5rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center text-center">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-full border border-dashed border-white/28 bg-black/12 text-[10px] font-heading font-bold uppercase tracking-[0.18em] text-white/70">
-                        {translatePositionAbbreviation(t, slot.position)}
-                      </div>
-                      <div className="mt-1 max-w-full text-[9px] font-heading font-bold uppercase tracking-[0.16em] text-white/45">
-                        {t("squad.dropPlayerHere")}
-                      </div>
-                    </div>
-                  )}
+        <div className="relative mx-auto w-full max-w-[36rem] overflow-hidden rounded-[1.5rem] border border-primary-500/20 shadow-inner">
+          <FormationBoard
+            formation={formation}
+            interaction={{
+              comparedSlotIndex: findSlotIndex(comparePlayerId),
+              draggedSlotIndex: findSlotIndex(draggedPlayerId),
+              hoveredSlotIndex: hoveredSlot,
+              onSlotActivate: (slotIndex) => {
+                const slotPlayer = pitchSlots[slotIndex]?.player;
+                if (slotPlayer) {
+                  onLineupPlayerClick(slotPlayer.id, "xi");
+                }
+              },
+              onSlotDragEnd: onDragEnd,
+              onSlotDragLeave,
+              onSlotDragOver,
+              onSlotDragStart: (event, slotIndex) => {
+                const slotPlayer = pitchSlots[slotIndex]?.player;
+                if (slotPlayer) {
+                  onDragStart(event, slotPlayer.id, "xi", slotIndex);
+                }
+              },
+              onSlotDrop,
+              selectedSlotIndex: findSlotIndex(selectedPlayerId),
+            }}
+            label={t("tactics.startingXI", { formation })}
+            orientation="normal"
+            overlays={
+              tacticsPhase ? <TacticalOverlays phase={tacticsPhase} /> : undefined
+            }
+            renderEmptySlot={(state) => (
+              <div className="flex w-[4.5rem] flex-col items-center text-center">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full border border-dashed border-white/28 bg-black/12 text-[10px] font-heading font-bold uppercase tracking-[0.18em] text-white/70">
+                  {translatePositionAbbreviation(t, state.position)}
                 </div>
-              );
-            })}
-          </div>
+                <div className="mt-1 max-w-full text-[9px] font-heading font-bold uppercase tracking-[0.16em] text-white/45">
+                  {t("squad.dropPlayerHere")}
+                </div>
+              </div>
+            )}
+            renderToken={(player, state) => renderPitchToken(player, state.position)}
+            slots={boardSlots}
+            variant="full"
+          />
         </div>
-
       </div>
     </Card>
   );

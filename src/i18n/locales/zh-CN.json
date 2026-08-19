@@ -4013,5 +4013,11 @@
   "generation": {
     "title": "生成与完善",
     "coverage": "您的包涵盖"
+  },
+  "pitchToken": {
+    "accessibleName": "{{name}} · {{condition}} · {{fit}}",
+    "conditionValue": "状态 {{condition}}%",
+    "adaptedToSlot": "已适应该位置",
+    "fitUnavailable": "位置适应度不可用"
   }
 }
