@@ -1781,6 +1781,13 @@
       "large": "大",
       "xlarge": "超大"
     },
+    "tacticsTokenStyle": "战术棋子外观",
+    "tacticsTokenStyleDesc": "为战术板上的球员选择一种显示样式",
+    "tacticsTokenStyleOptions": {
+      "portrait": "肖像",
+      "shirt": "球衣",
+      "initials": "姓名首字母"
+    },
     "highContrast": "高对比度",
     "highContrastDesc": "在深色模式下增强文字对比度以提升可读性",
     "fullscreen": "全屏",
@@ -2689,7 +2696,8 @@
         "loadFailed": "加载设置失败。",
         "parseFailed": "设置数据无效。",
         "saveFailed": "保存设置失败。",
-        "invalidCurrency": "所选货币不受支持。"
+        "invalidCurrency": "所选货币不受支持。",
+        "invalidTokenStyle": "不支持所选的战术棋子样式。"
       },
       "profiles": {
         "loadFailed": "无法加载经理档案。",

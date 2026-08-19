@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
+import type { TacticsTokenStyle } from "./types";
 
 export interface AppSettings {
   theme: "dark" | "light" | "system";
@@ -12,6 +13,7 @@ export interface AppSettings {
   confirm_advance: boolean;
   continue_to_next_event: boolean;
   ui_scale: "small" | "normal" | "large" | "xlarge";
+  tactics_token_style: TacticsTokenStyle;
   high_contrast: boolean;
 }
 
@@ -27,7 +29,7 @@ interface SettingsResponse {
   supported_currencies: CurrencyDefinition[];
 }
 
-const DEFAULT_SETTINGS: AppSettings = {
+export const DEFAULT_SETTINGS: AppSettings = {
   theme: "dark",
   language: "en",
   currency: "EUR",
@@ -38,6 +40,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   confirm_advance: false,
   continue_to_next_event: false,
   ui_scale: "normal",
+  tactics_token_style: "portrait",
   high_contrast: false,
 };
 

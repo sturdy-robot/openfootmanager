@@ -1781,6 +1781,13 @@
       "large": "Grande",
       "xlarge": "Muito grande"
     },
+    "tacticsTokenStyle": "Visual das fichas táticas",
+    "tacticsTokenStyleDesc": "Escolha um único estilo visual para os jogadores no campo tático",
+    "tacticsTokenStyleOptions": {
+      "portrait": "Retrato",
+      "shirt": "Camisola",
+      "initials": "Iniciais"
+    },
     "highContrast": "Alto Contraste",
     "highContrastDesc": "Melhorar contraste do texto no modo escuro",
     "fullscreen": "Ecrã Inteiro",
@@ -2689,7 +2696,8 @@
         "loadFailed": "Não foi possível carregar as definições.",
         "parseFailed": "Os dados das definições são inválidos.",
         "saveFailed": "Não foi possível guardar as definições.",
-        "invalidCurrency": "A moeda selecionada não é suportada."
+        "invalidCurrency": "A moeda selecionada não é suportada.",
+        "invalidTokenStyle": "O estilo de ficha tática selecionado não é suportado."
       },
       "profiles": {
         "loadFailed": "Não foi possível carregar os perfis de treinador.",

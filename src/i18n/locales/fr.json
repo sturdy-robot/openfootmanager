@@ -1781,6 +1781,13 @@
       "large": "Grande",
       "xlarge": "Très grande"
     },
+    "tacticsTokenStyle": "Apparence des pions tactiques",
+    "tacticsTokenStyleDesc": "Choisissez un seul rendu visuel pour les joueurs sur le terrain tactique",
+    "tacticsTokenStyleOptions": {
+      "portrait": "Portrait du joueur",
+      "shirt": "Maillot",
+      "initials": "Initiales"
+    },
     "highContrast": "Contraste Élevé",
     "highContrastDesc": "Améliorer le contraste du texte en mode sombre",
     "fullscreen": "Plein Écran",
@@ -2689,7 +2696,8 @@
         "loadFailed": "Impossible de charger les paramètres.",
         "parseFailed": "Les données de paramètres sont invalides.",
         "saveFailed": "Impossible d'enregistrer les paramètres.",
-        "invalidCurrency": "La devise sélectionnée n'est pas prise en charge."
+        "invalidCurrency": "La devise sélectionnée n'est pas prise en charge.",
+        "invalidTokenStyle": "Le style de pion tactique sélectionné n'est pas pris en charge."
       },
       "profiles": {
         "loadFailed": "Impossible de charger les profils d'entraîneur.",

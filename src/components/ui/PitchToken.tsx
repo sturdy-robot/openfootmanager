@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { KitPattern } from "../../store/types";
 import { condBgColor } from "../../lib/playerConditionDisplay";
 import { getPositionColor } from "../../lib/positionColors";
+import { useSettingsStore } from "../../store/settingsStore";
 import { PlayerAvatar } from "./PlayerAvatar";
 import JerseyIcon from "./JerseyIcon";
 
@@ -28,16 +29,16 @@ export interface PitchTokenProps {
   /** 0–100 short-term condition; drives the bar at the bottom. */
   condition: number;
   fitTone?: PitchFitTone;
-  /** When present, renders a face/generated avatar; otherwise initials from name. */
+  /** Player identity used by portrait mode. */
   avatar?: { full_name: string; match_name: string; media?: { face?: string } };
-  /** Optional kit jersey rendered under the avatar. */
+  /** Optional kit rendered in shirt mode. */
   jersey?: {
     primaryColor: string;
     secondaryColor: string;
     pattern: KitPattern;
     number?: number | null;
   };
-  /** Plain "#N" fallback shown when no kit `jersey` is available. */
+  /** Plain "#N" fallback for portrait/initials or missing shirt artwork. */
   jerseyNumber?: number | null;
   /** Role markers stacked at the top-left (max 3 shown). */
   markers?: PitchTokenMarker[];
@@ -66,13 +67,23 @@ const FIT_LABEL_KEYS: Record<PitchFitTone, string> = {
   empty: "pitchToken.fitUnavailable",
 };
 
-
+function getInitials(name: string): string {
+  const parts = name.split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) {
+    return (parts[0] ?? "").slice(0, 2).toUpperCase();
+  }
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
 
 /**
  * Presentational pitch token shared by the tactics board and the pre-match
- * screen: a circular avatar with a fit-tone ring, corner badges (position +
- * OVR), stacked role markers, an optional kit jersey, the player name, an
- * optional control slot (e.g. a role combobox), and a condition bar.
+ * screen: one selected visual treatment with a fit-tone ring, corner badges
+ * (position + OVR), stacked role markers, the player name, an optional control
+ * slot (e.g. a role combobox), and a condition bar.
  *
  * It renders visuals only — wrap it in a button / drag handle and wire
  * interactions at the call site.
@@ -91,6 +102,9 @@ export function PitchToken({
   children,
 }: PitchTokenProps) {
   const { t } = useTranslation();
+  const tacticsTokenStyle = useSettingsStore(
+    (state) => state.settings.tactics_token_style,
+  );
   // Clamped once: a condition outside 0-100 would otherwise produce a bar wider
   // than its track and a value a screen reader cannot place on the scale.
   const clampedCondition = Math.min(100, Math.max(0, Math.round(condition)));
@@ -104,6 +118,11 @@ export function PitchToken({
     fit: t(FIT_LABEL_KEYS[fitTone]),
     name,
   });
+  const initials = getInitials(name);
+  const resolvedJerseyNumber = jerseyNumber ?? jersey?.number;
+  const showPlainJerseyNumber =
+    resolvedJerseyNumber != null &&
+    (tacticsTokenStyle !== "shirt" || jersey == null);
 
   return (
     // A labelled group, not role="img": the tactics token still embeds a role
@@ -135,10 +154,31 @@ export function PitchToken({
             {positionAbbr}
           </span>
         </div>
-        <PlayerAvatar
-          player={avatar ?? { full_name: name, match_name: name }}
-          className={`h-11 w-11 overflow-hidden rounded-full ${fitRingClass(fitTone)}`}
-        />
+        <div
+          className={`flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-white/10 dark:bg-white/10 ${fitRingClass(fitTone)}`}
+        >
+          {tacticsTokenStyle === "portrait" ? (
+            <PlayerAvatar
+              player={avatar ?? { full_name: name, match_name: name }}
+              className="h-full w-full overflow-hidden rounded-full"
+            />
+          ) : tacticsTokenStyle === "shirt" && jersey ? (
+            <JerseyIcon
+              className="h-11 w-11"
+              size="md"
+              primaryColor={jersey.primaryColor}
+              secondaryColor={jersey.secondaryColor}
+              pattern={jersey.pattern}
+              number={jersey.number}
+            />
+          ) : (
+            // Initials, and also what shirt mode falls back to when the club has
+            // no kit on record — an empty ringed circle reads as a broken image.
+            <span className="text-sm font-heading font-bold uppercase text-white dark:text-white">
+              {initials}
+            </span>
+          )}
+        </div>
         <div className="absolute -bottom-1 -right-1.5 z-10">
           <span className="rounded-full bg-gray-900 px-2 py-0.5 text-xs font-heading font-bold leading-4 text-white ring-1 ring-white/30">
             {ovr}
@@ -146,17 +186,9 @@ export function PitchToken({
         </div>
       </div>
 
-      {jersey ? (
-        <JerseyIcon
-          size="md"
-          primaryColor={jersey.primaryColor}
-          secondaryColor={jersey.secondaryColor}
-          pattern={jersey.pattern}
-          number={jersey.number}
-        />
-      ) : jerseyNumber != null ? (
+      {showPlainJerseyNumber ? (
         <span className="text-[10px] font-heading font-bold text-white/80">
-          #{jerseyNumber}
+          #{resolvedJerseyNumber}
         </span>
       ) : null}
 

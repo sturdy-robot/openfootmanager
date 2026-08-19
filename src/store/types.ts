@@ -10,6 +10,8 @@ export type KitPattern =
   | "HalfAndHalf"
   | "Diagonal";
 
+export type TacticsTokenStyle = "portrait" | "shirt" | "initials";
+
 export interface FacilitiesData {
   training: number;
   medical: number;

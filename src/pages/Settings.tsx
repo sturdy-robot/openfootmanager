@@ -33,6 +33,7 @@ const THEME_OPTION_KEYS = ["light", "dark", "system"] as const;
 const MATCH_MODE_KEYS = ["live", "spectator", "delegate"] as const;
 const MATCH_SPEED_KEYS = ["slow", "normal", "fast"] as const;
 const UI_SCALE_KEYS = ["small", "normal", "large", "xlarge"] as const;
+const TACTICS_TOKEN_STYLE_KEYS = ["portrait", "shirt", "initials"] as const;
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -244,6 +245,26 @@ export default function Settings() {
             <Toggle
               checked={settings.high_contrast}
               onChange={(v) => handleUpdate({ high_contrast: v })}
+            />
+          </SettingRow>
+
+          <SettingRow
+            label={t("settings.tacticsTokenStyle")}
+            description={t("settings.tacticsTokenStyleDesc")}
+          >
+            <SegmentedControl
+              ariaLabel={t("settings.tacticsTokenStyle")}
+              options={TACTICS_TOKEN_STYLE_KEYS.map((key) => ({
+                value: key,
+                label: t(`settings.tacticsTokenStyleOptions.${key}`),
+              }))}
+              value={settings.tactics_token_style}
+              onChange={(value) =>
+                handleUpdate({
+                  tactics_token_style:
+                    value as AppSettings["tactics_token_style"],
+                })
+              }
             />
           </SettingRow>
 
@@ -507,20 +528,28 @@ function Toggle({
 }
 
 function SegmentedControl({
+  ariaLabel,
   options,
   value,
   onChange,
 }: {
+  ariaLabel?: string;
   options: Array<{ value: string; label?: string; icon?: React.ReactNode }>;
   value: string;
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex rounded-lg bg-gray-100 dark:bg-navy-700 p-0.5 border border-gray-200 dark:border-navy-600">
+    <div
+      aria-label={ariaLabel}
+      className="flex rounded-lg bg-gray-100 dark:bg-navy-700 p-0.5 border border-gray-200 dark:border-navy-600"
+      role={ariaLabel ? "group" : undefined}
+    >
       {options.map((opt) => (
         <button
           key={opt.value}
+          aria-pressed={value === opt.value}
           onClick={() => onChange(opt.value)}
+          type="button"
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-heading font-bold uppercase tracking-wider transition-all ${value === opt.value
             ? "bg-white dark:bg-navy-500 text-primary-600 dark:text-primary-400 shadow-sm"
             : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"

@@ -1800,6 +1800,13 @@
       "large": "Grande",
       "xlarge": "Molto grande"
     },
+    "tacticsTokenStyle": "Aspetto dei segnalini tattici",
+    "tacticsTokenStyleDesc": "Scegli un solo stile visivo per i giocatori sul campo tattico",
+    "tacticsTokenStyleOptions": {
+      "portrait": "Ritratto",
+      "shirt": "Maglia",
+      "initials": "Iniziali"
+    },
     "highContrast": "Alto contrasto",
     "highContrastDesc": "Aumenta il contrasto del testo in modalità scura per migliorare la leggibilità",
     "fullscreen": "Schermo intero",
@@ -2689,7 +2696,8 @@
         "loadFailed": "Impossibile caricare le impostazioni.",
         "parseFailed": "I dati delle impostazioni non sono validi.",
         "saveFailed": "Impossibile salvare le impostazioni.",
-        "invalidCurrency": "La valuta selezionata non è supportata."
+        "invalidCurrency": "La valuta selezionata non è supportata.",
+        "invalidTokenStyle": "Lo stile del segnalino tattico selezionato non è supportato."
       },
       "profiles": {
         "loadFailed": "Impossibile caricare i profili dell'allenatore.",

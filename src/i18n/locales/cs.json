@@ -1781,6 +1781,13 @@
       "large": "Velké",
       "xlarge": "Velmi velké"
     },
+    "tacticsTokenStyle": "Vzhled taktických žetonů",
+    "tacticsTokenStyleDesc": "Vyberte jeden způsob zobrazení hráčů na taktickém hřišti",
+    "tacticsTokenStyleOptions": {
+      "portrait": "Portrét",
+      "shirt": "Dres",
+      "initials": "Iniciály"
+    },
     "highContrast": "Vysoký kontrast",
     "highContrastDesc": "Zvýšit kontrast textu v tmavém motivu pro lepší čitelnost",
     "fullscreen": "Celá obrazovka",
@@ -2553,7 +2560,8 @@
         "loadFailed": "Nepodařilo se načíst nastavení.",
         "parseFailed": "Data nastavení jsou neplatná.",
         "saveFailed": "Nepodařilo se uložit nastavení.",
-        "invalidCurrency": "Vybraná měna není podporována."
+        "invalidCurrency": "Vybraná měna není podporována.",
+        "invalidTokenStyle": "Vybraný styl taktického žetonu není podporován."
       },
       "profiles": {
         "loadFailed": "Nepodařilo se načíst profily manažerů.",

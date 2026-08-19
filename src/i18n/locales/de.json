@@ -1781,6 +1781,13 @@
       "large": "Groß",
       "xlarge": "Sehr groß"
     },
+    "tacticsTokenStyle": "Darstellung der Taktik-Spieler",
+    "tacticsTokenStyleDesc": "Wähle eine Darstellung für Spieler auf dem Taktikfeld",
+    "tacticsTokenStyleOptions": {
+      "portrait": "Porträt",
+      "shirt": "Trikot",
+      "initials": "Initialen"
+    },
     "highContrast": "Hoher Kontrast",
     "highContrastDesc": "Textkontrast im Dunkelmodus verbessern",
     "fullscreen": "Vollbild",
@@ -2689,7 +2696,8 @@
         "loadFailed": "Die Einstellungen konnten nicht geladen werden.",
         "parseFailed": "Die Einstellungsdaten sind ungültig.",
         "saveFailed": "Die Einstellungen konnten nicht gespeichert werden.",
-        "invalidCurrency": "Die ausgewählte Währung wird nicht unterstützt."
+        "invalidCurrency": "Die ausgewählte Währung wird nicht unterstützt.",
+        "invalidTokenStyle": "Der ausgewählte Stil für Taktik-Spieler wird nicht unterstützt."
       },
       "profiles": {
         "loadFailed": "Manager-Profile konnten nicht geladen werden.",

@@ -1781,6 +1781,13 @@
       "large": "Large",
       "xlarge": "Extra Large"
     },
+    "tacticsTokenStyle": "Pitch Token Art",
+    "tacticsTokenStyleDesc": "Choose one visual treatment for players on the tactics pitch",
+    "tacticsTokenStyleOptions": {
+      "portrait": "Portrait",
+      "shirt": "Shirt",
+      "initials": "Initials"
+    },
     "highContrast": "High Contrast",
     "highContrastDesc": "Boost text contrast in dark mode for improved readability",
     "fullscreen": "Fullscreen",
@@ -2553,7 +2560,8 @@
         "loadFailed": "Failed to load settings.",
         "parseFailed": "Settings data is invalid.",
         "saveFailed": "Failed to save settings.",
-        "invalidCurrency": "Selected currency is not supported."
+        "invalidCurrency": "Selected currency is not supported.",
+        "invalidTokenStyle": "Selected tactics token style is not supported."
       },
       "profiles": {
         "loadFailed": "Failed to load manager profiles.",

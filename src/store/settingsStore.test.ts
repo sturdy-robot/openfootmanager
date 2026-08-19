@@ -17,6 +17,7 @@ const DEFAULT_SETTINGS = {
   confirm_advance: false,
   continue_to_next_event: false,
   ui_scale: "normal",
+  tactics_token_style: "portrait",
   high_contrast: false,
 } as const;
 

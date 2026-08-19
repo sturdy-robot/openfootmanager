@@ -1,6 +1,6 @@
 use log::info;
-use std::sync::Arc;
 use ofm_core::currency::{self, CurrencyDefinition};
+use std::sync::Arc;
 use tauri::Manager as TauriManager;
 
 const SETTINGS_LOAD_FAILED_ERROR: &str = "be.error.settings.loadFailed";
@@ -21,6 +21,8 @@ pub struct AppSettings {
     pub confirm_advance: bool,
     #[serde(default = "default_ui_scale")]
     pub ui_scale: String, // "small" | "normal" | "large" | "xlarge"
+    #[serde(default = "default_tactics_token_style")]
+    pub tactics_token_style: String, // "portrait" | "shirt" | "initials"
     #[serde(default)]
     pub high_contrast: bool,
     /// When true, the Continue button rolls forward several days until the next
@@ -42,6 +44,13 @@ fn default_language() -> String {
 fn default_ui_scale() -> String {
     "normal".to_string()
 }
+fn default_tactics_token_style() -> String {
+    "portrait".to_string()
+}
+
+fn is_supported_tactics_token_style(style: &str) -> bool {
+    matches!(style, "portrait" | "shirt" | "initials")
+}
 
 impl Default for AppSettings {
     fn default() -> Self {
@@ -55,6 +64,7 @@ impl Default for AppSettings {
             show_match_commentary: true,
             confirm_advance: false,
             ui_scale: "normal".to_string(),
+            tactics_token_style: default_tactics_token_style(),
             high_contrast: false,
             continue_to_next_event: false,
         }
@@ -76,6 +86,9 @@ fn normalize_loaded_settings(mut settings: AppSettings) -> AppSettings {
     settings.currency = currency::normalize_currency_code(&settings.currency)
         .unwrap_or(currency::DEFAULT_CURRENCY_CODE)
         .to_string();
+    if !is_supported_tactics_token_style(&settings.tactics_token_style) {
+        settings.tactics_token_style = default_tactics_token_style();
+    }
     settings
 }
 
@@ -83,6 +96,9 @@ fn validate_settings(mut settings: AppSettings) -> Result<AppSettings, String> {
     settings.currency = currency::normalize_currency_code(&settings.currency)
         .ok_or("be.error.settings.invalidCurrency".to_string())?
         .to_string();
+    if !is_supported_tactics_token_style(&settings.tactics_token_style) {
+        return Err("be.error.settings.invalidTokenStyle".to_string());
+    }
     Ok(settings)
 }
 
@@ -126,7 +142,9 @@ pub fn save_settings(app_handle: tauri::AppHandle, settings: AppSettings) -> Res
 }
 
 #[tauri::command]
-pub fn clear_all_saves(sm_state: tauri::State<'_, Arc<crate::SaveManagerState>>) -> Result<(), String> {
+pub fn clear_all_saves(
+    sm_state: tauri::State<'_, Arc<crate::SaveManagerState>>,
+) -> Result<(), String> {
     log::warn!("[cmd] clear_all_saves: deleting all save data!");
     let mut sm = sm_state
         .0
@@ -169,6 +187,67 @@ mod tests {
         let result = validate_settings(make_settings("CAD"));
 
         assert_eq!(result.unwrap_err(), "be.error.settings.invalidCurrency");
+    }
+
+    /// A settings file written before the token-art setting existed must still
+    /// load. Serde drops what it does not know and writes the file back
+    /// without it, so a field with no default would vanish on every reload —
+    /// silently, because nothing errors.
+    #[test]
+    fn loads_settings_written_before_the_token_style_existed() {
+        let legacy = r#"{
+            "theme": "dark",
+            "language": "en",
+            "currency": "EUR",
+            "default_match_mode": "live",
+            "auto_save": true,
+            "match_speed": "normal",
+            "show_match_commentary": true,
+            "confirm_advance": false
+        }"#;
+
+        let settings: AppSettings =
+            serde_json::from_str(legacy).expect("legacy settings must still parse");
+
+        assert_eq!(settings.tactics_token_style, "portrait");
+    }
+
+    #[test]
+    fn keeps_a_supported_token_style_through_a_load() {
+        let settings = normalize_loaded_settings(AppSettings {
+            tactics_token_style: "shirt".to_string(),
+            ..AppSettings::default()
+        });
+
+        assert_eq!(settings.tactics_token_style, "shirt");
+    }
+
+    /// An unrecognised value is corrected rather than rejected: the setting only
+    /// decides which picture a token draws, and refusing to open the game over
+    /// it would be out of all proportion.
+    #[test]
+    fn falls_back_to_portrait_when_the_token_style_is_unknown() {
+        let settings = normalize_loaded_settings(AppSettings {
+            tactics_token_style: "hologram".to_string(),
+            ..AppSettings::default()
+        });
+
+        assert_eq!(settings.tactics_token_style, "portrait");
+    }
+
+    #[test]
+    fn rejects_an_unknown_token_style_when_saving_settings() {
+        let result = validate_settings(AppSettings {
+            tactics_token_style: "hologram".to_string(),
+            ..AppSettings::default()
+        });
+
+        assert_eq!(result.unwrap_err(), "be.error.settings.invalidTokenStyle");
+    }
+
+    #[test]
+    fn defaults_a_new_settings_file_to_portrait_tokens() {
+        assert_eq!(AppSettings::default().tactics_token_style, "portrait");
     }
 
     #[test]

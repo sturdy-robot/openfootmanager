@@ -1781,6 +1781,13 @@
       "large": "Besar",
       "xlarge": "Ekstra Besar"
     },
+    "tacticsTokenStyle": "Tampilan Token Lapangan",
+    "tacticsTokenStyleDesc": "Pilih satu tampilan visual untuk pemain di lapangan taktik",
+    "tacticsTokenStyleOptions": {
+      "portrait": "Potret",
+      "shirt": "Kostum",
+      "initials": "Inisial"
+    },
     "highContrast": "Kontras Tinggi",
     "highContrastDesc": "Tingkatkan kontras teks di mode gelap agar lebih mudah dibaca",
     "fullscreen": "Layar Penuh",
@@ -2553,7 +2560,8 @@
         "loadFailed": "Gagal memuat pengaturan.",
         "parseFailed": "Data pengaturan tidak valid.",
         "saveFailed": "Gagal menyimpan pengaturan.",
-        "invalidCurrency": "Mata uang yang dipilih tidak didukung."
+        "invalidCurrency": "Mata uang yang dipilih tidak didukung.",
+        "invalidTokenStyle": "Gaya token taktik yang dipilih tidak didukung."
       },
       "profiles": {
         "loadFailed": "Gagal memuat profil manajer.",

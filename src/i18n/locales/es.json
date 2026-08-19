@@ -1781,6 +1781,13 @@
       "large": "Grande",
       "xlarge": "Muy grande"
     },
+    "tacticsTokenStyle": "Arte de las fichas tácticas",
+    "tacticsTokenStyleDesc": "Elige un único estilo visual para los jugadores en el campo táctico",
+    "tacticsTokenStyleOptions": {
+      "portrait": "Retrato",
+      "shirt": "Camiseta",
+      "initials": "Iniciales"
+    },
     "highContrast": "Alto Contraste",
     "highContrastDesc": "Mejorar contraste de texto en modo oscuro",
     "fullscreen": "Pantalla Completa",
@@ -2689,7 +2696,8 @@
         "loadFailed": "No se pudo cargar la configuración.",
         "parseFailed": "Los datos de configuración no son válidos.",
         "saveFailed": "No se pudo guardar la configuración.",
-        "invalidCurrency": "La moneda seleccionada no es compatible."
+        "invalidCurrency": "La moneda seleccionada no es compatible.",
+        "invalidTokenStyle": "El estilo de ficha táctica seleccionado no es compatible."
       },
       "profiles": {
         "loadFailed": "No se pudieron cargar los perfiles de mánager.",
