@@ -84,13 +84,20 @@ export function loadCustomTactics(
   }
 }
 
+/**
+ * Returns whether the tactics actually reached storage.
+ *
+ * A quota or a privacy setting can refuse the write, and the caller announces
+ * a successful save — so swallowing the failure here would confirm something
+ * that then vanishes on the next launch.
+ */
 export function saveCustomTactics(
   gameState: GameStateData,
   customTactics: readonly TacticsLibraryEntry[],
   storage: StorageLike | null = getDefaultStorage(),
-): void {
+): boolean {
   if (!storage) {
-    return;
+    return false;
   }
 
   const persistedTactics = customTactics.filter(
@@ -102,8 +109,9 @@ export function saveCustomTactics(
       buildCustomTacticsStorageKey(gameState),
       JSON.stringify(persistedTactics),
     );
+    return true;
   } catch {
-    // Storage quota exceeded or access denied — skip persist
+    return false;
   }
 }
 
@@ -454,6 +462,14 @@ export interface TacticsDraftApplyResult {
   gameState?: GameStateData;
   kind: "applied" | "blocked" | "failed" | "noop";
   reason?: "alreadyApplying" | "invalidLatestLineup" | "noManagedTeam";
+  /**
+   * What was actually sent, when anything was.
+   *
+   * The caller needs it to tell an edit made *during* the request from one the
+   * request has now applied — dropping the whole draft on success would throw
+   * away work the manager did while waiting.
+   */
+  sent?: TeamTacticsDraft;
   state: TacticsDraftState;
 }
 
@@ -540,6 +556,7 @@ export async function applyTacticsDraft({
     return {
       gameState: updatedGameState,
       kind: "applied",
+      sent: draft,
       state: {
         ...state,
         draft: {},
@@ -553,6 +570,50 @@ export async function applyTacticsDraft({
       state: { ...state, feedbackKey: "tactics.applyError", isApplying: false },
     };
   }
+}
+
+/**
+ * What is still staged once `sent` has landed.
+ *
+ * An Apply is a round trip, and the manager can keep working during it. Only
+ * the values that were actually applied drop out of the draft; anything they
+ * changed while waiting is still their intent and survives.
+ */
+export function remainingDraftAfterApply(
+  currentDraft: TacticsDraftPatch,
+  sent: TeamTacticsDraft,
+): TacticsDraftPatch {
+  const remaining: TacticsDraftPatch = {};
+
+  if (
+    currentDraft.formation !== undefined &&
+    currentDraft.formation !== sent.formation
+  ) {
+    remaining.formation = currentDraft.formation;
+  }
+
+  if (
+    currentDraft.play_style !== undefined &&
+    currentDraft.play_style !== sent.play_style
+  ) {
+    remaining.play_style = currentDraft.play_style;
+  }
+
+  if (
+    currentDraft.slot_roles !== undefined &&
+    !sameValue(currentDraft.slot_roles, sent.slot_roles)
+  ) {
+    remaining.slot_roles = currentDraft.slot_roles;
+  }
+
+  if (
+    currentDraft.tactics_phase !== undefined &&
+    !sameValue(currentDraft.tactics_phase, sent.tactics_phase)
+  ) {
+    remaining.tactics_phase = currentDraft.tactics_phase;
+  }
+
+  return remaining;
 }
 
 /**

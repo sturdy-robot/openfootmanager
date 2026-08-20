@@ -202,15 +202,23 @@ export default function TacticsTab({
           comparePlayerId={comparePlayerId}
           hoveredSlot={hoveredSlot}
           matchRoles={effectiveMatchRoles}
-          onRoleChange={(playerId, role) => {
-            void setPlayerRole(playerId, role)
-              .then(onGameUpdate)
-              .catch((error: unknown) => {
-                console.error("Failed to set player role:", error);
-              });
-          }}
+          // While a shape change is staged the pitch is drawing slots the
+          // server does not have yet, so a role chosen here would be validated
+          // against the old formation — and then overwritten by the draft's own
+          // roles on Apply. Roles come back once the shape is settled.
+          onRoleChange={
+            formation === team.formation
+              ? (playerId, role) => {
+                  void setPlayerRole(playerId, role)
+                    .then(onGameUpdate)
+                    .catch((error: unknown) => {
+                      console.error("Failed to set player role:", error);
+                    });
+                }
+              : undefined
+          }
           playerRoles={team ? rolesByStartingPlayer(team.starting_xi_ids, team.slot_roles, team.player_roles) : undefined}
-          tacticsPhase={team?.tactics_phase}
+          tacticsPhase={tacticsPhase}
           teamKitPattern={team?.kit_pattern}
           teamPrimaryColor={team?.colors?.primary}
           teamSecondaryColor={team?.colors?.secondary}

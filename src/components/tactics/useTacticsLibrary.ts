@@ -73,7 +73,11 @@ export function useTacticsLibrary({
       return;
     }
 
-    saveCustomTactics(gameState, customTactics);
+    if (!saveCustomTactics(gameState, customTactics)) {
+      // Storage refused the write, so nothing was really saved — drop the cue
+      // rather than confirm a change that will not survive a restart.
+      setSavedTacticId(null);
+    }
   }, [customTactics, customTacticsStorageKey, gameState]);
 
   const matchedPreset = findTacticsPresetBySetup(formation, activePlayStyle);

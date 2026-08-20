@@ -8,11 +8,15 @@ import {
   applyTacticsDraft,
   getTacticsDraftControls,
   reduceTacticsDraft,
+  remainingDraftAfterApply,
   type TacticsDraftAction,
   type TacticsDraftControls,
   type TacticsDraftState,
 } from "./TacticsCustomTactics.helpers";
-import type { TacticsPresetDefinition } from "./TacticsTab.helpers";
+import {
+  findTacticsPresetBySetup,
+  type TacticsPresetDefinition,
+} from "./TacticsTab.helpers";
 
 interface UseTacticsDraftArgs {
   gameState: GameStateData | null;
@@ -53,23 +57,43 @@ export function useTacticsDraft({
       }
 
       setDraftState((current) =>
-        reduceTacticsDraft(current, action, appliedTeam),
+        reduceTacticsDraft(
+          {
+            ...current,
+            presetAnchor:
+              current.presetAnchor ??
+              findTacticsPresetBySetup(
+                appliedTeam.formation,
+                appliedTeam.play_style,
+              ),
+          },
+          action,
+          appliedTeam,
+        ),
       );
     },
     [appliedTeam],
   );
 
+  // A team already playing a preset is anchored to it from the start. Waiting
+  // for the manager to reselect what they are visibly already using would leave
+  // Reset dead exactly when they first want it — right after the first change.
+  const appliedPreset = appliedTeam
+    ? findTacticsPresetBySetup(appliedTeam.formation, appliedTeam.play_style)
+    : null;
+  const presetAnchor = draftState.presetAnchor ?? appliedPreset;
+
   const controls: TacticsDraftControls = useMemo(
     () =>
       appliedTeam
-        ? getTacticsDraftControls(draftState, appliedTeam)
+        ? getTacticsDraftControls({ ...draftState, presetAnchor }, appliedTeam)
         : {
             canApply: false,
             canReset: false,
             canRevert: false,
             isDraftDirty: false,
           },
-    [appliedTeam, draftState],
+    [appliedTeam, draftState, presetAnchor],
   );
 
   const apply = useCallback(async () => {
@@ -90,7 +114,19 @@ export function useTacticsDraft({
         state: draftState,
       });
 
-      setDraftState(result.state);
+      setDraftState((current) => {
+        // Read `current`, not the state the request was built from: the manager
+        // can keep editing while it is in flight, and replacing the draft
+        // wholesale would throw those edits away.
+        const sent = result.sent;
+
+        return {
+          ...current,
+          draft: sent ? remainingDraftAfterApply(current.draft, sent) : current.draft,
+          feedbackKey: result.state.feedbackKey,
+          isApplying: false,
+        };
+      });
 
       if (result.gameState) {
         onGameUpdate(result.gameState);
@@ -109,7 +145,7 @@ export function useTacticsDraft({
     isApplying: draftState.isApplying,
     playStyle:
       draftState.draft.play_style ?? appliedTeam?.play_style ?? "Balanced",
-    presetAnchor: draftState.presetAnchor,
+    presetAnchor,
     tacticsPhase: draftState.draft.tactics_phase ?? appliedTeam?.tactics_phase,
 
     apply,
