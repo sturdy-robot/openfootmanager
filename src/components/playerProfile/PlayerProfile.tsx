@@ -88,6 +88,13 @@ export default function PlayerProfile({
     roleValidationPosition,
     currentTacticalRole,
   );
+  // A role now belongs to a formation slot, so there is nowhere to keep one
+  // for a player who is not in the starting XI — `set_player_role` refuses it.
+  // Offering the picker anyway meant a benched player could be given a role
+  // that went nowhere, with the refusal logged to a console nobody reads.
+  const isDeployedStarter = Boolean(
+    playerTeam?.starting_xi_ids?.includes(player.id),
+  );
   const teamName = getPlayerTeamName(gameState.teams, player.team_id, {
     freeAgent: t("common.freeAgent"),
     unknown: t("common.unknown"),
@@ -291,6 +298,7 @@ export default function PlayerProfile({
           <span className="shrink-0 text-sm font-medium text-gray-600 dark:text-gray-300">
             {t("tactics.playerRoleLabel")}
           </span>
+          {isDeployedStarter ? (
           <Select
             selectSize="sm"
             value={currentTacticalRole}
@@ -305,6 +313,11 @@ export default function PlayerProfile({
               </option>
             ))}
           </Select>
+          ) : (
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {t("tactics.roleNeedsAStartingPlace")}
+            </span>
+          )}
         </div>
       )}
 

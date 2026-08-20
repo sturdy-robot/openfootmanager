@@ -750,7 +750,6 @@
     "teamInstructions": "Consignes d’équipe",
     "deployedSlot": "Poste occupé",
     "naturalPosition": "Poste naturel",
-    "playerRole": "Rôle",
     "assignSlot": "Affecter {{position}}",
     "assignedToSlot": "{{player}} passe à {{position}}",
     "assignFailed": "Impossible de placer un joueur au poste de {{position}}",
@@ -921,7 +920,8 @@
       "strong": "Très bon match",
       "good": "Bon match",
       "risky": "Adaptation risquée"
-    }
+    },
+    "roleNeedsAStartingPlace": "Donnez-lui une place dans le onze de départ pour définir son rôle."
   },
   "training": {
     "weeklySchedule": "Calendrier Hebdomadaire",
@@ -2613,7 +2613,12 @@
         "playerNotOnPitch": "Le joueur n'est pas sur le terrain",
         "playerAlreadySubstitutedOff": "Ce joueur a déjà été remplacé",
         "playerNotOnBench": "Le joueur n'est pas sur le banc",
-        "playerNotInStartingXi": "Le joueur n'est pas dans le onze de départ"
+        "playerNotInStartingXi": "Le joueur n'est pas dans le onze de départ",
+        "staleLineupSlot": "Ce poste a changé depuis l'ouverture de ce panneau.",
+        "duplicateLineupChange": "Le même poste a été modifié deux fois dans les mêmes consignes.",
+        "invalidSlotRoles": "Ces rôles ne correspondent pas à la structure demandée.",
+        "assignmentPlayerNotOnPitch": "Vous ne pouvez pas confier une responsabilité à un joueur absent du terrain.",
+        "managementNotAllowed": "Vous ne pouvez pas diriger cette équipe pendant ce match."
       },
       "csv": {
         "writeFailed": "Échec de l'écriture du fichier CSV."
@@ -2805,7 +2810,11 @@
       "notice": {
         "fallbackLeagueGenerated": "Aucune compétition n'a été définie. Une ligue à division unique par défaut a été générée automatiquement pour toutes les équipes.",
         "fallbackTeamsFilled": "Une seule équipe a été définie. Des adversaires procéduraux ont été générés automatiquement pour rendre le jeu jouable."
-      }
+      },
+      "invalidFormation": "Cette composition n'est pas reconnue par le jeu.",
+      "invalidStartingXi": "Ce onze de départ ne correspond pas à la composition.",
+      "matchRolePlayerNotInStartingXi": "Un joueur chargé d'une responsabilité n'est plus dans le onze de départ.",
+      "playerNotInStartingXi": "Ce joueur n'est pas dans le onze de départ."
     },
     "sender": {
       "boardOfDirectors": "Conseil d'Administration",

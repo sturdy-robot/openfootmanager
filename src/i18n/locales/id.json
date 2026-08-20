@@ -848,7 +848,6 @@
     "teamInstructions": "Instruksi tim",
     "deployedSlot": "Posisi penempatan",
     "naturalPosition": "Posisi asli",
-    "playerRole": "Peran",
     "assignSlot": "Tempatkan di {{position}}",
     "assignedToSlot": "{{player}} dipindahkan ke {{position}}",
     "assignFailed": "Tidak dapat menempatkan pemain di {{position}}",
@@ -921,7 +920,8 @@
       "ready": "Siap",
       "adjusted": "Disesuaikan",
       "risk": "Berisiko"
-    }
+    },
+    "roleNeedsAStartingPlace": "Beri pemain ini tempat di sebelas pemain inti untuk menentukan perannya."
   },
   "training": {
     "weeklySchedule": "Jadwal Mingguan",
@@ -2627,7 +2627,12 @@
         "playerNotOnPitch": "Pemain tidak berada di lapangan",
         "playerAlreadySubstitutedOff": "Pemain sudah diganti",
         "playerNotOnBench": "Pemain tidak berada di bangku cadangan",
-        "playerNotInStartingXi": "Pemain tidak berada di Starting XI"
+        "playerNotInStartingXi": "Pemain tidak berada di Starting XI",
+        "staleLineupSlot": "Posisi itu sudah berubah sejak kamu membuka panel ini.",
+        "duplicateLineupChange": "Posisi yang sama diubah dua kali dalam satu rangkaian instruksi.",
+        "invalidSlotRoles": "Peran-peran itu tidak sesuai dengan formasi yang kamu minta.",
+        "assignmentPlayerNotOnPitch": "Kamu tidak dapat memberi tugas kepada pemain yang tidak berada di lapangan.",
+        "managementNotAllowed": "Kamu tidak dapat mengelola tim ini selama pertandingan berlangsung."
       },
       "csv": {
         "writeFailed": "Gagal menulis berkas CSV."
@@ -2805,7 +2810,11 @@
         "youthAssignmentNotFound": "Penugasan rekrutmen pemuda tidak ditemukan",
         "scoutAlreadyAssignedToSearch": "Scout sudah ditugaskan ke pencarian ini"
       },
-      "invalidPath": "Jalur tidak valid."
+      "invalidPath": "Jalur tidak valid.",
+      "invalidFormation": "Formasi itu tidak dikenal oleh permainan.",
+      "invalidStartingXi": "Sebelas pemain inti itu tidak sesuai dengan formasi.",
+      "matchRolePlayerNotInStartingXi": "Pemain yang diberi tugas sudah tidak berada di sebelas pemain inti.",
+      "playerNotInStartingXi": "Pemain itu tidak berada di sebelas pemain inti."
     },
     "sender": {
       "boardOfDirectors": "Dewan Direksi",

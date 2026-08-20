@@ -848,7 +848,6 @@
     "teamInstructions": "Takım talimatları",
     "deployedSlot": "Sahadaki pozisyon",
     "naturalPosition": "Doğal pozisyon",
-    "playerRole": "Rol",
     "assignSlot": "{{position}} pozisyonuna ata",
     "assignedToSlot": "{{player}} {{position}} pozisyonuna geçti",
     "assignFailed": "{{position}} pozisyonuna oyuncu yerleştirilemedi",
@@ -921,7 +920,8 @@
       "ready": "Hazır",
       "adjusted": "Uyarlanmış",
       "risk": "Riskli"
-    }
+    },
+    "roleNeedsAStartingPlace": "Rolünü belirlemek için oyuncuya ilk on birde yer verin."
   },
   "training": {
     "weeklySchedule": "Haftalık Program",
@@ -2627,7 +2627,12 @@
         "playerNotOnPitch": "Oyuncu sahada değil",
         "playerAlreadySubstitutedOff": "Oyuncu zaten oyundan alınmış",
         "playerNotOnBench": "Oyuncu yedek kulübesinde değil",
-        "playerNotInStartingXi": "Oyuncu ilk 11'de değil"
+        "playerNotInStartingXi": "Oyuncu ilk 11'de değil",
+        "staleLineupSlot": "Bu paneli açtığınızdan beri o pozisyon değişti.",
+        "duplicateLineupChange": "Aynı pozisyon tek bir talimatta iki kez değiştirildi.",
+        "invalidSlotRoles": "Bu roller istediğiniz dizilişle uyuşmuyor.",
+        "assignmentPlayerNotOnPitch": "Sahada olmayan bir oyuncuya görev veremezsiniz.",
+        "managementNotAllowed": "Bu maçta bu takımı yönetemezsiniz."
       },
       "csv": {
         "writeFailed": "CSV dosyası yazılamadı."
@@ -2805,7 +2810,11 @@
         "youthAssignmentNotFound": "Genç oyuncu kazanım görevi bulunamadı",
         "scoutAlreadyAssignedToSearch": "Gözlemci bu aramaya zaten atanmış"
       },
-      "invalidPath": "Geçersiz yol."
+      "invalidPath": "Geçersiz yol.",
+      "invalidFormation": "Bu diziliş oyun tarafından tanınmıyor.",
+      "invalidStartingXi": "Bu ilk on bir dizilişe uymuyor.",
+      "matchRolePlayerNotInStartingXi": "Görev verilen bir oyuncu artık ilk on birde değil.",
+      "playerNotInStartingXi": "Bu oyuncu ilk on birde değil."
     },
     "sender": {
       "boardOfDirectors": "Yönetim Kurulu",

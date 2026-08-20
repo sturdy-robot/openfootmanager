@@ -750,7 +750,6 @@
     "teamInstructions": "Командные инструкции",
     "deployedSlot": "Позиция на поле",
     "naturalPosition": "Естественная позиция",
-    "playerRole": "Роль",
     "assignSlot": "Назначить: {{position}}",
     "assignedToSlot": "{{player}} переходит на позицию {{position}}",
     "assignFailed": "Не удалось поставить игрока на позицию {{position}}",
@@ -921,7 +920,8 @@
       "strong": "Сильное соответствие",
       "good": "Хорошее соответствие",
       "risky": "Рискованное соответствие"
-    }
+    },
+    "roleNeedsAStartingPlace": "Дайте игроку место в стартовом составе, чтобы назначить роль."
   },
   "training": {
     "weeklySchedule": "Недельный график",
@@ -2627,7 +2627,12 @@
         "playerNotOnPitch": "Игрок не на поле",
         "playerAlreadySubstitutedOff": "Игрок уже заменен",
         "playerNotOnBench": "Игрок не на скамейке запасных",
-        "playerNotInStartingXi": "Игрок не в стартовом составе"
+        "playerNotInStartingXi": "Игрок не в стартовом составе",
+        "staleLineupSlot": "Эта позиция изменилась с тех пор, как вы открыли эту панель.",
+        "duplicateLineupChange": "Одна и та же позиция изменена дважды в одной инструкции.",
+        "invalidSlotRoles": "Эти роли не соответствуют выбранной расстановке.",
+        "assignmentPlayerNotOnPitch": "Нельзя поручить роль игроку, которого нет на поле.",
+        "managementNotAllowed": "Вы не можете руководить этой командой в этом матче."
       },
       "csv": {
         "writeFailed": "Не удалось записать CSV-файл."
@@ -2805,7 +2810,11 @@
       "notice": {
         "fallbackLeagueGenerated": "Соревнования не были определены. Для всех команд автоматически создана стандартная одиночная лига.",
         "fallbackTeamsFilled": "Была определена только одна команда. Процедурные соперники созданы автоматически, чтобы игра была играбельной."
-      }
+      },
+      "invalidFormation": "Игра не знает такую расстановку.",
+      "invalidStartingXi": "Этот стартовый состав не соответствует расстановке.",
+      "matchRolePlayerNotInStartingXi": "Игрок, которому поручена роль, больше не в стартовом составе.",
+      "playerNotInStartingXi": "Этого игрока нет в стартовом составе."
     },
     "sender": {
       "boardOfDirectors": "Совет директоров",

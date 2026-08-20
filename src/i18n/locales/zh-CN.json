@@ -750,7 +750,6 @@
     "teamInstructions": "球队指令",
     "deployedSlot": "场上位置",
     "naturalPosition": "擅长位置",
-    "playerRole": "角色",
     "assignSlot": "指派{{position}}",
     "assignedToSlot": "{{player}} 移至 {{position}}",
     "assignFailed": "无法在 {{position}} 安排球员",
@@ -921,7 +920,8 @@
       "strong": "高度适配",
       "good": "适配良好",
       "risky": "适配风险高"
-    }
+    },
+    "roleNeedsAStartingPlace": "把该球员放进首发阵容才能设置其角色。"
   },
   "training": {
     "weeklySchedule": "每周日程",
@@ -2613,7 +2613,12 @@
         "playerNotOnPitch": "球员不在场上",
         "playerAlreadySubstitutedOff": "该球员已经被换下",
         "playerNotOnBench": "球员不在替补席上",
-        "playerNotInStartingXi": "球员不在首发阵容中"
+        "playerNotInStartingXi": "球员不在首发阵容中",
+        "staleLineupSlot": "自你打开该面板以来，这个位置已经改变。",
+        "duplicateLineupChange": "同一位置在一组指令中被改动了两次。",
+        "invalidSlotRoles": "这些角色与你选择的阵型不符。",
+        "assignmentPlayerNotOnPitch": "你不能把职责交给不在场上的球员。",
+        "managementNotAllowed": "本场比赛你无法执教这支球队。"
       },
       "csv": {
         "writeFailed": "无法写入 CSV 文件。"
@@ -2805,7 +2810,11 @@
       "notice": {
         "fallbackLeagueGenerated": "未定义任何赛事。已自动为所有球队生成默认的单级别联赛。",
         "fallbackTeamsFilled": "仅定义了一支球队。已自动生成程序化对手以使游戏可玩。"
-      }
+      },
+      "invalidFormation": "游戏无法识别该阵型。",
+      "invalidStartingXi": "该首发阵容与阵型不符。",
+      "matchRolePlayerNotInStartingXi": "被指派职责的球员已不在首发阵容中。",
+      "playerNotInStartingXi": "该球员不在首发阵容中。"
     },
     "sender": {
       "boardOfDirectors": "董事会",

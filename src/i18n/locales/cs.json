@@ -848,7 +848,6 @@
     "teamInstructions": "Týmové pokyny",
     "deployedSlot": "Pozice v sestavě",
     "naturalPosition": "Přirozená pozice",
-    "playerRole": "Herní role",
     "assignSlot": "Obsadit pozici {{position}}",
     "assignedToSlot": "{{player}} přechází na {{position}}",
     "assignFailed": "Na pozici {{position}} se nepodařilo postavit hráče",
@@ -921,7 +920,8 @@
       "ready": "Připraven",
       "adjusted": "Upraveno",
       "risk": "Riziko"
-    }
+    },
+    "roleNeedsAStartingPlace": "Aby šlo nastavit roli, dej hráči místo v základní sestavě."
   },
   "training": {
     "weeklySchedule": "Týdenní plán",
@@ -2627,7 +2627,12 @@
         "playerNotOnPitch": "Hráč není na hřišti",
         "playerAlreadySubstitutedOff": "Hráč již byl vystřídán",
         "playerNotOnBench": "Hráč není na lavički",
-        "playerNotInStartingXi": "Hráč není v základní sestavě"
+        "playerNotInStartingXi": "Hráč není v základní sestavě",
+        "staleLineupSlot": "Tato pozice se od otevření panelu změnila.",
+        "duplicateLineupChange": "Stejná pozice byla v jedněch pokynech změněna dvakrát.",
+        "invalidSlotRoles": "Tyto role neodpovídají zvolenému rozestavení.",
+        "assignmentPlayerNotOnPitch": "Úlohu nelze svěřit hráči, který není na hřišti.",
+        "managementNotAllowed": "Tento tým v tomto zápase řídit nemůžete."
       },
       "csv": {
         "writeFailed": "Nepodařilo se zapsat soubor CSV."
@@ -2805,7 +2810,11 @@
         "youthAssignmentNotFound": "Úkol pro nábor mládeže nebyl nalezen",
         "scoutAlreadyAssignedToSearch": "Skaut je již k tomuto vyhledávání přiřazen"
       },
-      "invalidPath": "Neplatná cesta."
+      "invalidPath": "Neplatná cesta.",
+      "invalidFormation": "Tuto formaci hra nezná.",
+      "invalidStartingXi": "Tato základní sestava neodpovídá formaci.",
+      "matchRolePlayerNotInStartingXi": "Hráč s pověřenou úlohou už není v základní sestavě.",
+      "playerNotInStartingXi": "Tento hráč není v základní sestavě."
     },
     "sender": {
       "boardOfDirectors": "Představenstvo",

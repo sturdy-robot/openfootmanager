@@ -750,7 +750,6 @@
     "teamInstructions": "Instrucciones del equipo",
     "deployedSlot": "Posición asignada",
     "naturalPosition": "Posición natural",
-    "playerRole": "Rol",
     "assignSlot": "Asignar {{position}}",
     "assignedToSlot": "{{player}} pasa a {{position}}",
     "assignFailed": "No se pudo colocar a un jugador en {{position}}",
@@ -921,7 +920,8 @@
       "strong": "Encaje fuerte",
       "good": "Buen encaje",
       "risky": "Encaje arriesgado"
-    }
+    },
+    "roleNeedsAStartingPlace": "Dale un puesto en el once inicial para asignarle un rol."
   },
   "training": {
     "weeklySchedule": "Calendario Semanal",
@@ -2613,7 +2613,12 @@
         "playerNotOnPitch": "El jugador no está en el campo",
         "playerAlreadySubstitutedOff": "Ese jugador ya fue sustituido",
         "playerNotOnBench": "El jugador no está en el banquillo",
-        "playerNotInStartingXi": "El jugador no está en el once inicial"
+        "playerNotInStartingXi": "El jugador no está en el once inicial",
+        "staleLineupSlot": "Esa posición ha cambiado desde que abriste este panel.",
+        "duplicateLineupChange": "La misma posición se ha cambiado dos veces en las mismas instrucciones.",
+        "invalidSlotRoles": "Esos roles no coinciden con la formación que has pedido.",
+        "assignmentPlayerNotOnPitch": "No puedes dar una responsabilidad a alguien que no está en el campo.",
+        "managementNotAllowed": "No puedes dirigir a este equipo durante este partido."
       },
       "csv": {
         "writeFailed": "No se pudo escribir el archivo CSV."
@@ -2805,7 +2810,11 @@
       "notice": {
         "fallbackLeagueGenerated": "No se definieron competiciones. Se generó automáticamente una liga de división única predeterminada para todos los equipos.",
         "fallbackTeamsFilled": "Solo se definió un equipo. Se generaron rivales de forma procedural automáticamente para que el juego sea jugable."
-      }
+      },
+      "invalidFormation": "Esa formación no es una que el juego reconozca.",
+      "invalidStartingXi": "Ese once inicial no encaja en la formación.",
+      "matchRolePlayerNotInStartingXi": "Un jugador con una responsabilidad ya no está en el once inicial.",
+      "playerNotInStartingXi": "Ese jugador no está en el once inicial."
     },
     "sender": {
       "boardOfDirectors": "Junta Directiva",

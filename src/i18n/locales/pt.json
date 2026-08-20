@@ -750,8 +750,7 @@
     "teamInstructions": "Instruções da equipa",
     "deployedSlot": "Posição em campo",
     "naturalPosition": "Posição natural",
-    "playerRole": "Função",
-    "assignSlot": "Escalar {{position}}",
+    "assignSlot": "Colocar em {{position}}",
     "assignedToSlot": "{{player}} passa a {{position}}",
     "assignFailed": "Não foi possível colocar um jogador em {{position}}",
     "replacedInSlot": "{{incoming}} substitui {{outgoing}} em {{position}}",
@@ -761,7 +760,7 @@
     "availableSquad": "Plantel disponível",
     "fullSquad": "Plantel Completo",
     "pitchInteractionHint": "Arrasta jogadores entre o campo e o banco, clica para inspecionar, clica num segundo para comparar ou usa o clique direito para ações táticas rápidas.",
-    "pitchLegend": "Legenda do campo",
+    "pitchLegend": "Legenda do relvado",
     "selectedPlayer": "Jogador selecionado",
     "comparePlayer": "Jogador de comparação",
     "selectSecondPlayer": "Seleciona um segundo jogador na vista da escalação para comparar atributos e preparar a troca.",
@@ -921,7 +920,8 @@
       "strong": "Grande encaixe",
       "good": "Bom encaixe",
       "risky": "Encaixe arriscado"
-    }
+    },
+    "roleNeedsAStartingPlace": "Dá-lhe um lugar no onze inicial para definir a sua função."
   },
   "training": {
     "weeklySchedule": "Calendário Semanal",
@@ -1807,7 +1807,7 @@
       "xlarge": "Muito grande"
     },
     "tacticsTokenStyle": "Visual das fichas táticas",
-    "tacticsTokenStyleDesc": "Escolha um único estilo visual para os jogadores no campo tático",
+    "tacticsTokenStyleDesc": "Escolhe um único estilo visual para os jogadores no relvado",
     "tacticsTokenStyleOptions": {
       "portrait": "Retrato",
       "shirt": "Camisola",
@@ -2613,7 +2613,12 @@
         "playerNotOnPitch": "O jogador não está em campo",
         "playerAlreadySubstitutedOff": "Esse jogador já foi substituído",
         "playerNotOnBench": "O jogador não está no banco",
-        "playerNotInStartingXi": "O jogador não está no onze inicial"
+        "playerNotInStartingXi": "O jogador não está no onze inicial",
+        "staleLineupSlot": "Essa posição mudou desde que abriste este painel.",
+        "duplicateLineupChange": "A mesma posição foi alterada duas vezes nas mesmas instruções.",
+        "invalidSlotRoles": "Essas funções não correspondem ao esquema que pediste.",
+        "assignmentPlayerNotOnPitch": "Não podes dar uma responsabilidade a quem não está em campo.",
+        "managementNotAllowed": "Não podes orientar esta equipa durante este jogo."
       },
       "csv": {
         "writeFailed": "Falha ao escrever o ficheiro CSV."
@@ -2805,7 +2810,11 @@
       "notice": {
         "fallbackLeagueGenerated": "Não foram definidas competições. Foi gerada automaticamente uma liga de divisão única predefinida para todas as equipas.",
         "fallbackTeamsFilled": "Apenas uma equipa foi definida. Foram gerados adversários procedurais automaticamente para tornar o jogo jogável."
-      }
+      },
+      "invalidFormation": "Essa formação não é reconhecida pelo jogo.",
+      "invalidStartingXi": "Esse onze inicial não encaixa na formação.",
+      "matchRolePlayerNotInStartingXi": "Um jogador com uma responsabilidade já não está no onze inicial.",
+      "playerNotInStartingXi": "Esse jogador não está no onze inicial."
     },
     "sender": {
       "boardOfDirectors": "Conselho de Administração",

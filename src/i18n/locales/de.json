@@ -750,7 +750,6 @@
     "teamInstructions": "Teamanweisungen",
     "deployedSlot": "Eingesetzte Position",
     "naturalPosition": "Natürliche Position",
-    "playerRole": "Rolle",
     "assignSlot": "{{position}} besetzen",
     "assignedToSlot": "{{player}} rückt auf {{position}}",
     "assignFailed": "Auf {{position}} konnte kein Spieler eingesetzt werden",
@@ -921,7 +920,8 @@
       "strong": "Starke Übereinstimmung",
       "good": "Gute Übereinstimmung",
       "risky": "Riskante Passung"
-    }
+    },
+    "roleNeedsAStartingPlace": "Gib ihm einen Platz in der Startelf, um seine Rolle festzulegen."
   },
   "training": {
     "weeklySchedule": "Wochenplan",
@@ -2613,7 +2613,12 @@
         "playerNotOnPitch": "Spieler ist nicht auf dem Platz",
         "playerAlreadySubstitutedOff": "Dieser Spieler wurde bereits ausgewechselt",
         "playerNotOnBench": "Spieler ist nicht auf der Bank",
-        "playerNotInStartingXi": "Spieler ist nicht in der Startelf"
+        "playerNotInStartingXi": "Spieler ist nicht in der Startelf",
+        "staleLineupSlot": "Diese Position hat sich geändert, seit du dieses Fenster geöffnet hast.",
+        "duplicateLineupChange": "Dieselbe Position wurde in einer Anweisung zweimal geändert.",
+        "invalidSlotRoles": "Diese Rollen passen nicht zur gewünschten Formation.",
+        "assignmentPlayerNotOnPitch": "Du kannst niemandem eine Aufgabe geben, der nicht auf dem Platz steht.",
+        "managementNotAllowed": "Du kannst dieses Team in diesem Spiel nicht coachen."
       },
       "csv": {
         "writeFailed": "Die CSV-Datei konnte nicht geschrieben werden."
@@ -2805,7 +2810,11 @@
       "notice": {
         "fallbackLeagueGenerated": "Es wurden keine Wettbewerbe definiert. Eine standardmäßige eingleisige Liga wurde automatisch für alle Teams generiert.",
         "fallbackTeamsFilled": "Es wurde nur ein Team definiert. Prozedurale Gegner wurden automatisch generiert, um das Spiel spielbar zu machen."
-      }
+      },
+      "invalidFormation": "Diese Formation kennt das Spiel nicht.",
+      "invalidStartingXi": "Diese Startelf passt nicht zur Formation.",
+      "matchRolePlayerNotInStartingXi": "Ein Spieler mit einer Aufgabe steht nicht mehr in der Startelf.",
+      "playerNotInStartingXi": "Dieser Spieler steht nicht in der Startelf."
     },
     "sender": {
       "boardOfDirectors": "Vorstand",

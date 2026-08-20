@@ -769,7 +769,6 @@
     "teamInstructions": "Istruzioni di squadra",
     "deployedSlot": "Posizione schierata",
     "naturalPosition": "Posizione naturale",
-    "playerRole": "Ruolo",
     "assignSlot": "Assegna {{position}}",
     "assignedToSlot": "{{player}} passa a {{position}}",
     "assignFailed": "Impossibile schierare un giocatore in {{position}}",
@@ -940,7 +939,8 @@
       "strong": "Ottimo incastro",
       "good": "Buon incastro",
       "risky": "Incastro rischioso"
-    }
+    },
+    "roleNeedsAStartingPlace": "Dagli un posto nella formazione iniziale per assegnargli un ruolo."
   },
   "training": {
     "weeklySchedule": "Programma settimanale",
@@ -2613,7 +2613,12 @@
         "playerNotOnPitch": "Il giocatore non è in campo",
         "playerAlreadySubstitutedOff": "Quel giocatore è già stato sostituito",
         "playerNotOnBench": "Il giocatore non è in panchina",
-        "playerNotInStartingXi": "Il giocatore non è nell'undici titolare"
+        "playerNotInStartingXi": "Il giocatore non è nell'undici titolare",
+        "staleLineupSlot": "Quella posizione è cambiata da quando hai aperto questo pannello.",
+        "duplicateLineupChange": "La stessa posizione è stata cambiata due volte nelle stesse istruzioni.",
+        "invalidSlotRoles": "Quei ruoli non corrispondono all'assetto richiesto.",
+        "assignmentPlayerNotOnPitch": "Non puoi affidare un incarico a chi non è in campo.",
+        "managementNotAllowed": "Non puoi guidare questa squadra durante questa partita."
       },
       "csv": {
         "writeFailed": "Impossibile scrivere il file CSV."
@@ -2805,7 +2810,11 @@
       "notice": {
         "fallbackLeagueGenerated": "Nessuna competizione è stata definita. È stato generato automaticamente un campionato a girone unico predefinito per tutte le squadre.",
         "fallbackTeamsFilled": "È stata definita una sola squadra. Sono stati generati automaticamente avversari procedurali per rendere il gioco giocabile."
-      }
+      },
+      "invalidFormation": "Quel modulo non è riconosciuto dal gioco.",
+      "invalidStartingXi": "Quella formazione iniziale non corrisponde al modulo.",
+      "matchRolePlayerNotInStartingXi": "Un giocatore con un incarico non è più nella formazione iniziale.",
+      "playerNotInStartingXi": "Quel giocatore non è nella formazione iniziale."
     },
     "sender": {
       "boardOfDirectors": "Consiglio di amministrazione",

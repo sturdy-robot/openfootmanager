@@ -750,7 +750,6 @@
     "teamInstructions": "Instruções do time",
     "deployedSlot": "Posição escalada",
     "naturalPosition": "Posição natural",
-    "playerRole": "Função",
     "assignSlot": "Escalar {{position}}",
     "assignedToSlot": "{{player}} assume {{position}}",
     "assignFailed": "Não foi possível colocar um jogador em {{position}}",
@@ -921,7 +920,8 @@
       "strong": "Ótimo encaixe",
       "good": "Bom encaixe",
       "risky": "Encaixe arriscado"
-    }
+    },
+    "roleNeedsAStartingPlace": "Dê a ele um lugar na escalação inicial para definir sua função."
   },
   "training": {
     "weeklySchedule": "Calendário Semanal",
@@ -2613,7 +2613,12 @@
         "playerNotOnPitch": "O jogador não está em campo",
         "playerAlreadySubstitutedOff": "Esse jogador já foi substituído",
         "playerNotOnBench": "O jogador não está no banco",
-        "playerNotInStartingXi": "O jogador não está no time titular"
+        "playerNotInStartingXi": "O jogador não está no time titular",
+        "staleLineupSlot": "Essa posição mudou desde que você abriu este painel.",
+        "duplicateLineupChange": "A mesma posição foi alterada duas vezes nas mesmas instruções.",
+        "invalidSlotRoles": "Essas funções não correspondem ao esquema que você pediu.",
+        "assignmentPlayerNotOnPitch": "Você não pode dar uma responsabilidade a quem não está em campo.",
+        "managementNotAllowed": "Você não pode comandar este time durante esta partida."
       },
       "csv": {
         "writeFailed": "Falha ao gravar o arquivo CSV."
@@ -2805,7 +2810,11 @@
       "notice": {
         "fallbackLeagueGenerated": "Nenhuma competição foi definida. Uma liga de divisão única padrão foi gerada automaticamente para todos os times.",
         "fallbackTeamsFilled": "Apenas um time foi definido. Adversários procedurais foram gerados automaticamente para tornar o jogo jogável."
-      }
+      },
+      "invalidFormation": "Essa formação não é reconhecida pelo jogo.",
+      "invalidStartingXi": "Essa escalação inicial não encaixa na formação.",
+      "matchRolePlayerNotInStartingXi": "Um jogador com uma responsabilidade não está mais na escalação inicial.",
+      "playerNotInStartingXi": "Esse jogador não está na escalação inicial."
     },
     "sender": {
       "boardOfDirectors": "Diretoria",

@@ -848,7 +848,6 @@
     "teamInstructions": "Team instructions",
     "deployedSlot": "Deployed slot",
     "naturalPosition": "Natural position",
-    "playerRole": "Role",
     "assignSlot": "Assign {{position}}",
     "assignedToSlot": "{{player}} moved into {{position}}",
     "assignFailed": "Could not put a player in {{position}}",
@@ -921,7 +920,8 @@
       "ready": "Ready",
       "adjusted": "Adjusted",
       "risk": "Risk"
-    }
+    },
+    "roleNeedsAStartingPlace": "Give this player a place in the starting eleven to set their role."
   },
   "training": {
     "weeklySchedule": "Weekly Schedule",
@@ -2627,7 +2627,12 @@
         "playerNotOnPitch": "Player not on pitch",
         "playerAlreadySubstitutedOff": "Player has already been substituted off",
         "playerNotOnBench": "Player not on bench",
-        "playerNotInStartingXi": "Player not in starting XI"
+        "playerNotInStartingXi": "Player not in starting XI",
+        "staleLineupSlot": "That slot has changed since you opened this panel.",
+        "duplicateLineupChange": "The same slot was changed twice in one set of instructions.",
+        "invalidSlotRoles": "Those roles do not match the shape you asked for.",
+        "assignmentPlayerNotOnPitch": "You cannot give a duty to someone who is not on the pitch.",
+        "managementNotAllowed": "You cannot manage this team during this match."
       },
       "csv": {
         "writeFailed": "Failed to write the CSV file."
@@ -2805,7 +2810,11 @@
         "youthAssignmentNotFound": "Youth recruitment assignment not found",
         "scoutAlreadyAssignedToSearch": "Scout is already assigned to this search"
       },
-      "invalidPath": "Invalid path."
+      "invalidPath": "Invalid path.",
+      "invalidFormation": "That formation is not one the game knows.",
+      "invalidStartingXi": "That starting eleven does not fit the formation.",
+      "matchRolePlayerNotInStartingXi": "A player given a duty is no longer in the starting eleven.",
+      "playerNotInStartingXi": "That player is not in the starting eleven."
     },
     "sender": {
       "boardOfDirectors": "Board of Directors",
