@@ -8,8 +8,8 @@ import { getFixtureDisplayLabel } from "../../lib/helpers";
 import { MatchSnapshot, EnginePlayerData, FORMATIONS, PLAY_STYLES, type MatchCommand, type Side } from "./types";
 import PreMatchLineup, { parseFormationNeeds, POSITION_KEY_STATS, statColor, starterOvrColor, getStatVal } from "./PreMatchLineup";
 import { condColor } from "../../lib/playerConditionDisplay";
-import { getSetPieceStats } from "./SetPieceSelector";
 import { FormationPitch, formationSlotPositions } from "./FormationPitch";
+import PreMatchInspector from "./PreMatchInspector";
 import { makeTeamFallback } from "./helpers";
 import {
   isPlayerExactForSlot,
@@ -17,18 +17,11 @@ import {
   normalisePosition,
   translatePositionAbbreviation,
 } from "../squad/SquadTab.helpers";
-import { PhaseBlueprintPanel } from "../tactics/PhaseBlueprintPanel";
-import { setPlayerRole, setTacticsPhase } from "../../services/squadService";
-import { getRoleOptions, rolesByStartingPlayer } from "../../lib/playerRoles";
+import { setTacticsPhase } from "../../services/squadService";
 import type { PlayerRole, TacticsPhaseSettings } from "../../store/types";
 import { PitchToken, Select, TeamLogo, type PitchFitTone } from "../ui";
 import {
   ChevronRight,
-  Crown,
-  Footprints,
-  CornerDownRight,
-  CircleDot,
-  Wand2,
 } from "lucide-react";
 
 interface PreMatchSetupProps {
@@ -71,28 +64,32 @@ export default function PreMatchSetup({
     });
   };
 
-  // Player roles, editable from the pitch like on the tactics board; optimistic
-  // local state persisted fire-and-forget, same pattern as the phase blueprint.
-  const [playerRoles, setPlayerRoles] = useState<Record<string, PlayerRole>>(() => {
-    const uid =
-      userSide === "Home" ? snapshot.home_team.id : snapshot.away_team.id;
-    const team = gameState.teams.find((tm) => tm.id === uid);
-    return team
-      ? rolesByStartingPlayer(team.starting_xi_ids, team.slot_roles, team.player_roles)
-      : {};
-  });
-
-  const handlePlayerRoleChange = (playerId: string, role: PlayerRole) => {
-    const previous = playerRoles[playerId] ?? "Standard";
-    setPlayerRoles((prev) => ({ ...prev, [playerId]: role }));
-    void setPlayerRole(playerId, role).catch((err: unknown) => {
-      console.error("Failed to set player role:", err);
-      // Roll back the optimistic value so the UI doesn't show a role that was
-      // never persisted — unless the user has already picked something newer.
-      setPlayerRoles((prev) =>
-        prev[playerId] === role ? { ...prev, [playerId]: previous } : prev,
-      );
-    });
+  /**
+   * A role chosen here changes the match being played, not the saved team.
+   *
+   * `set_player_role` writes the *stored* XI and validates against the stored
+   * formation, but this screen runs after `start_live_match` — the engine has
+   * already taken its copy. So a role set here never reached the match at all,
+   * and after a shape change or a pre-match swap the command failed outright
+   * against a lineup the server no longer had. `ChangePlayerRole` has existed
+   * in the engine since it was written and has never had a caller.
+   *
+   * Formation and play style already work this way here, so this is the screen
+   * agreeing with itself: what you do before kick-off is for this match. The
+   * saved default stays the tactics screen's job.
+   */
+  const handlePlayerRoleChange = async (
+    playerId: string,
+    role: PlayerRole,
+  ): Promise<void> => {
+    try {
+      const snap = await applyMatchCommand({
+        ChangePlayerRole: { side: userSide, player_id: playerId, role },
+      });
+      onUpdateSnapshot(snap);
+    } catch (err) {
+      console.error("Player role change failed:", err);
+    }
   };
 
   const homeTeam = snapshot.home_team;
@@ -213,9 +210,6 @@ export default function PreMatchSetup({
     ? getFixtureDisplayLabel(t, currentFixture)
     : t("match.matchDay");
 
-  const allSquadPlayers = gameState.players.filter(
-    (p) => p.team_id === userTeam.id,
-  );
   const userBench =
     userSide === "Home" ? snapshot.home_bench ?? [] : snapshot.away_bench ?? [];
 
@@ -235,51 +229,6 @@ export default function PreMatchSetup({
       ? userSlotPositions[selectedStarterIndex] ?? selectedStarter?.position
       : undefined;
 
-  // The role picker used to sit inside each of the eleven pitch tokens, which
-  // put a control inside what is now a real slot button — invalid, and the
-  // reason issue #322 existed. One picker for the selected player says the same
-  // thing without eleven comboboxes competing with the shape they annotate.
-  const renderSelectedStarter = () =>
-    selectedStarter && selectedStarterSlot ? (
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-colors duration-300 dark:border-navy-700 dark:bg-navy-800">
-        <p className="text-[10px] font-heading font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
-          {t("tactics.selectedPlayer")}
-        </p>
-        <p className="mt-0.5 truncate text-sm font-heading font-bold text-gray-900 dark:text-gray-100">
-          {storeById.get(selectedStarter.id)?.match_name ?? selectedStarter.name}
-        </p>
-        <p className="mt-0.5 text-[10px] text-gray-500 dark:text-gray-400">
-          {t("tactics.deployedSlot")} ·{" "}
-          {translatePositionAbbreviation(t, selectedStarterSlot)}
-        </p>
-        <span className="mb-1 mt-2.5 block text-[10px] font-heading uppercase tracking-widest text-gray-500 dark:text-gray-400">
-          {t("tactics.playerRoleLabel")}
-        </span>
-        <Select
-          aria-label={t("tactics.playerRoleLabel")}
-          fullWidth
-          onChange={(e) => {
-            handlePlayerRoleChange(
-              selectedStarter.id,
-              e.target.value as PlayerRole,
-            );
-          }}
-          selectSize="sm"
-          value={playerRoles[selectedStarter.id] ?? "Standard"}
-        >
-          {getRoleOptions(
-            // The deployed slot, not the natural position — that is what the
-            // backend validates a role against.
-            selectedStarterSlot,
-            playerRoles[selectedStarter.id] ?? "Standard",
-          ).map((role) => (
-            <option key={role} value={role}>
-              {t(`tactics.playerRoles.${role}`, role)}
-            </option>
-          ))}
-        </Select>
-      </div>
-    ) : null;
 
   const handleFormationChange = async (formation: string) => {
     try {
@@ -407,70 +356,20 @@ export default function PreMatchSetup({
     }
   };
 
-  const sortedForRole = (role: string) => {
-    const allowGk = role === "captain";
-    return userTeam.players
-      .filter((p) => allowGk || p.position !== "Goalkeeper")
-      .map((p) => {
-        const fullData = allSquadPlayers.find((sp) => sp.id === p.id);
-        const score = fullData ? getSetPieceStats(role, fullData).score : 0;
-        return { id: p.id, name: p.name, score };
-      })
-      .sort((a, b) => b.score - a.score);
-  };
-
   const positions = ["Goalkeeper", "Defender", "Midfielder", "Forward"];
   const oppPositions = positions.filter((pos) =>
     oppTeam.players.some((p) => p.position === pos),
   );
 
-  const renderSetPieces = () => (
-    <div className="rounded-xl border border-gray-200 dark:border-navy-700 bg-white dark:bg-navy-800 p-4 shadow-sm transition-colors duration-300">
-      <div className="flex items-center justify-between mb-2.5">
-        <p className="text-[10px] font-heading font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
-          {t("match.setPiecesCaptain")}
-        </p>
-        <button
-          onClick={handleAutoSelectSetPieces}
-          className="flex items-center gap-1.5 rounded-lg border border-accent-200 dark:border-accent-500/20 bg-accent-50 hover:bg-accent-100 dark:bg-accent-500/10 dark:hover:bg-accent-500/20 px-3 py-1.5 font-heading font-bold text-[10px] uppercase tracking-wider text-accent-700 dark:text-accent-400 transition-colors"
-        >
-          <Wand2 className="h-3 w-3" />
-          {t("match.autoSelectTakers")}
-        </button>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        {setPieceItems.map(({ role, label, Icon, current }) => (
-          <div key={role}>
-            <label className="mb-1.5 flex items-center gap-1 text-[10px] font-heading uppercase tracking-widest text-gray-500 dark:text-gray-400">
-              <Icon className="h-3 w-3" />
-              {label}
-            </label>
-            <Select
-              value={current ?? ""}
-              onChange={(e) => handleSetPieceTaker(role, e.target.value)}
-              selectSize="xs"
-              fullWidth
-              aria-label={label}
-            >
-              <option value="">—</option>
-              {sortedForRole(role).map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </Select>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
   // YOUR TEAM tab: fixed 3-panel (subs+fit / pitch / set-pieces). The page never
   // scrolls — each panel scrolls internally.
   const renderTeamView = () => (
-    <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 p-4 xl:grid-cols-[300px_1fr_320px] xl:overflow-hidden">
+    <div className="@container/prematch grid min-h-0 flex-1 grid-cols-1 gap-4 p-4 @3xl/prematch:grid-cols-3 @5xl/prematch:grid-cols-4 @5xl/prematch:grid-rows-1 @5xl/prematch:overflow-hidden">
       {/* Left: formation fit + auto-select + substitutes */}
-      <div className="min-h-0 overflow-y-auto">
+      <section
+        aria-label={t("tactics.squadPane")}
+        className="flex min-h-0 flex-col overflow-y-auto"
+      >
         <PreMatchLineup
           userTeam={userTeam}
           userBench={userBench}
@@ -479,7 +378,6 @@ export default function PreMatchSetup({
           selectedStarterId={selectedStarterId}
           isAutoSelecting={isAutoSelecting}
           onSelectStarter={setSelectedStarterId}
-          onSwap={handleSwap}
           onAutoSelect={handleAutoSelect}
           jerseyNumberById={jerseyNumberById}
           formationControls={
@@ -518,10 +416,10 @@ export default function PreMatchSetup({
           }
           showStartingList={false}
         />
-      </div>
+      </section>
       {/* Center: the pitch — portrait aspect (SVG is 100x140) so it fills the
           column height without squishing, capped by available width. */}
-      <div className="flex min-h-0 items-center justify-center overflow-hidden">
+      <div className="flex min-h-0 items-center justify-center overflow-hidden @3xl/prematch:col-span-2">
         <FormationPitch
           formation={userTeam.formation}
           players={userTeam.players}
@@ -535,22 +433,29 @@ export default function PreMatchSetup({
           className="aspect-[5/7] h-full max-h-full w-auto max-w-full"
         />
       </div>
-      {/* Right: the selected player, set pieces, phase blueprint */}
-      <div className="flex min-h-0 flex-col gap-4 overflow-y-auto">
-        {renderSelectedStarter()}
-        {renderSetPieces()}
-        <div className="rounded-xl border border-gray-200 dark:border-navy-700 bg-white dark:bg-navy-800 shadow-sm transition-colors duration-300">
-          <div className="border-b border-gray-100 dark:border-navy-700 px-3 py-2.5">
-            <p className="text-[10px] font-heading font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
-              {t("tactics.phaseBlueprint")}
-            </p>
-          </div>
-          <PhaseBlueprintPanel
-            tacticsPhase={phase}
-            onTacticsPhaseChange={handlePhaseChange}
-          />
-        </div>
-      </div>
+      {/* Right: whatever is selected — the team, or one player */}
+      <PreMatchInspector
+        bench={userBench}
+        onAutoSelectTakers={() => {
+          void handleAutoSelectSetPieces();
+        }}
+        onChangePlayerRole={(playerId, role) => {
+          void handlePlayerRoleChange(playerId, role);
+        }}
+        onSetPieceTaker={(role, playerId) => {
+          void handleSetPieceTaker(role, playerId);
+        }}
+        onSwapWithBench={(benchPlayerId) => {
+          void handleSwap(benchPlayerId);
+        }}
+        onTacticsPhaseChange={handlePhaseChange}
+        selectedPlayer={selectedStarter}
+        selectedSlotPosition={selectedStarterSlot}
+        setPieces={userSetPieces}
+        starters={userTeam.players}
+        storeById={storeById}
+        tacticsPhase={phase}
+      />
     </div>
   );
 
@@ -646,32 +551,6 @@ export default function PreMatchSetup({
     </div>
   );
 
-  const setPieceItems = [
-    {
-      role: "captain",
-      label: t("match.captain"),
-      Icon: Crown,
-      current: userSetPieces.captain,
-    },
-    {
-      role: "penalty",
-      label: t("match.penaltyTaker"),
-      Icon: CircleDot,
-      current: userSetPieces.penalty_taker,
-    },
-    {
-      role: "freekick",
-      label: t("match.freeKickTaker"),
-      Icon: Footprints,
-      current: userSetPieces.free_kick_taker,
-    },
-    {
-      role: "corner",
-      label: t("match.cornerTaker"),
-      Icon: CornerDownRight,
-      current: userSetPieces.corner_taker,
-    },
-  ] as const;
 
   return (
     <MatchdayShell bodyMode="frame" identity={matchdayIdentity}>

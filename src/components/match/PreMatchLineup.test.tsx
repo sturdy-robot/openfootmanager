@@ -311,32 +311,27 @@ describe("PreMatchLineup component", () => {
     expect(onSelectStarter).toHaveBeenCalledWith(null);
   });
 
-  it("calls onSwap when bench player is clicked while a starter is selected", () => {
-    const onSwap = vi.fn();
-    render(<PreMatchLineup {...defaultProps} selectedStarterId="m1" onSwap={onSwap} />);
-    fireEvent.click(screen.getByText("Bench One"));
-    expect(onSwap).toHaveBeenCalledWith("b1");
+  it("does not commit a swap from the squad rail when a starter is selected", () => {
+    render(<PreMatchLineup {...defaultProps} selectedStarterId="m1" />);
+
+    // Step 9 moves the committing bench-swap affordance into the contextual
+    // details pane. The rail lists who is available; it no longer decides.
+    expect(
+      screen.queryByRole("button", { name: /Bench One/ }),
+    ).toBeNull();
   });
 
-  it("offers a context menu action to swap in a bench player", () => {
-    const onSwap = vi.fn();
-
+  it("does not keep a context-menu swap shortcut in the squad rail", () => {
     render(
       <PreMatchLineup
         {...defaultProps}
         selectedStarterId="m1"
-        onSwap={onSwap}
       />,
     );
 
     fireEvent.contextMenu(screen.getByTestId("pre-match-bench-b1"));
-    fireEvent.click(
-      within(screen.getByRole("menu")).getByRole("menuitem", {
-        name: "Swap with selected starter",
-      }),
-    );
-
-    expect(onSwap).toHaveBeenCalledWith("b1");
+    // Step 9 keeps the inspector as the only committing swap surface.
+    expect(screen.queryByRole("menu")).toBeNull();
   });
 
   it("renders formation fit indicators", () => {

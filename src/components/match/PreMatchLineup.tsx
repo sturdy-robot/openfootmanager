@@ -147,7 +147,6 @@ interface PreMatchLineupProps {
   selectedStarterId: string | null;
   isAutoSelecting: boolean;
   onSelectStarter: (id: string | null) => void;
-  onSwap: (benchPlayerId: string) => void;
   onAutoSelect: () => void;
   /**
    * Jersey number per player id, looked up from the game store — the match
@@ -173,7 +172,6 @@ export default function PreMatchLineup({
   selectedStarterId,
   isAutoSelecting,
   onSelectStarter,
-  onSwap,
   onAutoSelect,
   jerseyNumberById,
   formationControls,
@@ -407,23 +405,11 @@ export default function PreMatchLineup({
               {userBench.map((bp) => {
                 const posOvr = bp.ovr;
                 const keyStats = POSITION_KEY_STATS[bp.position] || [];
-                const canSwap = Boolean(selectedStarterId);
                 const benchButton = (
-                  <button
-                    type="button"
+                  <div
                     key={bp.id}
                     data-testid={`pre-match-bench-${bp.id}`}
-                    disabled={!canSwap}
-                    aria-disabled={!canSwap}
-                    onClick={() => {
-                      if (canSwap) {
-                        onSwap(bp.id);
-                      }
-                    }}
-                    className={`flex items-center gap-2 py-1.5 px-2 rounded w-full text-left transition-all ${canSwap
-                      ? "hover:bg-primary-500/20 hover:ring-1 hover:ring-primary-500/50 cursor-pointer"
-                      : "opacity-60 cursor-not-allowed"
-                      }`}
+                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left"
                   >
                     <Badge variant="neutral" size="sm">
                       {translatePositionAbbreviation(t, bp.position)}
@@ -458,26 +444,10 @@ export default function PreMatchLineup({
                     >
                       {Math.round(bp.condition)}%
                     </span>
-                  </button>
+                  </div>
                 );
 
-                if (!selectedStarterId) {
-                  return benchButton;
-                }
-
-                return (
-                  <ContextMenu
-                    items={[
-                      {
-                        label: t("match.swapWithSelectedStarter"),
-                        onClick: () => onSwap(bp.id),
-                      },
-                    ]}
-                    key={bp.id}
-                  >
-                    {benchButton}
-                  </ContextMenu>
-                );
+                return benchButton;
               })}
             </div>
           )}

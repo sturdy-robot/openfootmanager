@@ -87,7 +87,7 @@ interface TacticsInspectorProps {
   tacticsPhase?: TacticsPhaseSettings;
 }
 
-function InspectorCard({
+export function InspectorCard({
   children,
   id,
   onToggleEditing,
@@ -135,7 +135,7 @@ function InspectorCard({
 }
 
 /** A label and its value, which is all a setting is until you want to change it. */
-function ReadRow({
+export function ReadRow({
   label,
   value,
 }: {
