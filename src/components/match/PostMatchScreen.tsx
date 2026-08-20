@@ -227,7 +227,7 @@ export default function PostMatchScreen({
   return (
     <MatchdayShell bodyMode="frame" identity={matchdayIdentity}>
       {/* Result Header */}
-      <header
+      <div
         className={`border-b border-gray-200 dark:border-navy-700 px-4 py-6 transition-colors duration-300 ${
           resultType === "win"
             ? "bg-linear-to-r from-primary-100 via-white to-primary-100 dark:from-primary-900/50 dark:via-navy-900 dark:to-primary-900/50"
@@ -325,7 +325,7 @@ export default function PostMatchScreen({
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Sticky Action Bar */}
       <div className="sticky top-0 z-10 bg-white dark:bg-navy-800 border-b border-gray-200 dark:border-navy-700 shadow-sm transition-colors duration-300">

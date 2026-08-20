@@ -35,9 +35,12 @@ vi.mock("react-i18next", () => ({
     // values with it, because what a live region actually says is the point of
     // half these tests.
     t: (key: string, options?: string | Record<string, unknown>) => {
-      if (key === "pitchToken.accessibleName") {
+      if (key.startsWith("pitchToken.accessibleName")) {
         const values = options as Record<string, unknown> | undefined;
-        return `${String(values?.name)} · ${String(values?.condition)} · ${String(values?.fit)}`;
+        // The token gains a duties segment when a player wears the armband or
+        // takes the set pieces; the same mock answers both keys.
+        const duties = values?.duties ? ` · ${String(values.duties)}` : "";
+        return `${String(values?.name)} · ${String(values?.condition)} · ${String(values?.fit)}${duties}`;
       }
       if (key === "pitchToken.conditionValue") {
         const values = options as Record<string, unknown> | undefined;

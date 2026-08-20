@@ -365,7 +365,7 @@ export default function PressConference({
   return (
     <MatchdayShell bodyMode="centered" identity={matchdayIdentity}>
       {/* Header */}
-      <header className="bg-linear-to-r from-gray-200 via-white to-gray-200 dark:from-navy-800 dark:via-navy-900 dark:to-navy-800 border-b border-gray-200 dark:border-navy-700 px-4 py-6 transition-colors duration-300">
+      <div className="bg-linear-to-r from-gray-200 via-white to-gray-200 dark:from-navy-800 dark:via-navy-900 dark:to-navy-800 border-b border-gray-200 dark:border-navy-700 px-4 py-6 transition-colors duration-300">
         <div className="max-w-3xl mx-auto text-center relative">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gray-200 dark:bg-navy-700 rounded-full mb-3 transition-colors duration-300">
             <Mic className="w-4 h-4 text-accent-400" />
@@ -391,7 +391,7 @@ export default function PressConference({
             ))}
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Main content */}
       <div className="flex-1 flex items-center justify-center p-6">

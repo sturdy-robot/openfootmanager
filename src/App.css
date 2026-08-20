@@ -56,6 +56,16 @@
   --color-navy-800: #131b33;
   --color-navy-700: #1a2340;
   --color-navy-600: #243054;
+
+  /* The pitch. Green in both themes — turf does not have a dark mode — so
+     anything drawn on it offsets against these, not against the surface
+     colours above. The overlays are the tactical annotations: the shaded band
+     a team presses in, and the line it defends from. */
+  --color-turf-near: #116b40;
+  --color-turf-far: #0d5733;
+  --color-pitch-line: rgba(255, 255, 255, 0.35);
+  --color-pitch-press: 255, 220, 100;
+  --color-pitch-defensive-line: rgba(255, 80, 80, 0.75);
 }
 
 @layer base {

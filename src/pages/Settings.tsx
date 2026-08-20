@@ -550,8 +550,8 @@ function SegmentedControl({
           aria-pressed={value === opt.value}
           onClick={() => onChange(opt.value)}
           type="button"
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-heading font-bold uppercase tracking-wider transition-all ${value === opt.value
-            ? "bg-white dark:bg-navy-500 text-primary-600 dark:text-primary-400 shadow-sm"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-heading font-bold uppercase tracking-wider transition-all motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-100 dark:focus-visible:ring-offset-navy-700 ${value === opt.value
+            ? "bg-white dark:bg-navy-600 text-primary-600 dark:text-primary-400 shadow-sm"
             : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
             }`}
         >

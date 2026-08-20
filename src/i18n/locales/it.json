@@ -940,7 +940,9 @@
       "good": "Buon incastro",
       "risky": "Incastro rischioso"
     },
-    "roleNeedsAStartingPlace": "Dagli un posto nella formazione iniziale per assegnargli un ruolo."
+    "roleNeedsAStartingPlace": "Dagli un posto nella formazione iniziale per assegnargli un ruolo.",
+    "conditionBands": "fresco, in calo, esausto",
+    "replaceInSlot": "Sostituisci in questa posizione"
   },
   "training": {
     "weeklySchedule": "Programma settimanale",
@@ -4060,6 +4062,7 @@
     "accessibleName": "{{name}} · {{condition}} · {{fit}}",
     "conditionValue": "Condizione {{condition}}%",
     "adaptedToSlot": "Adattato al ruolo",
-    "fitUnavailable": "Idoneità al ruolo non disponibile"
+    "fitUnavailable": "Idoneità al ruolo non disponibile",
+    "accessibleNameWithDuties": "{{name}} · {{condition}} · {{fit}} · {{duties}}"
   }
 }

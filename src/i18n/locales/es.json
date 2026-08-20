@@ -921,7 +921,9 @@
       "good": "Buen encaje",
       "risky": "Encaje arriesgado"
     },
-    "roleNeedsAStartingPlace": "Dale un puesto en el once inicial para asignarle un rol."
+    "roleNeedsAStartingPlace": "Dale un puesto en el once inicial para asignarle un rol.",
+    "conditionBands": "fresco, cansado, agotado",
+    "replaceInSlot": "Sustituir en la posición"
   },
   "training": {
     "weeklySchedule": "Calendario Semanal",
@@ -4060,6 +4062,7 @@
     "accessibleName": "{{name}} · {{condition}} · {{fit}}",
     "conditionValue": "Condición {{condition}} %",
     "adaptedToSlot": "Adaptado a la posición",
-    "fitUnavailable": "Idoneidad no disponible"
+    "fitUnavailable": "Idoneidad no disponible",
+    "accessibleNameWithDuties": "{{name}} · {{condition}} · {{fit}} · {{duties}}"
   }
 }

@@ -921,7 +921,9 @@
       "good": "Bom encaixe",
       "risky": "Encaixe arriscado"
     },
-    "roleNeedsAStartingPlace": "Dá-lhe um lugar no onze inicial para definir a sua função."
+    "roleNeedsAStartingPlace": "Dá-lhe um lugar no onze inicial para definir a sua função.",
+    "conditionBands": "fresco, a cansar, esgotado",
+    "replaceInSlot": "Substituir na posição"
   },
   "training": {
     "weeklySchedule": "Calendário Semanal",
@@ -4060,6 +4062,7 @@
     "accessibleName": "{{name}} · {{condition}} · {{fit}}",
     "conditionValue": "Condição {{condition}}%",
     "adaptedToSlot": "Adaptado à posição",
-    "fitUnavailable": "Adequação indisponível"
+    "fitUnavailable": "Adequação indisponível",
+    "accessibleNameWithDuties": "{{name}} · {{condition}} · {{fit}} · {{duties}}"
   }
 }

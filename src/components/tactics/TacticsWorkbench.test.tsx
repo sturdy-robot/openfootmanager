@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameStateData } from "../../store/gameStore";
@@ -167,7 +167,9 @@ describe("tactics workbench layout", () => {
       "squad.naturalFit",
       "pitchToken.adaptedToSlot",
       "squad.outOfPosition",
-      "common.condition",
+      // The bar has three bands, and amber against red is the distinction a
+      // colour-blind manager cannot make — so the key names them in words.
+      "common.condition · tactics.conditionBands",
     ]) {
       expect(screen.getByText(key), key).toBeInTheDocument();
     }
@@ -175,6 +177,42 @@ describe("tactics workbench layout", () => {
     fireEvent.click(trigger);
 
     expect(screen.queryByText("tactics.pitchInteractionHint")).toBeNull();
+  });
+
+  it("lets the tactic picker be worked without a pointer", () => {
+    renderWorkbench();
+
+    const trigger = screen.getByRole("button", { name: "tactics.chooseTactic" });
+
+    fireEvent.click(trigger);
+
+    // Focus goes to the search box and stays there; the arrows move a
+    // highlight in the list, which is what aria-activedescendant describes.
+    const search = screen.getByRole("textbox", { name: "tactics.searchTactics" });
+
+    expect(document.activeElement).toBe(search);
+    expect(search).toHaveAttribute("aria-activedescendant");
+
+    const listbox = screen.getByRole("listbox", { name: "tactics.chooseTactic" });
+    const options = within(listbox).getAllByRole("option");
+
+    expect(options.length).toBeGreaterThan(1);
+    // Every option is owned by the listbox — the section headings are groups,
+    // not bare divs that break the option/listbox relationship.
+    for (const option of options) {
+      expect(option).toHaveAttribute("tabindex", "-1");
+    }
+
+    const first = search.getAttribute("aria-activedescendant");
+    fireEvent.keyDown(search, { key: "ArrowDown" });
+
+    expect(search.getAttribute("aria-activedescendant")).not.toBe(first);
+
+    fireEvent.keyDown(search, { key: "Escape" });
+
+    expect(screen.queryByRole("listbox")).toBeNull();
+    // Escape hands focus back rather than dropping it on the document.
+    expect(document.activeElement).toBe(trigger);
   });
 
   it("mentions out-of-position players only when there are some", () => {

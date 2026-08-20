@@ -427,11 +427,31 @@ export function Select({
         event.preventDefault();
         closeMenu();
       }
+      return;
     }
+
+    if (event.key === "Tab" && isOpen) {
+      // Tab is not prevented — the manager asked to leave — but the menu has
+      // to come with them. It is portalled to the body, so an open menu left
+      // behind stays on screen with `aria-expanded="true"` until an unrelated
+      // click closes it. APG's select-only pattern commits the active option
+      // on the way out, which is what arrowing to a value and tabbing on
+      // plainly means.
+      const activeOption =
+        activeIndex === null ? undefined : options[activeIndex];
+      if (activeOption && !activeOption.disabled) {
+        handleSelect(activeOption.value);
+      } else {
+        closeMenu();
+      }
+    }
+
   };
 
+  // A 30%-alpha ring with no offset was close to invisible on the `ghost`
+  // variant, which sits on turf.
   const base =
-    "rounded-lg border transition-all focus:outline-none focus:ring-2 focus:ring-primary-500/30 disabled:opacity-50 disabled:cursor-not-allowed";
+    "rounded-lg border transition-all motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed";
 
   const variants = {
     default:

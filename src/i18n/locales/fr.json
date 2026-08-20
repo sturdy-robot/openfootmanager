@@ -921,7 +921,9 @@
       "good": "Bon match",
       "risky": "Adaptation risquée"
     },
-    "roleNeedsAStartingPlace": "Donnez-lui une place dans le onze de départ pour définir son rôle."
+    "roleNeedsAStartingPlace": "Donnez-lui une place dans le onze de départ pour définir son rôle.",
+    "conditionBands": "frais, fatigué, épuisé",
+    "replaceInSlot": "Remplacer à ce poste"
   },
   "training": {
     "weeklySchedule": "Calendrier Hebdomadaire",
@@ -4060,6 +4062,7 @@
     "accessibleName": "{{name}} · {{condition}} · {{fit}}",
     "conditionValue": "Condition {{condition}} %",
     "adaptedToSlot": "Adapté au poste",
-    "fitUnavailable": "Aptitude au poste indisponible"
+    "fitUnavailable": "Aptitude au poste indisponible",
+    "accessibleNameWithDuties": "{{name}} · {{condition}} · {{fit}} · {{duties}}"
   }
 }

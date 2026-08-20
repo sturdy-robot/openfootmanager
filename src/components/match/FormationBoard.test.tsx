@@ -221,7 +221,9 @@ describe("FormationBoard rendering and interaction", () => {
     // Step 8b-1 moves the role picker to the inspector, so the slot host is a real button.
     expect(control.tagName).toBe("BUTTON");
     expect(control.className).toContain("focus-visible:ring-2");
-    expect(control.className).toMatch(/dark:focus-visible:ring-offset-/);
+    // The turf is the surface behind a slot and is the same green in both
+    // themes, so the offset names a turf token rather than a dark override.
+    expect(control.className).toMatch(/focus-visible:ring-offset-turf-/);
 
     // Step 8b-2: a real button turns the manager's Enter into a click itself.
     // Hand-rolling that on top would activate the slot twice per keystroke in a

@@ -921,7 +921,9 @@
       "good": "Хорошее соответствие",
       "risky": "Рискованное соответствие"
     },
-    "roleNeedsAStartingPlace": "Дайте игроку место в стартовом составе, чтобы назначить роль."
+    "roleNeedsAStartingPlace": "Дайте игроку место в стартовом составе, чтобы назначить роль.",
+    "conditionBands": "свежий, устаёт, вымотан",
+    "replaceInSlot": "Заменить на позиции"
   },
   "training": {
     "weeklySchedule": "Недельный график",
@@ -4060,6 +4062,7 @@
     "accessibleName": "{{name}} · {{condition}} · {{fit}}",
     "conditionValue": "Состояние {{condition}} %",
     "adaptedToSlot": "Приспособлен к позиции",
-    "fitUnavailable": "Пригодность к позиции неизвестна"
+    "fitUnavailable": "Пригодность к позиции неизвестна",
+    "accessibleNameWithDuties": "{{name}} · {{condition}} · {{fit}} · {{duties}}"
   }
 }

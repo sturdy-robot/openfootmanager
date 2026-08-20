@@ -921,7 +921,9 @@
       "adjusted": "Adjusted",
       "risk": "Risk"
     },
-    "roleNeedsAStartingPlace": "Give this player a place in the starting eleven to set their role."
+    "roleNeedsAStartingPlace": "Give this player a place in the starting eleven to set their role.",
+    "conditionBands": "fresh, tiring, spent",
+    "replaceInSlot": "Replace in slot"
   },
   "training": {
     "weeklySchedule": "Weekly Schedule",
@@ -4060,6 +4062,7 @@
     "accessibleName": "{{name}} · {{condition}} · {{fit}}",
     "conditionValue": "Condition {{condition}}%",
     "adaptedToSlot": "Adapted to slot",
-    "fitUnavailable": "Slot fit unavailable"
+    "fitUnavailable": "Slot fit unavailable",
+    "accessibleNameWithDuties": "{{name}} · {{condition}} · {{fit}} · {{duties}}"
   }
 }

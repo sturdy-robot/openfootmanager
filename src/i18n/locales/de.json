@@ -921,7 +921,9 @@
       "good": "Gute Übereinstimmung",
       "risky": "Riskante Passung"
     },
-    "roleNeedsAStartingPlace": "Gib ihm einen Platz in der Startelf, um seine Rolle festzulegen."
+    "roleNeedsAStartingPlace": "Gib ihm einen Platz in der Startelf, um seine Rolle festzulegen.",
+    "conditionBands": "frisch, ermüdend, erschöpft",
+    "replaceInSlot": "Auf dieser Position ersetzen"
   },
   "training": {
     "weeklySchedule": "Wochenplan",
@@ -4060,6 +4062,7 @@
     "accessibleName": "{{name}} · {{condition}} · {{fit}}",
     "conditionValue": "Verfassung {{condition}} %",
     "adaptedToSlot": "An die Position angepasst",
-    "fitUnavailable": "Positionseignung nicht verfügbar"
+    "fitUnavailable": "Positionseignung nicht verfügbar",
+    "accessibleNameWithDuties": "{{name}} · {{condition}} · {{fit}} · {{duties}}"
   }
 }

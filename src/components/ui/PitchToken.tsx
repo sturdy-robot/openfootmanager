@@ -12,6 +12,13 @@ export type PitchFitTone = "exact" | "adapted" | "out" | "empty";
 /** A small role marker chip (Captain, Penalty taker, etc.) stacked top-left. */
 export interface PitchTokenMarker {
   key: string;
+  /**
+   * The duty in words. The chip's own letters are decorative: the slot is a
+   * button, ARIA makes a button's children presentational, and the token's
+   * `aria-label` short-circuits name-from-content — so without this the
+   * armband is announced nowhere at all.
+   */
+  label: string;
   shortLabel: string;
   /** Tailwind classes for the chip background/border/text. */
   toneClassName: string;
@@ -43,16 +50,18 @@ export interface PitchTokenProps {
   markers?: PitchTokenMarker[];
 }
 
+// The token sits on turf in both themes, so these are deliberately unpaired:
+// a `dark:` variant of the same value is noise that reads as coverage.
 function fitRingClass(fitTone: PitchFitTone): string {
   switch (fitTone) {
     case "exact":
-      return "ring-2 ring-success-400 dark:ring-success-400";
+      return "ring-2 ring-success-400";
     case "adapted":
-      return "ring-2 ring-accent-400 dark:ring-accent-400";
+      return "ring-2 ring-accent-400";
     case "out":
-      return "ring-2 ring-red-400 dark:ring-red-400";
+      return "ring-2 ring-red-400";
     default:
-      return "ring-1 ring-white/25 dark:ring-white/25";
+      return "ring-1 ring-white/25";
   }
 }
 
@@ -112,11 +121,19 @@ export function PitchToken({
   });
   // One localized template rather than fragments joined in code, so a language
   // can order name, condition and fit however it reads best.
-  const tokenLabel = t("pitchToken.accessibleName", {
-    condition: conditionLabel,
-    fit: t(FIT_LABEL_KEYS[fitTone]),
-    name,
-  });
+  const dutyLabels = (markers ?? []).map((marker) => marker.label).join(", ");
+  const tokenLabel = dutyLabels
+    ? t("pitchToken.accessibleNameWithDuties", {
+        condition: conditionLabel,
+        duties: dutyLabels,
+        fit: t(FIT_LABEL_KEYS[fitTone]),
+        name,
+      })
+    : t("pitchToken.accessibleName", {
+        condition: conditionLabel,
+        fit: t(FIT_LABEL_KEYS[fitTone]),
+        name,
+      });
   const initials = getInitials(name);
   const resolvedJerseyNumber = jerseyNumber ?? jersey?.number;
   const showPlainJerseyNumber =
@@ -152,7 +169,7 @@ export function PitchToken({
           </span>
         </div>
         <div
-          className={`flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-white/10 dark:bg-white/10 ${fitRingClass(fitTone)}`}
+          className={`flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-white/10 ${fitRingClass(fitTone)}`}
         >
           {tacticsTokenStyle === "portrait" ? (
             <PlayerAvatar
@@ -171,7 +188,7 @@ export function PitchToken({
           ) : (
             // Initials, and also what shirt mode falls back to when the club has
             // no kit on record — an empty ringed circle reads as a broken image.
-            <span className="text-sm font-heading font-bold uppercase text-white dark:text-white">
+            <span className="text-sm font-heading font-bold uppercase text-white">
               {initials}
             </span>
           )}

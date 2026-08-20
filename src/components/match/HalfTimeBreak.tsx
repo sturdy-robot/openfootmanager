@@ -154,7 +154,7 @@ export default function HalfTimeBreak({
   return (
     <MatchdayShell bodyMode="frame" identity={matchdayIdentity}>
       {/* Header scoreboard */}
-      <header className="bg-linear-to-r from-gray-200 via-white to-gray-200 dark:from-navy-800 dark:via-navy-900 dark:to-navy-800 border-b border-gray-200 dark:border-navy-700 px-4 py-4 transition-colors duration-300">
+      <div className="bg-linear-to-r from-gray-200 via-white to-gray-200 dark:from-navy-800 dark:via-navy-900 dark:to-navy-800 border-b border-gray-200 dark:border-navy-700 px-4 py-4 transition-colors duration-300">
         <div className="relative">
           <div className="absolute right-0 top-0 flex items-center gap-3">
             <button
@@ -240,7 +240,7 @@ export default function HalfTimeBreak({
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto">

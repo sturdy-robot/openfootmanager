@@ -303,6 +303,20 @@ describe("Select keyboard navigation", () => {
     expect(combobox).toHaveAttribute("aria-expanded", "false");
   });
 
+  it("takes the menu with you when you tab away, and commits what you moved to", () => {
+    const { combobox, onChange } = renderSelect();
+
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+    fireEvent.keyDown(combobox, { key: "ArrowDown" });
+    // The menu is portalled to the body, so an open one left behind stays on
+    // screen with aria-expanded="true" until an unrelated click closes it.
+    fireEvent.keyDown(combobox, { key: "Tab" });
+
+    expect(combobox).toHaveAttribute("aria-expanded", "false");
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0].target.value).toBe("4-3-3");
+  });
+
   it("abandons the move on Escape, leaving the committed value alone", () => {
     const { combobox, onChange } = renderSelect();
 

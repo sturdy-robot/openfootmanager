@@ -921,7 +921,9 @@
       "adjusted": "Disesuaikan",
       "risk": "Berisiko"
     },
-    "roleNeedsAStartingPlace": "Beri pemain ini tempat di sebelas pemain inti untuk menentukan perannya."
+    "roleNeedsAStartingPlace": "Beri pemain ini tempat di sebelas pemain inti untuk menentukan perannya.",
+    "conditionBands": "bugar, mulai lelah, habis",
+    "replaceInSlot": "Ganti di posisi ini"
   },
   "training": {
     "weeklySchedule": "Jadwal Mingguan",
@@ -4060,6 +4062,7 @@
     "accessibleName": "{{name}} · {{condition}} · {{fit}}",
     "conditionValue": "Kondisi {{condition}}%",
     "adaptedToSlot": "Menyesuaikan posisi",
-    "fitUnavailable": "Kecocokan posisi tidak tersedia"
+    "fitUnavailable": "Kecocokan posisi tidak tersedia",
+    "accessibleNameWithDuties": "{{name}} · {{condition}} · {{fit}} · {{duties}}"
   }
 }

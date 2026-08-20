@@ -28,9 +28,12 @@ const squadServiceMocks = vi.hoisted(() => ({
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string, fallback?: string | Record<string, unknown>) => {
-      if (key === "pitchToken.accessibleName") {
+      if (key.startsWith("pitchToken.accessibleName")) {
         const options = fallback as Record<string, unknown> | undefined;
-        return `${String(options?.name)} · ${String(options?.condition)} · ${String(options?.fit)}`;
+        // The duties segment appears when a player wears the armband or takes
+        // the set pieces; the same mock answers both keys.
+        const duties = options?.duties ? ` · ${String(options.duties)}` : "";
+        return `${String(options?.name)} · ${String(options?.condition)} · ${String(options?.fit)}${duties}`;
       }
       if (key === "pitchToken.conditionValue") {
         const options = fallback as Record<string, unknown> | undefined;

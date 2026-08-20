@@ -71,6 +71,11 @@ interface TacticsInspectorProps {
   matchRoles?: TeamMatchRolesData;
   onAssignBestFit: (playerId: string) => void;
   onClearSelection: () => void;
+  /**
+   * Open the assignment dialog for the slot this player occupies. Enter on the
+   * pitch does the same thing; this is how a pointer gets there.
+   */
+  onReplaceInSlot?: () => void;
   onConfirmSwap: () => void;
   onGameUpdate: (game: GameStateData) => void;
   onOpenPlayerProfile: (playerId: string) => void;
@@ -159,6 +164,7 @@ export default function TacticsInspector({
   matchRoles,
   onAssignBestFit,
   onClearSelection,
+  onReplaceInSlot,
   onConfirmSwap,
   onGameUpdate,
   onOpenPlayerProfile,
@@ -317,6 +323,16 @@ export default function TacticsInspector({
               >
                 {t("tactics.openProfile")}
               </Button>
+              {deployedPosition && onReplaceInSlot ? (
+                <Button
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                  onClick={onReplaceInSlot}
+                >
+                  {t("tactics.replaceInSlot")}
+                </Button>
+              ) : null}
             </div>
 
             <SinglePlayerAttributes player={selectedPlayer} />

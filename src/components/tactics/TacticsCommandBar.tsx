@@ -16,10 +16,12 @@ import {
 } from "lucide-react";
 import {
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
   type JSX,
+  type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
@@ -86,9 +88,17 @@ function PitchLegend(): JSX.Element {
       <button
         type="button"
         aria-expanded={isOpen}
+        aria-haspopup="dialog"
         aria-label={t("tactics.pitchLegend")}
         onClick={() => {
           setIsOpen((open) => !open);
+        }}
+        onKeyDown={(event) => {
+          // On the trigger, not the popover: nothing inside the popover takes
+          // focus, so a handler there could never fire.
+          if (event.key === "Escape") {
+            setIsOpen(false);
+          }
         }}
         className="flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-[11px] font-heading font-bold text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 dark:border-navy-600 dark:text-gray-400 dark:hover:bg-navy-700 dark:hover:text-gray-200 dark:focus:ring-offset-navy-800"
       >
@@ -97,20 +107,15 @@ function PitchLegend(): JSX.Element {
       {isOpen ? (
         <div
           className="absolute left-0 top-8 z-30 w-72 rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-navy-600 dark:bg-navy-800"
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              setIsOpen(false);
-            }
-          }}
           role="group"
           aria-label={t("tactics.pitchLegend")}
         >
           <div className="space-y-1.5">
             {(
               [
-                ["squad.naturalFit", "bg-success-500"],
-                ["pitchToken.adaptedToSlot", "bg-accent-500"],
-                ["squad.outOfPosition", "bg-red-500"],
+                ["squad.naturalFit", "bg-success-400"],
+                ["pitchToken.adaptedToSlot", "bg-accent-400"],
+                ["squad.outOfPosition", "bg-red-400"],
               ] as const
             ).map(([labelKey, tone]) => (
               <div key={labelKey} className="flex items-center gap-2">
@@ -124,12 +129,13 @@ function PitchLegend(): JSX.Element {
               </div>
             ))}
             <div className="flex items-center gap-2">
-              <span
-                aria-hidden="true"
-                className="h-1.5 w-3 shrink-0 rounded-full bg-primary-500"
-              />
+              <span aria-hidden="true" className="flex shrink-0 gap-0.5">
+                <span className="h-1.5 w-2 rounded-full bg-primary-500" />
+                <span className="h-1.5 w-2 rounded-full bg-amber-500" />
+                <span className="h-1.5 w-2 rounded-full bg-red-500" />
+              </span>
               <span className="text-xs text-gray-600 dark:text-gray-300">
-                {t("common.condition")}
+                {t("common.condition")} · {t("tactics.conditionBands")}
               </span>
             </div>
           </div>
@@ -166,7 +172,11 @@ export default function TacticsCommandBar({
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [activeEntryIndex, setActiveEntryIndex] = useState(0);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const pickerTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const pickerSearchRef = useRef<HTMLInputElement | null>(null);
+  const listboxId = useId();
 
   const filteredLibrary = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -192,6 +202,63 @@ export default function TacticsCommandBar({
 
   const presetEntries = filteredLibrary.filter((entry) => entry.type === "preset");
   const customEntries = filteredLibrary.filter((entry) => entry.type === "custom");
+  // The order the arrow keys walk: what is on screen, top to bottom.
+  const visibleEntries = [...customEntries, ...presetEntries];
+  const activeEntry = visibleEntries[activeEntryIndex];
+  const optionId = (entryId: string) => `${listboxId}-${entryId}`;
+
+  function openPicker(): void {
+    const startIndex = visibleEntries.findIndex(
+      (entry) => entry.id === activeTactic.id,
+    );
+    setActiveEntryIndex(startIndex >= 0 ? startIndex : 0);
+    setIsOpen(true);
+  }
+
+  function closePicker({ restoreFocus }: { restoreFocus: boolean }): void {
+    setIsOpen(false);
+    setSearch("");
+    if (restoreFocus) {
+      pickerTriggerRef.current?.focus();
+    }
+  }
+
+  function choosePickerEntry(entryId: string): void {
+    onSelectTactic(entryId);
+    closePicker({ restoreFocus: true });
+  }
+
+  function handlePickerKeyDown(event: ReactKeyboardEvent<HTMLDivElement>): void {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closePicker({ restoreFocus: true });
+      return;
+    }
+
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      if (visibleEntries.length === 0) {
+        return;
+      }
+      const step = event.key === "ArrowDown" ? 1 : -1;
+      setActiveEntryIndex(
+        (current) =>
+          (current + step + visibleEntries.length) % visibleEntries.length,
+      );
+      return;
+    }
+
+    if (event.key === "Home" || event.key === "End") {
+      event.preventDefault();
+      setActiveEntryIndex(event.key === "Home" ? 0 : visibleEntries.length - 1);
+      return;
+    }
+
+    if (event.key === "Enter" && activeEntry) {
+      event.preventDefault();
+      choosePickerEntry(activeEntry.id);
+    }
+  }
 
   const saveLabel =
     activeTactic.type === "custom"
@@ -319,7 +386,7 @@ export default function TacticsCommandBar({
           </div>
 
           <div className="grid gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)_minmax(0,1.2fr)]">
-            <div className="relative rounded-2xl border border-gray-200/70 bg-gray-50/80 p-3 dark:border-white/8 dark:bg-navy-900/35">
+            <div className="relative rounded-2xl border border-gray-200/70 bg-gray-50/80 p-3 dark:border-navy-600 dark:bg-navy-900/35">
               <div className="mb-2 flex items-center justify-between gap-3">
                 <div className="text-[11px] font-heading font-bold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">
                   {t("tactics.chooseTactic")}
@@ -333,10 +400,18 @@ export default function TacticsCommandBar({
 
               <button
                 type="button"
-                aria-label={t("tactics.chooseTactic")}
+                aria-controls={isOpen ? listboxId : undefined}
                 aria-expanded={isOpen}
                 aria-haspopup="listbox"
-                onClick={() => setIsOpen((open) => !open)}
+                aria-label={t("tactics.chooseTactic")}
+                onClick={() => {
+                  if (isOpen) {
+                    closePicker({ restoreFocus: false });
+                  } else {
+                    openPicker();
+                  }
+                }}
+                ref={pickerTriggerRef}
                 className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-3 text-left transition-colors hover:border-primary-300 dark:border-white/10 dark:bg-navy-800/90 dark:hover:border-primary-400"
               >
                 <div className="min-w-0">
@@ -355,15 +430,33 @@ export default function TacticsCommandBar({
               </button>
 
               {isOpen ? (
-                <div className="absolute left-0 right-0 top-full z-50 mt-2 rounded-2xl border border-gray-200 bg-white p-2 shadow-2xl dark:border-navy-600 dark:bg-navy-800">
+                <div
+                  className="absolute left-0 right-0 top-full z-50 mt-2 rounded-2xl border border-gray-200 bg-white p-2 shadow-2xl dark:border-navy-600 dark:bg-navy-800"
+                  onKeyDown={handlePickerKeyDown}
+                >
                   <div className="mb-2 flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 dark:border-navy-600 dark:bg-navy-700">
                     <Search className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                    {/*
+                      Focus stays here while the arrows move a highlight in the
+                      list below — which is what `aria-activedescendant` is for.
+                      Moving real focus onto the options would take the search
+                      box away from under the manager's hands mid-search.
+                    */}
                     <input
                       type="text"
                       value={search}
-                      onChange={(event) => setSearch(event.target.value)}
+                      onChange={(event) => {
+                        setSearch(event.target.value);
+                        setActiveEntryIndex(0);
+                      }}
+                      aria-activedescendant={
+                        activeEntry ? optionId(activeEntry.id) : undefined
+                      }
+                      aria-controls={listboxId}
                       aria-label={t("tactics.searchTactics")}
+                      autoFocus
                       placeholder={t("tactics.searchTactics")}
+                      ref={pickerSearchRef}
                       className="w-full bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400 dark:text-gray-100"
                     />
                   </div>
@@ -371,11 +464,15 @@ export default function TacticsCommandBar({
                   <div
                     role="listbox"
                     aria-label={t("tactics.chooseTactic")}
+                    id={listboxId}
                     className="max-h-80 space-y-3 overflow-y-auto p-1"
                   >
                     {customEntries.length > 0 ? (
-                      <div>
-                        <div className="mb-2 px-2 text-[11px] font-heading font-bold uppercase tracking-[0.22em] text-gray-500 dark:text-gray-400">
+                      <div role="group" aria-label={t("tactics.myTactics")}>
+                        <div
+                          aria-hidden="true"
+                          className="mb-2 px-2 text-[11px] font-heading font-bold uppercase tracking-[0.22em] text-gray-500 dark:text-gray-400"
+                        >
                           {t("tactics.myTactics")}
                         </div>
                         <div className="space-y-1">
@@ -385,15 +482,17 @@ export default function TacticsCommandBar({
                               type="button"
                               role="option"
                               aria-selected={entry.id === activeTactic.id}
+                              id={optionId(entry.id)}
+                              tabIndex={-1}
                               onClick={() => {
-                                onSelectTactic(entry.id);
-                                setIsOpen(false);
-                                setSearch("");
+                                choosePickerEntry(entry.id);
                               }}
                               className={`w-full rounded-xl border px-3 py-3 text-left transition-colors ${
-                                entry.id === activeTactic.id
-                                  ? "border-primary-300 bg-primary-50 dark:border-primary-400 dark:bg-primary-500/10"
-                                  : "border-transparent bg-gray-50 hover:border-gray-200 hover:bg-white dark:bg-navy-700/70 dark:hover:border-navy-500 dark:hover:bg-navy-700"
+                                entry.id === activeEntry?.id
+                                  ? "border-primary-400 bg-primary-50 ring-2 ring-primary-400 dark:border-primary-300 dark:bg-primary-500/15"
+                                  : entry.id === activeTactic.id
+                                    ? "border-primary-300 bg-primary-50 dark:border-primary-400 dark:bg-primary-500/10"
+                                    : "border-transparent bg-gray-50 hover:border-gray-200 hover:bg-white dark:bg-navy-700/70 dark:hover:border-navy-500 dark:hover:bg-navy-700"
                               }`}
                             >
                               <div className="flex items-start justify-between gap-3">
@@ -415,8 +514,11 @@ export default function TacticsCommandBar({
                       </div>
                     ) : null}
 
-                    <div>
-                      <div className="mb-2 px-2 text-[11px] font-heading font-bold uppercase tracking-[0.22em] text-gray-500 dark:text-gray-400">
+                    <div role="group" aria-label={t("tactics.presets")}>
+                      <div
+                        aria-hidden="true"
+                        className="mb-2 px-2 text-[11px] font-heading font-bold uppercase tracking-[0.22em] text-gray-500 dark:text-gray-400"
+                      >
                         {t("tactics.presets")}
                       </div>
                       <div className="space-y-1">
@@ -426,15 +528,17 @@ export default function TacticsCommandBar({
                             type="button"
                             role="option"
                             aria-selected={entry.id === activeTactic.id}
+                            id={optionId(entry.id)}
+                            tabIndex={-1}
                             onClick={() => {
-                              onSelectTactic(entry.id);
-                              setIsOpen(false);
-                              setSearch("");
+                              choosePickerEntry(entry.id);
                             }}
                             className={`w-full rounded-xl border px-3 py-3 text-left transition-colors ${
-                              entry.id === activeTactic.id
-                                ? "border-primary-300 bg-primary-50 dark:border-primary-400 dark:bg-primary-500/10"
-                                : "border-transparent bg-gray-50 hover:border-gray-200 hover:bg-white dark:bg-navy-700/70 dark:hover:border-navy-500 dark:hover:bg-navy-700"
+                              entry.id === activeEntry?.id
+                                ? "border-primary-400 bg-primary-50 ring-2 ring-primary-400 dark:border-primary-300 dark:bg-primary-500/15"
+                                : entry.id === activeTactic.id
+                                  ? "border-primary-300 bg-primary-50 dark:border-primary-400 dark:bg-primary-500/10"
+                                  : "border-transparent bg-gray-50 hover:border-gray-200 hover:bg-white dark:bg-navy-700/70 dark:hover:border-navy-500 dark:hover:bg-navy-700"
                             }`}
                           >
                             <div className="flex items-start justify-between gap-3">
@@ -459,7 +563,7 @@ export default function TacticsCommandBar({
               ) : null}
             </div>
 
-            <div className="rounded-2xl border border-gray-200/70 bg-gray-50/80 p-3 dark:border-white/8 dark:bg-navy-900/35">
+            <div className="rounded-2xl border border-gray-200/70 bg-gray-50/80 p-3 dark:border-navy-600 dark:bg-navy-900/35">
               <div className="mb-2 text-[11px] font-heading font-bold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">
                 {t("tactics.formation")}
               </div>
@@ -475,7 +579,7 @@ export default function TacticsCommandBar({
               </Select>
             </div>
 
-            <div className="rounded-2xl border border-gray-200/70 bg-gray-50/80 p-3 dark:border-white/8 dark:bg-navy-900/35">
+            <div className="rounded-2xl border border-gray-200/70 bg-gray-50/80 p-3 dark:border-navy-600 dark:bg-navy-900/35">
               <div className="mb-2 text-[11px] font-heading font-bold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">
                 {t("tactics.playStyle")}
               </div>

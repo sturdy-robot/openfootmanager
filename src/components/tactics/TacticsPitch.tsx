@@ -58,6 +58,7 @@ type FitTone = "exact" | "adapted" | "out" | "empty";
 
 interface RoleMarker {
   key: keyof TeamMatchRolesData;
+  label: string;
   shortLabel: string;
   toneClassName: string;
 }
@@ -81,6 +82,7 @@ function getFitTone(player: PlayerData | null, slotPosition: string): FitTone {
 function getRoleMarkers(
   matchRoles: TeamMatchRolesData | undefined,
   playerId: string,
+  t: (key: string) => string,
 ): RoleMarker[] {
   if (!matchRoles) {
     return [];
@@ -91,6 +93,7 @@ function getRoleMarkers(
   if (matchRoles.captain === playerId) {
     markers.push({
       key: "captain",
+      label: t("preMatch.captain"),
       shortLabel: "C",
       toneClassName: "border-accent-500 bg-accent-500 text-white",
     });
@@ -99,6 +102,7 @@ function getRoleMarkers(
   if (matchRoles.vice_captain === playerId) {
     markers.push({
       key: "vice_captain",
+      label: t("tactics.viceCaptain"),
       shortLabel: "VC",
       toneClassName: "border-white/60 bg-gray-800/85 text-white",
     });
@@ -107,6 +111,7 @@ function getRoleMarkers(
   if (matchRoles.penalty_taker === playerId) {
     markers.push({
       key: "penalty_taker",
+      label: t("preMatch.penaltyTaker"),
       shortLabel: "PK",
       toneClassName: "border-primary-500 bg-primary-500 text-white",
     });
@@ -115,6 +120,7 @@ function getRoleMarkers(
   if (matchRoles.free_kick_taker === playerId) {
     markers.push({
       key: "free_kick_taker",
+      label: t("preMatch.freeKickTaker"),
       shortLabel: "FK",
       toneClassName: "border-success-600 bg-success-600 text-white",
     });
@@ -123,6 +129,7 @@ function getRoleMarkers(
   if (matchRoles.corner_taker === playerId) {
     markers.push({
       key: "corner_taker",
+      label: t("preMatch.cornerTaker"),
       shortLabel: "CK",
       toneClassName: "border-orange-500 bg-orange-500 text-white",
     });
@@ -180,7 +187,7 @@ function TacticalOverlays({ phase }: { phase: TacticsPhaseSettings }): JSX.Eleme
           y={pressTop}
           width="92"
           height={70 - pressTop}
-          fill={`rgba(255,220,100,${pressOpacity})`}
+          fill={`rgba(var(--color-pitch-press), ${pressOpacity})`}
           pointerEvents="none"
         />
       )}
@@ -191,7 +198,7 @@ function TacticalOverlays({ phase }: { phase: TacticsPhaseSettings }): JSX.Eleme
         y1={lineY}
         x2="96"
         y2={lineY}
-        stroke="rgba(255,80,80,0.75)"
+        stroke="var(--color-pitch-defensive-line)"
         strokeWidth="0.8"
         strokeDasharray="3,2"
         pointerEvents="none"
@@ -312,7 +319,7 @@ export default function TacticsPitch({
             : undefined
         }
         jerseyNumber={player.jersey_number}
-        markers={getRoleMarkers(matchRoles, player.id)}
+        markers={getRoleMarkers(matchRoles, player.id, t)}
         name={getPitchDisplayName(player)}
         ovr={getPlayerOvr(player)}
         position={slotPosition}
@@ -336,7 +343,11 @@ export default function TacticsPitch({
                 const slotPlayer = pitchSlots[slotIndex]?.player;
                 if (slotPlayer) {
                   onLineupPlayerClick(slotPlayer.id, "xi");
+                  return;
                 }
+                // Nothing here to select, so the click means the only thing it
+                // can mean: put someone in this slot.
+                onSlotAssign?.(slotIndex);
               },
               onSlotDragEnd: onDragEnd,
               onSlotDragLeave,

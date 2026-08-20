@@ -10,8 +10,9 @@ vi.mock("react-i18next", () => ({
       if (key === "pitchToken.conditionValue") {
         return `Condition ${String(options?.condition)}%`;
       }
-      if (key === "pitchToken.accessibleName") {
-        return `${String(options?.name)} · ${String(options?.condition)} · ${String(options?.fit)}`;
+      if (key.startsWith("pitchToken.accessibleName")) {
+        const duties = options?.duties ? ` · ${String(options.duties)}` : "";
+        return `${String(options?.name)} · ${String(options?.condition)} · ${String(options?.fit)}${duties}`;
       }
       if (key === "pitchToken.adaptedToSlot") return "Adapted to slot";
       if (key === "pitchToken.fitUnavailable") return "Slot fit unavailable";
@@ -132,7 +133,11 @@ describe("PitchToken condition semantics", () => {
           ringElement,
           `${fitTone} must keep its fit ring at condition ${condition}`,
         ).toBeDefined();
-        expect(ringElement?.className).toMatch(/dark:ring-/);
+        // Deliberately *not* `dark:ring-…`: the token sits on turf, which is
+        // the same green in both themes, so a dark variant of the same value
+        // is noise that reads as coverage. What matters is that the ring is
+        // the fit's colour and nothing else's.
+        expect(ringElement?.className).not.toMatch(/dark:ring-\w/);
         return ringElement?.className;
       });
 

@@ -172,6 +172,22 @@ export default function TacticsTab({
         ? xiActivePosition.get(inspectorPlayer.id)
         : undefined;
 
+  const openAssignmentForSlot = (slotIndex: number) => {
+    const slot = pitchSlots[slotIndex];
+    if (!slot) {
+      return;
+    }
+    assignmentOriginRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    setAssignmentSlot({
+      occupant: slot.player,
+      slotIndex,
+      slotPosition: slot.position,
+    });
+  };
+
   const closeAssignmentDialog = () => {
     setAssignmentSlot(null);
     assignmentOriginRef.current?.focus();
@@ -348,21 +364,7 @@ export default function TacticsTab({
             onSlotDrop={(event, slotIndex) => {
               void handleSlotDrop(event, slotIndex);
             }}
-            onSlotAssign={(slotIndex) => {
-              const slot = pitchSlots[slotIndex];
-              if (!slot) {
-                return;
-              }
-              assignmentOriginRef.current =
-                document.activeElement instanceof HTMLElement
-                  ? document.activeElement
-                  : null;
-              setAssignmentSlot({
-                occupant: slot.player,
-                slotIndex,
-                slotPosition: slot.position,
-              });
-            }}
+            onSlotAssign={openAssignmentForSlot}
             onSlotFocus={setFocusedSlotIndex}
             pitchSlots={pitchSlots}
             selectedPlayerId={selectedPlayerId}
@@ -391,6 +393,22 @@ export default function TacticsTab({
           }}
           onGameUpdate={onGameUpdate}
           onOpenPlayerProfile={onSelectPlayer}
+          onReplaceInSlot={
+            focusedSlotIndex !== null
+              ? () => {
+                  openAssignmentForSlot(focusedSlotIndex);
+                }
+              : selectedPlayer
+                ? () => {
+                    const slotIndex = pitchSlots.findIndex(
+                      (slot) => slot.player?.id === selectedPlayer.id,
+                    );
+                    if (slotIndex >= 0) {
+                      openAssignmentForSlot(slotIndex);
+                    }
+                  }
+                : undefined
+          }
           onPlayerRoleChange={(playerId, role) => {
             void setPlayerRole(playerId, role)
               .then(onGameUpdate)

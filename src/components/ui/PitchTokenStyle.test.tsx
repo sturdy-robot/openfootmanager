@@ -11,8 +11,9 @@ vi.mock("react-i18next", () => ({
       if (key === "pitchToken.conditionValue") {
         return `Condition ${String(options?.condition)}%`;
       }
-      if (key === "pitchToken.accessibleName") {
-        return `${String(options?.name)} · ${String(options?.condition)} · ${String(options?.fit)}`;
+      if (key.startsWith("pitchToken.accessibleName")) {
+        const duties = options?.duties ? ` · ${String(options.duties)}` : "";
+        return `${String(options?.name)} · ${String(options?.condition)} · ${String(options?.fit)}${duties}`;
       }
       if (key === "pitchToken.adaptedToSlot") return "Adapted to slot";
       if (key === "pitchToken.fitUnavailable") return "Slot fit unavailable";

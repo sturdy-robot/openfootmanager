@@ -921,7 +921,9 @@
       "adjusted": "Uyarlanmış",
       "risk": "Riskli"
     },
-    "roleNeedsAStartingPlace": "Rolünü belirlemek için oyuncuya ilk on birde yer verin."
+    "roleNeedsAStartingPlace": "Rolünü belirlemek için oyuncuya ilk on birde yer verin.",
+    "conditionBands": "dinç, yorulan, tükenmiş",
+    "replaceInSlot": "Bu pozisyonda değiştir"
   },
   "training": {
     "weeklySchedule": "Haftalık Program",
@@ -4060,6 +4062,7 @@
     "accessibleName": "{{name}} · {{condition}} · {{fit}}",
     "conditionValue": "Kondisyon %{{condition}}",
     "adaptedToSlot": "Mevkiye uyum sağlamış",
-    "fitUnavailable": "Mevki uygunluğu bilinmiyor"
+    "fitUnavailable": "Mevki uygunluğu bilinmiyor",
+    "accessibleNameWithDuties": "{{name}} · {{condition}} · {{fit}} · {{duties}}"
   }
 }

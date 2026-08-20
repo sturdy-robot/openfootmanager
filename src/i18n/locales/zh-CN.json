@@ -921,7 +921,9 @@
       "good": "适配良好",
       "risky": "适配风险高"
     },
-    "roleNeedsAStartingPlace": "把该球员放进首发阵容才能设置其角色。"
+    "roleNeedsAStartingPlace": "把该球员放进首发阵容才能设置其角色。",
+    "conditionBands": "充沛、下降、耗尽",
+    "replaceInSlot": "替换该位置球员"
   },
   "training": {
     "weeklySchedule": "每周日程",
@@ -4060,6 +4062,7 @@
     "accessibleName": "{{name}} · {{condition}} · {{fit}}",
     "conditionValue": "状态 {{condition}}%",
     "adaptedToSlot": "已适应该位置",
-    "fitUnavailable": "位置适应度不可用"
+    "fitUnavailable": "位置适应度不可用",
+    "accessibleNameWithDuties": "{{name}} · {{condition}} · {{fit}} · {{duties}}"
   }
 }

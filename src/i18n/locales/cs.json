@@ -921,7 +921,9 @@
       "adjusted": "Upraveno",
       "risk": "Riziko"
     },
-    "roleNeedsAStartingPlace": "Aby šlo nastavit roli, dej hráči místo v základní sestavě."
+    "roleNeedsAStartingPlace": "Aby šlo nastavit roli, dej hráči místo v základní sestavě.",
+    "conditionBands": "svěží, unavuje se, vyčerpaný",
+    "replaceInSlot": "Nahradit na pozici"
   },
   "training": {
     "weeklySchedule": "Týdenní plán",
@@ -4060,6 +4062,7 @@
     "accessibleName": "{{name}} · {{condition}} · {{fit}}",
     "conditionValue": "Kondice {{condition}} %",
     "adaptedToSlot": "Přizpůsoben pozici",
-    "fitUnavailable": "Vhodnost na pozici není známa"
+    "fitUnavailable": "Vhodnost na pozici není známa",
+    "accessibleNameWithDuties": "{{name}} · {{condition}} · {{fit}} · {{duties}}"
   }
 }

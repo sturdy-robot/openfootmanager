@@ -26,7 +26,8 @@
     "worldEditor.competitionId",
     "worldEditor.teamId",
     "worldEditor.staffId",
-    "pitchToken.accessibleName"
+    "pitchToken.accessibleName",
+    "pitchToken.accessibleNameWithDuties"
   ],
   "de": [
     "nations.eng",

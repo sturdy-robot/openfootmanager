@@ -74,8 +74,10 @@ const SLOT_SIZE: Record<FormationBoardVariant, string> = {
   compact: "h-12 w-12",
 };
 
+// Offset against the turf, which is the surface actually behind a slot — and
+// the same green in both themes, so there is no dark variant to give it.
 const FOCUS_RING =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-emerald-900 dark:focus-visible:ring-offset-navy-900";
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-turf-far";
 
 /**
  * The only pitch in the app.
@@ -154,14 +156,14 @@ export function FormationBoard<T>({
       >
         <defs>
           <linearGradient id="ofm-pitch-turf" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#116b40" />
-            <stop offset="100%" stopColor="#0d5733" />
+            <stop offset="0%" stopColor="var(--color-turf-near)" />
+            <stop offset="100%" stopColor="var(--color-turf-far)" />
           </linearGradient>
         </defs>
         <rect fill="url(#ofm-pitch-turf)" height="140" width="100" x="0" y="0" />
         <g
           fill="none"
-          stroke="rgba(255,255,255,0.35)"
+          stroke="var(--color-pitch-line)"
           strokeWidth="0.6"
         >
           <rect height="132" width="92" x="4" y="4" />

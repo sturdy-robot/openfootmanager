@@ -29,6 +29,7 @@ const LOCALES: Record<string, LocaleTree> = {
 
 const REQUIRED_KEYS = [
   "pitchToken.accessibleName",
+  "pitchToken.accessibleNameWithDuties",
   "pitchToken.conditionValue",
   "pitchToken.adaptedToSlot",
   "pitchToken.fitUnavailable",

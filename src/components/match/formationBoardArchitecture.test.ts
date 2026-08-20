@@ -79,6 +79,11 @@ describe("one pitch renderer architecture", () => {
     expect(core).not.toMatch(/role\s*=\s*["']button["']/);
     expect(core).toContain("focus-visible:ring-2");
     expect(core).toContain("focus-visible:ring-offset-2");
-    expect(core).toMatch(/dark:focus-visible:ring-offset-/);
+    // The surface behind a slot is the turf, which does not change with the
+    // theme — so the offset names a turf token and has no dark variant. This
+    // used to require `dark:focus-visible:ring-offset-`, which pinned an
+    // override against a colour that is never there.
+    expect(core).toMatch(/focus-visible:ring-offset-turf-/);
+    expect(core).not.toMatch(/emerald-/);
   });
 });
