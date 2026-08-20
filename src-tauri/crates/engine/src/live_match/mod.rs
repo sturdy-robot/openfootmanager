@@ -420,11 +420,17 @@ impl LiveMatchState {
         let team = self.team_ref(changes.side);
         let mut outgoing = HashSet::new();
         let mut incoming = HashSet::new();
-        if changes.lineup_changes.len()
-            > self.max_subs.saturating_sub(match changes.side {
-                Side::Home => self.home_subs_made,
-                Side::Away => self.away_subs_made,
-            }) as usize
+        // Only what is actually a substitution is charged as one. Before kick-off
+        // these changes go through `do_pre_match_swap` a few lines below — a
+        // manager rearranging their team sheet has not used anything up, and
+        // telling them they had run out of substitutions before a ball was
+        // kicked would have been the first thing anyone noticed here.
+        if self.phase != MatchPhase::PreKickOff
+            && changes.lineup_changes.len()
+                > self.max_subs.saturating_sub(match changes.side {
+                    Side::Home => self.home_subs_made,
+                    Side::Away => self.away_subs_made,
+                }) as usize
         {
             return Err("be.error.liveMatch.maxSubstitutionsReached".into());
         }

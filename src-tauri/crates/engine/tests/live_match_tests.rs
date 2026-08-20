@@ -117,6 +117,52 @@ fn make_live_match(allows_extra_time: bool) -> LiveMatchState {
     )
 }
 
+fn make_live_match_with_six_home_bench_players() -> LiveMatchState {
+    let home = make_team("home", "Home FC", 70, PlayStyle::Balanced);
+    let away = make_team("away", "Away FC", 70, PlayStyle::Balanced);
+    let mut home_bench = make_bench("home", 65);
+    home_bench.push(make_player(
+        "home_sub_extra",
+        "SUB_EXTRA",
+        Position::Midfielder,
+        65,
+    ));
+    LiveMatchState::new(
+        home,
+        away,
+        MatchConfig::default(),
+        home_bench,
+        make_bench("away", 65),
+        false,
+    )
+}
+
+fn six_lineup_changes(snapshot: &MatchSnapshot, bench: &[PlayerData]) -> Vec<TacticalLineupChange> {
+    (0..6)
+        .map(|slot_index| TacticalLineupChange {
+            slot_index,
+            expected_outgoing_player_id: snapshot.home_team.players[slot_index].id.clone(),
+            incoming_player_id: bench[slot_index].id.clone(),
+        })
+        .collect()
+}
+
+fn roles_for_433() -> Vec<PlayerRole> {
+    vec![
+        PlayerRole::BallPlayingKeeper,
+        PlayerRole::Stopper,
+        PlayerRole::Stopper,
+        PlayerRole::Stopper,
+        PlayerRole::Stopper,
+        PlayerRole::BoxToBox,
+        PlayerRole::BoxToBox,
+        PlayerRole::BoxToBox,
+        PlayerRole::Poacher,
+        PlayerRole::Poacher,
+        PlayerRole::Poacher,
+    ]
+}
+
 fn run_to_finish(state: &mut LiveMatchState, rng: &mut StdRng) -> Vec<MinuteResult> {
     let mut results = Vec::new();
     loop {
@@ -524,16 +570,82 @@ fn tactical_change_set_applies_multiple_substitutions_in_slot_order() {
 }
 
 #[test]
-fn invalid_later_tactical_change_rolls_back_the_entire_batch() {
+fn pre_kick_off_lineup_changes_ignore_the_substitution_budget_but_second_half_changes_do_not() {
+    let mut pre_match = make_live_match_with_six_home_bench_players();
+    let pre_match_before = pre_match.snapshot();
+    let changes = MatchTacticsChangeSet {
+        side: Side::Home,
+        formation: "4-4-2".into(),
+        play_style: PlayStyle::Balanced,
+        tactics: TacticsConfig::default(),
+        slot_roles: vec![PlayerRole::Standard; 11],
+        lineup_changes: six_lineup_changes(&pre_match_before, pre_match.bench(Side::Home)),
+        assignments: SetPieceTakers::default(),
+    };
+
+    pre_match
+        .apply_tactics_change_set(changes.clone())
+        .expect("pre-kick-off swaps are lineup edits, not substitutions");
+
+    let pre_match_after = pre_match.snapshot();
+    assert_eq!(pre_match_after.home_subs_made, 0);
+    assert!(pre_match_after.substitutions.is_empty());
+    for (slot_index, change) in changes.lineup_changes.iter().enumerate() {
+        assert_eq!(
+            pre_match_after.home_team.players[slot_index].id,
+            change.incoming_player_id
+        );
+    }
+
+    let mut second_half = make_live_match_with_six_home_bench_players();
+    while second_half.phase() != MatchPhase::SecondHalf {
+        second_half.step_minute(&mut seeded_rng(42));
+    }
+    let second_half_before = second_half.snapshot();
+    let second_half_changes = MatchTacticsChangeSet {
+        lineup_changes: six_lineup_changes(&second_half_before, second_half.bench(Side::Home)),
+        ..changes
+    };
+
+    assert_eq!(
+        second_half
+            .apply_tactics_change_set(second_half_changes)
+            .unwrap_err(),
+        "be.error.liveMatch.maxSubstitutionsReached"
+    );
+    let second_half_after = second_half.snapshot();
+    assert_eq!(second_half_after.home_subs_made, 0);
+    assert!(second_half_after.substitutions.is_empty());
+    assert_eq!(
+        second_half_after
+            .home_team
+            .players
+            .iter()
+            .map(|player| &player.id)
+            .collect::<Vec<_>>(),
+        second_half_before
+            .home_team
+            .players
+            .iter()
+            .map(|player| &player.id)
+            .collect::<Vec<_>>()
+    );
+}
+
+#[test]
+fn invalid_final_assignment_rolls_back_lineup_formation_roles_and_tactics() {
     let mut state = make_live_match(false);
     state.step_minute(&mut seeded_rng(42));
     let before = state.snapshot();
     let changes = MatchTacticsChangeSet {
         side: Side::Home,
-        formation: "4-4-2".into(),
+        formation: "4-3-3".into(),
         play_style: PlayStyle::Attacking,
-        tactics: TacticsConfig::default(),
-        slot_roles: vec![PlayerRole::Standard; 11],
+        tactics: TacticsConfig {
+            pressing_intensity: PressingIntensity::Aggressive,
+            ..TacticsConfig::default()
+        },
+        slot_roles: roles_for_433(),
         lineup_changes: vec![
             TacticalLineupChange {
                 slot_index: 5,
@@ -543,13 +655,20 @@ fn invalid_later_tactical_change_rolls_back_the_entire_batch() {
             TacticalLineupChange {
                 slot_index: 9,
                 expected_outgoing_player_id: before.home_team.players[9].id.clone(),
-                incoming_player_id: "not-on-bench".into(),
+                incoming_player_id: "home_sub_fwd1".into(),
             },
         ],
-        assignments: SetPieceTakers::default(),
+        assignments: SetPieceTakers {
+            captain: Some(before.home_team.players[0].id.clone()),
+            free_kick_taker: Some("not-on-pitch".into()),
+            ..SetPieceTakers::default()
+        },
     };
 
-    assert!(state.apply_tactics_change_set(changes).is_err());
+    assert_eq!(
+        state.apply_tactics_change_set(changes).unwrap_err(),
+        "be.error.liveMatch.assignmentPlayerNotOnPitch"
+    );
     let after = state.snapshot();
 
     assert_eq!(after.home_subs_made, before.home_subs_made);
@@ -568,7 +687,161 @@ fn invalid_later_tactical_change_rolls_back_the_entire_batch() {
             .map(|player| &player.id)
             .collect::<Vec<_>>()
     );
+    assert_eq!(after.home_team.formation, before.home_team.formation);
     assert_eq!(after.home_team.play_style, before.home_team.play_style);
+    assert_eq!(after.home_team.tactics, before.home_team.tactics);
+    assert_eq!(
+        after
+            .home_team
+            .players
+            .iter()
+            .map(|player| player.role)
+            .collect::<Vec<_>>(),
+        before
+            .home_team
+            .players
+            .iter()
+            .map(|player| player.role)
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(after.home_set_pieces, before.home_set_pieces);
+}
+
+#[test]
+fn stale_lineup_slot_refuses_the_whole_change_set() {
+    let mut state = make_live_match(false);
+    state.step_minute(&mut seeded_rng(42));
+    let before = state.snapshot();
+    let changes = MatchTacticsChangeSet {
+        side: Side::Home,
+        formation: "4-3-3".into(),
+        play_style: PlayStyle::Attacking,
+        tactics: TacticsConfig {
+            pressing_intensity: PressingIntensity::Aggressive,
+            ..TacticsConfig::default()
+        },
+        slot_roles: roles_for_433(),
+        lineup_changes: vec![
+            TacticalLineupChange {
+                slot_index: 5,
+                expected_outgoing_player_id: before.home_team.players[5].id.clone(),
+                incoming_player_id: "home_sub_mid".into(),
+            },
+            TacticalLineupChange {
+                slot_index: 9,
+                expected_outgoing_player_id: "player-from-an-older-snapshot".into(),
+                incoming_player_id: "home_sub_fwd1".into(),
+            },
+        ],
+        assignments: SetPieceTakers {
+            captain: Some(before.home_team.players[0].id.clone()),
+            ..SetPieceTakers::default()
+        },
+    };
+
+    assert_eq!(
+        state.apply_tactics_change_set(changes).unwrap_err(),
+        "be.error.liveMatch.staleLineupSlot"
+    );
+
+    let after = state.snapshot();
+    assert_eq!(after.home_subs_made, before.home_subs_made);
+    assert_eq!(
+        after
+            .substitutions
+            .iter()
+            .map(|sub| (&sub.player_off_id, &sub.player_on_id))
+            .collect::<Vec<_>>(),
+        before
+            .substitutions
+            .iter()
+            .map(|sub| (&sub.player_off_id, &sub.player_on_id))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(after.home_team.formation, before.home_team.formation);
+    assert_eq!(after.home_team.play_style, before.home_team.play_style);
+    assert_eq!(after.home_team.tactics, before.home_team.tactics);
+    assert_eq!(after.home_set_pieces, before.home_set_pieces);
+    assert_eq!(
+        after
+            .home_team
+            .players
+            .iter()
+            .map(|player| (&player.id, player.role))
+            .collect::<Vec<_>>(),
+        before
+            .home_team
+            .players
+            .iter()
+            .map(|player| (&player.id, player.role))
+            .collect::<Vec<_>>()
+    );
+}
+
+#[test]
+fn duplicate_slot_in_one_change_set_is_refused_without_a_substitution() {
+    let mut state = make_live_match(false);
+    state.step_minute(&mut seeded_rng(42));
+    let before = state.snapshot();
+    let outgoing = before.home_team.players[5].id.clone();
+    let changes = MatchTacticsChangeSet {
+        side: Side::Home,
+        formation: before.home_team.formation.clone(),
+        play_style: before.home_team.play_style,
+        tactics: before.home_team.tactics.clone(),
+        slot_roles: before
+            .home_team
+            .players
+            .iter()
+            .map(|player| player.role)
+            .collect(),
+        lineup_changes: vec![
+            TacticalLineupChange {
+                slot_index: 5,
+                expected_outgoing_player_id: outgoing.clone(),
+                incoming_player_id: "home_sub_mid".into(),
+            },
+            TacticalLineupChange {
+                slot_index: 5,
+                expected_outgoing_player_id: outgoing,
+                incoming_player_id: "home_sub_fwd1".into(),
+            },
+        ],
+        assignments: before.home_set_pieces.clone(),
+    };
+
+    assert_eq!(
+        state.apply_tactics_change_set(changes).unwrap_err(),
+        "be.error.liveMatch.duplicateLineupChange"
+    );
+    let after = state.snapshot();
+    assert_eq!(after.home_subs_made, before.home_subs_made);
+    assert_eq!(
+        after
+            .substitutions
+            .iter()
+            .map(|sub| (&sub.player_off_id, &sub.player_on_id))
+            .collect::<Vec<_>>(),
+        before
+            .substitutions
+            .iter()
+            .map(|sub| (&sub.player_off_id, &sub.player_on_id))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        after
+            .home_team
+            .players
+            .iter()
+            .map(|player| &player.id)
+            .collect::<Vec<_>>(),
+        before
+            .home_team
+            .players
+            .iter()
+            .map(|player| &player.id)
+            .collect::<Vec<_>>()
+    );
 }
 
 #[test]

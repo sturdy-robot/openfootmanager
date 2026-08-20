@@ -17,9 +17,23 @@ import {
   Shield,
   Swords,
   Sparkles,
+  X,
 } from "lucide-react";
 import ContextMenu from "../ContextMenu";
-import { translatePositionAbbreviation } from "../squad/SquadTab.helpers";
+import {
+  buildPitchRows,
+  translatePositionAbbreviation,
+} from "../squad/SquadTab.helpers";
+import { getRoleOptions } from "../../lib/playerRoles";
+import {
+  EMPTY_MATCH_DRAFT,
+  isMatchDraftEmpty,
+  queueLineupChange,
+  removeLineupChange,
+  removeSlotRole,
+  type MatchDraft,
+  type MatchLineupDraftChange,
+} from "./MatchDraft.helpers";
 import {
   buildRecommendedSubstitutions,
   getMatchScenario,
@@ -60,21 +74,38 @@ const CompareBar = ({
 export function SubPanel({
   snapshot,
   side,
-  onSubstitute,
-  onFormationChange,
-  onPlayStyleChange,
+  onSubmitDraft,
+  submissionError,
+  naturalPositionById,
   onClose,
 }: {
   snapshot: MatchSnapshot;
   side: "Home" | "Away";
-  onSubstitute: (offId: string, onId: string) => void;
-  onFormationChange: (formation: string) => void;
-  onPlayStyleChange: (playStyle: string) => void;
+  /**
+   * Send everything the manager has decided, as one change set.
+   *
+   * The draft lives here rather than above, because the panel is where it is
+   * built, reviewed and abandoned — and because a refusal has to leave it
+   * exactly as it was so the manager corrects rather than restarts.
+   */
+  onSubmitDraft: (draft: MatchDraft) => void;
+  /** Already localized; why the last submission was refused. */
+  submissionError?: string | null;
+  /**
+   * The exact position each player actually plays, from the store. The engine
+   * carries four coarse buckets, so a left-back arrives here as "Defender" —
+   * no use at all to someone looking for a left-back (#371).
+   */
+  naturalPositionById?: Map<string, string>;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
   const [selectedOff, setSelectedOff] = useState<string | null>(null);
   const [selectedBench, setSelectedBench] = useState<string | null>(null);
+  const [queueRefusal, setQueueRefusal] = useState<string | null>(null);
+  const [draft, setDraft] = useState<MatchDraft>(EMPTY_MATCH_DRAFT);
+
+  const onDraftChange = setDraft;
 
   const team = side === "Home" ? snapshot.home_team : snapshot.away_team;
   const bench = side === "Home" ? snapshot.home_bench : snapshot.away_bench;
@@ -142,16 +173,73 @@ export function SubPanel({
   const handleSelectBenchPlayer = (playerId: string) => {
     if (!selectedOff) return;
     setSelectedBench((cur) => (cur === playerId ? null : playerId));
+    queueSwap(selectedOff, playerId);
   };
+
+  const slotIndexOf = (playerId: string | null): number =>
+    playerId === null
+      ? -1
+      : team.players.findIndex((player) => player.id === playerId);
+
+  const slotPositions = buildPitchRows(team.formation).flatMap(
+    (row) => row.positions,
+  );
+
+  const deployedSlotPosition = (slotIndex: number): string =>
+    slotPositions[slotIndex] ?? team.players[slotIndex]?.position ?? "";
+
+  function queueSwap(offId: string, onId: string): void {
+    const slotIndex = slotIndexOf(offId);
+    if (slotIndex < 0) {
+      return;
+    }
+
+    const result = queueLineupChange(draft, snapshot, side, {
+      incomingPlayerId: onId,
+      outgoingPlayerId: offId,
+      slotIndex,
+    });
+
+    if (result.refusedRemaining !== undefined) {
+      // Said here rather than sent: the remaining count is known on this side,
+      // so the manager finds out now instead of having a whole set refused.
+      setQueueRefusal(
+        t("match.tooManyPendingSubstitutions", {
+          remaining: result.refusedRemaining,
+        }),
+      );
+      return;
+    }
+
+    setQueueRefusal(null);
+    onDraftChange(result.draft);
+    setSelectedOff(null);
+    setSelectedBench(null);
+  }
 
   const handleConfirmSubstitution = () => {
     if (!selectedOff || !selectedBench) return;
-    onSubstitute(selectedOff, selectedBench);
+    queueSwap(selectedOff, selectedBench);
   };
 
+  const describeChange = (change: MatchLineupDraftChange): string =>
+    t("match.pendingSubstitution", {
+      playerOff: getPlayerName(snapshot, change.outgoingPlayerId),
+      playerOn: getPlayerName(snapshot, change.incomingPlayerId),
+    });
+
+  const describeRole = (slotIndex: number, role: string): string =>
+    t("match.pendingRoleChange", {
+      player: team.players[slotIndex]?.name ?? "",
+      role: t(`tactics.playerRoles.${role}`, role),
+    });
+
   const handleApplyRecommendation = (offId: string, onId: string) => {
+    // A recommendation is a decision, not a prefill: it joins the queue like
+    // any other, where it can be reviewed or taken back out.
     setSelectedOff(offId);
     setSelectedBench(onId);
+    queueSwap(offId, onId);
   };
 
   const handleInteractiveRowKeyDown = (
@@ -216,6 +304,154 @@ export function SubPanel({
           </div>
         ) : (
           <>
+            <div className="shrink-0 border-b border-gray-200 px-4 py-3 dark:border-navy-700">
+        {/*
+          What the manager has decided, before any of it is sent. A break is
+          three or four changes and the engine used to take them one at a time,
+          so a refusal halfway through left the earlier ones committed.
+        */}
+        <section
+          aria-label={t("match.pendingChanges")}
+          className="rounded-xl border border-gray-200 bg-white p-3 dark:border-navy-600 dark:bg-navy-800"
+        >
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+              {t("match.pendingChanges")}
+            </h3>
+            <button
+              type="button"
+              disabled={isMatchDraftEmpty(draft)}
+              onClick={() => onSubmitDraft(draft)}
+              className="rounded-lg bg-primary-600 px-3 py-1.5 font-heading text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus-visible:ring-offset-navy-800"
+            >
+              {t("match.applyPendingChanges")}
+            </button>
+          </div>
+
+          {submissionError ? (
+            <p
+              role="alert"
+              className="mb-2 rounded-lg bg-red-50 px-2 py-1.5 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-300"
+            >
+              {submissionError}
+            </p>
+          ) : null}
+          {queueRefusal ? (
+            <p
+              role="alert"
+              className="mb-2 rounded-lg bg-amber-50 px-2 py-1.5 text-xs text-amber-700 dark:bg-amber-500/10 dark:text-amber-300"
+            >
+              {queueRefusal}
+            </p>
+          ) : null}
+
+          {isMatchDraftEmpty(draft) ? (
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {t("match.noPendingChanges")}
+            </p>
+          ) : (
+            <ul className="space-y-1">
+              {draft.lineupChanges.map((change) => {
+                const summary = describeChange(change);
+                return (
+                  <li
+                    key={`lineup-${change.slotIndex}`}
+                    className="flex items-center justify-between gap-2 text-xs text-gray-700 dark:text-gray-200"
+                  >
+                    <span>{summary}</span>
+                    <button
+                      type="button"
+                      aria-label={t("match.removePendingChange", {
+                        change: summary,
+                      })}
+                      onClick={() => {
+                        setQueueRefusal(null);
+                        onDraftChange(removeLineupChange(draft, change.slotIndex));
+                      }}
+                      className="shrink-0 rounded-md p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 dark:text-gray-400 dark:hover:bg-navy-700 dark:hover:text-gray-100 dark:focus-visible:ring-offset-navy-800"
+                    >
+                      <X aria-hidden="true" className="h-3.5 w-3.5" />
+                    </button>
+                  </li>
+                );
+              })}
+              {Object.entries(draft.slotRoles).map(([slotIndex, role]) => {
+                const summary = describeRole(Number(slotIndex), role);
+                return (
+                  <li
+                    key={`role-${slotIndex}`}
+                    className="flex items-center justify-between gap-2 text-xs text-gray-700 dark:text-gray-200"
+                  >
+                    <span>{summary}</span>
+                    <button
+                      type="button"
+                      aria-label={t("match.removePendingChange", {
+                        change: summary,
+                      })}
+                      onClick={() =>
+                        onDraftChange(removeSlotRole(draft, Number(slotIndex)))
+                      }
+                      className="shrink-0 rounded-md p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 dark:text-gray-400 dark:hover:bg-navy-700 dark:hover:text-gray-100 dark:focus-visible:ring-offset-navy-800"
+                    >
+                      <X aria-hidden="true" className="h-3.5 w-3.5" />
+                    </button>
+                  </li>
+                );
+              })}
+              {draft.formation ? (
+                <li className="text-xs text-gray-700 dark:text-gray-200">
+                  {t("tactics.formation")}: {draft.formation}
+                </li>
+              ) : null}
+              {draft.playStyle ? (
+                <li className="text-xs text-gray-700 dark:text-gray-200">
+                  {t("tactics.playStyle")}:{" "}
+                  {t(`common.playStyles.${draft.playStyle}`, draft.playStyle)}
+                </li>
+              ) : null}
+            </ul>
+          )}
+
+          {selectedOff && slotIndexOf(selectedOff) >= 0 ? (
+            <div className="mt-3">
+              <span className="mb-1 block text-[11px] text-gray-500 dark:text-gray-400">
+                {t("tactics.playerRoleLabel")}
+              </span>
+              <Select
+                aria-label={t("tactics.playerRoleLabel")}
+                fullWidth
+                onChange={(event) => {
+                  const slotIndex = slotIndexOf(selectedOff);
+                  onDraftChange({
+                    ...draft,
+                    slotRoles: {
+                      ...draft.slotRoles,
+                      [slotIndex]: event.target.value,
+                    },
+                  });
+                }}
+                selectSize="sm"
+                value={
+                  draft.slotRoles[slotIndexOf(selectedOff)] ??
+                  team.players[slotIndexOf(selectedOff)]?.role ??
+                  "Standard"
+                }
+              >
+                {getRoleOptions(
+                  deployedSlotPosition(slotIndexOf(selectedOff)),
+                  draft.slotRoles[slotIndexOf(selectedOff)] ??
+                    team.players[slotIndexOf(selectedOff)]?.role ??
+                    "Standard",
+                ).map((role) => (
+                  <option key={role} value={role}>
+                    {t(`tactics.playerRoles.${role}`, role)}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          ) : null}
+        </section>
+            </div>
             {/* Tactics strip — scenario, recommendation chips, quick selects */}
             <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-gray-200 bg-gray-50/60 px-4 py-2 dark:border-navy-700 dark:bg-navy-900/30">
               {/* Scenario + apply play style */}
@@ -227,9 +463,12 @@ export function SubPanel({
                 <button
                   type="button"
                   data-testid="recommended-plan-cta"
-                  onClick={() =>
-                    onPlayStyleChange(scenario.recommendedPlayStyle)
-                  }
+                  onClick={() => {
+                    onDraftChange({
+                      ...draft,
+                      playStyle: scenario.recommendedPlayStyle,
+                    });
+                  }}
                   className="rounded-full border border-primary-500/25 bg-primary-500/12 px-2 py-0.5 font-heading text-[10px] font-bold uppercase tracking-widest text-primary-500 transition-colors hover:bg-primary-500/20 dark:text-primary-300"
                 >
                   {t("match.recommendedPlan")}:{" "}
@@ -273,11 +512,17 @@ export function SubPanel({
               <div className="ml-auto flex items-center gap-2">
                 <Select
                   value={
-                    FORMATIONS.includes(team.formation)
+                    draft.formation ??
+                    (FORMATIONS.includes(team.formation)
                       ? team.formation
-                      : FORMATIONS[0]
+                      : FORMATIONS[0])
                   }
-                  onChange={(e) => onFormationChange(e.target.value)}
+                  onChange={(e) =>
+                    setDraft((current) => ({
+                      ...current,
+                      formation: e.target.value,
+                    }))
+                  }
                   aria-label={t("tactics.formation")}
                   selectSize="xs"
                 >
@@ -288,8 +533,13 @@ export function SubPanel({
                   ))}
                 </Select>
                 <Select
-                  value={team.play_style}
-                  onChange={(e) => onPlayStyleChange(e.target.value)}
+                  value={draft.playStyle ?? team.play_style}
+                  onChange={(e) =>
+                    setDraft((current) => ({
+                      ...current,
+                      playStyle: e.target.value,
+                    }))
+                  }
                   aria-label={t("tactics.playStyle")}
                   selectSize="xs"
                 >
@@ -517,7 +767,10 @@ export function SubPanel({
                                 <span
                                   className={`font-heading text-xs ${!posMatch && selectedOff ? "text-yellow-400" : "text-gray-500 dark:text-gray-400"}`}
                                 >
-                                  {translatePositionAbbreviation(t, p.position)}
+                                  {translatePositionAbbreviation(
+                                    t,
+                                    naturalPositionById?.get(p.id) ?? p.position,
+                                  )}
                                   {!posMatch && selectedOff && " !"}
                                 </span>
                               </td>

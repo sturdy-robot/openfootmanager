@@ -144,9 +144,7 @@ describe("SubPanel", () => {
     const createProps = () => ({
         snapshot: createSnapshot(),
         side: "Home" as const,
-        onSubstitute: vi.fn(),
-        onFormationChange: vi.fn(),
-        onPlayStyleChange: vi.fn(),
+        onSubmitDraft: vi.fn(),
         onClose: vi.fn(),
     });
 
@@ -177,11 +175,17 @@ describe("SubPanel", () => {
         fireEvent.contextMenu(screen.getByTestId("sub-panel-bench-bench-1"));
         fireEvent.click(screen.getByRole("menuitem", { name: "Select replacement" }));
 
-        fireEvent.click(
-            screen.getByRole("button", { name: "Confirm substitution" }),
-        );
+        const queue = screen.getByRole("region", {
+            name: "match.pendingChanges",
+        });
 
-        expect(props.onSubstitute).toHaveBeenCalledWith("starter-1", "bench-1");
+        // Step 11 moved substitutions from immediate dispatch into the atomic
+        // pending queue: nothing leaves the panel until Apply.
+        expect(props.onSubmitDraft).not.toHaveBeenCalled();
+        expect(queue).toHaveTextContent("match.pendingSubstitution");
+        expect(
+            screen.getByRole("button", { name: "match.applyPendingChanges" }),
+        ).toBeEnabled();
     });
 
     it("allows clearing the selected off-player through the context menu", () => {
@@ -213,7 +217,11 @@ describe("SubPanel", () => {
 
         fireEvent.click(screen.getByTestId("recommended-plan-cta"));
 
-        expect(props.onPlayStyleChange).toHaveBeenCalledWith("Balanced");
+        // Step 11 moved tactical tweaks into the same atomic draft as lineup changes.
+        expect(props.onSubmitDraft).not.toHaveBeenCalled();
+        expect(
+            screen.getByRole("button", { name: "match.applyPendingChanges" }),
+        ).toBeEnabled();
     });
 
     it("applies formation from quick tactical tweaks", () => {
@@ -224,7 +232,11 @@ describe("SubPanel", () => {
         fireEvent.click(screen.getByRole("combobox", { name: "tactics.formation" }));
         fireEvent.click(screen.getByRole("option", { name: "4-3-3" }));
 
-        expect(props.onFormationChange).toHaveBeenCalledWith("4-3-3");
+        // Step 11 moved formation changes into the one atomic in-match change set.
+        expect(props.onSubmitDraft).not.toHaveBeenCalled();
+        expect(
+            screen.getByRole("button", { name: "match.applyPendingChanges" }),
+        ).toBeEnabled();
     });
 
     it("lets a recommendation prefill the swap flow", () => {
@@ -238,8 +250,9 @@ describe("SubPanel", () => {
 
         expect(screen.getAllByText("Starter One").length).toBeGreaterThan(0);
         expect(screen.getAllByText("Bench One").length).toBeGreaterThan(0);
+        // Step 11 moved a recommended swap from a prefilled immediate action into the queue.
         expect(
-            screen.getByRole("button", { name: "Confirm substitution" }),
-        ).toBeInTheDocument();
+            screen.getByRole("region", { name: "match.pendingChanges" }),
+        ).toHaveTextContent("match.pendingSubstitution");
     });
 });

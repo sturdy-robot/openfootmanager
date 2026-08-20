@@ -5,6 +5,7 @@ import type { MatchdayIdentity } from "../../lib/competitionName";
 import MatchdayShell from "./MatchdayShell";
 import {
   applyMatchCommand,
+  applyMatchTactics,
   applyTeamTalk,
   type TeamTalkMoraleChange,
 } from "../../services/matchService";
@@ -19,6 +20,8 @@ import {
 import { getEventDisplay, getPlayerName, makeTeamFallback } from "./helpers";
 import { getTalkIcon } from "./TeamTalkIcons";
 import { SubPanel } from "./SubPanel";
+import { buildMatchTacticsChangeSet, type MatchDraft } from "./MatchDraft.helpers";
+import { resolveBackendError } from "../../utils/backendI18n";
 import { Badge, TeamLogo } from "../ui";
 import {
   Play,
@@ -65,6 +68,7 @@ export default function HalfTimeBreak({
   const teamTalkOptions = getTeamTalkOptions(t);
   const [selectedTalk, setSelectedTalk] = useState<TeamTalkTone | null>(null);
   const [showSubPanel, setShowSubPanel] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [talkDelivered, setTalkDelivered] = useState(false);
   const [talkResults, setTalkResults] = useState<TeamTalkMoraleChange[]>([]);
 
@@ -89,6 +93,22 @@ export default function HalfTimeBreak({
     ].includes(e.event_type),
   );
 
+  // Half time is the break where a manager makes several changes at once, so
+  // it is the one that most needed them to land together.
+  const handleSubmitDraft = async (draft: MatchDraft) => {
+    try {
+      const snap = await applyMatchTactics(
+        buildMatchTacticsChangeSet({ draft, side: userSide, snapshot }),
+      );
+      onUpdateSnapshot(snap);
+      setSubmissionError(null);
+      setShowSubPanel(false);
+    } catch (err) {
+      console.error("Half-time change set failed:", err);
+      setSubmissionError(resolveBackendError(err));
+    }
+  };
+
   const handleFormationChange = async (formation: string) => {
     try {
       const snap = await applyMatchCommand({
@@ -111,24 +131,6 @@ export default function HalfTimeBreak({
     }
   };
 
-  const handleSubstitution = async (
-    playerOffId: string,
-    playerOnId: string,
-  ) => {
-    try {
-      const snap = await applyMatchCommand({
-        Substitute: {
-          side: userSide,
-          player_off_id: playerOffId,
-          player_on_id: playerOnId,
-        },
-      });
-      onUpdateSnapshot(snap);
-      setShowSubPanel(false);
-    } catch (err) {
-      console.error("Substitution failed:", err);
-    }
-  };
 
   const handleDeliverTalk = async () => {
     if (!selectedTalk) return;
@@ -482,9 +484,10 @@ export default function HalfTimeBreak({
         <SubPanel
           snapshot={snapshot}
           side={userSide}
-          onSubstitute={handleSubstitution}
-          onFormationChange={handleFormationChange}
-          onPlayStyleChange={handlePlayStyleChange}
+          onSubmitDraft={(draft) => {
+            void handleSubmitDraft(draft);
+          }}
+          submissionError={submissionError}
           onClose={() => setShowSubPanel(false)}
         />
       )}

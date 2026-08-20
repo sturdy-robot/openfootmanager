@@ -1,7 +1,12 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { GameStateData } from "../../store/gameStore";
-import { applyMatchCommand, getMatchSnapshot, stepLiveMatch } from "../../services/matchService";
+import {
+  applyMatchCommand,
+  applyMatchTactics,
+  getMatchSnapshot,
+  stepLiveMatch,
+} from "../../services/matchService";
 import { FORMATIONS, MINUTES_PER_TICK, PLAY_STYLES, SPEED_MS, isPersistableSpeed, type EnginePlayerData, type MatchEvent, type MatchSnapshot, type Side, type SimSpeed } from "./types";
 import { getEventDisplay, makeTeamFallback, phaseLabel } from "./helpers";
 import { PitchToken, Select, TeamLogo, type PitchTokenMarker } from "../ui";
@@ -10,6 +15,8 @@ import { EventFeed, MatchStats, Lineups } from "./MatchPanels";
 import type { MatchdayIdentity } from "../../lib/competitionName";
 import MatchdayShell from "./MatchdayShell";
 import { SubPanel } from "./SubPanel";
+import { buildMatchTacticsChangeSet, type MatchDraft } from "./MatchDraft.helpers";
+import { resolveBackendError } from "../../utils/backendI18n";
 import { FormationPitch } from "./FormationPitch";
 import { translatePositionAbbreviation } from "../squad/SquadTab.helpers";
 import type { KitPattern } from "../../store/types";
@@ -52,6 +59,7 @@ export default function MatchLive({
   const [activePanel, setActivePanel] = useState<ActivePanel>("events");
   const [isRunning, setIsRunning] = useState(true);
   const [showSubPanel, setShowSubPanel] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const eventFeedRef = useRef<HTMLDivElement>(null);
   // Track phases we've already signaled to avoid double-firing
@@ -68,6 +76,19 @@ export default function MatchLive({
 
   const playerById = useMemo(() => {
     return new Map(gameState.players.map((player) => [player.id, player]));
+  }, [gameState.players]);
+
+  // The engine knows four coarse buckets; the store knows a left-back is a
+  // left-back (#371).
+  const naturalPositionById = useMemo(() => {
+    const positions = new Map<string, string>();
+    for (const player of gameState.players) {
+      const natural = player.natural_position || player.position;
+      if (natural) {
+        positions.set(player.id, natural);
+      }
+    }
+    return positions;
   }, [gameState.players]);
 
   const playerJerseyMap = useMemo(() => {
@@ -234,16 +255,21 @@ export default function MatchLive({
   }, [importantEvents.length]);
 
   // Apply substitution
-  const handleSubstitution = async (playerOffId: string, playerOnId: string) => {
+
+  const handleSubmitDraft = async (draft: MatchDraft) => {
     if (!userSide || isSpectator) return;
     try {
-      const snap = await applyMatchCommand({
-        Substitute: { side: userSide, player_off_id: playerOffId, player_on_id: playerOnId }
-      });
+      const snap = await applyMatchTactics(
+        buildMatchTacticsChangeSet({ draft, side: userSide, snapshot }),
+      );
       onSnapshotUpdate(snap);
+      setSubmissionError(null);
       setShowSubPanel(false);
     } catch (err) {
-      console.error("Substitution failed:", err);
+      // The panel stays open with the queue intact: a refusal is a correction,
+      // not a restart, and the manager cannot correct what has been closed.
+      console.error("In-match change set failed:", err);
+      setSubmissionError(resolveBackendError(err));
     }
   };
 
@@ -559,12 +585,14 @@ export default function MatchLive({
 
       {showSubPanel && userSide ? (
         <SubPanel
+          naturalPositionById={naturalPositionById}
           onClose={() => setShowSubPanel(false)}
-          onFormationChange={handleFormationChange}
-          onPlayStyleChange={handlePlayStyleChange}
-          onSubstitute={handleSubstitution}
+          onSubmitDraft={(draft) => {
+            void handleSubmitDraft(draft);
+          }}
           side={userSide}
           snapshot={snapshot}
+          submissionError={submissionError}
         />
       ) : null}
     </MatchdayShell>

@@ -31,6 +31,9 @@ vi.mock("../../services/matchService", () => ({
 }));
 
 vi.mock("react-i18next", () => ({
+  // `utils/backendI18n` pulls the i18n bootstrap in through MatchLive, so the
+  // mock has to answer for it too.
+  initReactI18next: { init: () => undefined, type: "3rdParty" },
   useTranslation: () => ({
     t: (key: string, opts?: unknown) => {
       if (opts && typeof opts === "object") {

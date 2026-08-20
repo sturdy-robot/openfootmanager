@@ -461,12 +461,72 @@ mod tests {
         game
     }
 
+    fn unchanged_match_tactics(
+        snapshot: &engine::MatchSnapshot,
+        side: engine::Side,
+    ) -> engine::MatchTacticsChangeSet {
+        let (team, assignments) = match side {
+            engine::Side::Home => (&snapshot.home_team, &snapshot.home_set_pieces),
+            engine::Side::Away => (&snapshot.away_team, &snapshot.away_set_pieces),
+        };
+        engine::MatchTacticsChangeSet {
+            side,
+            formation: team.formation.clone(),
+            play_style: team.play_style,
+            tactics: team.tactics.clone(),
+            slot_roles: team.players.iter().map(|player| player.role).collect(),
+            lineup_changes: Vec::new(),
+            assignments: assignments.clone(),
+        }
+    }
+
     fn delta_for(results: &[serde_json::Value], player_id: &str) -> i64 {
         results
             .iter()
             .find(|result| result["player_id"] == player_id)
             .and_then(|result| result["delta"].as_i64())
             .unwrap()
+    }
+
+    #[test]
+    fn apply_match_tactics_requires_an_active_match() {
+        let state = StateManager::new();
+        let game = make_game_with_round();
+        let session =
+            live_match_manager::create_live_match(&game, 0, MatchMode::Live, false).unwrap();
+        let changes = unchanged_match_tactics(&session.snapshot(), engine::Side::Home);
+        state.set_game(game);
+
+        assert_eq!(
+            crate::application::live_match::apply_match_tactics(&state, changes).unwrap_err(),
+            "be.error.noActiveLiveMatch"
+        );
+    }
+
+    #[test]
+    fn apply_match_tactics_rejects_the_side_the_manager_does_not_control() {
+        let state = StateManager::new();
+        let game = make_game_with_round();
+        let session =
+            live_match_manager::create_live_match(&game, 0, MatchMode::Live, false).unwrap();
+        assert_eq!(session.user_side, Some(engine::Side::Home));
+        let before = session.snapshot();
+        let mut changes = unchanged_match_tactics(&before, engine::Side::Away);
+        changes.formation = "4-3-3".into();
+        changes.play_style = engine::PlayStyle::Attacking;
+        state.set_game(game);
+        state.set_live_match(session);
+
+        assert_eq!(
+            crate::application::live_match::apply_match_tactics(&state, changes).unwrap_err(),
+            "be.error.liveMatch.managementNotAllowed"
+        );
+
+        let after = state
+            .with_live_match(|live_match| live_match.snapshot())
+            .expect("live match stays active after refusal");
+        assert_eq!(after.away_team.formation, before.away_team.formation);
+        assert_eq!(after.away_team.play_style, before.away_team.play_style);
     }
 
     #[test]
