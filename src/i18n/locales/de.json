@@ -2792,7 +2792,8 @@
         "playerNotOnPitch": "Spieler ist nicht auf dem Platz",
         "playerAlreadySubstitutedOff": "Dieser Spieler wurde bereits ausgewechselt",
         "playerNotOnBench": "Spieler ist nicht auf der Bank",
-        "playerNotInStartingXi": "Spieler ist nicht in der Startelf"
+        "playerNotInStartingXi": "Spieler ist nicht in der Startelf",
+        "commandNotSupported": "Diese Engine unterstützt diese Anweisung nicht"
       },
       "csv": {
         "writeFailed": "Die CSV-Datei konnte nicht geschrieben werden."

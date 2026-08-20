@@ -2824,7 +2824,8 @@
         "playerNotOnPitch": "El jugador no está en el campo",
         "playerAlreadySubstitutedOff": "Ese jugador ya fue sustituido",
         "playerNotOnBench": "El jugador no está en el banquillo",
-        "playerNotInStartingXi": "El jugador no está en el once inicial"
+        "playerNotInStartingXi": "El jugador no está en el once inicial",
+        "commandNotSupported": "Este motor no admite esa instrucción"
       },
       "csv": {
         "writeFailed": "No se pudo escribir el archivo CSV."

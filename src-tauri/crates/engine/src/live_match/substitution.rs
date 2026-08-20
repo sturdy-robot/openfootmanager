@@ -1,4 +1,5 @@
 use crate::event::{EventType, MatchEvent};
+use crate::rejection::CommandRejection;
 use crate::types::{Position, Side, Zone};
 
 use super::{LiveMatchState, SubstitutionRecord};
@@ -13,19 +14,19 @@ impl LiveMatchState {
         side: Side,
         player_off_id: &str,
         player_on_id: &str,
-    ) -> Result<(), String> {
+    ) -> Result<(), CommandRejection> {
         let subs_made = match side {
             Side::Home => &mut self.home_subs_made,
             Side::Away => &mut self.away_subs_made,
         };
 
         if *subs_made >= self.max_subs {
-            return Err("be.error.liveMatch.maxSubstitutionsReached".into());
+            return Err(CommandRejection::MaxSubstitutionsReached);
         }
 
         // Cannot substitute a player who has been sent off
         if self.sent_off.contains(player_off_id) {
-            return Err("be.error.liveMatch.cannotSubstituteSentOffPlayer".into());
+            return Err(CommandRejection::CannotSubstituteSentOffPlayer);
         }
 
         let team = self.team_mut(side);
@@ -33,7 +34,7 @@ impl LiveMatchState {
             .players
             .iter()
             .position(|p| p.id == player_off_id)
-            .ok_or("be.error.liveMatch.playerNotOnPitch")?;
+            .ok_or(CommandRejection::PlayerNotOnPitch)?;
 
         // Cannot bring on a player who was already substituted off
         let already_subbed_off: std::collections::HashSet<&str> = self
@@ -42,7 +43,7 @@ impl LiveMatchState {
             .map(|s| s.player_off_id.as_str())
             .collect();
         if already_subbed_off.contains(player_on_id) {
-            return Err("be.error.liveMatch.playerAlreadySubstitutedOff".into());
+            return Err(CommandRejection::PlayerAlreadySubstitutedOff);
         }
 
         let bench = match side {
@@ -52,7 +53,7 @@ impl LiveMatchState {
         let on_idx = bench
             .iter()
             .position(|p| p.id == player_on_id)
-            .ok_or("be.error.liveMatch.playerNotOnBench")?;
+            .ok_or(CommandRejection::PlayerNotOnBench)?;
 
         let mut player_on = bench.remove(on_idx);
         let player_off = self.team_mut(side).players.remove(off_idx);
@@ -117,13 +118,13 @@ impl LiveMatchState {
         side: Side,
         player_off_id: &str,
         player_on_id: &str,
-    ) -> Result<(), String> {
+    ) -> Result<(), CommandRejection> {
         let team = self.team_mut(side);
         let off_idx = team
             .players
             .iter()
             .position(|p| p.id == player_off_id)
-            .ok_or("be.error.liveMatch.playerNotInStartingXi")?;
+            .ok_or(CommandRejection::PlayerNotInStartingXi)?;
 
         let bench = match side {
             Side::Home => &mut self.home_bench,
@@ -132,7 +133,7 @@ impl LiveMatchState {
         let on_idx = bench
             .iter()
             .position(|p| p.id == player_on_id)
-            .ok_or("be.error.liveMatch.playerNotOnBench")?;
+            .ok_or(CommandRejection::PlayerNotOnBench)?;
 
         let mut player_on = bench.remove(on_idx);
         let player_off = self.team_mut(side).players.remove(off_idx);

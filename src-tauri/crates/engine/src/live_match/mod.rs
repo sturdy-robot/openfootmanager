@@ -363,7 +363,10 @@ impl LiveMatchState {
     }
 
     /// Apply a command (substitution, tactic change, set piece assignment).
-    pub fn apply_command(&mut self, cmd: MatchCommand) -> Result<(), String> {
+    pub fn apply_command(
+        &mut self,
+        cmd: MatchCommand,
+    ) -> Result<(), crate::rejection::CommandRejection> {
         match cmd {
             MatchCommand::Substitute {
                 side,
@@ -400,7 +403,7 @@ impl LiveMatchState {
                 player_on_id,
             } => {
                 if self.phase != MatchPhase::PreKickOff {
-                    return Err("be.error.liveMatch.preMatchSwapTooLate".into());
+                    return Err(crate::rejection::CommandRejection::PreMatchSwapTooLate);
                 }
                 self.do_pre_match_swap(side, &player_off_id, &player_on_id)
             }

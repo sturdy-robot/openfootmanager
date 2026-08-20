@@ -2805,7 +2805,8 @@
         "playerNotOnPitch": "Player not on pitch",
         "playerAlreadySubstitutedOff": "Player has already been substituted off",
         "playerNotOnBench": "Player not on bench",
-        "playerNotInStartingXi": "Player not in starting XI"
+        "playerNotInStartingXi": "Player not in starting XI",
+        "commandNotSupported": "This engine does not support that instruction"
       },
       "csv": {
         "writeFailed": "Failed to write the CSV file."

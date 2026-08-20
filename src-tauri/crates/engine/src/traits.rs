@@ -132,8 +132,13 @@ pub trait LiveState {
 
     /// Apply a command between minutes (substitution, tactical change).
     ///
-    /// Returns a translation key on rejection, never English prose.
-    fn apply_command(&mut self, cmd: MatchCommand) -> Result<(), String>;
+    /// The reason set is closed, so an engine picks a rejection rather than
+    /// inventing a message the game cannot translate. See
+    /// [`crate::rejection::CommandRejection`].
+    fn apply_command(
+        &mut self,
+        cmd: MatchCommand,
+    ) -> Result<(), crate::rejection::CommandRejection>;
 
     fn snapshot(&self) -> MatchSnapshot;
 
@@ -209,7 +214,10 @@ impl LiveState for crate::live_match::LiveMatchState {
         crate::live_match::LiveMatchState::step_minute(self, rng)
     }
 
-    fn apply_command(&mut self, cmd: MatchCommand) -> Result<(), String> {
+    fn apply_command(
+        &mut self,
+        cmd: MatchCommand,
+    ) -> Result<(), crate::rejection::CommandRejection> {
         crate::live_match::LiveMatchState::apply_command(self, cmd)
     }
 

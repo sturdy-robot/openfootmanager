@@ -524,7 +524,7 @@ fn max_substitutions_enforced() {
         });
         assert_eq!(
             result.unwrap_err(),
-            "be.error.liveMatch.maxSubstitutionsReached"
+            CommandRejection::MaxSubstitutionsReached
         );
     }
 }
@@ -543,7 +543,7 @@ fn substitution_invalid_player_off_fails() {
         player_off_id: "nonexistent".to_string(),
         player_on_id,
     });
-    assert_eq!(result.unwrap_err(), "be.error.liveMatch.playerNotOnPitch");
+    assert_eq!(result.unwrap_err(), CommandRejection::PlayerNotOnPitch);
 }
 
 #[test]
@@ -1037,7 +1037,7 @@ fn pre_match_swap_fails_after_kickoff() {
     });
     assert_eq!(
         result.unwrap_err(),
-        "be.error.liveMatch.preMatchSwapTooLate"
+        CommandRejection::PreMatchSwapTooLate
     );
 }
 
@@ -1053,7 +1053,7 @@ fn pre_match_swap_invalid_player_fails() {
     });
     assert_eq!(
         result.unwrap_err(),
-        "be.error.liveMatch.playerNotInStartingXi"
+        CommandRejection::PlayerNotInStartingXi
     );
 }
 
@@ -1068,7 +1068,7 @@ fn pre_match_swap_invalid_bench_player_fails() {
         player_off_id: starter_id,
         player_on_id: "nonexistent_bench".to_string(),
     });
-    assert_eq!(result.unwrap_err(), "be.error.liveMatch.playerNotOnBench");
+    assert_eq!(result.unwrap_err(), CommandRejection::PlayerNotOnBench);
 }
 
 // ===========================================================================
@@ -1793,7 +1793,7 @@ fn substitution_invalid_bench_player_fails() {
         player_off_id: off_id,
         player_on_id: "nonexistent_bench".to_string(),
     });
-    assert_eq!(result.unwrap_err(), "be.error.liveMatch.playerNotOnBench");
+    assert_eq!(result.unwrap_err(), CommandRejection::PlayerNotOnBench);
 }
 
 // ===========================================================================
@@ -1827,7 +1827,7 @@ fn cannot_substitute_red_carded_player() {
     );
     assert_eq!(
         result.unwrap_err(),
-        "be.error.liveMatch.cannotSubstituteSentOffPlayer",
+        CommandRejection::CannotSubstituteSentOffPlayer,
         "Red-carded substitution should use the sent-off i18n key"
     );
 }
@@ -1869,7 +1869,7 @@ fn cannot_bring_back_already_substituted_off_player() {
     );
     assert_eq!(
         result.unwrap_err(),
-        "be.error.liveMatch.playerAlreadySubstitutedOff",
+        CommandRejection::PlayerAlreadySubstitutedOff,
         "Substituted-off player should use the re-entry guard i18n key"
     );
 }

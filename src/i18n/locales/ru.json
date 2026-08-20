@@ -2805,7 +2805,8 @@
         "playerNotOnPitch": "Игрок не на поле",
         "playerAlreadySubstitutedOff": "Игрок уже заменен",
         "playerNotOnBench": "Игрок не на скамейке запасных",
-        "playerNotInStartingXi": "Игрок не в стартовом составе"
+        "playerNotInStartingXi": "Игрок не в стартовом составе",
+        "commandNotSupported": "Этот движок не поддерживает эту команду"
       },
       "csv": {
         "writeFailed": "Не удалось записать CSV-файл."

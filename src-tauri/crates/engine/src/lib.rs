@@ -5,6 +5,7 @@ pub mod descriptor;
 pub mod engine;
 pub mod event;
 pub mod live_match;
+pub mod rejection;
 pub mod report;
 pub(crate) mod shared;
 pub mod sim;
@@ -52,6 +53,7 @@ pub use live_match::{
     LiveMatchState, MatchCommand, MatchPhase, MatchSnapshot, MinuteResult, PenaltyShootoutSnapshot,
     SetPieceTakers, SubstitutionRecord,
 };
+pub use rejection::CommandRejection;
 pub use report::{GoalDetail, GoalSource, MatchReport, PlayerMatchStats, TeamStats};
 pub use traits::{
     DEFAULT_ENGINE_ID, DefaultEngine, InstantEngine, LiveEngine, LiveState, MatchSetup,

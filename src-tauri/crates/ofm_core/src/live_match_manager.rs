@@ -301,15 +301,22 @@ impl LiveMatchSession {
     pub fn apply_command(&mut self, cmd: MatchCommand) -> Result<(), String> {
         // Record only commands the engine accepted; a rejected command changed
         // nothing, so replaying it would diverge from what actually happened.
+        // The engine now returns a closed set of reasons rather than a bare
+        // string, so it cannot hand the frontend a key the locale files do not
+        // define. The IPC boundary still speaks keys, so unwrap it here.
         if let Some(command) = to_replay_command(&cmd) {
-            self.match_state.apply_command(cmd)?;
+            self.match_state
+                .apply_command(cmd)
+                .map_err(|reason| reason.translation_key().to_string())?;
             self.recorded_commands.push(ReplayCommand {
                 minute: self.match_state.minute(),
                 command,
             });
             return Ok(());
         }
-        self.match_state.apply_command(cmd)
+        self.match_state
+            .apply_command(cmd)
+            .map_err(|reason| reason.translation_key().to_string())
     }
 
     /// The inputs needed to replay this match, for storing on the fixture.
