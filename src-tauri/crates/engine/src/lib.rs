@@ -1,4 +1,5 @@
 pub mod ai;
+pub mod clock;
 pub mod compliance;
 pub mod engine;
 pub mod event;
@@ -41,6 +42,7 @@ pub mod replay;
 pub use engine::simulate;
 pub use engine::simulate_setup;
 pub use engine::simulate_with_rng;
+pub use clock::{MatchClock, MatchPeriod};
 pub use event::{EventDetail, EventType, MatchEvent, ShotTechnique};
 pub use live_match::{
     LiveMatchState, MatchCommand, MatchPhase, MatchSnapshot, MinuteResult, PenaltyShootoutSnapshot,
