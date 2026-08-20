@@ -63,26 +63,26 @@ pub fn apply_team_tactics_internal(
     state: &StateManager,
     draft: domain::team::TeamTacticsDraft,
 ) -> Result<Game, String> {
-    state
-        .update_game(|game| {
-            let mut candidate = game.clone();
-            let team_id = user_team_id(&candidate)?;
-            let roster_ids = candidate
-                .players
-                .iter()
-                .filter(|player| player.team_id.as_deref() == Some(&team_id))
-                .map(|player| player.id.clone())
-                .collect();
-            let team = candidate
-                .teams
-                .iter_mut()
-                .find(|team| team.id == team_id)
-                .ok_or_else(|| "be.error.teamNotFound".to_string())?;
-            ofm_core::tactics::apply_team_tactics_draft(team, &roster_ids, draft)?;
-            *game = candidate;
-            Ok(game.clone())
-        })
-        .ok_or_else(|| "be.error.noActiveGameSession".to_string())?
+    // No throwaway clone of the world to roll back to: the draft is validated
+    // in full before `apply_team_tactics_draft` assigns anything, so it cannot
+    // leave the team half-changed. Cloning 440 teams and ~9,680 players twice
+    // inside the state lock is what `mutate_active_game` exists to stop.
+    mutate_active_game(state, |game| {
+        let team_id = user_team_id(game)?;
+        let roster_ids = game
+            .players
+            .iter()
+            .filter(|player| player.team_id.as_deref() == Some(&team_id))
+            .map(|player| player.id.clone())
+            .collect();
+        let team = game
+            .teams
+            .iter_mut()
+            .find(|team| team.id == team_id)
+            .ok_or_else(|| "be.error.teamNotFound".to_string())?;
+
+        ofm_core::tactics::apply_team_tactics_draft(team, &roster_ids, draft)
+    })
 }
 
 #[tauri::command]
@@ -501,8 +501,6 @@ pub fn set_player_role_internal(
             .get(slot_index)
             .cloned()
             .ok_or_else(|| "be.error.invalidFormation".to_string())?;
-        ofm_core::tactics::reconcile_slot_roles(team);
-
         match role {
             Some(r) => {
                 let role_enum = r
@@ -517,6 +515,11 @@ pub fn set_player_role_internal(
                 team.slot_roles[slot_index] = domain::team::PlayerRole::Standard;
             }
         }
+
+        // After the assignment, not before it: this mutates the live game, so
+        // running it ahead of a validation that can still fail would leave the
+        // normalisation behind on a rejected request.
+        ofm_core::tactics::reconcile_slot_roles(team);
         team.player_roles.clear();
 
         Ok(())
@@ -616,8 +619,8 @@ pub fn set_tactics_phase(
 #[cfg(test)]
 mod tests {
     use super::{
-        set_formation_internal, set_player_role_internal, set_player_squad_role_internal,
-        set_player_training_focus_internal,
+        apply_team_tactics_internal, set_formation_internal, set_player_role_internal,
+        set_player_squad_role_internal, set_player_training_focus_internal,
     };
     use chrono::{TimeZone, Utc};
     use domain::manager::Manager;
@@ -774,6 +777,88 @@ mod tests {
         let stored_game = state.get_game(|game| game.clone()).expect("stored game");
         assert_eq!(stored_game.players[0].squad_role, SquadRole::Youth);
         assert!(stored_game.teams[0].starting_xi_ids.is_empty());
+    }
+
+    fn game_with_full_xi() -> Game {
+        let mut game = make_game(make_player("1998-01-01"));
+        game.players = (0..11)
+            .map(|index| make_player_for_team(&format!("p{index}"), "team-1", "1998-01-01"))
+            .collect();
+        game.teams[0].formation = "4-4-2".to_string();
+        game.teams[0].starting_xi_ids = (0..11).map(|index| format!("p{index}")).collect();
+        game.teams[0].slot_roles = vec![domain::team::PlayerRole::Standard; 11];
+        game
+    }
+
+    fn draft_for(game: &Game) -> domain::team::TeamTacticsDraft {
+        domain::team::TeamTacticsDraft {
+            formation: game.teams[0].formation.clone(),
+            play_style: game.teams[0].play_style.clone(),
+            slot_roles: game.teams[0].slot_roles.clone(),
+            tactics_phase: game.teams[0].tactics_phase.clone(),
+            starting_xi_ids: game.teams[0].starting_xi_ids.clone(),
+            match_roles: game.teams[0].match_roles.clone(),
+        }
+    }
+
+    #[test]
+    fn apply_team_tactics_internal_stores_the_whole_draft() {
+        let state = StateManager::new();
+        let game = game_with_full_xi();
+        state.set_game(game.clone());
+
+        let mut draft = draft_for(&game);
+        draft.play_style = domain::team::PlayStyle::Attacking;
+        draft.slot_roles[0] = domain::team::PlayerRole::SweeperKeeper;
+
+        let response = apply_team_tactics_internal(&state, draft).expect("response");
+
+        assert_eq!(
+            response.teams[0].play_style,
+            domain::team::PlayStyle::Attacking
+        );
+        assert_eq!(
+            response.teams[0].slot_roles[0],
+            domain::team::PlayerRole::SweeperKeeper
+        );
+
+        let stored = state.get_game(|game| game.clone()).expect("stored game");
+        assert_eq!(
+            stored.teams[0].play_style,
+            domain::team::PlayStyle::Attacking
+        );
+    }
+
+    #[test]
+    fn a_rejected_draft_leaves_the_team_exactly_as_it_was() {
+        // The command mutates the live game rather than a throwaway clone, so
+        // this is the test that says the validation really does happen first.
+        let state = StateManager::new();
+        let game = game_with_full_xi();
+        state.set_game(game.clone());
+
+        let mut draft = draft_for(&game);
+        draft.play_style = domain::team::PlayStyle::Attacking;
+        // A striker's role at the goalkeeper's slot: rejected outright.
+        draft.slot_roles[0] = domain::team::PlayerRole::Poacher;
+
+        let result = apply_team_tactics_internal(&state, draft);
+
+        assert!(result.is_err());
+
+        let stored = state.get_game(|game| game.clone()).expect("stored game");
+        assert_eq!(stored.teams[0].play_style, game.teams[0].play_style);
+        assert_eq!(stored.teams[0].slot_roles, game.teams[0].slot_roles);
+    }
+
+    #[test]
+    fn apply_team_tactics_internal_needs_an_active_game() {
+        let state = StateManager::new();
+        let game = game_with_full_xi();
+
+        let result = apply_team_tactics_internal(&state, draft_for(&game));
+
+        assert_eq!(result.err(), Some("be.error.noActiveGameSession".into()));
     }
 
     #[test]

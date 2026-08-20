@@ -143,6 +143,13 @@ fn migrate_single_save(
         .map_err(|_| LEGACY_MIGRATION_FAILED_ERROR.to_string())?;
 
     canonicalize_game_starting_xi_ids(&mut game);
+    // Before the save is written, not after it is read. `upsert_team` stores
+    // the legacy player-keyed map as `{}`, so a role that has not been moved
+    // onto its slot by now is gone for good — the read-path migration in
+    // `game_persistence` would find nothing left to migrate.
+    for team in &mut game.teams {
+        ofm_core::tactics::migrate_legacy_player_roles(team);
+    }
     player_identity::upgrade_game_player_identities(&mut game);
     ofm_core::football_identity::upgrade_game_football_identities(&mut game);
 
@@ -587,6 +594,74 @@ mod tests {
         assert!(results.is_empty());
         assert!(!legacy_path.exists()); // Renamed even if empty
         assert!(dir.path().join("saves.db.migrated").exists());
+    }
+
+    fn legacy_game_json_with_player_keyed_roles() -> String {
+        let mut json: serde_json::Value =
+            serde_json::from_str(&legacy_game_json_with_mirrored_starting_xi())
+                .expect("legacy game json should parse");
+
+        // The pre-slot model: roles keyed by player, and no `slot_roles` field
+        // at all — which is what every save written before v043 looks like.
+        json["teams"][0]["player_roles"] = serde_json::json!({
+            "gk": "SweeperKeeper",
+            "cb1": "Stopper",
+            "st1": "Poacher",
+        });
+        json["teams"][0]
+            .as_object_mut()
+            .expect("team should be an object")
+            .remove("slot_roles");
+
+        serde_json::to_string(&json).expect("legacy game json should serialize")
+    }
+
+    #[test]
+    fn migrating_a_legacy_save_keeps_the_roles_its_players_were_given() {
+        // `upsert_team` writes the player-keyed map as `{}`, so a role that has
+        // not reached its slot before the save is created is gone. The read-path
+        // migration cannot help: by then there is nothing left to read.
+        let dir = tempfile::tempdir().unwrap();
+        let legacy_path = dir.path().join("saves.db");
+        let saves_dir = dir.path().join("saves");
+        let json = legacy_game_json_with_player_keyed_roles();
+
+        create_legacy_db(
+            &legacy_path,
+            &[("old-save-roles", "Legacy Roles Save", "Test Manager", &json)],
+        );
+
+        let mut sm = SaveManager::init(&saves_dir).unwrap();
+        let results = migrate_legacy_saves(dir.path(), &mut sm).unwrap();
+
+        assert_eq!(results.len(), 1);
+        assert!(matches!(&results[0], LegacyMigrationResult::Success { .. }));
+
+        // Read the database back rather than the in-memory `Game`: the write is
+        // the step that was losing the data.
+        let save_id = sm.list_saves()[0].id.clone();
+        let loaded = sm.load_game(&save_id).unwrap();
+        let team = loaded
+            .teams
+            .iter()
+            .find(|team| team.id == "team-001")
+            .expect("the migrated save should still have the team");
+
+        let role_of = |player_id: &str| {
+            team.starting_xi_ids
+                .iter()
+                .position(|id| id == player_id)
+                .and_then(|slot| team.slot_roles.get(slot))
+                .cloned()
+        };
+
+        assert_eq!(
+            role_of("gk"),
+            Some(domain::team::PlayerRole::SweeperKeeper),
+            "the goalkeeper's role should have moved onto their slot"
+        );
+        assert_eq!(role_of("st1"), Some(domain::team::PlayerRole::Poacher));
+        assert_eq!(team.slot_roles.len(), 11);
     }
 
     #[test]

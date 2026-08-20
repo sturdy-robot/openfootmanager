@@ -521,6 +521,20 @@ impl Team {
     }
 
     pub fn remove_player_references(&mut self, player_id: &str) {
+        // A role belongs to the slot, and the slot is an index into the XI —
+        // so removing an entry from the middle of the XI has to remove the
+        // matching role, or every starter behind them inherits the wrong one.
+        // Selling a left-back would hand their `Stopper` to the next centre-back
+        // and a `Poacher` to a wide midfielder, silently and permanently.
+        if let Some(slot_index) = self.starting_xi_ids.iter().position(|id| id == player_id)
+            && slot_index < self.slot_roles.len()
+        {
+            self.slot_roles.remove(slot_index);
+            // The vector stays formation-length; the freed slot has no player
+            // and so no opinion about how it should be played.
+            self.slot_roles.push(PlayerRole::Standard);
+        }
+
         self.starting_xi_ids.retain(|id| id != player_id);
         self.player_roles.remove(player_id);
 
@@ -539,5 +553,79 @@ impl Team {
 fn clear_match_role_if_matches(role: &mut Option<String>, player_id: &str) {
     if role.as_deref() == Some(player_id) {
         *role = None;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn team_with_xi(role_at_slot: &[(usize, PlayerRole)]) -> Team {
+        let mut team = Team::new(
+            "t1".to_string(),
+            "Test FC".to_string(),
+            "TFC".to_string(),
+            "England".to_string(),
+            "Test City".to_string(),
+            "Test Ground".to_string(),
+            20_000,
+        );
+        team.starting_xi_ids = (0..11).map(|index| format!("p{index}")).collect();
+        for (slot, role) in role_at_slot {
+            team.slot_roles[*slot] = role.clone();
+        }
+        team
+    }
+
+    #[test]
+    fn selling_a_starter_leaves_every_other_role_with_its_own_player() {
+        // Roles are indexed by slot, and the slot is an index into the XI. Drop
+        // a player out of the middle and every starter behind them shifts down
+        // one — so the roles have to shift with them or they land on strangers.
+        let mut team = team_with_xi(&[
+            (1, PlayerRole::WingBack),
+            (5, PlayerRole::BoxToBox),
+            (9, PlayerRole::Poacher),
+        ]);
+        let before: Vec<(String, PlayerRole)> = team
+            .starting_xi_ids
+            .iter()
+            .cloned()
+            .zip(team.slot_roles.iter().cloned())
+            .filter(|(id, _)| id != "p1")
+            .collect();
+
+        team.remove_player_references("p1");
+
+        let after: Vec<(String, PlayerRole)> = team
+            .starting_xi_ids
+            .iter()
+            .cloned()
+            .zip(team.slot_roles.iter().cloned())
+            .collect();
+
+        assert_eq!(after, before);
+    }
+
+    #[test]
+    fn the_slot_role_vector_stays_formation_length() {
+        let mut team = team_with_xi(&[]);
+
+        team.remove_player_references("p3");
+
+        assert_eq!(team.starting_xi_ids.len(), 10);
+        assert_eq!(team.slot_roles.len(), 11);
+        assert_eq!(team.slot_roles[10], PlayerRole::Standard);
+    }
+
+    #[test]
+    fn removing_a_player_who_was_never_a_starter_changes_no_role() {
+        let mut team = team_with_xi(&[(4, PlayerRole::Mezzala)]);
+        let before = team.slot_roles.clone();
+
+        team.remove_player_references("someone-else");
+
+        assert_eq!(team.slot_roles, before);
+        assert_eq!(team.starting_xi_ids.len(), 11);
     }
 }
