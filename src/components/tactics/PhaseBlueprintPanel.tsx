@@ -21,7 +21,13 @@ const TRANSITION_FIELDS = [
   ["break_speed", "breakSpeed", ["Slow", "Medium", "Fast"]] as const,
 ];
 
-const SECTIONS = [
+/**
+ * The nine dials, grouped as a manager reads them. Exported because the
+ * inspector shows the same nine as text before it offers them as controls —
+ * two lists that could disagree about which dials exist would be one list too
+ * many.
+ */
+export const PHASE_FIELD_SECTIONS = [
   ["withBall", WITH_BALL_FIELDS] as const,
   ["withoutBall", WITHOUT_BALL_FIELDS] as const,
   ["transitions", TRANSITION_FIELDS] as const,
@@ -82,7 +88,7 @@ export function PhaseBlueprintPanel({
   const { t } = useTranslation();
   return (
     <div className="divide-y divide-gray-100 dark:divide-navy-700">
-      {SECTIONS.map(([labelKey, fields]) => (
+      {PHASE_FIELD_SECTIONS.map(([labelKey, fields]) => (
         <div key={labelKey} className="p-3 space-y-2">
           <div className="mb-1.5 text-[11px] font-heading font-bold uppercase tracking-[0.2em] text-primary-500 dark:text-primary-400">
             {t(`tactics.phaseLabels.${labelKey}`)}

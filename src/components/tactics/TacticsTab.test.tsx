@@ -512,12 +512,15 @@ describe("TacticsTab", () => {
       />,
     );
 
-    // Modal requires two players — select f1 then m1 to open comparison
+    // Step 8b-1 moves the two-player comparison from the modal into the details pane.
     fireEvent.click(pitchPlayer("f1"));
     fireEvent.click(pitchPlayer("m1"));
 
-    expect(screen.getByText("common.positions.Forward")).toBeInTheDocument();
-    expect(screen.queryByText("Forward")).not.toBeInTheDocument();
+    const pane = screen.getByRole("region", { name: "tactics.detailsPane" });
+    // Step 8b-1 requires the localized comparison content to live inside the inspector.
+    expect(within(pane).getByText("common.positions.Forward")).toBeInTheDocument();
+    // Step 8b-1 keeps raw position prose out of the inline inspector comparison.
+    expect(within(pane).queryByText("Forward")).not.toBeInTheDocument();
   });
 
   it("allows selecting a bench player from the pitch view and swapping them with a starter", async () => {
@@ -531,16 +534,19 @@ describe("TacticsTab", () => {
 
     fireEvent.click(screen.getByTestId("pitch-bench-player-d5"));
 
-    // Modal only opens after both players are selected
-    expect(screen.queryByText("tactics.selectedPlayer")).not.toBeInTheDocument();
+    const pane = screen.getByRole("region", { name: "tactics.detailsPane" });
+    // Step 8b-1 gives a single selected player an inspector state before comparison.
+    expect(within(pane).getByText("tactics.selectedPlayer")).toBeInTheDocument();
 
     fireEvent.click(pitchPlayer("d2"));
 
     expect(squadServiceMocks.setStartingXi).not.toHaveBeenCalled();
-    expect(screen.getByText("tactics.comparePlayer")).toBeInTheDocument();
+    // Step 8b-1 moves the comparison into the persistent details pane.
+    expect(within(pane).getByText("tactics.comparePlayer")).toBeInTheDocument();
 
     fireEvent.click(
-      screen.getByRole("button", { name: "tactics.confirmSwap" }),
+      // Step 8b-1 moves swap confirmation from the modal into the inspector.
+      within(pane).getByRole("button", { name: "tactics.confirmSwap" }),
     );
 
     await waitFor(() => {
@@ -574,17 +580,20 @@ describe("TacticsTab", () => {
     fireEvent.click(pitchPlayer("d1"));
 
     expect(onSelectPlayer).not.toHaveBeenCalled();
-    // Modal only opens after both players are selected
-    expect(screen.queryByText("tactics.selectedPlayer")).not.toBeInTheDocument();
+    const pane = screen.getByRole("region", { name: "tactics.detailsPane" });
+    // Step 8b-1 makes the first pitch click populate the single-player inspector.
+    expect(within(pane).getByText("tactics.selectedPlayer")).toBeInTheDocument();
 
     fireEvent.click(pitchPlayer("d2"));
 
     expect(onSelectPlayer).not.toHaveBeenCalled();
     expect(squadServiceMocks.setStartingXi).not.toHaveBeenCalled();
-    expect(screen.getByText("tactics.comparePlayer")).toBeInTheDocument();
+    // Step 8b-1 makes the second pitch click replace that state with inline comparison.
+    expect(within(pane).getByText("tactics.comparePlayer")).toBeInTheDocument();
 
     fireEvent.click(
-      screen.getByRole("button", { name: "tactics.confirmSwap" }),
+      // Step 8b-1 keeps the swap action in the details pane instead of an overlay.
+      within(pane).getByRole("button", { name: "tactics.confirmSwap" }),
     );
 
     await waitFor(() => {
@@ -616,13 +625,18 @@ describe("TacticsTab", () => {
     fireEvent.click(pitchPlayer("d1"));
     fireEvent.click(pitchPlayer("m1"));
 
-    expect(screen.getByText("tactics.comparePlayer")).toBeInTheDocument();
-    expect(screen.getAllByText("Player m1").length).toBeGreaterThan(0);
+    const pane = screen.getByRole("region", { name: "tactics.detailsPane" });
+    // Step 8b-1 places the comparison heading inside the details pane.
+    expect(within(pane).getByText("tactics.comparePlayer")).toBeInTheDocument();
+    // Step 8b-1 places the compared player's summary inside the details pane.
+    expect(within(pane).getAllByText("Player m1").length).toBeGreaterThan(0);
+    // Step 8b-1 places the compared attributes inside the details pane.
     expect(
-      screen.getAllByText("common.attributes.vision").length,
+      within(pane).getAllByText("common.attributes.vision").length,
     ).toBeGreaterThan(0);
+    // Step 8b-1 places swap confirmation inside the details pane.
     expect(
-      screen.getByRole("button", { name: "tactics.confirmSwap" }),
+      within(pane).getByRole("button", { name: "tactics.confirmSwap" }),
     ).toBeInTheDocument();
   });
 
@@ -640,8 +654,12 @@ describe("TacticsTab", () => {
     fireEvent.click(screen.getByTestId("xi-player-d1"));
 
     expect(onSelectPlayer).not.toHaveBeenCalled();
-    // Modal stays closed until a second player is selected
-    expect(screen.queryByText("tactics.selectedPlayer")).not.toBeInTheDocument();
+    // Step 8b-1 replaces the modal-only flow with a first-selection inspector state.
+    expect(
+      within(
+        screen.getByRole("region", { name: "tactics.detailsPane" }),
+      ).getByText("tactics.selectedPlayer"),
+    ).toBeInTheDocument();
   });
 
   it("shows all starting XI players in the left panel list", () => {
@@ -659,7 +677,7 @@ describe("TacticsTab", () => {
   });
 
   // A natural striker occupying the right-midfield slot (index 8 in 4-4-2).
-  // Issue #272: the left panel and the pitch role picker must follow the
+  // Issue #272: the left panel and the inspector role picker must follow the
   // deployed slot, which is also what the backend validates roles against.
   const makeOutOfPositionGameState = (): GameStateData => {
     const gameState = makeGameState();
@@ -694,7 +712,7 @@ describe("TacticsTab", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("offers pitch roles for the deployed slot, not the natural position", () => {
+  it("offers inspector roles for the deployed slot, not the natural position", () => {
     const gameState = makeOutOfPositionGameState();
     squadServiceMocks.getSquad.mockResolvedValue(
       gameState.players.filter((p) => p.team_id === "team1"),
@@ -708,8 +726,10 @@ describe("TacticsTab", () => {
       />,
     );
 
-    const card = pitchPlayer("m4");
-    fireEvent.click(within(card).getByRole("combobox"));
+    fireEvent.click(pitchPlayer("m4"));
+    const pane = screen.getByRole("region", { name: "tactics.detailsPane" });
+    // Step 8b-1 moves the deployed-slot role picker from the pitch token to the inspector.
+    fireEvent.click(within(pane).getByRole("combobox"));
 
     // Right-midfield roles are on offer; striker-only roles are not.
     expect(
@@ -769,8 +789,10 @@ describe("TacticsTab", () => {
     fireEvent.click(screen.getByTestId("pitch-bench-player-d5"));
     fireEvent.click(pitchPlayer("d2"));
 
+    const pane = screen.getByRole("region", { name: "tactics.detailsPane" });
+    // Step 8b-1 keeps the illegal-swap guard on the inspector's confirmation control.
     expect(
-      screen.getByRole("button", { name: "tactics.confirmSwap" }),
+      within(pane).getByRole("button", { name: "tactics.confirmSwap" }),
     ).toBeDisabled();
   });
 
@@ -883,7 +905,7 @@ describe("TacticsTab", () => {
     });
   });
 
-  it("persists default set piece and team role assignments from the right panel", async () => {
+  it("persists default set piece and team role assignments from the responsibility editor", async () => {
     render(
       <TacticsTab
         gameState={makeGameState()}
@@ -892,8 +914,16 @@ describe("TacticsTab", () => {
       />,
     );
 
+    const pane = screen.getByRole("region", { name: "tactics.detailsPane" });
+    // Step 8b-1 puts responsibility controls behind their section's Adjust action.
     fireEvent.click(
-      screen.getByRole("button", { name: "tactics.autoSelectAssignments" }),
+      within(pane).getAllByRole("button", { name: "tactics.adjust" })[1],
+    );
+    // Step 8b-1 keeps the existing auto-assignment action inside that editor.
+    fireEvent.click(
+      within(pane).getByRole("button", {
+        name: "tactics.autoSelectAssignments",
+      }),
     );
 
     await waitFor(() => {

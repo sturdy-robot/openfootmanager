@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { getPlayerOvr } from "../../lib/helpers";
 import type { PlayerData, TeamMatchRolesData } from "../../store/gameStore";
 import ContextMenu from "../ContextMenu";
-import { Card, PitchToken, Select } from "../ui";
+import { Card, PitchToken } from "../ui";
 import { FormationBoard } from "../match/FormationBoard";
 import {
   isPlayerExactForSlot,
@@ -15,16 +15,13 @@ import {
 } from "../squad/SquadTab.helpers";
 import type { TacticsPitchSlot } from "./TacticsTab.helpers";
 import { buildTacticsPlayerContextMenuItems } from "./TacticsContextMenu.helpers";
-import type { KitPattern, PlayerRole, TacticsPhaseSettings } from "../../store/types";
-import { getRoleOptions } from "../../lib/playerRoles";
+import type { KitPattern, TacticsPhaseSettings } from "../../store/types";
 
 interface TacticsPitchProps {
   benchPlayers?: PlayerData[];
   dragState: DragState | null;
   formation: string;
   matchRoles?: TeamMatchRolesData;
-  onRoleChange?: (playerId: string, role: PlayerRole) => void;
-  playerRoles?: Record<string, PlayerRole>;
   tacticsPhase?: TacticsPhaseSettings;
   teamKitPattern?: KitPattern;
   teamPrimaryColor?: string;
@@ -206,8 +203,6 @@ export default function TacticsPitch({
   dragState,
   formation,
   matchRoles,
-  onRoleChange,
-  playerRoles,
   tacticsPhase,
   teamKitPattern,
   teamPrimaryColor,
@@ -292,39 +287,7 @@ export default function TacticsPitch({
         ovr={getPlayerOvr(player)}
         position={slotPosition}
         positionAbbr={translatePositionAbbreviation(t, slotPosition)}
-      >
-        {onRoleChange && (
-          <div
-            className="w-full"
-            draggable={false}
-            onKeyDown={(event) => event.stopPropagation()}
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <Select
-              fullWidth
-              onChange={(event) => {
-                onRoleChange(player.id, event.target.value as PlayerRole);
-              }}
-              selectSize="sm"
-              value={playerRoles?.[player.id] ?? "Standard"}
-              variant="ghost"
-            >
-              {getRoleOptions(
-                // Roles follow the deployed slot, which is what the backend
-                // validates against — natural-position roles for an
-                // out-of-position player would be rejected and silently
-                // revert (#272).
-                slotPosition,
-                playerRoles?.[player.id] ?? "Standard",
-              ).map((role) => (
-                <option key={role} value={role}>
-                  {t(`tactics.playerRoles.${role}`, role)}
-                </option>
-              ))}
-            </Select>
-          </div>
-        )}
-      </PitchToken>
+      />
       </div>
     </ContextMenu>
   );

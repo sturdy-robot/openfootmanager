@@ -9,7 +9,7 @@ import { MatchSnapshot, EnginePlayerData, FORMATIONS, PLAY_STYLES, type MatchCom
 import PreMatchLineup, { parseFormationNeeds, POSITION_KEY_STATS, statColor, starterOvrColor, getStatVal } from "./PreMatchLineup";
 import { condColor } from "../../lib/playerConditionDisplay";
 import { getSetPieceStats } from "./SetPieceSelector";
-import { FormationPitch } from "./FormationPitch";
+import { FormationPitch, formationSlotPositions } from "./FormationPitch";
 import { makeTeamFallback } from "./helpers";
 import {
   isPlayerExactForSlot,
@@ -175,34 +175,7 @@ export default function PreMatchSetup({
             pattern: userPattern,
             number: sp?.jersey_number,
           }}
-        >
-          <div
-            draggable={false}
-            onClick={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}
-            className="w-full"
-          >
-            <Select
-              selectSize="sm"
-              variant="ghost"
-              fullWidth
-              value={playerRoles[player.id] ?? "Standard"}
-              onChange={(e) => {
-                handlePlayerRoleChange(player.id, e.target.value as PlayerRole);
-              }}
-            >
-              {getRoleOptions(
-                displayPosition,
-                playerRoles[player.id] ?? "Standard",
-              ).map((role) => (
-                <option key={role} value={role}>
-                  {t(`tactics.playerRoles.${role}`, role)}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </PitchToken>
+        />
       </div>
     );
   };
@@ -247,6 +220,66 @@ export default function PreMatchSetup({
     userSide === "Home" ? snapshot.home_bench ?? [] : snapshot.away_bench ?? [];
 
   const formationNeeds = parseFormationNeeds(userTeam.formation);
+
+  const userSlotPositions = useMemo(
+    () => formationSlotPositions(userTeam.formation, userTeam.players),
+    [userTeam.formation, userTeam.players],
+  );
+  const selectedStarterIndex = userTeam.players.findIndex(
+    (player) => player.id === selectedStarterId,
+  );
+  const selectedStarter =
+    selectedStarterIndex >= 0 ? userTeam.players[selectedStarterIndex] : null;
+  const selectedStarterSlot =
+    selectedStarterIndex >= 0
+      ? userSlotPositions[selectedStarterIndex] ?? selectedStarter?.position
+      : undefined;
+
+  // The role picker used to sit inside each of the eleven pitch tokens, which
+  // put a control inside what is now a real slot button — invalid, and the
+  // reason issue #322 existed. One picker for the selected player says the same
+  // thing without eleven comboboxes competing with the shape they annotate.
+  const renderSelectedStarter = () =>
+    selectedStarter && selectedStarterSlot ? (
+      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-colors duration-300 dark:border-navy-700 dark:bg-navy-800">
+        <p className="text-[10px] font-heading font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+          {t("tactics.selectedPlayer")}
+        </p>
+        <p className="mt-0.5 truncate text-sm font-heading font-bold text-gray-900 dark:text-gray-100">
+          {storeById.get(selectedStarter.id)?.match_name ?? selectedStarter.name}
+        </p>
+        <p className="mt-0.5 text-[10px] text-gray-500 dark:text-gray-400">
+          {t("tactics.deployedSlot")} ·{" "}
+          {translatePositionAbbreviation(t, selectedStarterSlot)}
+        </p>
+        <span className="mb-1 mt-2.5 block text-[10px] font-heading uppercase tracking-widest text-gray-500 dark:text-gray-400">
+          {t("tactics.playerRole")}
+        </span>
+        <Select
+          aria-label={t("tactics.playerRole")}
+          fullWidth
+          onChange={(e) => {
+            handlePlayerRoleChange(
+              selectedStarter.id,
+              e.target.value as PlayerRole,
+            );
+          }}
+          selectSize="sm"
+          value={playerRoles[selectedStarter.id] ?? "Standard"}
+        >
+          {getRoleOptions(
+            // The deployed slot, not the natural position — that is what the
+            // backend validates a role against.
+            selectedStarterSlot,
+            playerRoles[selectedStarter.id] ?? "Standard",
+          ).map((role) => (
+            <option key={role} value={role}>
+              {t(`tactics.playerRoles.${role}`, role)}
+            </option>
+          ))}
+        </Select>
+      </div>
+    ) : null;
 
   const handleFormationChange = async (formation: string) => {
     try {
@@ -502,8 +535,9 @@ export default function PreMatchSetup({
           className="aspect-[5/7] h-full max-h-full w-auto max-w-full"
         />
       </div>
-      {/* Right: set pieces + phase blueprint */}
+      {/* Right: the selected player, set pieces, phase blueprint */}
       <div className="flex min-h-0 flex-col gap-4 overflow-y-auto">
+        {renderSelectedStarter()}
         {renderSetPieces()}
         <div className="rounded-xl border border-gray-200 dark:border-navy-700 bg-white dark:bg-navy-800 shadow-sm transition-colors duration-300">
           <div className="border-b border-gray-100 dark:border-navy-700 px-3 py-2.5">

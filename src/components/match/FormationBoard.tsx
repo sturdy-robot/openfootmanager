@@ -222,12 +222,12 @@ function FormationBoardSlotHost<T>({
   };
 
   return (
-    // A div with button semantics, not a <button>, because the tactics token
-    // still embeds a role combobox and nesting a control inside a button is
-    // invalid. The role picker moves to the inspector in the workbench rebuild
-    // and this becomes a real button then; until it does, the name and the
-    // focus ring are pinned by test so issue #322 cannot recur quietly.
-    <div
+    // A real button, now that no token embeds a control. It was a div with
+    // button semantics for exactly as long as the role combobox lived inside
+    // the token, because nesting a control in a button is invalid — that is
+    // what issue #322 was. `aria-disabled` rather than `disabled`, because a
+    // slot the manager cannot use is still a slot they should be able to read.
+    <button
       aria-disabled={isDisabled || undefined}
       aria-label={slot.ariaLabel}
       className={`${shell} rounded-2xl ${FOCUS_RING} ${isDisabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
@@ -245,11 +245,10 @@ function FormationBoardSlotHost<T>({
       }}
       onDrop={(event) => interaction?.onSlotDrop?.(event, coordinate.index)}
       onKeyDown={handleKeyDown}
-      role="button"
       style={positioning}
-      tabIndex={isDisabled ? -1 : 0}
+      type="button"
     >
       {children}
-    </div>
+    </button>
   );
 }

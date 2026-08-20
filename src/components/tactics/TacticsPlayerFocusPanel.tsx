@@ -109,7 +109,12 @@ function PlayerSummary({
   );
 }
 
-function SinglePlayerAttributes({ player }: { player: PlayerData }) {
+/**
+ * One player's attributes, grouped. Exported so the inspector's single-player
+ * view and this comparison panel keep one opinion about which attributes
+ * matter and how they are grouped.
+ */
+export function SinglePlayerAttributes({ player }: { player: PlayerData }) {
   const { t } = useTranslation();
   const isGoalkeeper = getNormalizedPlayerPosition(player) === "Goalkeeper";
 
@@ -285,8 +290,9 @@ export default function TacticsPlayerFocusPanel({
           {onClose && (
             <button
               type="button"
+              aria-label={t("tactics.clearSelection")}
               onClick={onClose}
-              className="rounded-lg p-1 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+              className="rounded-lg p-1 text-white/60 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 focus:ring-offset-navy-800"
             >
               <X className="h-4 w-4" />
             </button>

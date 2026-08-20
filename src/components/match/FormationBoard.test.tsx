@@ -195,7 +195,7 @@ describe("FormationBoard rendering and interaction", () => {
     expect(onSlotDragEnd).toHaveBeenCalledTimes(1);
   });
 
-  it("pins the interim rich-token host name, keyboard activation, and visible focus ring", () => {
+  it("pins the rich-token host name, keyboard activation, and visible focus ring", () => {
     const FormationBoard = requireFormationBoard();
     const onSlotActivate = vi.fn();
 
@@ -217,8 +217,8 @@ describe("FormationBoard rendering and interaction", () => {
     fireEvent.keyDown(control, { key: "Enter" });
     fireEvent.keyDown(control, { key: " " });
 
-    expect(control.tagName).toBe("DIV");
-    expect(control).toHaveAttribute("tabindex", "0");
+    // Step 8b-1 moves the role picker to the inspector, so the slot host is a real button.
+    expect(control.tagName).toBe("BUTTON");
     expect(control.className).toContain("focus-visible:ring-2");
     expect(control.className).toMatch(/dark:focus-visible:ring-offset-/);
     expect(onSlotActivate).toHaveBeenNthCalledWith(1, 0);
@@ -253,6 +253,8 @@ describe("FormationBoard rendering and interaction", () => {
     fireEvent.click(control);
     fireEvent.keyDown(control, { key: "Enter" });
 
+    // Step 8b-1 keeps the disabled-slot semantics when the host becomes a real button.
+    expect(control.tagName).toBe("BUTTON");
     expect(control).toHaveAttribute("aria-disabled", "true");
     expect(control).not.toHaveAttribute("draggable", "true");
     expect(onSlotActivate).not.toHaveBeenCalled();

@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { KitPattern } from "../../store/types";
 import { condBgColor } from "../../lib/playerConditionDisplay";
@@ -42,8 +41,6 @@ export interface PitchTokenProps {
   jerseyNumber?: number | null;
   /** Role markers stacked at the top-left (max 3 shown). */
   markers?: PitchTokenMarker[];
-  /** Optional slot below the name — e.g. a tactical-role combobox. */
-  children?: ReactNode;
 }
 
 function fitRingClass(fitTone: PitchFitTone): string {
@@ -82,8 +79,11 @@ function getInitials(name: string): string {
 /**
  * Presentational pitch token shared by the tactics board and the pre-match
  * screen: one selected visual treatment with a fit-tone ring, corner badges
- * (position + OVR), stacked role markers, the player name, an optional control
- * slot (e.g. a role combobox), and a condition bar.
+ * (position + OVR), stacked role markers, the player name, and a condition bar.
+ *
+ * Nothing focusable goes in here. The token is rendered inside a real button,
+ * and a control nested in a button is invalid — issue #322. Anything the
+ * manager can change belongs in the inspector, next to the pitch.
  *
  * It renders visuals only — wrap it in a button / drag handle and wire
  * interactions at the call site.
@@ -99,7 +99,6 @@ export function PitchToken({
   jersey,
   jerseyNumber,
   markers,
-  children,
 }: PitchTokenProps) {
   const { t } = useTranslation();
   const tacticsTokenStyle = useSettingsStore(
@@ -125,10 +124,8 @@ export function PitchToken({
     (tacticsTokenStyle !== "shirt" || jersey == null);
 
   return (
-    // A labelled group, not role="img": the tactics token still embeds a role
-    // combobox, and role="img" would make every descendant presentational and
-    // hide it. The group contributes its name to the interactive parent while
-    // leaving what is inside reachable.
+    // A labelled group whose name is what the surrounding slot button is
+    // called. Nothing inside is reachable on its own, which is the point.
     <div
       aria-label={tokenLabel}
       className="flex w-full flex-col items-center gap-1"
@@ -195,8 +192,6 @@ export function PitchToken({
       <div className="max-w-full truncate text-xs font-heading font-bold uppercase tracking-[0.12em] text-white drop-shadow-sm">
         {name}
       </div>
-
-      {children}
 
       <div className="w-full">
         <div className="h-1.5 overflow-hidden rounded-full bg-white/10">

@@ -196,16 +196,19 @@ describe("tactics draft in the screen", () => {
     ).toBeEnabled();
   });
 
-  it("withdraws the slot role pickers while a shape change is staged", () => {
+  it("withdraws the selected player's role picker while a shape change is staged", () => {
     renderTactics();
 
-    const board = screen.getByRole("region", { name: "tactics.startingXI" });
-    expect(within(board).queryAllByRole("combobox").length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByTestId("xi-player-m4"));
+    const pane = screen.getByRole("region", { name: "tactics.detailsPane" });
+    // Step 8b-1 moves the settled-shape role picker from the pitch into the selected player's inspector.
+    expect(within(pane).queryAllByRole("combobox")).toHaveLength(1);
 
     chooseFromSelect("tactics.formation", "4-3-3");
 
     // A role chosen now would be validated against the formation the server
     // still holds, and then overwritten by the draft's own roles on Apply.
-    expect(within(board).queryAllByRole("combobox")).toHaveLength(0);
+    // Step 8b-1 moves the staged-formation guard with the role picker into the inspector.
+    expect(within(pane).queryAllByRole("combobox")).toHaveLength(0);
   });
 });

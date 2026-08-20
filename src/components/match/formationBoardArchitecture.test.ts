@@ -69,10 +69,14 @@ describe("one pitch renderer architecture", () => {
     expect(legacyReferences).toEqual([]);
   });
 
-  it("pins the interim rich-token host and its light/dark focus treatment in the core", () => {
+  it("pins the rich-token host and its light/dark focus treatment in the core", () => {
     const core = stripComments(formationBoard);
 
-    expect(core).toMatch(/role\s*=\s*["']button["']/);
+    // Step 8b: with no control left inside a token, the slot host is a real
+    // button rather than a div wearing the role — the nesting that made a div
+    // necessary is what issue #322 was.
+    expect(core).toMatch(/<button\b/);
+    expect(core).not.toMatch(/role\s*=\s*["']button["']/);
     expect(core).toContain("focus-visible:ring-2");
     expect(core).toContain("focus-visible:ring-offset-2");
     expect(core).toMatch(/dark:focus-visible:ring-offset-/);

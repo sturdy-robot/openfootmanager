@@ -68,6 +68,33 @@ function fallbackGroupFor(
 }
 
 /**
+ * The slot each XI entry is deployed in, index-aligned with `players`.
+ *
+ * The board already works this out to place the tokens; a caller that needs to
+ * name a player's slot outside the token — a role picker in an inspector, say —
+ * asks the same question rather than re-deriving the answer from the formation
+ * string and hoping the two agree.
+ */
+export function formationSlotPositions(
+  formation: string,
+  players: EnginePlayerData[],
+): string[] {
+  const slots = players.map((player) => ({
+    occupant: player,
+    fallbackGroup: fallbackGroupFor(player),
+  }));
+  const positions: string[] = [];
+  for (const coordinate of buildFormationBoardCoordinates(
+    formation,
+    slots,
+    "normal",
+  )) {
+    positions[coordinate.index] = coordinate.position;
+  }
+  return positions;
+}
+
+/**
  * The engine XI drawn on the shared board.
  *
  * Entry `i` of the XI is formation slot `i`, so the board is handed the players

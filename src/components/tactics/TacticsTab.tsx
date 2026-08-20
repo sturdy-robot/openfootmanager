@@ -9,9 +9,8 @@ import { rolesByStartingPlayer } from "../../lib/playerRoles";
 
 import TacticsPitch from "./TacticsPitch";
 import TacticsPlayerList from "./TacticsPlayerList";
-import TacticsRightPanel from "./TacticsRightPanel";
+import TacticsInspector from "./TacticsInspector";
 import TacticsCommandBar from "./TacticsCommandBar";
-import TacticsPlayerFocusPanel from "./TacticsPlayerFocusPanel";
 import { useTacticsDraft } from "./useTacticsDraft";
 import { useTacticsLibrary } from "./useTacticsLibrary";
 import { useTacticsFilters } from "./useTacticsFilters";
@@ -204,22 +203,6 @@ export default function TacticsTab({
             comparePlayerId={comparePlayerId}
             hoveredSlot={hoveredSlot}
             matchRoles={effectiveMatchRoles}
-            // While a shape change is staged the pitch is drawing slots the
-            // server does not have yet, so a role chosen here would be validated
-            // against the old formation — and then overwritten by the draft's own
-            // roles on Apply. Roles come back once the shape is settled.
-            onRoleChange={
-              formation === team.formation
-                ? (playerId, role) => {
-                    void setPlayerRole(playerId, role)
-                      .then(onGameUpdate)
-                      .catch((error: unknown) => {
-                        console.error("Failed to set player role:", error);
-                      });
-                  }
-                : undefined
-            }
-            playerRoles={team ? rolesByStartingPlayer(team.starting_xi_ids, team.slot_roles, team.player_roles) : undefined}
             tacticsPhase={tacticsPhase}
             teamKitPattern={team?.kit_pattern}
             teamPrimaryColor={team?.colors?.primary}
@@ -255,37 +238,43 @@ export default function TacticsTab({
           />
         </div>
 
-        {/* Right: roles + phase blueprint */}
-        <TacticsRightPanel
+        {/* Right: whatever is selected — the team, one player, or two */}
+        <TacticsInspector
           allSquad={roster}
+          canConfirmSwap={canConfirmSwap}
+          comparePlayer={comparePlayer}
+          deployedPosition={
+            selectedPlayer ? xiActivePosition.get(selectedPlayer.id) : undefined
+          }
+          isShapeSettled={formation === team.formation}
           matchRoles={team.match_roles}
+          onAssignBestFit={(playerId) => {
+            void handleAssignBestFit(playerId);
+          }}
+          onClearSelection={clearLineupSelection}
+          onConfirmSwap={() => {
+            void handleConfirmSwap();
+          }}
           onGameUpdate={onGameUpdate}
+          onOpenPlayerProfile={onSelectPlayer}
+          onPlayerRoleChange={(playerId, role) => {
+            void setPlayerRole(playerId, role)
+              .then(onGameUpdate)
+              .catch((error: unknown) => {
+                console.error("Failed to set player role:", error);
+              });
+          }}
           onTacticsPhaseChange={stagePhase}
+          playerRoles={rolesByStartingPlayer(
+            team.starting_xi_ids,
+            team.slot_roles,
+            team.player_roles,
+          )}
+          selectedPlayer={selectedPlayer}
           startingPlayers={startingXI}
           tacticsPhase={tacticsPhase}
         />
       </div>
-
-      {/* Inspector modal — only when both players are selected for comparison */}
-      {selectedPlayer && comparePlayer && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
-            onClick={clearLineupSelection}
-          />
-          <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="pointer-events-auto w-full max-w-lg max-h-[85vh] overflow-y-auto">
-              <TacticsPlayerFocusPanel
-                canConfirmSwap={canConfirmSwap}
-                comparePlayer={comparePlayer}
-                onClose={clearLineupSelection}
-                onConfirmSwap={() => { void handleConfirmSwap(); }}
-                selectedPlayer={selectedPlayer}
-              />
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }
