@@ -1,6 +1,7 @@
 pub mod ai;
 pub mod clock;
 pub mod compliance;
+pub mod descriptor;
 pub mod engine;
 pub mod event;
 pub mod live_match;
@@ -43,6 +44,9 @@ pub use engine::simulate;
 pub use engine::simulate_setup;
 pub use engine::simulate_with_rng;
 pub use clock::{MatchClock, MatchPeriod};
+pub use descriptor::{
+    CONTRACT_VERSION, EngineDescriptor, EngineInfo, MatchCommandKind, NativeStep,
+};
 pub use event::{EventDetail, EventType, MatchEvent, ShotTechnique};
 pub use live_match::{
     LiveMatchState, MatchCommand, MatchPhase, MatchSnapshot, MinuteResult, PenaltyShootoutSnapshot,

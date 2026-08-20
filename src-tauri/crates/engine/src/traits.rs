@@ -109,10 +109,7 @@ impl MatchSetup {
 ///
 /// This is the path the league uses for fixtures the player is not watching,
 /// and the path `sim-bench` measures.
-pub trait InstantEngine {
-    /// Stable identifier, used to select an engine by name.
-    fn id(&self) -> &'static str;
-
+pub trait InstantEngine: crate::descriptor::EngineInfo {
     /// Simulate a full match and return the report.
     ///
     /// Must be deterministic: the same `rng` seed and the same inputs must
@@ -122,10 +119,8 @@ pub trait InstantEngine {
 
 /// An engine that can be stepped a minute at a time, accepting commands
 /// between minutes — what the watched match and (later) replay playback use.
-pub trait LiveEngine {
+pub trait LiveEngine: crate::descriptor::EngineInfo {
     type State: LiveState;
-
-    fn id(&self) -> &'static str;
 
     fn kickoff(&self, setup: MatchSetup) -> Self::State;
 }
@@ -161,11 +156,30 @@ pub struct DefaultEngine;
 
 pub const DEFAULT_ENGINE_ID: &str = "default";
 
-impl InstantEngine for DefaultEngine {
-    fn id(&self) -> &'static str {
-        DEFAULT_ENGINE_ID
+impl crate::descriptor::EngineInfo for DefaultEngine {
+    fn descriptor(&self) -> crate::descriptor::EngineDescriptor {
+        use crate::descriptor::{EngineDescriptor, MatchCommandKind, NativeStep, CONTRACT_VERSION};
+        EngineDescriptor {
+            id: DEFAULT_ENGINE_ID,
+            engine_version: crate::ENGINE_VERSION,
+            contract_version: CONTRACT_VERSION,
+            // The possession chain measures actions in seconds internally, but
+            // it only surfaces a resolved minute, so a caller cannot ask it for
+            // less than one.
+            native_step: NativeStep::WholeMinute,
+            // Every command the contract defines is accepted.
+            commands: MatchCommandKind::ALL,
+            // Play is resolved over five bands and three lanes, not on a pitch
+            // with coordinates. There is nothing honest to report here.
+            spatial_telemetry: false,
+            extra_time: true,
+            penalty_shootout: true,
+            in_match_ai: true,
+        }
     }
+}
 
+impl InstantEngine for DefaultEngine {
     fn simulate(&self, setup: &MatchSetup, rng: &mut dyn Rng) -> MatchReport {
         // Straight through, not via `simulate_with_rng`: that takes the two
         // teams and a config, so routing through it silently discarded the
@@ -177,10 +191,6 @@ impl InstantEngine for DefaultEngine {
 
 impl LiveEngine for DefaultEngine {
     type State = crate::live_match::LiveMatchState;
-
-    fn id(&self) -> &'static str {
-        DEFAULT_ENGINE_ID
-    }
 
     fn kickoff(&self, setup: MatchSetup) -> Self::State {
         crate::live_match::LiveMatchState::new(
