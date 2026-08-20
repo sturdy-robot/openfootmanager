@@ -2536,7 +2536,12 @@
     "yourResult": "Tu resultado",
     "continue": "Continuar",
     "notableUpset": "Sorpresa notable",
-    "pts": "pts."
+    "pts": "pts.",
+    "formationRejected": "No se pudo cambiar la formación.",
+    "playStyleRejected": "No se pudo cambiar el estilo de juego.",
+    "roleRejected": "No se pudo asignar ese rol.",
+    "swapRejected": "No se pudo realizar el cambio.",
+    "instructionsRejected": "No se pudieron cambiar las instrucciones del equipo."
   },
   "endOfSeason": {
     "seasonComplete": "Temporada Completa",

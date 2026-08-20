@@ -2555,7 +2555,12 @@
     "yourResult": "Il tuo risultato",
     "continue": "Continua",
     "notableUpset": "Sorpresa del turno",
-    "pts": "pts."
+    "pts": "pts.",
+    "formationRejected": "Non è stato possibile cambiare il modulo.",
+    "playStyleRejected": "Non è stato possibile cambiare lo stile di gioco.",
+    "roleRejected": "Non è stato possibile assegnare quel ruolo.",
+    "swapRejected": "Non è stato possibile effettuare il cambio.",
+    "instructionsRejected": "Non è stato possibile cambiare le istruzioni di squadra."
   },
   "notifications": {
     "attentionRequired": "Attenzione Richiesta",

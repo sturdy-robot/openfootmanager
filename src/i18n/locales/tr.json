@@ -2536,7 +2536,12 @@
     "yourResult": "Sizin Sonucunuz",
     "continue": "Devam Et",
     "notableUpset": "Dikkat Çeken Sürpriz",
-    "pts": "P"
+    "pts": "P",
+    "formationRejected": "Diziliş değiştirilemedi.",
+    "playStyleRejected": "Oyun stili değiştirilemedi.",
+    "roleRejected": "Bu rol verilemedi.",
+    "swapRejected": "Bu değişiklik yapılamadı.",
+    "instructionsRejected": "Takım talimatları değiştirilemedi."
   },
   "endOfSeason": {
     "seasonComplete": "Sezon Tamamlandı",

@@ -2536,7 +2536,12 @@
     "yourResult": "Váš výsledek",
     "continue": "Pokračovat",
     "notableUpset": "Velké překvapení",
-    "pts": "b."
+    "pts": "b.",
+    "formationRejected": "Formaci se nepodařilo změnit.",
+    "playStyleRejected": "Herní styl se nepodařilo změnit.",
+    "roleRejected": "Tuto roli se nepodařilo přidělit.",
+    "swapRejected": "Změnu se nepodařilo provést.",
+    "instructionsRejected": "Týmové pokyny se nepodařilo změnit."
   },
   "endOfSeason": {
     "seasonComplete": "Sezóna dokončena",

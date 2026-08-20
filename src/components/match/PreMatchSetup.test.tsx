@@ -21,6 +21,7 @@ import PreMatchSetup from "./PreMatchSetup";
 
 const matchServiceMocks = vi.hoisted(() => ({
   applyMatchCommand: vi.fn(),
+  applyMatchTactics: vi.fn(),
   autoSelectSetPieces: vi.fn(),
 }));
 
@@ -31,6 +32,7 @@ const squadServiceMocks = vi.hoisted(() => ({
 
 vi.mock("../../services/matchService", () => ({
   applyMatchCommand: matchServiceMocks.applyMatchCommand,
+  applyMatchTactics: matchServiceMocks.applyMatchTactics,
   autoSelectSetPieces: matchServiceMocks.autoSelectSetPieces,
 }));
 
@@ -354,6 +356,7 @@ function scrollingAncestorOf(element: HTMLElement): Element | null {
 
 beforeEach(() => {
   matchServiceMocks.applyMatchCommand.mockReset();
+  matchServiceMocks.applyMatchTactics.mockReset();
   matchServiceMocks.autoSelectSetPieces.mockReset();
   squadServiceMocks.setPlayerRole.mockReset();
   squadServiceMocks.setPlayerRole.mockResolvedValue(gameState());
@@ -619,5 +622,104 @@ describe("pre-match player roles reach the running match", () => {
     });
     expect(squadServiceMocks.setPlayerRole).not.toHaveBeenCalled();
     expect(onUpdateSnapshot).toHaveBeenCalledWith(acknowledged);
+  });
+});
+
+describe("pre-match commands answer to the match, one at a time", () => {
+  it("sends a team instruction to the match rather than to the saved team", async () => {
+    const initial = snapshot();
+    const acknowledged: MatchSnapshot = {
+      ...initial,
+      home_team: {
+        ...initial.home_team,
+        tactics: { ...PHASE, build_up_style: "Long" },
+      },
+    };
+    matchServiceMocks.applyMatchTactics.mockResolvedValue(acknowledged);
+    const { onUpdateSnapshot } = renderSetup({ initialSnapshot: initial });
+
+    fireEvent.click(
+      within(detailsPane()).getByRole("button", {
+        name: "tactics.adjust tactics.teamInstructions",
+      }),
+    );
+    chooseFromSelect("tactics.phaseSettings.buildUpStyle", "tactics.phaseSettings.buildUpStyle_Long");
+
+    await waitFor(() => {
+      expect(matchServiceMocks.applyMatchTactics).toHaveBeenCalledTimes(1);
+    });
+
+    const sent = matchServiceMocks.applyMatchTactics.mock.calls[0]?.[0] as {
+      lineup_changes: unknown[];
+      side: string;
+      tactics: { build_up_style: string };
+    };
+
+    expect(sent.side).toBe("Home");
+    expect(sent.tactics.build_up_style).toBe("Long");
+    // Nothing else is being changed here, and an empty list is what keeps a
+    // dial off the substitution budget.
+    expect(sent.lineup_changes).toEqual([]);
+    // The engine copied the saved phase when the match was built, so writing
+    // the saved team would change a default and leave this match alone.
+    expect(squadServiceMocks.setTacticsPhase).not.toHaveBeenCalled();
+    expect(onUpdateSnapshot).toHaveBeenCalledWith(acknowledged);
+  });
+
+  it("will not let a role be chosen against a shape that is still in flight", async () => {
+    const initial = snapshot();
+    const deferred: { release?: () => void } = {};
+    matchServiceMocks.applyMatchCommand.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          deferred.release = () => resolve(initial);
+        }),
+    );
+    renderSetup({ initialSnapshot: initial });
+
+    selectPitchPlayer("Home Mid 2");
+    chooseFromSelect("tactics.formation", "4-3-3");
+
+    await waitFor(() => {
+      expect(matchServiceMocks.applyMatchCommand).toHaveBeenCalledTimes(1);
+    });
+
+    // The pitch is still drawing the old shape. A role chosen now is a role
+    // for a slot that may not survive — and whichever command reaches the
+    // engine second, the mismatch is discarded in silence.
+    expect(
+      screen.getByRole("combobox", { name: "tactics.playerRoleLabel" }),
+    ).toBeDisabled();
+    expect(matchServiceMocks.applyMatchCommand).toHaveBeenCalledTimes(1);
+
+    deferred.release?.();
+  });
+
+  it("keeps the player selected and says so when a swap is refused", async () => {
+    matchServiceMocks.applyMatchCommand.mockRejectedValue(new Error("refused"));
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    renderSetup();
+
+    selectPitchPlayer("Home Mid 3");
+    fireEvent.click(
+      within(detailsPane()).getByRole("button", { name: /Bench One/ }),
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("status").textContent).toContain(
+        "match.swapRejected",
+      );
+    });
+
+    // The pane stays open on the player the manager was working with. Closing
+    // it took away the context and the focus that was inside it, and left them
+    // to find the player again to try a second time.
+    expect(
+      within(detailsPane()).getByText("Home Mid 3"),
+    ).toBeInTheDocument();
+
+    consoleError.mockRestore();
   });
 });

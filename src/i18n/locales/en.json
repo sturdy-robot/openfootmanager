@@ -2536,7 +2536,12 @@
     "yourResult": "Your Result",
     "continue": "Continue",
     "notableUpset": "Notable Upset",
-    "pts": "pts"
+    "pts": "pts",
+    "formationRejected": "The shape could not be changed.",
+    "playStyleRejected": "The approach could not be changed.",
+    "roleRejected": "That role could not be given.",
+    "swapRejected": "The change could not be made.",
+    "instructionsRejected": "The team instructions could not be changed."
   },
   "endOfSeason": {
     "seasonComplete": "Season Complete",

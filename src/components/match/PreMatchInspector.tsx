@@ -38,6 +38,8 @@ const RESPONSIBILITIES: {
 
 interface PreMatchInspectorProps {
   bench: EnginePlayerData[];
+  /** A match command is out. Nothing that mutates the match may be sent yet. */
+  isBusy?: boolean;
   onAutoSelectTakers: () => void;
   onChangePlayerRole: (playerId: string, role: PlayerRole) => void;
   onSetPieceTaker: (role: PreMatchSetPieceRole, playerId: string) => void;
@@ -69,6 +71,7 @@ interface PreMatchInspectorProps {
  */
 export default function PreMatchInspector({
   bench,
+  isBusy = false,
   onAutoSelectTakers,
   onChangePlayerRole,
   onSetPieceTaker,
@@ -153,6 +156,7 @@ export default function PreMatchInspector({
                 </span>
                 <Select
                   aria-label={t("tactics.playerRoleLabel")}
+                  disabled={isBusy}
                   fullWidth
                   onChange={(event) => {
                     onChangePlayerRole(

@@ -2536,7 +2536,12 @@
     "yourResult": "Hasil Kamu",
     "continue": "Lanjut",
     "notableUpset": "Kejutan Menonjol",
-    "pts": "poin"
+    "pts": "poin",
+    "formationRejected": "Formasi tidak dapat diubah.",
+    "playStyleRejected": "Gaya bermain tidak dapat diubah.",
+    "roleRejected": "Peran itu tidak dapat diberikan.",
+    "swapRejected": "Perubahan itu tidak dapat dilakukan.",
+    "instructionsRejected": "Instruksi tim tidak dapat diubah."
   },
   "endOfSeason": {
     "seasonComplete": "Musim Selesai",

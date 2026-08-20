@@ -2536,7 +2536,12 @@
     "yourResult": "你的成绩",
     "continue": "继续",
     "notableUpset": "重大爆冷",
-    "pts": "分"
+    "pts": "分",
+    "formationRejected": "无法更改阵型。",
+    "playStyleRejected": "无法更改战术风格。",
+    "roleRejected": "无法指派该角色。",
+    "swapRejected": "无法完成该调整。",
+    "instructionsRejected": "无法更改球队指令。"
   },
   "endOfSeason": {
     "seasonComplete": "赛季结束",

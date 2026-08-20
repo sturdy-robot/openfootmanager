@@ -251,7 +251,7 @@ export const EMPTY_TACTICS_DRAFT_STATE: TacticsDraftState = {
  * draft sent to the backend must carry all nine — so the frontend needs the same
  * starting point the backend would have used.
  */
-const DEFAULT_TACTICS_PHASE: TacticsPhaseSettings = {
+export const DEFAULT_TACTICS_PHASE: TacticsPhaseSettings = {
   build_up_style: "Mixed",
   width: "Normal",
   tempo: "Direct",

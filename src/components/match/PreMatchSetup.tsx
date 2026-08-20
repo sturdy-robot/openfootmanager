@@ -1,15 +1,22 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FixtureData, GameStateData } from "../../store/gameStore";
 import type { MatchdayIdentity } from "../../lib/competitionName";
 import MatchdayShell from "./MatchdayShell";
-import { applyMatchCommand, autoSelectSetPieces } from "../../services/matchService";
+import {
+  applyMatchCommand,
+  applyMatchTactics,
+  autoSelectSetPieces,
+} from "../../services/matchService";
 import { getFixtureDisplayLabel } from "../../lib/helpers";
 import { MatchSnapshot, EnginePlayerData, FORMATIONS, PLAY_STYLES, type MatchCommand, type Side } from "./types";
 import PreMatchLineup, { parseFormationNeeds, POSITION_KEY_STATS, statColor, starterOvrColor, getStatVal } from "./PreMatchLineup";
 import { condColor } from "../../lib/playerConditionDisplay";
 import { FormationPitch, formationSlotPositions } from "./FormationPitch";
 import PreMatchInspector from "./PreMatchInspector";
+import { useAnnouncer } from "../../hooks/useAnnouncer";
+import { LiveRegion } from "../ui";
+import { DEFAULT_TACTICS_PHASE } from "../tactics/TacticsCustomTactics.helpers";
 import { makeTeamFallback } from "./helpers";
 import {
   isPlayerExactForSlot,
@@ -17,7 +24,6 @@ import {
   normalisePosition,
   translatePositionAbbreviation,
 } from "../squad/SquadTab.helpers";
-import { setTacticsPhase } from "../../services/squadService";
 import type { PlayerRole, TacticsPhaseSettings } from "../../store/types";
 import { PitchToken, Select, TeamLogo, type PitchFitTone } from "../ui";
 import {
@@ -48,20 +54,101 @@ export default function PreMatchSetup({
   const { t } = useTranslation();
   const [selectedStarterId, setSelectedStarterId] = useState<string | null>(null);
   const [isAutoSelecting, setIsAutoSelecting] = useState(false);
-  const [activeTab, setActiveTab] = useState<"team" | "opponent">("team");
-  const [phase, setPhase] = useState<TacticsPhaseSettings | undefined>(() => {
-    const uid =
-      userSide === "Home" ? snapshot.home_team.id : snapshot.away_team.id;
-    return gameState.teams.find((tm) => tm.id === uid)?.tactics_phase;
-  });
+  /**
+   * Every command on this screen mutates the same engine state, so they are
+   * sent one at a time.
+   *
+   * Without this, a role could be chosen against the shape on screen while a
+   * `ChangeFormation` was still in flight: if the formation lands first the
+   * engine silently ignores a role it now thinks invalid, and if the role
+   * lands first `apply_formation` carries it into a slot that cannot play it.
+   * Neither says anything. A ref decides — two clicks in the same tick both
+   * read the state from before the first one.
+   */
+  const [isCommandInFlight, setIsCommandInFlight] = useState(false);
+  const commandInFlightRef = useRef(false);
+  const { announce, announcement } = useAnnouncer();
 
-  const handlePhaseChange = (patch: Partial<TacticsPhaseSettings>) => {
-    setPhase((prev) =>
-      prev ? { ...prev, ...patch } : ({ ...patch } as TacticsPhaseSettings),
-    );
-    void setTacticsPhase(patch).catch((err: unknown) => {
-      console.error("Failed to set tactics phase:", err);
-    });
+  async function sendMatchCommand(
+    command: MatchCommand,
+    failureKey: string,
+  ): Promise<MatchSnapshot | null> {
+    if (commandInFlightRef.current) {
+      return null;
+    }
+
+    commandInFlightRef.current = true;
+    setIsCommandInFlight(true);
+    try {
+      const snap = await applyMatchCommand(command);
+      onUpdateSnapshot(snap);
+      return snap;
+    } catch (err) {
+      console.error("Pre-match command failed:", err);
+      // Said out loud, because the alternative is a control that appears to
+      // have worked and a console nobody is reading.
+      announce(t(failureKey));
+      return null;
+    } finally {
+      commandInFlightRef.current = false;
+      setIsCommandInFlight(false);
+    }
+  }
+  const [activeTab, setActiveTab] = useState<"team" | "opponent">("team");
+  // The nine dials as the *match* holds them. The engine took its copy when
+  // the match was built, so the saved team stopped being the answer here.
+  const phase: TacticsPhaseSettings | undefined =
+    ((userSide === "Home" ? snapshot.home_team : snapshot.away_team)
+      .tactics as TacticsPhaseSettings | undefined) ??
+    gameState.teams.find(
+      (team) =>
+        team.id ===
+        (userSide === "Home" ? snapshot.home_team.id : snapshot.away_team.id),
+    )?.tactics_phase;
+
+  /**
+   * The nine dials belong to the match too.
+   *
+   * They were written to the saved team with `set_tactics_phase`, and the
+   * engine copied `tactics_phase` when the match was built — so the inspector
+   * showed the new instructions while the match kept the old ones. Exactly the
+   * mistake the role picker made, one control over.
+   *
+   * `apply_match_tactics` takes the whole tactical state as one change set and
+   * commits it or none of it. It has existed unwired since it was written;
+   * this is its first caller, and step 11 will be its second.
+   */
+  const handlePhaseChange = async (
+    patch: Partial<TacticsPhaseSettings>,
+  ): Promise<void> => {
+    if (commandInFlightRef.current) {
+      return;
+    }
+
+    const nextPhase = { ...(phase ?? DEFAULT_TACTICS_PHASE), ...patch };
+
+    commandInFlightRef.current = true;
+    setIsCommandInFlight(true);
+    try {
+      const snap = await applyMatchTactics({
+        side: userSide,
+        formation: userTeam.formation,
+        play_style: userTeam.play_style,
+        tactics: nextPhase,
+        slot_roles: userTeam.players.map((player) => player.role || "Standard"),
+        // Nothing else is being changed, and an empty list is what keeps this
+        // off the substitution budget.
+        lineup_changes: [],
+        assignments: userSetPieces,
+      });
+      onUpdateSnapshot(snap);
+    } catch (err) {
+      console.error("Team instruction change failed:", err);
+      announce(t("match.instructionsRejected"));
+    } finally {
+      commandInFlightRef.current = false;
+      setIsCommandInFlight(false);
+    }
   };
 
   /**
@@ -82,14 +169,10 @@ export default function PreMatchSetup({
     playerId: string,
     role: PlayerRole,
   ): Promise<void> => {
-    try {
-      const snap = await applyMatchCommand({
-        ChangePlayerRole: { side: userSide, player_id: playerId, role },
-      });
-      onUpdateSnapshot(snap);
-    } catch (err) {
-      console.error("Player role change failed:", err);
-    }
+    await sendMatchCommand(
+      { ChangePlayerRole: { side: userSide, player_id: playerId, role } },
+      "match.roleRejected",
+    );
   };
 
   const homeTeam = snapshot.home_team;
@@ -231,42 +314,39 @@ export default function PreMatchSetup({
 
 
   const handleFormationChange = async (formation: string) => {
-    try {
-      const snap = await applyMatchCommand({
-        ChangeFormation: { side: userSide, formation },
-      });
-      onUpdateSnapshot(snap);
-    } catch (err) {
-      console.error("Formation change failed:", err);
-    }
+    await sendMatchCommand(
+      { ChangeFormation: { side: userSide, formation } },
+      "match.formationRejected",
+    );
   };
 
   const handlePlayStyleChange = async (playStyle: string) => {
-    try {
-      const snap = await applyMatchCommand({
-        ChangePlayStyle: { side: userSide, play_style: playStyle },
-      });
-      onUpdateSnapshot(snap);
-    } catch (err) {
-      console.error("Play style change failed:", err);
-    }
+    await sendMatchCommand(
+      { ChangePlayStyle: { side: userSide, play_style: playStyle } },
+      "match.playStyleRejected",
+    );
   };
 
   const handleSwap = async (benchPlayerId: string) => {
     if (!selectedStarterId) return;
-    try {
-      const snap = await applyMatchCommand({
+
+    const snap = await sendMatchCommand(
+      {
         PreMatchSwap: {
           side: userSide,
           player_off_id: selectedStarterId,
           player_on_id: benchPlayerId,
         },
-      });
-      onUpdateSnapshot(snap);
-    } catch (err) {
-      console.error("Pre-match swap failed:", err);
+      },
+      "match.swapRejected",
+    );
+
+    // Only on an acknowledged swap. Clearing regardless closed the pane the
+    // manager was working in and dropped the focus that was inside it, leaving
+    // them to find the player again to try a second time.
+    if (snap) {
+      setSelectedStarterId(null);
     }
-    setSelectedStarterId(null);
   };
 
   const handleSetPieceTaker = async (role: SetPieceRole, playerId: string) => {
@@ -439,6 +519,7 @@ export default function PreMatchSetup({
         onAutoSelectTakers={() => {
           void handleAutoSelectSetPieces();
         }}
+        isBusy={isCommandInFlight}
         onChangePlayerRole={(playerId, role) => {
           void handlePlayerRoleChange(playerId, role);
         }}
@@ -448,7 +529,9 @@ export default function PreMatchSetup({
         onSwapWithBench={(benchPlayerId) => {
           void handleSwap(benchPlayerId);
         }}
-        onTacticsPhaseChange={handlePhaseChange}
+        onTacticsPhaseChange={(patch) => {
+          void handlePhaseChange(patch);
+        }}
         selectedPlayer={selectedStarter}
         selectedSlotPosition={selectedStarterSlot}
         setPieces={userSetPieces}
@@ -554,6 +637,7 @@ export default function PreMatchSetup({
 
   return (
     <MatchdayShell bodyMode="frame" identity={matchdayIdentity}>
+      <LiveRegion announcement={announcement} />
       {/* Header */}
       <div className="shrink-0 border-b border-gray-200 dark:border-navy-700 bg-white dark:bg-navy-800 transition-colors duration-300">
         <div className="flex items-center gap-6 px-6 pt-5 pb-4">

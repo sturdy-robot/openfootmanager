@@ -2479,7 +2479,12 @@
     "yourResult": "Seu resultado",
     "continue": "Continuar",
     "notableUpset": "Grande surpresa",
-    "pts": "pts"
+    "pts": "pts",
+    "formationRejected": "Não foi possível mudar o esquema.",
+    "playStyleRejected": "Não foi possível mudar o estilo de jogo.",
+    "roleRejected": "Não foi possível atribuir essa função.",
+    "swapRejected": "Não foi possível fazer a alteração.",
+    "instructionsRejected": "Não foi possível mudar as instruções do time."
   },
   "endOfSeason": {
     "seasonComplete": "Temporada Encerrada",

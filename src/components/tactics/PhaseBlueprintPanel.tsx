@@ -53,7 +53,10 @@ function PhaseButtonGroup({
       <span className="w-20 shrink-0 text-[11px] text-gray-500 dark:text-gray-400">
         {t(`tactics.phaseSettings.${labelKey}`)}
       </span>
+      {/* Named, not just captioned. The sibling span is a label to a sighted
+          reader and nothing at all to a screen reader. */}
       <Select
+        aria-label={t(`tactics.phaseSettings.${labelKey}`)}
         selectSize="sm"
         variant="subtle"
         fullWidth
@@ -64,7 +67,10 @@ function PhaseButtonGroup({
       >
         {options.map((opt) => (
           <option key={opt} value={opt}>
-            {t(`tactics.phaseSettings.${labelKey}_${opt}`, opt)}
+            {/* No string fallback: every value key exists in all eleven
+                locales, and a fallback would quietly ship the raw enum name
+                the day one did not. */}
+            {t(`tactics.phaseSettings.${labelKey}_${opt}`)}
           </option>
         ))}
       </Select>

@@ -2536,7 +2536,12 @@
     "yourResult": "Ваш результат",
     "continue": "Продолжить",
     "notableUpset": "Неожиданный результат",
-    "pts": "очк."
+    "pts": "очк.",
+    "formationRejected": "Не удалось изменить расстановку.",
+    "playStyleRejected": "Не удалось изменить стиль игры.",
+    "roleRejected": "Не удалось назначить эту роль.",
+    "swapRejected": "Не удалось произвести замену.",
+    "instructionsRejected": "Не удалось изменить командные инструкции."
   },
   "endOfSeason": {
     "seasonComplete": "Сезон завершён",

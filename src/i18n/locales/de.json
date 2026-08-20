@@ -2536,7 +2536,12 @@
     "yourResult": "Dein Ergebnis",
     "continue": "Weiter",
     "notableUpset": "Überraschungsergebnis",
-    "pts": "Pkt."
+    "pts": "Pkt.",
+    "formationRejected": "Die Formation konnte nicht geändert werden.",
+    "playStyleRejected": "Die Spielweise konnte nicht geändert werden.",
+    "roleRejected": "Diese Rolle konnte nicht vergeben werden.",
+    "swapRejected": "Der Wechsel konnte nicht vorgenommen werden.",
+    "instructionsRejected": "Die Teamanweisungen konnten nicht geändert werden."
   },
   "endOfSeason": {
     "seasonComplete": "Saison beendet",
