@@ -253,10 +253,10 @@ export default function PreMatchSetup({
           {translatePositionAbbreviation(t, selectedStarterSlot)}
         </p>
         <span className="mb-1 mt-2.5 block text-[10px] font-heading uppercase tracking-widest text-gray-500 dark:text-gray-400">
-          {t("tactics.playerRole")}
+          {t("tactics.playerRoleLabel")}
         </span>
         <Select
-          aria-label={t("tactics.playerRole")}
+          aria-label={t("tactics.playerRoleLabel")}
           fullWidth
           onChange={(e) => {
             handlePlayerRoleChange(

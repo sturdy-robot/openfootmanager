@@ -6,9 +6,11 @@ import {
   type JSX,
   type KeyboardEvent,
 } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 
 import { getPlayerOvr } from "../../lib/helpers";
+import { resolveInjuryName } from "../../lib/injury";
 import type { PlayerData } from "../../store/gameStore";
 import {
   comparePlayersForSlot,
@@ -93,15 +95,23 @@ export default function TacticsAssignmentDialog({
     }
   };
 
-  return (
+  // Portalled to the body. The tactics workbench declares `@container/tactics`,
+  // and a container is a containing block for `position: fixed` descendants —
+  // so rendered in place this "modal" covered the tab and left the sidebar
+  // clickable underneath it.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 px-4 dark:bg-black/70"
+      onClick={onClose}
       role="presentation"
     >
       <div
         aria-label={title}
         aria-modal="true"
         className="flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-navy-600 dark:bg-navy-900"
+        onClick={(event) => {
+          event.stopPropagation();
+        }}
         onKeyDown={handleKeyDown}
         role="dialog"
       >
@@ -156,7 +166,9 @@ export default function TacticsAssignmentDialog({
                     </span>
                     <span className="block truncate text-xs text-gray-500 dark:text-gray-400">
                       {player.full_name}
-                      {player.injury ? ` · ${player.injury.name}` : ""}
+                      {player.injury
+                        ? ` · ${resolveInjuryName(player.injury.name, t)}`
+                        : ""}
                     </span>
                   </span>
                   <span className="shrink-0 text-sm font-heading font-bold text-primary-600 dark:text-primary-400">
@@ -168,7 +180,8 @@ export default function TacticsAssignmentDialog({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

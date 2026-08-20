@@ -268,10 +268,10 @@ export default function TacticsInspector({
             {deployedPosition && isShapeSettled && isSelectedPlayerInSavedXi ? (
               <div>
                 <span className="mb-1 block text-[11px] text-gray-500 dark:text-gray-400">
-                  {t("tactics.playerRole")}
+                  {t("tactics.playerRoleLabel")}
                 </span>
                 <Select
-                  aria-label={t("tactics.playerRole")}
+                  aria-label={t("tactics.playerRoleLabel")}
                   fullWidth
                   onChange={(event) => {
                     onPlayerRoleChange(

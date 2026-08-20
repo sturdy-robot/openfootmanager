@@ -7,6 +7,7 @@ import type {
   TeamTacticsDraft,
 } from "../../store/types";
 import { buildPitchRows } from "../squad/SquadTab.helpers";
+import { getRolesForPosition } from "../../lib/playerRoles";
 import type { TacticsLibraryEntry } from "./TacticsCommandBar";
 import {
   findTacticsPresetBySetup,
@@ -280,16 +281,51 @@ function slotCountForFormation(formation: string): number {
 /**
  * Roles for a shape the manager has not assigned roles for yet.
  *
- * Slot index is a deployed-position contract, so carrying a specialist role
- * across a shape change can leave, say, a full-back role sitting in what is now
- * an attacking-midfield slot. The backend rejects the *whole* draft over one
- * such mismatch, so a shape change would make Apply impossible rather than
- * merely odd. `Standard` is the one role valid at every position.
+ * `Standard` is the one role valid at every position, so this is the safe
+ * starting point for a formation nothing has been chosen for.
  */
 function defaultSlotRoles(formation: string): PlayerRole[] {
   return Array.from(
     { length: slotCountForFormation(formation) },
     () => "Standard" as PlayerRole,
+  );
+}
+
+/**
+ * Carry the roles that still make sense into a new shape, and only those.
+ *
+ * Slot index is a deployed-position contract, so a role can outlive a shape
+ * change — a sweeper-keeper is still a sweeper-keeper in a 4-3-3 — while a
+ * full-back role left sitting in what is now an attacking-midfield slot cannot
+ * be, and the backend rejects the *whole* draft over one such mismatch.
+ *
+ * This mirrors `ofm_core::tactics::reconcile_slot_roles`, which is what the
+ * server does to the same data. Wiping every role instead was simpler and
+ * contradicted the backend's own tested behaviour, so switching shape cost the
+ * manager every specialist they had chosen.
+ */
+export function reconcileSlotRolesForFormation(
+  formation: string,
+  currentRoles: PlayerRole[] | undefined,
+): PlayerRole[] {
+  const slotPositions = buildPitchRows(formation).flatMap(
+    (row) => row.positions,
+  );
+
+  return Array.from(
+    { length: slotCountForFormation(formation) },
+    (_, slotIndex) => {
+      const role = currentRoles?.[slotIndex];
+      const position = slotPositions[slotIndex];
+
+      if (!role || !position) {
+        return "Standard" as PlayerRole;
+      }
+
+      return getRolesForPosition(position).includes(role)
+        ? role
+        : ("Standard" as PlayerRole);
+    },
   );
 }
 
@@ -338,7 +374,10 @@ export function reduceTacticsDraft(
         draft: {
           ...state.draft,
           formation: action.formation,
-          slot_roles: defaultSlotRoles(action.formation),
+          slot_roles: reconcileSlotRolesForFormation(
+            action.formation,
+            state.draft.slot_roles ?? appliedTeam.slot_roles,
+          ),
         },
       };
     }

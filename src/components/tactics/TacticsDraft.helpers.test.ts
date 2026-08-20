@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { buildPitchRows } from "../squad/SquadTab.helpers";
+import { getRolesForPosition } from "../../lib/playerRoles";
+
 import type { GameStateData } from "../../store/gameStore";
 import type {
   PlayerRole,
@@ -377,7 +380,12 @@ describe("staged tactics draft", () => {
 });
 
 describe("formation and reset role safety", () => {
-  it("replaces slot roles with one universally valid Standard role per new-formation slot", () => {
+  it("carries the roles a new shape can still honour, and only those", () => {
+    // Review finding: this used to wipe every role. The backend does not —
+    // `ofm_core::tactics::reconcile_slot_roles` keeps a role that is valid for
+    // its new slot, and `formation_change_preserves_only_slot_compatible_roles`
+    // pins that. The only screen that changes formation was contradicting it,
+    // and a manager lost every specialist they had chosen for switching shape.
     const reduceTacticsDraft = requireHelper("reduceTacticsDraft");
     const oldRoles: PlayerRole[] = [
       "BallPlayingKeeper",
@@ -400,8 +408,23 @@ describe("formation and reset role safety", () => {
       team,
     );
 
-    expect(next.draft.slot_roles).toEqual(STANDARD_ROLES);
-    expect(next.draft.slot_roles).not.toEqual(oldRoles);
+    const slotPositions = buildPitchRows("4-2-3-1").flatMap(
+      (row) => row.positions,
+    );
+    const roles = next.draft.slot_roles as PlayerRole[];
+
+    expect(roles).toHaveLength(11);
+    // The goalkeeper is slot 0 in every shape, so their role always survives.
+    expect(roles[0]).toBe("BallPlayingKeeper");
+    // And nothing survives into a slot that cannot play it, which is what made
+    // the backend reject the whole draft.
+    roles.forEach((role, slotIndex) => {
+      expect(
+        getRolesForPosition(slotPositions[slotIndex]),
+        `${role} at ${slotPositions[slotIndex]}`,
+      ).toContain(role);
+    });
+    expect(roles).not.toEqual(STANDARD_ROLES);
   });
 
   it("[#366] Reset stages every anchored preset default and is enabled only after drift", () => {

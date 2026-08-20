@@ -21,6 +21,11 @@ import {
 
 interface UseTacticsDraftArgs {
   gameState: GameStateData | null;
+  /**
+   * Told what the outcome was, in words, every time — including twice in a row
+   * with the same words. Two applies are two events even when they read alike.
+   */
+  onAnnounce: (feedbackKey: string) => void;
   onGameUpdate: (gameState: GameStateData) => void;
 }
 
@@ -36,6 +41,7 @@ interface UseTacticsDraftArgs {
  */
 export function useTacticsDraft({
   gameState,
+  onAnnounce,
   onGameUpdate,
 }: UseTacticsDraftArgs) {
   const { sessionState } = useGameStore();
@@ -130,13 +136,17 @@ export function useTacticsDraft({
         };
       });
 
+      if (result.state.feedbackKey) {
+        onAnnounce(result.state.feedbackKey);
+      }
+
       if (result.gameState) {
         onGameUpdate(result.gameState);
       }
     } finally {
       applyingRef.current = false;
     }
-  }, [draftState, gameState, onGameUpdate]);
+  }, [draftState, gameState, onAnnounce, onGameUpdate]);
 
   return {
     appliedTeam,

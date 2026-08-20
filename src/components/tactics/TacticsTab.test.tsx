@@ -497,7 +497,9 @@ describe("TacticsTab", () => {
 
     // The manager is told, and their work survives: a rejected apply that
     // silently discarded the draft would cost them every dial they had set.
-    expect(await screen.findByText("tactics.applyError")).toBeInTheDocument();
+    // The screen says it once visibly and once to a screen reader — one voice,
+    // two presentations.
+    expect(await screen.findAllByText("tactics.applyError")).toHaveLength(2);
     expect(
       screen.getByRole("button", { name: "tactics.applyChanges" }),
     ).toBeEnabled();

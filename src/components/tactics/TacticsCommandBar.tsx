@@ -44,7 +44,8 @@ interface TacticsCommandBarProps {
   /** Apply / Revert / Reset availability, from the staged draft. */
   draftControls: TacticsDraftControls;
   /** Translation key for the outcome of the last apply or save, if any. */
-  feedbackKey: string | null;
+  /** Already-localized; the screen has one voice and this is what it just said. */
+  feedback: string;
   formation: string;
   isApplying: boolean;
   isDirty: boolean;
@@ -145,7 +146,7 @@ export default function TacticsCommandBar({
   activeTactic,
   activePlayStyle,
   draftControls,
-  feedbackKey,
+  feedback,
   formation,
   isApplying,
   isDirty,
@@ -242,11 +243,11 @@ export default function TacticsCommandBar({
                 button they just pressed — the complaint in #377 was that a
                 successful save looked exactly like a broken one.
               */}
-              <p
-                aria-live="polite"
-                className="mt-2 min-h-5 text-sm text-gray-600 dark:text-gray-300"
-              >
-                {feedbackKey ? t(feedbackKey) : ""}
+              {/* Visible only. The spoken copy is a single live region owned
+                  by the screen, so a later message cannot be masked by an
+                  earlier one that was never cleared. */}
+              <p className="mt-2 min-h-5 text-sm text-gray-600 dark:text-gray-300">
+                {feedback}
               </p>
               <p className="mt-2 max-w-3xl text-sm text-gray-500 dark:text-gray-400">
                 {activeTactic.description}

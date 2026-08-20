@@ -284,12 +284,11 @@ describe("building a starting XI with the keyboard", () => {
       expect(squadServiceMocks.setStartingXi).toHaveBeenCalled();
     });
 
-    const liveRegion = document.querySelector('[aria-live="polite"]');
+    const liveRegion = screen.getByRole("status");
 
-    expect(liveRegion).not.toBeNull();
-    expect(liveRegion?.textContent).toContain("tactics.replacedInSlot");
-    expect(liveRegion?.textContent).toContain("incoming=Bench DEF");
-    expect(liveRegion?.textContent).toContain("outgoing=D2");
+    expect(liveRegion.textContent).toContain("tactics.replacedInSlot");
+    expect(liveRegion.textContent).toContain("incoming=Bench DEF");
+    expect(liveRegion.textContent).toContain("outgoing=D2");
   });
 
   it("closes on Escape and puts focus back where it came from", () => {
@@ -407,14 +406,15 @@ describe("building a starting XI with the keyboard", () => {
     );
 
     await waitFor(() => {
-      expect(
-        document.querySelector('[aria-live="polite"]')?.textContent,
-      ).toContain("tactics.assignFailed");
+      // A refusal interrupts; a success waits its turn.
+      expect(screen.getByRole("alert").textContent).toContain(
+        "tactics.assignFailed",
+      );
     });
 
-    expect(
-      document.querySelector('[aria-live="polite"]')?.textContent,
-    ).not.toContain("tactics.replacedInSlot");
+    expect(screen.getByRole("status").textContent).not.toContain(
+      "tactics.replacedInSlot",
+    );
 
     consoleError.mockRestore();
   });

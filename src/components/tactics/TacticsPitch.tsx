@@ -244,7 +244,33 @@ export default function TacticsPitch({
     return index >= 0 ? index : null;
   };
 
-  const renderPitchToken = (player: PlayerData, slotPosition: string) => (
+  /** What the board already knows about a slot, drawn where it can be seen. */
+  const slotStateClassName = (state: {
+    isCompared: boolean;
+    isDragged: boolean;
+    isDropTarget: boolean;
+    isSelected: boolean;
+  }): string => {
+    if (state.isDragged) {
+      return "opacity-60";
+    }
+    if (state.isSelected) {
+      return "rounded-2xl bg-accent-500/20 ring-2 ring-accent-300/70 dark:bg-accent-500/20 dark:ring-accent-300/70";
+    }
+    if (state.isCompared) {
+      return "rounded-2xl bg-primary-500/20 ring-2 ring-primary-300/60 dark:bg-primary-500/20 dark:ring-primary-300/60";
+    }
+    if (state.isDropTarget) {
+      return "rounded-2xl bg-primary-500/15 ring-2 ring-primary-200/60 dark:bg-primary-500/15 dark:ring-primary-200/60";
+    }
+    return "";
+  };
+
+  const renderPitchToken = (
+    player: PlayerData,
+    slotPosition: string,
+    stateClassName: string,
+  ) => (
     <ContextMenu
       items={buildTacticsPlayerContextMenuItems({
         isSelected: selectedPlayerId === player.id,
@@ -270,7 +296,7 @@ export default function TacticsPitch({
     >
       {/* ContextMenu injects its handler by cloning this child, so it has to be
           a DOM element — cloning a component drops the prop silently. */}
-      <div className="contents">
+      <div className={stateClassName || "contents"}>
       <PitchToken
         avatar={player}
         condition={player.condition}
@@ -332,7 +358,13 @@ export default function TacticsPitch({
               tacticsPhase ? <TacticalOverlays phase={tacticsPhase} /> : undefined
             }
             renderEmptySlot={(state) => (
-              <div className="flex w-[4.5rem] flex-col items-center text-center">
+              <div
+                className={`flex w-[4.5rem] flex-col items-center text-center ${
+                  state.isDropTarget
+                    ? "rounded-2xl bg-primary-500/25 ring-2 ring-primary-200/70"
+                    : ""
+                }`}
+              >
                 <div className="flex h-11 w-11 items-center justify-center rounded-full border border-dashed border-white/28 bg-black/12 text-[10px] font-heading font-bold uppercase tracking-[0.18em] text-white/70">
                   {translatePositionAbbreviation(t, state.position)}
                 </div>
@@ -341,7 +373,13 @@ export default function TacticsPitch({
                 </div>
               </div>
             )}
-            renderToken={(player, state) => renderPitchToken(player, state.position)}
+            renderToken={(player, state) =>
+              renderPitchToken(
+                player,
+                state.position,
+                slotStateClassName(state),
+              )
+            }
             slots={boardSlots}
             variant="full"
           />

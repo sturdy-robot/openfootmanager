@@ -20,6 +20,8 @@ interface UseTacticsLibraryArgs {
   formation: string;
   activePlayStyle: string;
   initialPreset: TacticsPresetDefinition | null;
+  /** The screen's one voice — see `useAnnouncer`. */
+  onAnnounce: (feedbackKey: string) => void;
   /**
    * Put the chosen tactic into the draft. Choosing a tactic is an edit like any
    * other now — it is staged and lands with the rest on Apply, rather than
@@ -33,6 +35,7 @@ export function useTacticsLibrary({
   formation,
   activePlayStyle,
   initialPreset,
+  onAnnounce,
   onStageTactic,
 }: UseTacticsLibraryArgs) {
   const { t } = useTranslation();
@@ -230,6 +233,7 @@ export function useTacticsLibrary({
     const nextName = draftTacticName.trim() || t("tactics.customTactic");
 
     setSavedTacticId(activeTactic?.id ?? null);
+    onAnnounce("tactics.customTacticUpdated");
 
     if (isActiveCustomTactic && activeTactic && customTactics.some((e) => e.id === activeTactic.id)) {
       setCustomTactics((current) =>

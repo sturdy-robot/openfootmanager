@@ -1,4 +1,4 @@
-import { useRef, useState, type JSX } from "react";
+import { useCallback, useRef, useState, type JSX } from "react";
 import type {
   GameStateData,
   PlayerData,
@@ -19,6 +19,8 @@ import { useTacticsLineup } from "./useTacticsLineup";
 import { TACTICS_PRESETS } from "./TacticsTab.helpers";
 import TacticsAssignmentDialog from "./TacticsAssignmentDialog";
 import { translatePositionLabel } from "../squad/SquadTab.helpers";
+import { useAnnouncer } from "../../hooks/useAnnouncer";
+import { LiveRegion } from "../ui";
 
 interface AssignmentSlot {
   occupant: PlayerData | null;
@@ -42,13 +44,25 @@ export default function TacticsTab({
   const [assignmentSlot, setAssignmentSlot] = useState<AssignmentSlot | null>(
     null,
   );
-  const [assignmentAnnouncement, setAssignmentAnnouncement] = useState("");
   const assignmentOriginRef = useRef<HTMLElement | null>(null);
+  // One voice for the whole screen. Two regions meant the first message to
+  // arrive could sit there masking every later one — apply feedback was never
+  // cleared, so a save after an apply was announced to nobody.
+  const { announce, announcement } = useAnnouncer();
+  const announceKey = useCallback(
+    (feedbackKey: string) => {
+      announce(t(feedbackKey));
+    },
+    [announce, t],
+  );
+  const [failure, setFailure] = useState<{ id: number; text: string }>({
+    id: 0,
+    text: "",
+  });
 
   const {
     apply,
     controls: draftControls,
-    feedbackKey: draftFeedbackKey,
     formation,
     isApplying,
     playStyle: activePlayStyle,
@@ -59,7 +73,7 @@ export default function TacticsTab({
     stagePlayStyle,
     stagePreset,
     tacticsPhase,
-  } = useTacticsDraft({ gameState, onGameUpdate });
+  } = useTacticsDraft({ gameState, onAnnounce: announceKey, onGameUpdate });
 
   const {
     team,
@@ -119,6 +133,7 @@ export default function TacticsTab({
     formation,
     activePlayStyle,
     initialPreset,
+    onAnnounce: announceKey,
     onStageTactic: (nextTactic) => {
       const preset = TACTICS_PRESETS.find(
         (candidate) => `preset:${candidate.id}` === nextTactic.id,
@@ -181,11 +196,14 @@ export default function TacticsTab({
     const persisted = await handleAssignToSlot(playerId, slot.slotIndex);
 
     if (!persisted) {
-      setAssignmentAnnouncement(t("tactics.assignFailed", { position }));
+      setFailure((current) => ({
+        id: current.id + 1,
+        text: t("tactics.assignFailed", { position }),
+      }));
       return;
     }
 
-    setAssignmentAnnouncement(
+    announce(
       slot.occupant
         ? t("tactics.replacedInSlot", {
             incoming: incoming.match_name || incoming.full_name,
@@ -206,14 +224,15 @@ export default function TacticsTab({
         aria-hidden="true"
         className="pointer-events-none fixed -left-20 top-0 h-8 w-8 rounded-full border border-white/15 bg-navy-900/90 shadow-lg"
       />
-      <p aria-live="polite" className="sr-only">
-        {assignmentAnnouncement}
-      </p>
+      <LiveRegion announcement={announcement} />
+      {/* A refusal has to interrupt. The pitch has already rolled back by the
+          time a polite queue would reach it. */}
+      <LiveRegion announcement={failure} assertive />
       <TacticsCommandBar
         activeTactic={activeTactic}
         activePlayStyle={activePlayStyle}
         draftControls={draftControls}
-        feedbackKey={draftFeedbackKey ?? saveControls.feedbackKey}
+        feedback={announcement.text}
         formation={formation}
         isApplying={isApplying}
         isDirty={isCommandBarDirty}
