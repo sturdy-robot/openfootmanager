@@ -48,6 +48,12 @@ export interface PitchTokenProps {
   jerseyNumber?: number | null;
   /** Role markers stacked at the top-left (max 3 shown). */
   markers?: PitchTokenMarker[];
+  /**
+   * Live match tokens deliberately omit scouting/tactics claims. The engine
+   * has no per-player match rating yet, so that badge remains reserved but
+   * blank instead of displaying overall ability as if it were a live rating.
+   */
+  displayMode?: "default" | "live";
 }
 
 // The token sits on turf in both themes, so these are deliberately unpaired:
@@ -108,6 +114,7 @@ export function PitchToken({
   jersey,
   jerseyNumber,
   markers,
+  displayMode = "default",
 }: PitchTokenProps) {
   const { t } = useTranslation();
   const tacticsTokenStyle = useSettingsStore(
@@ -139,6 +146,7 @@ export function PitchToken({
   const showPlainJerseyNumber =
     resolvedJerseyNumber != null &&
     (tacticsTokenStyle !== "shirt" || jersey == null);
+  const isLive = displayMode === "live";
 
   return (
     // A labelled group whose name is what the surrounding slot button is
@@ -163,11 +171,13 @@ export function PitchToken({
             ))}
           </div>
         )}
-        <div className="absolute -right-1.5 -top-1.5 z-10">
-          <span className={`rounded-full ${position ? getPositionColor(position) : "bg-gray-900"} px-2 py-0.5 text-xs font-heading font-bold uppercase leading-4 text-white ring-1 ring-white/40`}>
-            {positionAbbr}
-          </span>
-        </div>
+        {!isLive ? (
+          <div className="absolute -right-1.5 -top-1.5 z-10">
+            <span className={`rounded-full ${position ? getPositionColor(position) : "bg-gray-900"} px-2 py-0.5 text-xs font-heading font-bold uppercase leading-4 text-white ring-1 ring-white/40`}>
+              {positionAbbr}
+            </span>
+          </div>
+        ) : null}
         <div
           className={`flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-white/10 ${fitRingClass(fitTone)}`}
         >
@@ -193,10 +203,15 @@ export function PitchToken({
             </span>
           )}
         </div>
-        <div className="absolute -bottom-1 -right-1.5 z-10">
-          <span className="rounded-full bg-gray-900 px-2 py-0.5 text-xs font-heading font-bold leading-4 text-white ring-1 ring-white/30">
-            {ovr}
-          </span>
+        <div
+          aria-hidden={isLive || undefined}
+          className="absolute -bottom-1 -right-1.5 z-10 min-h-5 min-w-7"
+        >
+          {!isLive ? (
+            <span className="rounded-full bg-gray-900 px-2 py-0.5 text-xs font-heading font-bold leading-4 text-white ring-1 ring-white/30">
+              {ovr}
+            </span>
+          ) : null}
         </div>
       </div>
 
@@ -210,19 +225,21 @@ export function PitchToken({
         {name}
       </div>
 
-      <div className="w-full">
-        <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-          <div
-            aria-label={conditionLabel}
-            aria-valuemax={100}
-            aria-valuemin={0}
-            aria-valuenow={clampedCondition}
-            className={`h-full rounded-full ${condBgColor(clampedCondition)}`}
-            role="progressbar"
-            style={{ width: `${clampedCondition}%` }}
-          />
+      {!isLive ? (
+        <div className="w-full">
+          <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+            <div
+              aria-label={conditionLabel}
+              aria-valuemax={100}
+              aria-valuemin={0}
+              aria-valuenow={clampedCondition}
+              className={`h-full rounded-full ${condBgColor(clampedCondition)}`}
+              role="progressbar"
+              style={{ width: `${clampedCondition}%` }}
+            />
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

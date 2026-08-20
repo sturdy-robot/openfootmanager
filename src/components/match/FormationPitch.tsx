@@ -10,6 +10,7 @@ import {
   nextSlotInDirection,
   rowSlotXCoordinates,
   type FormationBoardFallbackGroup,
+  type FormationBoardOrientation,
 } from "./FormationBoard.helpers";
 import type { EnginePlayerData } from "./types";
 
@@ -44,6 +45,8 @@ interface FormationPitchProps {
   className?: string;
   /** Region name for the board; already localized by the caller. */
   label?: string;
+  /** Turns the board for a side attacking towards the opposite goal. */
+  orientation?: FormationBoardOrientation;
   /**
    * Optional custom token renderer. When provided it replaces the default
    * initials token, letting callers (e.g. the pre-match screen) render a richer
@@ -117,6 +120,7 @@ export function FormationPitch({
   onPlayerClick,
   className,
   label,
+  orientation = "normal",
   renderToken,
 }: FormationPitchProps) {
   const slots: FormationBoardSlot<EnginePlayerData>[] = players.map(
@@ -148,7 +152,7 @@ export function FormationPitch({
           : undefined
       }
       label={label ?? formation}
-      orientation="normal"
+      orientation={orientation}
       renderToken={(player, state) =>
         renderToken
           ? renderToken(player, {
