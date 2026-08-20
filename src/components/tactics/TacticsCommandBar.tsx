@@ -47,6 +47,7 @@ interface TacticsCommandBarProps {
   formation: string;
   isApplying: boolean;
   isDirty: boolean;
+  outOfPositionCount: number;
   onApply: () => void;
   onCreateNew: () => void;
   onDuplicate: () => void;
@@ -81,6 +82,7 @@ export default function TacticsCommandBar({
   formation,
   isApplying,
   isDirty,
+  outOfPositionCount,
   onApply,
   onCreateNew,
   onDuplicate,
@@ -160,6 +162,11 @@ export default function TacticsCommandBar({
                 <Badge variant={isDirty ? "accent" : "neutral"} size="sm">
                   {isDirty ? t("tactics.unsavedChanges") : t("tactics.synced")}
                 </Badge>
+                {outOfPositionCount > 0 ? (
+                  <Badge variant="danger" size="sm">
+                    {outOfPositionCount} {t("squad.outOfPosition")}
+                  </Badge>
+                ) : null}
               </div>
               {/*
                 The one place the screen speaks back. It has to be a live region

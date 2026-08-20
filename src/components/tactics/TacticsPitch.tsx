@@ -1,13 +1,10 @@
 import type { DragEvent, JSX } from "react";
-import {
-  Star,
-} from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { getPlayerOvr } from "../../lib/helpers";
 import type { PlayerData, TeamMatchRolesData } from "../../store/gameStore";
 import ContextMenu from "../ContextMenu";
-import { Badge, Card, PitchToken, Select } from "../ui";
+import { Card, PitchToken, Select } from "../ui";
 import { FormationBoard } from "../match/FormationBoard";
 import {
   isPlayerExactForSlot,
@@ -54,9 +51,7 @@ interface TacticsPitchProps {
   onSlotDragOver: (event: DragEvent<HTMLElement>, slotIndex: number) => void;
   onSlotDragLeave: (slotIndex: number) => void;
   onSlotDrop: (event: DragEvent<HTMLElement>, slotIndex: number) => void;
-  outOfPositionCount: number;
   pitchSlots: TacticsPitchSlot[];
-  selectedPlayer: PlayerData | null;
   selectedPlayerId: string | null;
 }
 
@@ -231,9 +226,7 @@ export default function TacticsPitch({
   onSlotDragLeave,
   onSlotDragOver,
   onSlotDrop,
-  outOfPositionCount,
   pitchSlots,
-  selectedPlayer,
   selectedPlayerId,
 }: TacticsPitchProps): JSX.Element {
   const { t } = useTranslation();
@@ -337,50 +330,9 @@ export default function TacticsPitch({
   );
 
   return (
-    <Card className="overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-t-xl border-b border-gray-100 bg-linear-to-r from-navy-700 to-navy-800 px-5 py-4 dark:border-navy-600">
-        <div>
-          <h3 className="flex items-center gap-2 text-sm font-heading font-bold uppercase tracking-wide text-white">
-            <Star className="h-4 w-4 fill-current text-accent-400" />
-            {t("preMatch.startingXI")} - {formation}
-          </h3>
-          <p className="mt-0.5 text-xs text-gray-400">
-            {t("tactics.pitchInteractionHint")}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <Badge
-            variant={outOfPositionCount > 0 ? "danger" : "success"}
-            size="sm"
-          >
-            {outOfPositionCount} {t("squad.outOfPosition")}
-          </Badge>
-          <span className="rounded-full bg-success-500/15 px-2.5 py-1 text-[10px] font-heading font-bold uppercase tracking-widest text-success-300">
-            {t("tactics.naturalFit")}
-          </span>
-          <span className="rounded-full bg-accent-500/15 px-2.5 py-1 text-[10px] font-heading font-bold uppercase tracking-widest text-accent-300">
-            {t("tactics.adaptedFit")}
-          </span>
-          <span className="rounded-full bg-red-500/15 px-2.5 py-1 text-[10px] font-heading font-bold uppercase tracking-widest text-red-300">
-            {t("squad.outOfPosition")}
-          </span>
-          <span className="rounded-full bg-white/8 px-2.5 py-1 text-[10px] font-heading font-bold uppercase tracking-widest text-white/70">
-            {t("tactics.tableInteractionHint")}
-          </span>
-          {selectedPlayer ? (
-            <button
-              type="button"
-              onClick={onClearSelection}
-              className="text-xs font-heading font-bold uppercase tracking-wider text-accent-400 hover:text-accent-300"
-            >
-              {t("common.clear")}
-            </button>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="p-5 sm:p-6 lg:p-7">
-        <div className="relative mx-auto w-full max-w-[36rem] overflow-hidden rounded-[1.5rem] border border-primary-500/20 shadow-inner">
+    <Card className="min-h-0 overflow-hidden @5xl/tactics:h-full">
+      <div className="flex min-h-0 items-center p-5 sm:p-6 lg:p-7 @5xl/tactics:h-full">
+        <div className="relative mx-auto w-full overflow-hidden rounded-3xl border border-primary-500/20 shadow-inner dark:border-primary-400/20 @5xl/tactics:aspect-5/7 @5xl/tactics:h-full @5xl/tactics:w-auto">
           <FormationBoard
             formation={formation}
             interaction={{

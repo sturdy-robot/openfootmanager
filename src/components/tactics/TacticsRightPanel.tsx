@@ -77,7 +77,10 @@ export default function TacticsRightPanel({
   const [blueprintOpen, setBlueprintOpen] = useState(true);
 
   return (
-    <div className="flex flex-col gap-4">
+    <section
+      aria-label={t("tactics.detailsPane")}
+      className="flex min-h-0 flex-col gap-4 overflow-y-auto @3xl/tactics:col-span-3 @5xl/tactics:col-span-1"
+    >
       {/* Roles section */}
       <div className="rounded-xl border border-gray-200 bg-white dark:border-navy-600 dark:bg-navy-800">
         <div className="border-b border-gray-100 px-3 py-2 dark:border-navy-700">
@@ -182,6 +185,6 @@ export default function TacticsRightPanel({
         )}
       </div>
 
-    </div>
+    </section>
   );
 }

@@ -127,7 +127,7 @@ export default function TacticsTab({
   }
 
   return (
-    <div className="flex w-full flex-col gap-5">
+    <div className="@container/tactics flex h-full min-h-0 w-full flex-col gap-5">
       <div
         ref={dragPreviewRef}
         aria-hidden="true"
@@ -141,6 +141,7 @@ export default function TacticsTab({
         formation={formation}
         isApplying={isApplying}
         isDirty={isCommandBarDirty}
+        outOfPositionCount={outOfPositionCount}
         onApply={() => {
           void apply();
         }}
@@ -163,7 +164,7 @@ export default function TacticsTab({
         tacticLibrary={tacticLibrary}
       />
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[260px_1fr_270px] xl:items-start">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 overflow-auto @3xl/tactics:grid-cols-3 @5xl/tactics:grid-cols-4 @5xl/tactics:grid-rows-1 @5xl/tactics:overflow-hidden">
         {/* Left: player list */}
         <TacticsPlayerList
           bench={filteredBench}
@@ -196,63 +197,63 @@ export default function TacticsTab({
         />
 
         {/* Center: pitch */}
-        <TacticsPitch
-          dragState={dragState}
-          formation={formation}
-          comparePlayerId={comparePlayerId}
-          hoveredSlot={hoveredSlot}
-          matchRoles={effectiveMatchRoles}
-          // While a shape change is staged the pitch is drawing slots the
-          // server does not have yet, so a role chosen here would be validated
-          // against the old formation — and then overwritten by the draft's own
-          // roles on Apply. Roles come back once the shape is settled.
-          onRoleChange={
-            formation === team.formation
-              ? (playerId, role) => {
-                  void setPlayerRole(playerId, role)
-                    .then(onGameUpdate)
-                    .catch((error: unknown) => {
-                      console.error("Failed to set player role:", error);
-                    });
-                }
-              : undefined
-          }
-          playerRoles={team ? rolesByStartingPlayer(team.starting_xi_ids, team.slot_roles, team.player_roles) : undefined}
-          tacticsPhase={tacticsPhase}
-          teamKitPattern={team?.kit_pattern}
-          teamPrimaryColor={team?.colors?.primary}
-          teamSecondaryColor={team?.colors?.secondary}
-          onAssignBestFit={(playerId) => {
-            void handleAssignBestFit(playerId);
-          }}
-          onAssignMatchRole={(role, playerId) => {
-            void handleAssignMatchRole(role, playerId);
-          }}
-          onClearSelection={clearLineupSelection}
-          onDemoteStarter={(playerId) => {
-            void handleDemoteStarter(playerId);
-          }}
-          onDragEnd={resetDragState}
-          onDragStart={handleDragStart}
-          onLineupPlayerClick={(playerId, section) => {
-            void handleLineupPlayerClick(playerId, section);
-          }}
-          onOpenPlayerProfile={(playerId) => {
-            onSelectPlayer(playerId);
-          }}
-          onPromoteBench={(playerId) => {
-            void handlePromoteBenchPlayer(playerId);
-          }}
-          onSlotDragLeave={handleSlotDragLeave}
-          onSlotDragOver={handleSlotDragOver}
-          onSlotDrop={(event, slotIndex) => {
-            void handleSlotDrop(event, slotIndex);
-          }}
-          outOfPositionCount={outOfPositionCount}
-          pitchSlots={pitchSlots}
-          selectedPlayer={selectedPlayer}
-          selectedPlayerId={selectedPlayerId}
-        />
+        <div className="min-h-0 @3xl/tactics:col-span-2">
+          <TacticsPitch
+            dragState={dragState}
+            formation={formation}
+            comparePlayerId={comparePlayerId}
+            hoveredSlot={hoveredSlot}
+            matchRoles={effectiveMatchRoles}
+            // While a shape change is staged the pitch is drawing slots the
+            // server does not have yet, so a role chosen here would be validated
+            // against the old formation — and then overwritten by the draft's own
+            // roles on Apply. Roles come back once the shape is settled.
+            onRoleChange={
+              formation === team.formation
+                ? (playerId, role) => {
+                    void setPlayerRole(playerId, role)
+                      .then(onGameUpdate)
+                      .catch((error: unknown) => {
+                        console.error("Failed to set player role:", error);
+                      });
+                  }
+                : undefined
+            }
+            playerRoles={team ? rolesByStartingPlayer(team.starting_xi_ids, team.slot_roles, team.player_roles) : undefined}
+            tacticsPhase={tacticsPhase}
+            teamKitPattern={team?.kit_pattern}
+            teamPrimaryColor={team?.colors?.primary}
+            teamSecondaryColor={team?.colors?.secondary}
+            onAssignBestFit={(playerId) => {
+              void handleAssignBestFit(playerId);
+            }}
+            onAssignMatchRole={(role, playerId) => {
+              void handleAssignMatchRole(role, playerId);
+            }}
+            onClearSelection={clearLineupSelection}
+            onDemoteStarter={(playerId) => {
+              void handleDemoteStarter(playerId);
+            }}
+            onDragEnd={resetDragState}
+            onDragStart={handleDragStart}
+            onLineupPlayerClick={(playerId, section) => {
+              void handleLineupPlayerClick(playerId, section);
+            }}
+            onOpenPlayerProfile={(playerId) => {
+              onSelectPlayer(playerId);
+            }}
+            onPromoteBench={(playerId) => {
+              void handlePromoteBenchPlayer(playerId);
+            }}
+            onSlotDragLeave={handleSlotDragLeave}
+            onSlotDragOver={handleSlotDragOver}
+            onSlotDrop={(event, slotIndex) => {
+              void handleSlotDrop(event, slotIndex);
+            }}
+            pitchSlots={pitchSlots}
+            selectedPlayerId={selectedPlayerId}
+          />
+        </div>
 
         {/* Right: roles + phase blueprint */}
         <TacticsRightPanel

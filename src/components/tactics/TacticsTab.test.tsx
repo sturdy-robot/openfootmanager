@@ -116,7 +116,7 @@ describe("TacticsTab", () => {
     expect(screen.getByText("tactics.presetTactics")).toBeInTheDocument();
     expect(screen.getByText("tactics.formation")).toBeInTheDocument();
     expect(screen.getByText("tactics.playStyle")).toBeInTheDocument();
-    expect(screen.getAllByText(/preMatch\.substitutes/).length).toBeGreaterThan(
+    expect(screen.getAllByText(/tactics\.availableSquad/).length).toBeGreaterThan(
       0,
     );
     expect(screen.getByTestId("bench-player-d5")).toBeInTheDocument();

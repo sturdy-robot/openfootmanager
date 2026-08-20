@@ -225,85 +225,97 @@ export default function TacticsPlayerList({
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <TacticsFilters
-        onClear={onClearFilters}
-        onPlayerSearchChange={onPlayerSearchChange}
-        onPositionFilterChange={onPositionFilterChange}
-        playerSearch={playerSearch}
-        positionFilter={positionFilter}
-      />
-
-      <div className="rounded-xl border border-gray-200 bg-white dark:border-navy-600 dark:bg-navy-800">
-        <div className="border-b border-gray-100 px-3 py-2 dark:border-navy-700">
-          <span className="text-[11px] font-heading font-bold uppercase tracking-[0.22em] text-gray-500 dark:text-gray-400">
-            {t("preMatch.startingXI")} · {starters.length}
-          </span>
-        </div>
-        <div className="p-1.5 space-y-0.5">
-          {starters.map((player) => (
-            <PlayerRow
-              key={player.id}
-              comparePlayerId={comparePlayerId}
-              deployedPosition={xiActivePosition.get(player.id)}
-              isSelected={selectedPlayerId === player.id}
-              matchRoles={matchRoles}
-              onAssignMatchRole={onAssignMatchRole}
-              onClearSelection={clearSelection}
-              onDemoteStarter={onDemoteStarter}
-              onDragEnd={onDragEnd}
-              onDragStart={onDragStart}
-              onOpenPlayerProfile={onOpenPlayerProfile}
-              onPromoteBench={undefined}
-              onTacticalSelect={onTacticalSelect}
-              player={player}
-              section="xi"
-              selectedPlayerId={selectedPlayerId}
-            />
-          ))}
-        </div>
+    <section
+      aria-label={t("tactics.squadPane")}
+      className="flex min-h-0 flex-col gap-3"
+    >
+      {/*
+        Search stays put while the squad scrolls under it. A filter that
+        scrolls away is worse than no filter — you lose it exactly when the
+        list is long enough to need it.
+      */}
+      <div className="shrink-0">
+        <TacticsFilters
+          onClear={onClearFilters}
+          onPlayerSearchChange={onPlayerSearchChange}
+          onPositionFilterChange={onPositionFilterChange}
+          playerSearch={playerSearch}
+          positionFilter={positionFilter}
+        />
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white dark:border-navy-600 dark:bg-navy-800">
-        <div className="border-b border-gray-100 px-3 py-2 dark:border-navy-700">
-          <span className="text-[11px] font-heading font-bold uppercase tracking-[0.22em] text-gray-500 dark:text-gray-400">
-            {t("preMatch.substitutes")} · {bench.length}
-          </span>
-        </div>
-        <div className="p-1.5 space-y-0.5">
-          {bench.length === 0 ? (
-            <p className="px-2 py-3 text-xs text-gray-500 dark:text-gray-400">
-              {t("preMatch.noBench")}
-            </p>
-          ) : (
-            bench.map((player) => (
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+        <div className="rounded-xl border border-gray-200 bg-white dark:border-navy-600 dark:bg-navy-800">
+          <div className="border-b border-gray-100 px-3 py-2 dark:border-navy-700">
+            <span className="text-[11px] font-heading font-bold uppercase tracking-[0.22em] text-gray-500 dark:text-gray-400">
+              {t("preMatch.startingXI")} · {starters.length}
+            </span>
+          </div>
+          <div className="p-1.5 space-y-0.5">
+            {starters.map((player) => (
               <PlayerRow
                 key={player.id}
                 comparePlayerId={comparePlayerId}
+                deployedPosition={xiActivePosition.get(player.id)}
                 isSelected={selectedPlayerId === player.id}
                 matchRoles={matchRoles}
                 onAssignMatchRole={onAssignMatchRole}
                 onClearSelection={clearSelection}
-                onDemoteStarter={undefined}
+                onDemoteStarter={onDemoteStarter}
                 onDragEnd={onDragEnd}
                 onDragStart={onDragStart}
                 onOpenPlayerProfile={onOpenPlayerProfile}
-                onPromoteBench={onPromoteBench}
+                onPromoteBench={undefined}
                 onTacticalSelect={onTacticalSelect}
                 player={player}
-                section="bench"
+                section="xi"
                 selectedPlayerId={selectedPlayerId}
               />
-            ))
-          )}
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-gray-200 bg-white dark:border-navy-600 dark:bg-navy-800">
+          <div className="border-b border-gray-100 px-3 py-2 dark:border-navy-700">
+            <span className="text-[11px] font-heading font-bold uppercase tracking-[0.22em] text-gray-500 dark:text-gray-400">
+              {t("tactics.availableSquad")} · {bench.length}
+            </span>
+          </div>
+          <div className="p-1.5 space-y-0.5">
+            {bench.length === 0 ? (
+              <p className="px-2 py-3 text-xs text-gray-500 dark:text-gray-400">
+                {t("preMatch.noBench")}
+              </p>
+            ) : (
+              bench.map((player) => (
+                <PlayerRow
+                  key={player.id}
+                  comparePlayerId={comparePlayerId}
+                  isSelected={selectedPlayerId === player.id}
+                  matchRoles={matchRoles}
+                  onAssignMatchRole={onAssignMatchRole}
+                  onClearSelection={clearSelection}
+                  onDemoteStarter={undefined}
+                  onDragEnd={onDragEnd}
+                  onDragStart={onDragStart}
+                  onOpenPlayerProfile={onOpenPlayerProfile}
+                  onPromoteBench={onPromoteBench}
+                  onTacticalSelect={onTacticalSelect}
+                  player={player}
+                  section="bench"
+                  selectedPlayerId={selectedPlayerId}
+                />
+              ))
+            )}
+          </div>
         </div>
       </div>
 
       {draggedPlayerId ? (
-        <p className="text-center text-[10px] text-gray-400 dark:text-gray-500">
+        <p className="shrink-0 text-center text-[10px] text-gray-400 dark:text-gray-500">
           {t("squad.dropPlayerHere")}
         </p>
       ) : null}
-    </div>
+    </section>
   );
 }
