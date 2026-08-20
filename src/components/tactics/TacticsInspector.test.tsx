@@ -153,14 +153,34 @@ function pitchPlayer(playerId: string): HTMLElement {
   });
 }
 
+const SECTION_TITLE_KEYS = [
+  "tactics.teamInstructions",
+  "tactics.responsibilities",
+] as const;
+
+/**
+ * Open one section's editor, addressing it the way a screen reader user would.
+ * Both controls say "Adjust"; only the section they name tells them apart.
+ */
 function openEditor(index: 0 | 1): HTMLElement {
   const pane = inspector();
-  const adjust = within(pane).getAllByRole("button", {
-    name: "tactics.adjust",
-  });
-  expect(adjust).toHaveLength(2);
-  fireEvent.click(adjust[index]);
+  for (const titleKey of SECTION_TITLE_KEYS) {
+    expect(
+      within(pane).getByRole("button", { name: `tactics.adjust ${titleKey}` }),
+    ).toBeInTheDocument();
+  }
+  fireEvent.click(
+    within(pane).getByRole("button", {
+      name: `tactics.adjust ${SECTION_TITLE_KEYS[index]}`,
+    }),
+  );
   return pane;
+}
+
+function doneControl(pane: HTMLElement, index: 0 | 1): HTMLElement {
+  return within(pane).getByRole("button", {
+    name: `tactics.done ${SECTION_TITLE_KEYS[index]}`,
+  });
 }
 
 function responsibilityEditor(
@@ -247,9 +267,7 @@ describe("Tactics contextual inspector", () => {
         expect(responsibilityEditor(pane, label)).toBeNull();
       }
 
-      fireEvent.click(
-        within(pane).getByRole("button", { name: "tactics.done" }),
-      );
+      fireEvent.click(doneControl(pane, 0));
       expect(within(pane).queryAllByRole("combobox")).toEqual([]);
     });
 
@@ -268,9 +286,7 @@ describe("Tactics contextual inspector", () => {
         }
       }
 
-      fireEvent.click(
-        within(pane).getByRole("button", { name: "tactics.done" }),
-      );
+      fireEvent.click(doneControl(pane, 1));
       for (const [label] of RESPONSIBILITY_TEXT) {
         expect(responsibilityEditor(pane, label), label).toBeNull();
       }
@@ -392,6 +408,22 @@ describe("Tactics contextual inspector", () => {
       fireEvent.click(screen.getByRole("option", { name: "4-3-3" }));
 
       expect(within(pane).queryAllByRole("combobox")).toEqual([]);
+    });
+
+    it("withholds the role picker while the XI on screen is only a suggestion", () => {
+      // With nothing saved, the board draws a best-guess XI. `set_player_role`
+      // validates against the stored list and refuses a player who is not in
+      // it, so a picker here would be a control that silently cannot work.
+      const gameState = makeInspectorGameState();
+      gameState.teams = [{ ...gameState.teams[0], starting_xi_ids: [] }];
+      renderTactics(gameState);
+
+      fireEvent.click(pitchPlayer("m4"));
+
+      expect(within(inspector()).queryAllByRole("combobox")).toEqual([]);
+      expect(
+        within(inspector()).getByText("tactics.deployedSlot"),
+      ).toBeInTheDocument();
     });
 
     it("shows condition and the existing focus panel's key attribute groups", () => {

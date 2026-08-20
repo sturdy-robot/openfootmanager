@@ -247,6 +247,11 @@ export default function TacticsTab({
             selectedPlayer ? xiActivePosition.get(selectedPlayer.id) : undefined
           }
           isShapeSettled={formation === team.formation}
+          isSelectedPlayerInSavedXi={
+            selectedPlayer
+              ? (team.starting_xi_ids ?? []).includes(selectedPlayer.id)
+              : false
+          }
           matchRoles={team.match_roles}
           onAssignBestFit={(playerId) => {
             void handleAssignBestFit(playerId);

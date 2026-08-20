@@ -61,6 +61,13 @@ interface TacticsInspectorProps {
    * own roles on Apply. The picker comes back once the shape is settled.
    */
   isShapeSettled: boolean;
+  /**
+   * Whether the selected player is in the starting XI the *server* holds. The
+   * board draws a best-guess XI when none has been saved, and the backend
+   * refuses a role for a player who is not in the stored list — so offering the
+   * picker there would be offering a control that cannot work.
+   */
+  isSelectedPlayerInSavedXi: boolean;
   matchRoles?: TeamMatchRolesData;
   onAssignBestFit: (playerId: string) => void;
   onClearSelection: () => void;
@@ -77,11 +84,14 @@ interface TacticsInspectorProps {
 
 function InspectorCard({
   children,
+  id,
   onToggleEditing,
   isEditing,
   title,
 }: {
   children: ReactNode;
+  /** Distinguishes this card's controls from the other card's. */
+  id: string;
   isEditing: boolean;
   onToggleEditing: () => void;
   title: string;
@@ -91,18 +101,30 @@ function InspectorCard({
   return (
     <div className="rounded-xl border border-gray-200 bg-white dark:border-navy-600 dark:bg-navy-800">
       <div className="flex items-center justify-between gap-2 border-b border-gray-100 px-3 py-2 dark:border-navy-700">
-        <h3 className="text-[11px] font-heading font-bold uppercase tracking-[0.22em] text-gray-500 dark:text-gray-400">
+        <h3
+          id={`${id}-title`}
+          className="text-[11px] font-heading font-bold uppercase tracking-[0.22em] text-gray-500 dark:text-gray-400"
+        >
           {title}
         </h3>
+        {/*
+          Named by its own word *and* its section heading. Two buttons both
+          called "Adjust" are indistinguishable in a screen reader's controls
+          list, and this pane has exactly two.
+        */}
         <button
           type="button"
+          aria-controls={`${id}-body`}
+          aria-expanded={isEditing}
+          aria-labelledby={`${id}-action ${id}-title`}
+          id={`${id}-action`}
           onClick={onToggleEditing}
           className="rounded-lg border border-gray-200 px-2 py-1 text-[10px] font-heading font-bold uppercase tracking-[0.18em] text-gray-600 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 dark:border-navy-600 dark:text-gray-300 dark:hover:bg-navy-700 dark:focus:ring-offset-navy-800"
         >
           {isEditing ? t("tactics.done") : t("tactics.adjust")}
         </button>
       </div>
-      {children}
+      <div id={`${id}-body`}>{children}</div>
     </div>
   );
 }
@@ -133,6 +155,7 @@ export default function TacticsInspector({
   comparePlayer,
   deployedPosition,
   isShapeSettled,
+  isSelectedPlayerInSavedXi,
   matchRoles,
   onAssignBestFit,
   onClearSelection,
@@ -242,7 +265,7 @@ export default function TacticsInspector({
               />
             </div>
 
-            {deployedPosition && isShapeSettled ? (
+            {deployedPosition && isShapeSettled && isSelectedPlayerInSavedXi ? (
               <div>
                 <span className="mb-1 block text-[11px] text-gray-500 dark:text-gray-400">
                   {t("tactics.playerRole")}
@@ -302,6 +325,7 @@ export default function TacticsInspector({
       ) : (
         <>
           <InspectorCard
+            id="tactics-team-instructions"
             isEditing={editingInstructions}
             onToggleEditing={() => {
               setEditingInstructions((open) => !open);
@@ -341,6 +365,7 @@ export default function TacticsInspector({
           </InspectorCard>
 
           <InspectorCard
+            id="tactics-responsibilities"
             isEditing={editingResponsibilities}
             onToggleEditing={() => {
               setEditingResponsibilities((open) => !open);

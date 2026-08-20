@@ -917,7 +917,11 @@ describe("TacticsTab", () => {
     const pane = screen.getByRole("region", { name: "tactics.detailsPane" });
     // Step 8b-1 puts responsibility controls behind their section's Adjust action.
     fireEvent.click(
-      within(pane).getAllByRole("button", { name: "tactics.adjust" })[1],
+      // Step 8b-1 review: the two section controls are told apart by the section
+      // they name, not by their position in the DOM.
+      within(pane).getByRole("button", {
+        name: "tactics.adjust tactics.responsibilities",
+      }),
     );
     // Step 8b-1 keeps the existing auto-assignment action inside that editor.
     fireEvent.click(
