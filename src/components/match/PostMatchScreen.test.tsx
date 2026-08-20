@@ -131,7 +131,6 @@ function makeSnapshot() {
     home_score: 2,
     away_score: 1,
     possession: "Home" as const,
-    ball_zone: "Midfield",
     home_team: {
       id: "team1",
       name: "Alpha FC",

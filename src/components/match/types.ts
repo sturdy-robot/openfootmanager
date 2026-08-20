@@ -106,7 +106,6 @@ export interface MatchSnapshot {
   home_score: number;
   away_score: number;
   possession: "Home" | "Away";
-  ball_zone: string;
   home_team: EngineTeamData;
   away_team: EngineTeamData;
   home_bench: EnginePlayerData[];
@@ -137,7 +136,6 @@ export interface MinuteResult {
   home_score: number;
   away_score: number;
   possession: "Home" | "Away";
-  ball_zone: string;
   is_finished: boolean;
 }
 

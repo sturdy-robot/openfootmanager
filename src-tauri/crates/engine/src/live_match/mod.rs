@@ -122,7 +122,6 @@ pub struct MinuteResult {
     pub home_score: u8,
     pub away_score: u8,
     pub possession: Side,
-    pub ball_zone: Zone,
     pub is_finished: bool,
 }
 
@@ -137,7 +136,6 @@ pub struct MatchSnapshot {
     pub home_score: u8,
     pub away_score: u8,
     pub possession: Side,
-    pub ball_zone: Zone,
     pub home_team: TeamData,
     pub away_team: TeamData,
     pub home_bench: Vec<PlayerData>,

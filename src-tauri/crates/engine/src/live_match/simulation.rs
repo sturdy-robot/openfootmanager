@@ -27,7 +27,6 @@ impl LiveMatchState {
             home_score: 0,
             away_score: 0,
             possession: Side::Home,
-            ball_zone: Zone::Midfield,
             is_finished: false,
         }
     }
@@ -56,7 +55,6 @@ impl LiveMatchState {
             home_score: self.home_score,
             away_score: self.away_score,
             possession: Side::Away,
-            ball_zone: Zone::Midfield,
             is_finished: false,
         }
     }
@@ -84,7 +82,6 @@ impl LiveMatchState {
             home_score: self.home_score,
             away_score: self.away_score,
             possession: Side::Home,
-            ball_zone: Zone::Midfield,
             is_finished: false,
         }
     }
@@ -120,7 +117,6 @@ impl LiveMatchState {
                 home_score: self.home_score,
                 away_score: self.away_score,
                 possession: Side::Home,
-                ball_zone: Zone::Midfield,
                 is_finished: false,
             }
         } else {
@@ -151,7 +147,6 @@ impl LiveMatchState {
                 home_score: self.home_score,
                 away_score: self.away_score,
                 possession: self.possession,
-                ball_zone: Zone::Midfield,
                 is_finished: false,
             }
         } else {
@@ -197,7 +192,6 @@ impl LiveMatchState {
             home_score: self.home_score,
             away_score: self.away_score,
             possession: self.possession,
-            ball_zone: self.ball_zone,
             is_finished: self.phase == MatchPhase::Finished,
         }
     }
@@ -242,7 +236,6 @@ impl LiveMatchState {
             home_score: self.home_score,
             away_score: self.away_score,
             possession: self.possession,
-            ball_zone: self.ball_zone,
             is_finished: true,
         }
     }

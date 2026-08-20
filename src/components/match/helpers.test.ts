@@ -51,7 +51,6 @@ const makeSnapshot = (overrides: Partial<MatchSnapshot> = {}): MatchSnapshot => 
   home_score: 0,
   away_score: 0,
   possession: "Home",
-  ball_zone: "Midfield",
   home_team: makeTeam({ id: "home1", players: [makePlayer({ id: "h1", name: "Home Player" })] }),
   away_team: makeTeam({ id: "away1", players: [makePlayer({ id: "a1", name: "Away Player" })] }),
   home_bench: [makePlayer({ id: "hb1", name: "Home Bench" })],

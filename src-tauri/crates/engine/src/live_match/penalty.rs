@@ -92,7 +92,6 @@ impl LiveMatchState {
             home_score: self.home_score,
             away_score: self.away_score,
             possession: kicking_side,
-            ball_zone: Zone::Midfield,
             is_finished: self.phase == super::MatchPhase::Finished,
         }
     }

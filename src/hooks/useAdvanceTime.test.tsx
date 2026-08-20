@@ -78,7 +78,6 @@ describe("useAdvanceTime", function (): void {
       home_score: 0,
       away_score: 0,
       possession: "Home",
-      ball_zone: "Midfield",
     };
 
     mockedInvoke.mockResolvedValueOnce({

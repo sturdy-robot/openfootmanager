@@ -4,13 +4,10 @@
 //!
 //! These are not yet the full "a third party can implement `LiveState`" suite
 //! the contract work is aiming at. `MatchSnapshot` still demands a
-//! `current_minute: u8` and a `ball_zone: Zone`, which is precisely what an
-//! engine with a continuous clock and real coordinates should not have to
-//! invent, so the fake below leaves `snapshot()` and `into_report()`
-//! unimplemented and says so. What it does prove is the narrower thing this
-//! change is responsible for: the optional spatial channel is reachable
-//! *through type erasure*, which is the only way an engine registry can hand it
-//! to anyone.
+//! `current_minute: u8`, which an engine with a continuous clock should not
+//! have to invent, so the fake below leaves `snapshot()` unimplemented and says
+//! so. The zone half of that complaint is now gone: neither `MinuteResult` nor
+//! `MatchSnapshot` carries a `ball_zone` any more.
 
 use engine::clock::{MatchClock, MatchPeriod};
 use engine::compliance::check_capabilities;
@@ -115,7 +112,6 @@ impl LiveState for SpatialFake {
             home_score: 0,
             away_score: 0,
             possession: Side::Home,
-            ball_zone: Zone::Midfield,
             is_finished: false,
         }
     }
@@ -134,7 +130,7 @@ impl LiveState for SpatialFake {
         // clock and one of the built-in engine's five zones, neither of which
         // this engine has. That is a finding about the contract, not about this
         // fake, and it is what the next step has to fix.
-        unimplemented!("MatchSnapshot still demands current_minute and ball_zone")
+        unimplemented!("MatchSnapshot still demands a whole-minute current_minute")
     }
 
     fn phase(&self) -> MatchPhase {

@@ -62,7 +62,6 @@ impl LiveMatchState {
             home_score: self.home_score,
             away_score: self.away_score,
             possession: self.possession,
-            ball_zone: self.ball_zone,
             home_team,
             away_team,
             home_bench: self.home_bench.clone(),

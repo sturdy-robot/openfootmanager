@@ -102,7 +102,6 @@ function createSnapshot(): MatchSnapshot {
         home_score: 1,
         away_score: 0,
         possession: "Home",
-        ball_zone: "MiddleThird",
         home_team: makeTeam(),
         away_team: makeTeam({
             id: "team-2",

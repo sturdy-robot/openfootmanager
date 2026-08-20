@@ -181,7 +181,6 @@ function makeSnapshot(
     home_score: 0,
     away_score: 0,
     possession: "Home",
-    ball_zone: "Midfield",
     home_team: {
       id: "home1",
       name: "Home FC",
