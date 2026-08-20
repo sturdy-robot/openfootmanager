@@ -60,7 +60,8 @@ pub use spatial::{
 };
 pub use report::{GoalDetail, GoalSource, MatchReport, PlayerMatchStats, TeamStats};
 pub use traits::{
-    DEFAULT_ENGINE_ID, DefaultEngine, InstantEngine, LiveEngine, LiveState, MatchSetup,
+    DEFAULT_ENGINE_ID, DefaultEngine, InstantEngine, LiveEngine, LiveEngineObject, LiveState,
+    MatchSetup,
 };
 pub use types::{
     BreakSpeed, CounterPressDuration, DefensiveLine, DefensiveShape, MarkingStyle, MatchConfig,

@@ -164,7 +164,15 @@ pub trait LiveState {
         None
     }
 
-    fn into_report(self) -> MatchReport;
+    /// Consume the match and produce its report.
+    ///
+    /// Takes `Box<Self>` rather than `self` so it can be called on an erased
+    /// state. With a bare `self` receiver the method is excluded from the
+    /// vtable, and `Box<dyn LiveState>` compiles right up until you try to
+    /// finish the match, at which point it is `error[E0161]: cannot move a
+    /// value of type dyn LiveState`. A match that can be played and never
+    /// finished is no use to an engine registry.
+    fn into_report(self: Box<Self>) -> MatchReport;
 }
 
 // ---------------------------------------------------------------------------
@@ -253,7 +261,42 @@ impl LiveState for crate::live_match::LiveMatchState {
         crate::live_match::LiveMatchState::events(self)
     }
 
-    fn into_report(self) -> MatchReport {
-        crate::live_match::LiveMatchState::into_report(self)
+    fn into_report(self: Box<Self>) -> MatchReport {
+        crate::live_match::LiveMatchState::into_report(*self)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Holding an engine without naming its type
+// ---------------------------------------------------------------------------
+
+/// Object-safe companion to [`LiveEngine`].
+///
+/// `LiveEngine` carries an associated `State`, so a registry entry would have
+/// to name a concrete state type and every engine would need its own entry.
+/// That defeats the point: the whole reason for an engine contract is a
+/// collection of engines nobody had to enumerate in advance.
+///
+/// The blanket implementation means an engine gets this for free by
+/// implementing `LiveEngine`, and the generic path stays exactly as it was, so
+/// production pays nothing for the erased one existing.
+///
+/// `Send` is not decoration. `StateManager` keeps the live session behind a
+/// mutex shared with the Tauri command pool and, under the `mcp` feature, the
+/// MCP server's runtime, and `LiveMatchState` carries a compile-time assertion
+/// to that effect. An erased state that is not `Send` would compile here and
+/// fail in the crate that stores it, behind a feature flag that is off by
+/// default.
+pub trait LiveEngineObject: crate::descriptor::EngineInfo {
+    fn kickoff_boxed(&self, setup: MatchSetup) -> Box<dyn LiveState + Send>;
+}
+
+impl<T> LiveEngineObject for T
+where
+    T: LiveEngine + crate::descriptor::EngineInfo,
+    T::State: Send + 'static,
+{
+    fn kickoff_boxed(&self, setup: MatchSetup) -> Box<dyn LiveState + Send> {
+        Box::new(self.kickoff(setup))
     }
 }

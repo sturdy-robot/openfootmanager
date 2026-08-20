@@ -149,7 +149,7 @@ impl LiveState for SpatialFake {
         &self.events
     }
 
-    fn into_report(self) -> MatchReport {
+    fn into_report(self: Box<Self>) -> MatchReport {
         unimplemented!("reporting is not what this fake exists to test")
     }
 
@@ -180,7 +180,7 @@ impl LiveState for ZoneFake {
     fn events(&self) -> &[MatchEvent] {
         &[]
     }
-    fn into_report(self) -> MatchReport {
+    fn into_report(self: Box<Self>) -> MatchReport {
         unimplemented!()
     }
 }
@@ -360,4 +360,102 @@ fn the_built_in_engine_is_capability_compliant() {
         report.violations
     );
     assert!(state.telemetry().is_none());
+}
+
+// ---------------------------------------------------------------------------
+// Driving an engine without naming its type
+// ---------------------------------------------------------------------------
+
+/// Stand-in for the engine registry: hands back a live match without the caller
+/// knowing which engine produced it.
+fn kickoff_by_id(id: &str) -> Option<Box<dyn engine::LiveState + Send>> {
+    use engine::traits::{DefaultEngine, LiveEngineObject, MatchSetup};
+    use engine::{MatchConfig, PlayStyle, PlayerData, Position, TacticsConfig, TeamData};
+
+    fn player(id: &str, position: Position) -> PlayerData {
+        PlayerData {
+            id: id.to_string(),
+            name: id.to_string(),
+            position,
+            ovr: 70,
+            condition: 90,
+            fitness: 75,
+            pace: 70,
+            stamina: 70,
+            strength: 70,
+            agility: 70,
+            passing: 70,
+            shooting: 70,
+            tackling: 70,
+            dribbling: 70,
+            defending: 70,
+            positioning: 70,
+            vision: 70,
+            decisions: 70,
+            composure: 70,
+            aggression: 70,
+            teamwork: 70,
+            leadership: 70,
+            handling: 70,
+            reflexes: 70,
+            aerial: 70,
+            traits: vec![],
+            slot: None,
+            role: engine::PlayerRole::Standard,
+        }
+    }
+    fn team(id: &str) -> TeamData {
+        let mut players = vec![player(&format!("{id}_gk"), Position::Goalkeeper)];
+        for i in 0..4 {
+            players.push(player(&format!("{id}_d{i}"), Position::Defender));
+        }
+        for i in 0..4 {
+            players.push(player(&format!("{id}_m{i}"), Position::Midfielder));
+        }
+        for i in 0..2 {
+            players.push(player(&format!("{id}_f{i}"), Position::Forward));
+        }
+        TeamData {
+            id: id.to_string(),
+            name: id.to_string(),
+            formation: "4-4-2".to_string(),
+            play_style: PlayStyle::Balanced,
+            tactics: TacticsConfig::default(),
+            players,
+        }
+    }
+
+    if id != engine::DEFAULT_ENGINE_ID {
+        return None;
+    }
+    let setup = MatchSetup::league(team("home"), team("away"), MatchConfig::default());
+    Some(DefaultEngine.kickoff_boxed(setup))
+}
+
+#[test]
+fn a_match_can_be_played_to_a_report_without_naming_the_engine() {
+    // This is the whole contract in one test. Before `into_report` took
+    // `Box<Self>` the last line was E0161: a dynamically dispatched match could
+    // be played and never finished.
+    let mut state = kickoff_by_id(engine::DEFAULT_ENGINE_ID).expect("known engine");
+    let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(20260802);
+
+    let mut guard = 0;
+    while !state.is_finished() && guard < 200 {
+        state.step_minute(&mut rng);
+        guard += 1;
+    }
+    assert!(state.is_finished(), "the match should reach full time");
+
+    let report = state.into_report();
+    assert!(
+        report.total_minutes >= 90,
+        "a finished match runs at least ninety minutes, got {}",
+        report.total_minutes
+    );
+}
+
+#[test]
+fn an_unknown_engine_id_is_declined_rather_than_guessed() {
+    assert!(kickoff_by_id("no-such-engine").is_none());
 }
