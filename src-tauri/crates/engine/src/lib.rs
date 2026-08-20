@@ -9,6 +9,7 @@ pub mod rejection;
 pub mod report;
 pub(crate) mod shared;
 pub mod sim;
+pub mod spatial;
 pub mod traits;
 pub mod types;
 
@@ -54,6 +55,9 @@ pub use live_match::{
     SetPieceTakers, SubstitutionRecord,
 };
 pub use rejection::CommandRejection;
+pub use spatial::{
+    BallPosition, PitchGeometry, PitchPoint, PlayerPosition, SpatialFrame, SpatialTelemetry,
+};
 pub use report::{GoalDetail, GoalSource, MatchReport, PlayerMatchStats, TeamStats};
 pub use traits::{
     DEFAULT_ENGINE_ID, DefaultEngine, InstantEngine, LiveEngine, LiveState, MatchSetup,

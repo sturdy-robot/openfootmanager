@@ -47,11 +47,14 @@ pub enum Invariant {
     Shootout,
     /// Behaviour is unchanged since the pinned golden hash.
     GoldenReport,
+    /// What the descriptor advertises is what the engine actually does.
+    Capabilities,
 }
 
 impl Invariant {
     pub fn name(self) -> &'static str {
         match self {
+            Invariant::Capabilities => "capabilities",
             Invariant::Determinism => "determinism",
             Invariant::ReportConsistency => "report-consistency",
             Invariant::PlayerStats => "player-stats",
@@ -623,4 +626,79 @@ fn check_shootout(result: &MatchReport, seed: u64, report: &mut ComplianceReport
             );
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// Capabilities — what an engine claims must be what it does
+// ---------------------------------------------------------------------------
+
+/// Check a live state against the descriptor of the engine that produced it.
+///
+/// A capability nobody verifies becomes a stale comment, and a stale comment
+/// about whether coordinates exist is one a renderer would crash on. This is
+/// deliberately callable on `&dyn LiveState`, because the whole point of the
+/// spatial channel is that it survives the type erasure an engine registry
+/// needs.
+pub fn check_capabilities(
+    state: &dyn crate::traits::LiveState,
+    descriptor: &crate::descriptor::EngineDescriptor,
+) -> ComplianceReport {
+    let mut report = ComplianceReport {
+        engine_id: descriptor.id.to_string(),
+        matches_checked: 0,
+        ..Default::default()
+    };
+
+    let telemetry = state.telemetry();
+    match (descriptor.spatial_telemetry, telemetry.is_some()) {
+        (true, false) => report.fail(
+            Invariant::Capabilities,
+            "descriptor advertises spatial telemetry but the live state returns none",
+        ),
+        (false, true) => report.fail(
+            Invariant::Capabilities,
+            "the live state reports positions the descriptor does not advertise, so nothing will ask for them",
+        ),
+        _ => {}
+    }
+
+    if let Some(telemetry) = telemetry {
+        let geometry = telemetry.geometry();
+        let real_ground = |m: f32| m.is_finite() && m > 0.0;
+        if !real_ground(geometry.length_m) || !real_ground(geometry.width_m) {
+            report.fail(
+                Invariant::Capabilities,
+                format!(
+                    "pitch geometry is not a real ground: {}m by {}m",
+                    geometry.length_m, geometry.width_m
+                ),
+            );
+        }
+
+        let frame = telemetry.frame();
+        if !frame.ball.at.is_finite() {
+            report.fail(
+                Invariant::Capabilities,
+                "the ball is at a coordinate that is not a number",
+            );
+        }
+        for player in frame.players() {
+            if !player.at.is_finite() {
+                report.fail(
+                    Invariant::Capabilities,
+                    format!("{} is at a coordinate that is not a number", player.player_id),
+                );
+            } else if !player.at.is_on_pitch() {
+                report.fail(
+                    Invariant::Capabilities,
+                    format!(
+                        "{} is off the field of play at ({}, {})",
+                        player.player_id, player.at.x, player.at.y
+                    ),
+                );
+            }
+        }
+    }
+
+    report
 }

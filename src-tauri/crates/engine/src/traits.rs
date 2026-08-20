@@ -148,6 +148,22 @@ pub trait LiveState {
 
     fn events(&self) -> &[MatchEvent];
 
+    /// Where everyone is, for engines that model position.
+    ///
+    /// Returns `None` by default, which is the honest answer for an engine that
+    /// resolves zones rather than coordinates. An engine that returns `Some`
+    /// must also set `spatial_telemetry` in its descriptor; the two disagreeing
+    /// is a compliance failure, because a capability nobody checks becomes a
+    /// stale claim.
+    ///
+    /// Declared here rather than on a subtrait so it survives type erasure: a
+    /// caller holding a `dyn LiveState` from an engine registry can still ask.
+    /// A `PositionalState: LiveState` subtrait would be unreachable through
+    /// exactly the abstraction that makes a second engine possible.
+    fn telemetry(&self) -> Option<&dyn crate::spatial::SpatialTelemetry> {
+        None
+    }
+
     fn into_report(self) -> MatchReport;
 }
 
