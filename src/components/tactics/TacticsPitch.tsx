@@ -48,6 +48,9 @@ interface TacticsPitchProps {
   onSlotDragOver: (event: DragEvent<HTMLElement>, slotIndex: number) => void;
   onSlotDragLeave: (slotIndex: number) => void;
   onSlotDrop: (event: DragEvent<HTMLElement>, slotIndex: number) => void;
+  onSlotAssign?: (slotIndex: number) => void;
+  onSlotFocus?: (slotIndex: number) => void;
+  onBoardBlur?: () => void;
   pitchSlots: TacticsPitchSlot[];
   selectedPlayerId: string | null;
 }
@@ -221,6 +224,9 @@ export default function TacticsPitch({
   onSlotDragLeave,
   onSlotDragOver,
   onSlotDrop,
+  onSlotAssign,
+  onSlotFocus,
+  onBoardBlur,
   pitchSlots,
   selectedPlayerId,
 }: TacticsPitchProps): JSX.Element {
@@ -302,6 +308,7 @@ export default function TacticsPitch({
               comparedSlotIndex: findSlotIndex(comparePlayerId),
               draggedSlotIndex: findSlotIndex(draggedPlayerId),
               hoveredSlotIndex: hoveredSlot,
+              onBoardBlur,
               onSlotActivate: (slotIndex) => {
                 const slotPlayer = pitchSlots[slotIndex]?.player;
                 if (slotPlayer) {
@@ -318,6 +325,8 @@ export default function TacticsPitch({
                 }
               },
               onSlotDrop,
+              onSlotAssign,
+              onSlotFocus,
               selectedSlotIndex: findSlotIndex(selectedPlayerId),
             }}
             label={t("tactics.startingXI", { formation })}

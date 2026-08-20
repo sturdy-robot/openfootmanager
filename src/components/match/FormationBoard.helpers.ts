@@ -23,6 +23,51 @@ export interface FormationBoardCoordinate {
   y: number;
 }
 
+export type FormationBoardDirection = "up" | "down" | "left" | "right";
+
+export function nextSlotInDirection(
+  coordinates: readonly FormationBoardCoordinate[],
+  fromIndex: number,
+  direction: FormationBoardDirection,
+): number | null {
+  const origin = coordinates.find(
+    (coordinate) => coordinate.index === fromIndex,
+  );
+  if (!origin) {
+    return null;
+  }
+
+  if (direction === "left" || direction === "right") {
+    const candidates = coordinates.filter(
+      (coordinate) =>
+        coordinate.y === origin.y &&
+        (direction === "left"
+          ? coordinate.x < origin.x
+          : coordinate.x > origin.x),
+    );
+
+    candidates.sort(
+      (left, right) =>
+        Math.abs(left.x - origin.x) - Math.abs(right.x - origin.x) ||
+        left.index - right.index,
+    );
+    return candidates[0]?.index ?? null;
+  }
+
+  const candidates = coordinates.filter((coordinate) =>
+    direction === "up"
+      ? coordinate.y < origin.y
+      : coordinate.y > origin.y,
+  );
+  candidates.sort(
+    (left, right) =>
+      Math.abs(left.y - origin.y) - Math.abs(right.y - origin.y) ||
+      Math.abs(left.x - origin.x) - Math.abs(right.x - origin.x) ||
+      left.index - right.index,
+  );
+  return candidates[0]?.index ?? null;
+}
+
 /**
  * Where the slots of one row sit across the pitch.
  *

@@ -361,6 +361,33 @@ export function useTacticsLineup({
     resetDragState();
   }
 
+  function handleAssignToSlot(
+    playerId: string,
+    slotIndex: number,
+  ): boolean {
+    if (!isPlayerEligibleForTacticsLineup(playersById.get(playerId))) {
+      return false;
+    }
+
+    const fromIndex = startingXiIds.indexOf(playerId);
+    const nextXiIds = applyLineupDrop(
+      startingXiIds,
+      {
+        playerId,
+        from: fromIndex >= 0 ? "xi" : "bench",
+        slotIndex: fromIndex >= 0 ? fromIndex : null,
+      },
+      slotIndex,
+    );
+    if (nextXiIds.join(",") === startingXiIds.join(",")) {
+      return false;
+    }
+
+    void persistStartingXI(nextXiIds);
+    clearLineupSelection();
+    return true;
+  }
+
   async function handleLineupPlayerClick(
     playerId: string,
     section: SquadSection,
@@ -471,6 +498,7 @@ export function useTacticsLineup({
     handleSlotDragOver,
     handleSlotDragLeave,
     handleSlotDrop,
+    handleAssignToSlot,
     handleLineupPlayerClick,
     handleConfirmSwap,
     resetDragState,

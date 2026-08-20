@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { createEvent, fireEvent, render, screen } from "@testing-library/react";
 import type { ComponentType, DragEvent, ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -37,6 +37,9 @@ interface FormationBoardInteraction {
   draggedSlotIndex?: number | null;
   hoveredSlotIndex?: number | null;
   onSlotActivate?: (slotIndex: number) => void;
+  onSlotAssign?: (slotIndex: number) => void;
+  onSlotFocus?: (slotIndex: number) => void;
+  onBoardBlur?: () => void;
   onSlotDragStart?: (event: DragEvent<HTMLElement>, slotIndex: number) => void;
   onSlotDragEnd?: () => void;
   onSlotDragOver?: (event: DragEvent<HTMLElement>, slotIndex: number) => void;
@@ -214,15 +217,57 @@ describe("FormationBoard rendering and interaction", () => {
     const control = screen.getByRole("button", {
       name: "Alex Lane · Condition 74% · Adapted to slot",
     });
-    fireEvent.keyDown(control, { key: "Enter" });
-    fireEvent.keyDown(control, { key: " " });
 
     // Step 8b-1 moves the role picker to the inspector, so the slot host is a real button.
     expect(control.tagName).toBe("BUTTON");
     expect(control.className).toContain("focus-visible:ring-2");
     expect(control.className).toMatch(/dark:focus-visible:ring-offset-/);
+
+    // Step 8b-2: a real button turns the manager's Enter into a click itself.
+    // Hand-rolling that on top would activate the slot twice per keystroke in a
+    // browser — invisible in jsdom, which does not synthesise the click — so
+    // this asserts the platform path, and that the component adds nothing to it.
+    fireEvent.click(control);
+    expect(onSlotActivate).toHaveBeenCalledTimes(1);
     expect(onSlotActivate).toHaveBeenNthCalledWith(1, 0);
-    expect(onSlotActivate).toHaveBeenNthCalledWith(2, 0);
+
+    fireEvent.keyDown(control, { key: "Enter" });
+    fireEvent.keyDown(control, { key: " " });
+    expect(onSlotActivate).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends Enter to the assignment path, and only there, when one exists", () => {
+    const FormationBoard = requireFormationBoard();
+    const onSlotActivate = vi.fn();
+    const onSlotAssign = vi.fn();
+
+    render(
+      <FormationBoard
+        formation="4-4-2"
+        slots={[{ occupant: player("gk", "Alex Lane") }]}
+        variant="full"
+        orientation="normal"
+        interaction={{ onSlotActivate, onSlotAssign }}
+        renderToken={token}
+        label="Tactics formation"
+      />,
+    );
+
+    const control = screen.getByRole("button", { name: "Alex Lane" });
+    const enter = createEvent.keyDown(control, { key: "Enter" });
+
+    fireEvent(control, enter);
+
+    // Assigning is not selecting: a board that offers both must not do the
+    // other one as well, and must stop the browser's own click from doing it.
+    expect(onSlotAssign).toHaveBeenCalledWith(0);
+    expect(onSlotActivate).not.toHaveBeenCalled();
+    expect(enter.defaultPrevented).toBe(true);
+
+    // A pointer still selects. The two inputs mean different things on purpose.
+    fireEvent.click(control);
+    expect(onSlotActivate).toHaveBeenCalledWith(0);
+    expect(onSlotAssign).toHaveBeenCalledTimes(1);
   });
 
   it("signals an injured slot as disabled by more than colour and blocks activation", () => {

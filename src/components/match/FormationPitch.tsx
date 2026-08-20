@@ -7,6 +7,7 @@ import {
 } from "./FormationBoard";
 import {
   buildFormationBoardCoordinates,
+  nextSlotInDirection,
   rowSlotXCoordinates,
   type FormationBoardFallbackGroup,
 } from "./FormationBoard.helpers";
@@ -20,9 +21,14 @@ export type {
   FormationBoardSlot,
   FormationBoardVariant,
 } from "./FormationBoard";
-export { buildFormationBoardCoordinates, rowSlotXCoordinates };
+export {
+  buildFormationBoardCoordinates,
+  nextSlotInDirection,
+  rowSlotXCoordinates,
+};
 export type {
   FormationBoardCoordinate,
+  FormationBoardDirection,
   FormationBoardFallbackGroup,
   FormationBoardGeometrySlot,
   FormationBoardOrientation,

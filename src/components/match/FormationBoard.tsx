@@ -1,7 +1,17 @@
-import type { DragEvent, KeyboardEvent, ReactElement, ReactNode } from "react";
+import {
+  useState,
+  useRef,
+  type DragEvent,
+  type FocusEvent,
+  type KeyboardEvent,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 
 import {
   buildFormationBoardCoordinates,
+  nextSlotInDirection,
+  type FormationBoardDirection,
   type FormationBoardGeometrySlot,
   type FormationBoardOrientation,
 } from "./FormationBoard.helpers";
@@ -36,6 +46,9 @@ export interface FormationBoardInteraction {
   draggedSlotIndex?: number | null;
   hoveredSlotIndex?: number | null;
   onSlotActivate?: (slotIndex: number) => void;
+  onSlotAssign?: (slotIndex: number) => void;
+  onSlotFocus?: (slotIndex: number) => void;
+  onBoardBlur?: () => void;
   onSlotDragStart?: (event: DragEvent<HTMLElement>, slotIndex: number) => void;
   onSlotDragEnd?: () => void;
   onSlotDragOver?: (event: DragEvent<HTMLElement>, slotIndex: number) => void;
@@ -95,11 +108,54 @@ export function FormationBoard<T>({
     slots,
     orientation,
   );
+  const navigableCoordinates = coordinates.filter(
+    (coordinate) => !slots[coordinate.index]?.hidden,
+  );
+  // Slot 0, because entry 0 of the XI is where every other list of this team
+  // starts — the roster rail, the array the server stores, the engine's own
+  // order. Arrows take it from there.
+  const defaultRovingSlotIndex = navigableCoordinates.length
+    ? Math.min(...navigableCoordinates.map((coordinate) => coordinate.index))
+    : null;
+  const [rovingSlotIndex, setRovingSlotIndex] = useState(
+    defaultRovingSlotIndex,
+  );
+  const activeRovingSlotIndex = navigableCoordinates.some(
+    (coordinate) => coordinate.index === rovingSlotIndex,
+  )
+    ? rovingSlotIndex
+    : defaultRovingSlotIndex;
+  const slotElements = useRef(new Map<number, HTMLButtonElement>()).current;
+
+  const handleBoardBlur = (event: FocusEvent<HTMLElement>) => {
+    const nextTarget = event.relatedTarget;
+    if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) {
+      return;
+    }
+    interaction?.onBoardBlur?.();
+  };
+
+  const moveFocus = (
+    fromIndex: number,
+    direction: FormationBoardDirection,
+  ) => {
+    const nextIndex = nextSlotInDirection(
+      navigableCoordinates,
+      fromIndex,
+      direction,
+    );
+    if (nextIndex === null) {
+      return;
+    }
+    setRovingSlotIndex(nextIndex);
+    slotElements.get(nextIndex)?.focus();
+  };
 
   return (
     <section
       aria-label={label}
       className={`relative aspect-[10/14] w-full ${className ?? ""}`}
+      onBlur={handleBoardBlur}
     >
       <svg
         aria-hidden="true"
@@ -153,6 +209,21 @@ export function FormationBoard<T>({
               key={coordinate.index}
               coordinate={coordinate}
               interaction={interaction}
+              isRovingTabStop={coordinate.index === activeRovingSlotIndex}
+              onMoveFocus={moveFocus}
+              registerSlot={(element) => {
+                if (element) {
+                  slotElements.set(coordinate.index, element);
+                } else {
+                  slotElements.delete(coordinate.index);
+                }
+              }}
+              onSlotFocus={(slotIndex) => {
+                // Focus is what makes a slot the tab stop, whether it arrived
+                // by arrow key, by Tab, or from assistive technology.
+                setRovingSlotIndex(slotIndex);
+                interaction?.onSlotFocus?.(slotIndex);
+              }}
               slot={slot}
               state={state}
             >
@@ -171,6 +242,13 @@ interface SlotHostProps<T> {
   children: ReactNode;
   coordinate: { index: number; x: number; y: number };
   interaction?: FormationBoardInteraction;
+  isRovingTabStop: boolean;
+  onMoveFocus: (
+    fromIndex: number,
+    direction: FormationBoardDirection,
+  ) => void;
+  onSlotFocus: (slotIndex: number) => void;
+  registerSlot: (element: HTMLButtonElement | null) => void;
   slot: FormationBoardSlot<T>;
   state: FormationBoardRenderState;
 }
@@ -179,11 +257,17 @@ function FormationBoardSlotHost<T>({
   children,
   coordinate,
   interaction,
+  isRovingTabStop,
+  onMoveFocus,
+  onSlotFocus,
+  registerSlot,
   slot,
   state,
 }: SlotHostProps<T>): ReactElement {
   const isInteractive = Boolean(
     interaction?.onSlotActivate ||
+      interaction?.onSlotAssign ||
+      interaction?.onSlotFocus ||
       interaction?.onSlotDragStart ||
       interaction?.onSlotDrop,
   );
@@ -213,12 +297,31 @@ function FormationBoardSlotHost<T>({
     interaction?.onSlotActivate?.(coordinate.index);
   };
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    if (event.key !== "Enter" && event.key !== " ") {
+  const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    const directionByKey: Partial<
+      Record<string, FormationBoardDirection>
+    > = {
+      ArrowDown: "down",
+      ArrowLeft: "left",
+      ArrowRight: "right",
+      ArrowUp: "up",
+    };
+    const direction = directionByKey[event.key];
+    if (direction) {
+      event.preventDefault();
+      onMoveFocus(coordinate.index, direction);
       return;
     }
-    event.preventDefault();
-    activate();
+
+    if (
+      interaction?.onSlotAssign &&
+      (event.key === "Enter" || event.key === " ")
+    ) {
+      event.preventDefault();
+      if (!isDisabled) {
+        interaction.onSlotAssign(coordinate.index);
+      }
+    }
   };
 
   return (
@@ -232,6 +335,7 @@ function FormationBoardSlotHost<T>({
       aria-label={slot.ariaLabel}
       className={`${shell} rounded-2xl ${FOCUS_RING} ${isDisabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
       draggable={!isDisabled && Boolean(interaction?.onSlotDragStart)}
+      onFocus={() => onSlotFocus(coordinate.index)}
       onClick={activate}
       onDragEnd={() => interaction?.onSlotDragEnd?.()}
       onDragLeave={() => interaction?.onSlotDragLeave?.(coordinate.index)}
@@ -245,7 +349,9 @@ function FormationBoardSlotHost<T>({
       }}
       onDrop={(event) => interaction?.onSlotDrop?.(event, coordinate.index)}
       onKeyDown={handleKeyDown}
+      ref={registerSlot}
       style={positioning}
+      tabIndex={isRovingTabStop ? 0 : -1}
       type="button"
     >
       {children}
