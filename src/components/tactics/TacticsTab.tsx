@@ -66,6 +66,7 @@ export default function TacticsTab({
     initialPreset,
     roster,
     startingXI,
+    startingXiIds,
     bench,
     xiActivePosition,
     pitchSlots,
@@ -161,7 +162,7 @@ export default function TacticsTab({
     assignmentOriginRef.current?.focus();
   };
 
-  const assignPlayerToOpenSlot = (playerId: string) => {
+  const assignPlayerToOpenSlot = async (playerId: string) => {
     if (!assignmentSlot) {
       return;
     }
@@ -170,18 +171,25 @@ export default function TacticsTab({
       return;
     }
 
-    if (!handleAssignToSlot(playerId, assignmentSlot.slotIndex)) {
+    const slot = assignmentSlot;
+    const position = translatePositionLabel(t, slot.slotPosition);
+    closeAssignmentDialog();
+
+    // Announced once the write is acknowledged. Saying it on the way out told
+    // a screen-reader user the move had happened, and a rejected command then
+    // rolled the pitch back with nothing said about it.
+    const persisted = await handleAssignToSlot(playerId, slot.slotIndex);
+
+    if (!persisted) {
+      setAssignmentAnnouncement(t("tactics.assignFailed", { position }));
       return;
     }
 
-    const position = translatePositionLabel(t, assignmentSlot.slotPosition);
     setAssignmentAnnouncement(
-      assignmentSlot.occupant
+      slot.occupant
         ? t("tactics.replacedInSlot", {
             incoming: incoming.match_name || incoming.full_name,
-            outgoing:
-              assignmentSlot.occupant.match_name ||
-              assignmentSlot.occupant.full_name,
+            outgoing: slot.occupant.match_name || slot.occupant.full_name,
             position,
           })
         : t("tactics.assignedToSlot", {
@@ -189,7 +197,6 @@ export default function TacticsTab({
             position,
           }),
     );
-    closeAssignmentDialog();
   };
 
   return (
@@ -212,7 +219,13 @@ export default function TacticsTab({
         isDirty={isCommandBarDirty}
         outOfPositionCount={outOfPositionCount}
         onApply={() => {
-          void apply();
+          // What the manager is looking at, not what the server last said. An
+          // XI write can still be in flight, and a responsibility can have been
+          // handed to someone since the last snapshot arrived.
+          void apply({
+            matchRoles: effectiveMatchRoles,
+            startingXiIds,
+          });
         }}
         onCreateNew={handleCreateCustomTactic}
         onDuplicate={handleDuplicateTactic}
@@ -233,7 +246,20 @@ export default function TacticsTab({
         tacticLibrary={tacticLibrary}
       />
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 overflow-auto @3xl/tactics:grid-cols-3 @5xl/tactics:grid-cols-4 @5xl/tactics:grid-rows-1 @5xl/tactics:overflow-hidden">
+      <div
+        className="grid min-h-0 flex-1 grid-cols-1 gap-5 overflow-auto @3xl/tactics:grid-cols-3 @5xl/tactics:grid-cols-4 @5xl/tactics:grid-rows-1 @5xl/tactics:overflow-hidden"
+        onBlur={(event) => {
+          // The board and the pane it feeds are one scope. Clearing the
+          // focused slot the moment focus left the board unmounted the role
+          // picker a keyboard user was tabbing towards, and dropped their
+          // focus with it.
+          const next = event.relatedTarget;
+          if (next instanceof Node && event.currentTarget.contains(next)) {
+            return;
+          }
+          setFocusedSlotIndex(null);
+        }}
+      >
         {/* Left: player list */}
         <TacticsPlayerList
           bench={filteredBench}
@@ -319,7 +345,6 @@ export default function TacticsTab({
               });
             }}
             onSlotFocus={setFocusedSlotIndex}
-            onBoardBlur={() => setFocusedSlotIndex(null)}
             pitchSlots={pitchSlots}
             selectedPlayerId={selectedPlayerId}
           />
@@ -369,7 +394,9 @@ export default function TacticsTab({
         <TacticsAssignmentDialog
           candidates={roster}
           occupant={assignmentSlot.occupant}
-          onAssign={assignPlayerToOpenSlot}
+          onAssign={(playerId) => {
+            void assignPlayerToOpenSlot(playerId);
+          }}
           onClose={closeAssignmentDialog}
           slotIndex={assignmentSlot.slotIndex}
           slotPosition={assignmentSlot.slotPosition}

@@ -374,6 +374,51 @@ describe("building a starting XI with the keyboard", () => {
     ).toBeDisabled();
   });
 
+  it("keeps describing the focused player while focus moves into the pane", () => {
+    renderTactics();
+
+    focusSlot(slotFor("d1"));
+
+    const pane = screen.getByRole("region", { name: "tactics.detailsPane" });
+    const rolePicker = within(pane).getByRole("combobox");
+
+    // Tabbing from the board towards the role picker used to unmount the role
+    // picker — the pane fell back to the team view mid-Tab and took the
+    // manager's focus with it. The board and the pane it feeds are one scope.
+    act(() => {
+      rolePicker.focus();
+    });
+
+    expect(document.activeElement).toBe(rolePicker);
+    expect(within(pane).getByText("Player d1")).toBeInTheDocument();
+  });
+
+  it("does not claim a move happened when the server refused it", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    squadServiceMocks.setStartingXi.mockRejectedValue(new Error("refused"));
+    renderTactics();
+
+    focusSlot(slotFor("d2"));
+    press("Enter");
+    fireEvent.click(
+      within(dialog()).getByRole("button", { name: /Bench DEF/ }),
+    );
+
+    await waitFor(() => {
+      expect(
+        document.querySelector('[aria-live="polite"]')?.textContent,
+      ).toContain("tactics.assignFailed");
+    });
+
+    expect(
+      document.querySelector('[aria-live="polite"]')?.textContent,
+    ).not.toContain("tactics.replacedInSlot");
+
+    consoleError.mockRestore();
+  });
+
   it("opens the same way on Space as on Enter", () => {
     renderTactics();
 

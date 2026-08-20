@@ -3,6 +3,7 @@ import {
   Copy,
   Crosshair,
   Flag,
+  HelpCircle,
   Plus,
   RefreshCw,
   RotateCcw,
@@ -72,6 +73,72 @@ const PLAY_STYLES = [
 
 function summarizeTactic(entry: TacticsLibraryEntry, t: TFunction): string {
   return `${entry.formation} - ${t(`common.playStyles.${entry.playStyle}`, entry.playStyle)}`;
+}
+
+/** What the ring, the bar and the pitch's gestures mean — on request. */
+function PitchLegend(): JSX.Element {
+  const { t } = useTranslation();
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        aria-expanded={isOpen}
+        aria-label={t("tactics.pitchLegend")}
+        onClick={() => {
+          setIsOpen((open) => !open);
+        }}
+        className="flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-[11px] font-heading font-bold text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 dark:border-navy-600 dark:text-gray-400 dark:hover:bg-navy-700 dark:hover:text-gray-200 dark:focus:ring-offset-navy-800"
+      >
+        <HelpCircle className="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
+      {isOpen ? (
+        <div
+          className="absolute left-0 top-8 z-30 w-72 rounded-xl border border-gray-200 bg-white p-3 shadow-lg dark:border-navy-600 dark:bg-navy-800"
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              setIsOpen(false);
+            }
+          }}
+          role="group"
+          aria-label={t("tactics.pitchLegend")}
+        >
+          <div className="space-y-1.5">
+            {(
+              [
+                ["squad.naturalFit", "bg-success-500"],
+                ["pitchToken.adaptedToSlot", "bg-accent-500"],
+                ["squad.outOfPosition", "bg-red-500"],
+              ] as const
+            ).map(([labelKey, tone]) => (
+              <div key={labelKey} className="flex items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className={`h-3 w-3 shrink-0 rounded-full ${tone}`}
+                />
+                <span className="text-xs text-gray-600 dark:text-gray-300">
+                  {t(labelKey)}
+                </span>
+              </div>
+            ))}
+            <div className="flex items-center gap-2">
+              <span
+                aria-hidden="true"
+                className="h-1.5 w-3 shrink-0 rounded-full bg-primary-500"
+              />
+              <span className="text-xs text-gray-600 dark:text-gray-300">
+                {t("common.condition")}
+              </span>
+            </div>
+          </div>
+          <p className="mt-2 border-t border-gray-100 pt-2 text-xs text-gray-500 dark:border-navy-700 dark:text-gray-400">
+            {t("tactics.pitchInteractionHint")}
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 export default function TacticsCommandBar({
@@ -167,6 +234,7 @@ export default function TacticsCommandBar({
                     {outOfPositionCount} {t("squad.outOfPosition")}
                   </Badge>
                 ) : null}
+                <PitchLegend />
               </div>
               {/*
                 The one place the screen speaks back. It has to be a live region

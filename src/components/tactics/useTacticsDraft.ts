@@ -10,6 +10,7 @@ import {
   reduceTacticsDraft,
   remainingDraftAfterApply,
   type TacticsDraftAction,
+  type TacticsDraftLineup,
   type TacticsDraftControls,
   type TacticsDraftState,
 } from "./TacticsCustomTactics.helpers";
@@ -96,7 +97,7 @@ export function useTacticsDraft({
     [appliedTeam, draftState, presetAnchor],
   );
 
-  const apply = useCallback(async () => {
+  const apply = useCallback(async (lineup?: TacticsDraftLineup) => {
     // A ref rather than the rendered `isApplying`: two clicks in the same tick
     // both read the state from before the first one, so state cannot be what
     // stops the second request from going out.
@@ -111,6 +112,7 @@ export function useTacticsDraft({
       const result = await applyTacticsDraft({
         applyTeamTactics,
         gameState,
+        lineup,
         state: draftState,
       });
 

@@ -2,7 +2,6 @@ import {
   useState,
   useRef,
   type DragEvent,
-  type FocusEvent,
   type KeyboardEvent,
   type ReactElement,
   type ReactNode,
@@ -48,7 +47,6 @@ export interface FormationBoardInteraction {
   onSlotActivate?: (slotIndex: number) => void;
   onSlotAssign?: (slotIndex: number) => void;
   onSlotFocus?: (slotIndex: number) => void;
-  onBoardBlur?: () => void;
   onSlotDragStart?: (event: DragEvent<HTMLElement>, slotIndex: number) => void;
   onSlotDragEnd?: () => void;
   onSlotDragOver?: (event: DragEvent<HTMLElement>, slotIndex: number) => void;
@@ -127,14 +125,6 @@ export function FormationBoard<T>({
     : defaultRovingSlotIndex;
   const slotElements = useRef(new Map<number, HTMLButtonElement>()).current;
 
-  const handleBoardBlur = (event: FocusEvent<HTMLElement>) => {
-    const nextTarget = event.relatedTarget;
-    if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) {
-      return;
-    }
-    interaction?.onBoardBlur?.();
-  };
-
   const moveFocus = (
     fromIndex: number,
     direction: FormationBoardDirection,
@@ -155,7 +145,6 @@ export function FormationBoard<T>({
     <section
       aria-label={label}
       className={`relative aspect-[10/14] w-full ${className ?? ""}`}
-      onBlur={handleBoardBlur}
     >
       <svg
         aria-hidden="true"

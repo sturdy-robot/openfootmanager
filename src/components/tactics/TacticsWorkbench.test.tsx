@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameStateData } from "../../store/gameStore";
@@ -147,6 +147,34 @@ describe("tactics workbench layout", () => {
     ]) {
       expect(screen.queryByText(key), key).toBeNull();
     }
+  });
+
+  it("explains what the pitch means, one press away from the resting screen", () => {
+    renderWorkbench();
+
+    const trigger = screen.getByRole("button", { name: "tactics.pitchLegend" });
+
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(trigger);
+
+    // The ring, the bar and the interactions used to be printed above the
+    // pitch at all times. Removing them made the screen quieter and left a
+    // visual user to guess what a red ring meant.
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    for (const key of [
+      "tactics.pitchInteractionHint",
+      "squad.naturalFit",
+      "pitchToken.adaptedToSlot",
+      "squad.outOfPosition",
+      "common.condition",
+    ]) {
+      expect(screen.getByText(key), key).toBeInTheDocument();
+    }
+
+    fireEvent.click(trigger);
+
+    expect(screen.queryByText("tactics.pitchInteractionHint")).toBeNull();
   });
 
   it("mentions out-of-position players only when there are some", () => {

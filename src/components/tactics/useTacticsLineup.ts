@@ -189,14 +189,17 @@ export function useTacticsLineup({
     [team?.match_roles, startingXI],
   );
 
-  async function persistStartingXI(playerIds: string[]): Promise<void> {
+  /** Whether the server accepted the lineup, so a caller can say so out loud. */
+  async function persistStartingXI(playerIds: string[]): Promise<boolean> {
     setPendingStartingXiIds(playerIds);
     try {
       const updated = await setStartingXi(playerIds);
       onGameUpdate(updated);
+      return true;
     } catch (error) {
       setPendingStartingXiIds(null);
       console.error("Failed to set starting XI:", error);
+      return false;
     }
   }
 
@@ -361,10 +364,10 @@ export function useTacticsLineup({
     resetDragState();
   }
 
-  function handleAssignToSlot(
+  async function handleAssignToSlot(
     playerId: string,
     slotIndex: number,
-  ): boolean {
+  ): Promise<boolean> {
     if (!isPlayerEligibleForTacticsLineup(playersById.get(playerId))) {
       return false;
     }
@@ -383,9 +386,8 @@ export function useTacticsLineup({
       return false;
     }
 
-    void persistStartingXI(nextXiIds);
     clearLineupSelection();
-    return true;
+    return persistStartingXI(nextXiIds);
   }
 
   async function handleLineupPlayerClick(
@@ -477,6 +479,7 @@ export function useTacticsLineup({
     initialPreset,
     roster,
     startingXI,
+    startingXiIds,
     bench,
     xiActivePosition,
     pitchSlots,

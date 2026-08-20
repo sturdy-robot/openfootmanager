@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { TeamTacticsDraft } from "../../store/types";
@@ -211,4 +217,111 @@ describe("tactics draft in the screen", () => {
     // Step 8b-1 moves the staged-formation guard with the role picker into the inspector.
     expect(within(pane).queryAllByRole("combobox")).toHaveLength(0);
   });
+    function renderWithRoles() {
+      const gameState = makeGameState();
+      gameState.teams = [
+        {
+          ...gameState.teams[0],
+          match_roles: {
+            captain: "d2",
+            vice_captain: "d1",
+            penalty_taker: "f1",
+            free_kick_taker: "m1",
+            corner_taker: "m4",
+          },
+        },
+      ];
+      squadServiceMocks.getSquad.mockResolvedValue(
+        gameState.players.filter((player) => player.team_id === "team1"),
+      );
+      render(
+        <TacticsTab
+          gameState={gameState}
+          onSelectPlayer={vi.fn()}
+          onGameUpdate={vi.fn()}
+        />,
+      );
+      return gameState;
+    }
+
+    function sentDraft(): TeamTacticsDraft {
+      expect(squadServiceMocks.applyTeamTactics).toHaveBeenCalledTimes(1);
+      return squadServiceMocks.applyTeamTactics.mock
+        .calls[0]?.[0] as TeamTacticsDraft;
+    }
+
+    it("never names a responsibility holder who has left the XI", async () => {
+      renderWithRoles();
+
+      // The captain is dropped for a bench player. The backend rejects a draft
+      // whose captain is not in the XI it was handed, and it rejects the *whole*
+      // draft — so a stale role here quietly makes Apply impossible.
+      fireEvent.click(screen.getByTestId("pitch-bench-player-d5"));
+      fireEvent.click(screen.getByTestId("xi-player-d2"));
+      fireEvent.click(
+        screen.getByRole("button", { name: "tactics.confirmSwap" }),
+      );
+      await waitFor(() => {
+        expect(squadServiceMocks.setStartingXi).toHaveBeenCalled();
+      });
+
+      chooseFromSelect("tactics.formation", "4-3-3");
+      fireEvent.click(
+        screen.getByRole("button", { name: "tactics.applyChanges" }),
+      );
+
+      await waitFor(() => {
+        expect(squadServiceMocks.applyTeamTactics).toHaveBeenCalled();
+      });
+
+      const draft = sentDraft();
+      const named = Object.values(draft.match_roles).filter(
+        (id): id is string => id !== null,
+      );
+
+      expect(named.length).toBeGreaterThan(0);
+      for (const playerId of named) {
+        expect(draft.starting_xi_ids).toContain(playerId);
+      }
+      expect(draft.match_roles.captain).not.toBe("d2");
+    });
+
+    it("sends the XI on the pitch, not the one the server last acknowledged", async () => {
+      const deferred: { release?: () => void } = {};
+      const gameState = makeGameState();
+      squadServiceMocks.setStartingXi.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            deferred.release = () => resolve(gameState);
+          }),
+      );
+      renderWithRoles();
+
+      fireEvent.click(screen.getByTestId("pitch-bench-player-d5"));
+      fireEvent.click(screen.getByTestId("xi-player-d2"));
+      fireEvent.click(
+        screen.getByRole("button", { name: "tactics.confirmSwap" }),
+      );
+      await waitFor(() => {
+        expect(squadServiceMocks.setStartingXi).toHaveBeenCalled();
+      });
+
+      // Apply while the XI write is still out. The draft is total, so an Apply
+      // built from the last snapshot would put the dropped player straight back.
+      chooseFromSelect("tactics.formation", "4-3-3");
+      fireEvent.click(
+        screen.getByRole("button", { name: "tactics.applyChanges" }),
+      );
+
+      await waitFor(() => {
+        expect(squadServiceMocks.applyTeamTactics).toHaveBeenCalled();
+      });
+
+      const draft = sentDraft();
+
+      expect(draft.starting_xi_ids).toContain("d5");
+      expect(draft.starting_xi_ids).not.toContain("d2");
+
+      deferred.release?.();
+    });
 });

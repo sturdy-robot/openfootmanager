@@ -485,13 +485,29 @@ export interface TacticsDraftApplyResult {
  * first became dirty — otherwise a substitution made mid-edit would be quietly
  * rolled back by the very draft meant to change something else.
  */
+/**
+ * The XI and the responsibilities as the screen currently has them.
+ *
+ * The draft is total — the backend replaces the team's whole tactical state —
+ * so these travel with it even though neither is staged. Reading them off the
+ * last `gameState` instead was wrong twice over: an XI write still in flight
+ * would be undone by the Apply that followed it, and a responsibility whose
+ * holder had just left the XI would make the backend reject the whole request.
+ */
+export interface TacticsDraftLineup {
+  matchRoles: TeamMatchRolesData;
+  startingXiIds: string[];
+}
+
 export async function applyTacticsDraft({
   applyTeamTactics,
   gameState,
+  lineup,
   state,
 }: {
   applyTeamTactics: (draft: TeamTacticsDraft) => Promise<GameStateData>;
   gameState: GameStateData;
+  lineup?: TacticsDraftLineup;
   state: TacticsDraftState;
 }): Promise<TacticsDraftApplyResult> {
   if (state.isApplying) {
@@ -523,10 +539,10 @@ export async function applyTacticsDraft({
       state.draft.slot_roles ?? team.slot_roles ?? defaultSlotRoles(formation),
     tactics_phase:
       state.draft.tactics_phase ?? team.tactics_phase ?? DEFAULT_TACTICS_PHASE,
-    // Never staged: these have their own immediate paths, so the server copy
-    // read right now is the freshest truth there is.
-    starting_xi_ids: team.starting_xi_ids,
-    match_roles: team.match_roles ?? NO_MATCH_ROLES,
+    // Never staged — they have their own immediate paths — but sent as the
+    // screen has them, not as the server last reported them.
+    starting_xi_ids: lineup?.startingXiIds ?? team.starting_xi_ids,
+    match_roles: lineup?.matchRoles ?? team.match_roles ?? NO_MATCH_ROLES,
   };
 
   // The backend rejects the whole draft for a lineup it cannot honour. Catching
