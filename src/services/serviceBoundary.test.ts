@@ -34,30 +34,19 @@ function isTestModule(path: string): boolean {
   return path.endsWith(".test.ts") || path.endsWith(".test.tsx");
 }
 
-/**
- * `TacticsRolesPanel` and `TacticsPlayerTable` are unreferenced repo-wide and
- * are deleted later in this redesign. Excluding them keeps this gate honest
- * about live code instead of forcing churn on files already condemned.
- */
-const CONDEMNED = ["TacticsRolesPanel.tsx", "TacticsPlayerTable.tsx"];
-
-function isCondemned(path: string): boolean {
-  return CONDEMNED.some((name) => path.endsWith(name));
-}
-
 describe("service boundary", () => {
   it("has match and tactics modules to check", () => {
     // Guards against a glob that silently matches nothing, which would make
     // every assertion below vacuously true.
     const checked = Object.keys(componentModules).filter(
-      (path) => !isTestModule(path) && !isCondemned(path),
+      (path) => !isTestModule(path),
     );
     expect(checked.length).toBeGreaterThan(15);
   });
 
   it("no match or tactics component imports the Tauri core module", () => {
     const offenders = Object.entries(componentModules)
-      .filter(([path]) => !isTestModule(path) && !isCondemned(path))
+      .filter(([path]) => !isTestModule(path))
       .filter(([, source]) => /from\s+["']@tauri-apps\/api\/core["']/.test(source))
       .map(([path]) => path);
 
@@ -66,7 +55,7 @@ describe("service boundary", () => {
 
   it("no match or tactics component calls invoke directly", () => {
     const offenders = Object.entries(componentModules)
-      .filter(([path]) => !isTestModule(path) && !isCondemned(path))
+      .filter(([path]) => !isTestModule(path))
       .filter(([, source]) => /\binvoke\s*[<(]/.test(source))
       .map(([path]) => path);
 
