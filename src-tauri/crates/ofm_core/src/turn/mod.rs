@@ -561,6 +561,7 @@ where
     if let Some(league) = game.league.as_mut() {
         league.fixtures[idx].seed = seed;
         league.fixtures[idx].engine_version = engine::ENGINE_VERSION;
+        league.fixtures[idx].engine_id = engine::DEFAULT_ENGINE_ID.to_string();
     }
 
     // Benches and dugouts, so an unattended fixture is managed the same way a

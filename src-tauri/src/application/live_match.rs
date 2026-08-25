@@ -107,6 +107,7 @@ pub fn finish_live_match(state: &StateManager) -> Result<FinishLiveMatchResponse
                     if let Some(fixture) = league.fixtures.get_mut(fixture_index) {
                         fixture.seed = seed;
                         fixture.engine_version = engine::ENGINE_VERSION;
+                        fixture.engine_id = engine::DEFAULT_ENGINE_ID.to_string();
                         fixture.replay = Some(replay.clone());
                     }
                 }

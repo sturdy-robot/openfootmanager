@@ -2226,3 +2226,28 @@ fn a_crowded_day_still_simulates_the_user_club_in_full() {
     );
     let _ = today;
 }
+
+/// `domain` cannot import `engine`, so the legacy engine id is written out in
+/// both crates. This is the seam that stops the two drifting apart: if the
+/// built-in engine is ever renamed, every replay in every existing save would
+/// silently become unwatchable, and this fails first.
+#[test]
+fn the_legacy_engine_id_still_names_the_built_in_engine() {
+    assert_eq!(domain::league::LEGACY_ENGINE_ID, engine::DEFAULT_ENGINE_ID);
+}
+
+#[test]
+fn a_simulated_fixture_records_which_engine_played_it() {
+    let mut game = make_game_with_match();
+    turn::process_day(&mut game);
+
+    let fixture = &game.league.as_ref().unwrap().fixtures[0];
+    assert_eq!(fixture.status, FixtureStatus::Completed);
+    assert_eq!(
+        fixture.engine_id,
+        engine::DEFAULT_ENGINE_ID,
+        "a version number is not an identity: two engines both on 19 would \
+         reconstruct each other's matches"
+    );
+    assert_eq!(fixture.engine_version, engine::ENGINE_VERSION);
+}

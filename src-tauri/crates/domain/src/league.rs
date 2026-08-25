@@ -256,6 +256,15 @@ pub struct Fixture {
     /// same version; on a mismatch the match is still readable from
     /// [`MatchResult`], it just cannot be watched back.
     pub engine_version: u32,
+    /// Which engine produced this fixture's result.
+    ///
+    /// Empty means the fixture predates engine ids, which necessarily means the
+    /// built-in engine, since it was the only one. Stored because a version
+    /// number alone is not an identity: two engines both on their version 19
+    /// would happily reconstruct each other's matches and present the result as
+    /// history.
+    #[serde(default)]
+    pub engine_id: String,
     /// Inputs needed to re-simulate this match for replay.
     ///
     /// Only recorded for matches the user actually played, because only human
@@ -264,7 +273,61 @@ pub struct Fixture {
     pub replay: Option<ReplayInput>,
 }
 
+/// The engine that produced every fixture written before engine ids existed.
+///
+/// Declared here rather than imported because `domain` does not depend on
+/// `engine` and must not start. A test in `ofm_core`, which depends on both,
+/// asserts the two agree, so the duplication cannot drift.
+pub const LEGACY_ENGINE_ID: &str = "default";
+
+/// Whether a stored match can be watched back.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ReplayStatus {
+    /// Same engine, same behaviour version: re-simulating reproduces it.
+    Watchable,
+    /// Nothing was recorded. Only matches the user played carry replay inputs.
+    NotRecorded,
+    /// A different engine produced this. Re-simulating would invent a match
+    /// that never happened and present it as history.
+    DifferentEngine { recorded: String },
+    /// The right engine, but it has changed how it simulates since.
+    DifferentVersion { recorded: u32 },
+}
+
+impl ReplayStatus {
+    pub fn is_watchable(&self) -> bool {
+        matches!(self, ReplayStatus::Watchable)
+    }
+}
+
 impl Fixture {
+    /// Whether this match can be re-simulated by the engine described.
+    ///
+    /// The stored result stays readable either way. What a mismatch costs is
+    /// the ability to watch it back, which is the whole tradeoff of replaying
+    /// by re-simulation rather than by storing every event.
+    pub fn replay_status(&self, engine_id: &str, engine_version: u32) -> ReplayStatus {
+        if self.replay.is_none() {
+            return ReplayStatus::NotRecorded;
+        }
+        let recorded_id = if self.engine_id.is_empty() {
+            LEGACY_ENGINE_ID
+        } else {
+            self.engine_id.as_str()
+        };
+        if recorded_id != engine_id {
+            return ReplayStatus::DifferentEngine {
+                recorded: recorded_id.to_string(),
+            };
+        }
+        if self.engine_version != engine_version {
+            return ReplayStatus::DifferentVersion {
+                recorded: self.engine_version,
+            };
+        }
+        ReplayStatus::Watchable
+    }
+
     /// The seed to simulate this fixture with.
     ///
     /// Falls back to a value derived from the fixture id when no seed was
@@ -714,6 +777,7 @@ impl Default for Fixture {
             result: None,
             seed: 0,
             engine_version: 0,
+            engine_id: String::new(),
             replay: None,
         }
     }
@@ -754,5 +818,93 @@ mod replay_tests {
             back.lineup_fingerprint, 0,
             "an unverifiable line-up must be distinguishable from a verified one"
         );
+    }
+}
+
+#[cfg(test)]
+mod replay_guard_tests {
+    use super::*;
+
+    fn played_fixture() -> Fixture {
+        Fixture {
+            id: "fx-1".into(),
+            seed: 42,
+            engine_version: 19,
+            engine_id: "default".into(),
+            replay: Some(ReplayInput::default()),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn the_engine_that_played_it_can_watch_it_back() {
+        assert_eq!(played_fixture().replay_status("default", 19), ReplayStatus::Watchable);
+    }
+
+    #[test]
+    fn a_match_nobody_watched_has_nothing_to_replay() {
+        let mut f = played_fixture();
+        f.replay = None;
+        assert_eq!(f.replay_status("default", 19), ReplayStatus::NotRecorded);
+    }
+
+    #[test]
+    fn another_engine_is_refused_even_on_the_same_version_number() {
+        // The failure the id exists to prevent: two engines both on their own
+        // version 19 reconstructing each other's matches.
+        let f = played_fixture();
+        assert_eq!(
+            f.replay_status("some-other-engine", 19),
+            ReplayStatus::DifferentEngine {
+                recorded: "default".into()
+            }
+        );
+    }
+
+    #[test]
+    fn the_same_engine_that_has_since_changed_is_refused() {
+        let f = played_fixture();
+        assert_eq!(
+            f.replay_status("default", 20),
+            ReplayStatus::DifferentVersion { recorded: 19 }
+        );
+    }
+
+    #[test]
+    fn a_fixture_from_before_engine_ids_is_credited_to_the_built_in_engine() {
+        // Saves written before the field existed deserialize with an empty id.
+        // It was the only engine there was, so refusing them would break every
+        // replay in every existing save.
+        let mut f = played_fixture();
+        f.engine_id = String::new();
+        assert_eq!(f.replay_status(LEGACY_ENGINE_ID, 19), ReplayStatus::Watchable);
+        assert_eq!(
+            f.replay_status("some-other-engine", 19),
+            ReplayStatus::DifferentEngine {
+                recorded: "default".into()
+            }
+        );
+    }
+
+    #[test]
+    fn a_legacy_fixture_json_without_an_engine_id_still_loads() {
+        let json = r#"{
+            "id": "fx-legacy",
+            "competition_id": "c1",
+            "matchday": 1,
+            "date": "2026-08-20",
+            "home_team_id": "h",
+            "away_team_id": "a",
+            "competition": "League",
+            "status": "Scheduled",
+            "result": null,
+            "seed": 7,
+            "engine_version": 18,
+            "replay": null
+        }"#;
+        let f: Fixture = serde_json::from_str(json).expect("legacy fixture must still deserialize");
+        assert_eq!(f.engine_id, "");
+        assert_eq!(f.engine_version, 18);
+        assert_eq!(f.seed, 7);
     }
 }
