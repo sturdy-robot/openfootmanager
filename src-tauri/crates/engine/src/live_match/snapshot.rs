@@ -59,6 +59,7 @@ impl LiveMatchState {
         MatchSnapshot {
             phase: self.phase,
             current_minute: self.current_minute,
+            clock: self.clock(),
             home_score: self.home_score,
             away_score: self.away_score,
             possession: self.possession,

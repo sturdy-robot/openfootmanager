@@ -50,6 +50,7 @@ function makeSnapshot(): MatchSnapshot {
   return {
     phase: "FullTime",
     current_minute: 90,
+    clock: { period: "FirstHalf" as const, period_elapsed_ms: 0 },
     home_score: 2,
     away_score: 1,
     possession: "Home",

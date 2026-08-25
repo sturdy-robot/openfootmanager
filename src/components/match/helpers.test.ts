@@ -48,6 +48,7 @@ const makeTeam = (overrides: Partial<EngineTeamData> = {}): EngineTeamData => ({
 const makeSnapshot = (overrides: Partial<MatchSnapshot> = {}): MatchSnapshot => ({
   phase: "FirstHalf",
   current_minute: 25,
+  clock: { period: "FirstHalf" as const, period_elapsed_ms: 0 },
   home_score: 0,
   away_score: 0,
   possession: "Home",

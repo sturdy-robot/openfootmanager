@@ -22,6 +22,8 @@ impl LiveMatchState {
 
         MinuteResult {
             minute: 0,
+
+            clock: self.clock(),
             phase: MatchPhase::FirstHalf,
             events: vec![evt],
             home_score: 0,
@@ -50,6 +52,8 @@ impl LiveMatchState {
 
         MinuteResult {
             minute: start_min,
+
+            clock: self.clock(),
             phase: MatchPhase::SecondHalf,
             events: vec![evt],
             home_score: self.home_score,
@@ -77,6 +81,8 @@ impl LiveMatchState {
 
         MinuteResult {
             minute: start_min,
+
+            clock: self.clock(),
             phase: MatchPhase::ExtraTimeSecondHalf,
             events: vec![evt],
             home_score: self.home_score,
@@ -112,6 +118,8 @@ impl LiveMatchState {
 
             MinuteResult {
                 minute: kick_off_minute,
+
+                clock: self.clock(),
                 phase: MatchPhase::ExtraTimeFirstHalf,
                 events: vec![evt],
                 home_score: self.home_score,
@@ -142,6 +150,8 @@ impl LiveMatchState {
 
             MinuteResult {
                 minute: self.current_minute,
+
+                clock: self.clock(),
                 phase: MatchPhase::PenaltyShootout,
                 events: vec![evt],
                 home_score: self.home_score,
@@ -187,6 +197,7 @@ impl LiveMatchState {
 
         MinuteResult {
             minute,
+            clock: self.clock_at(minute),
             phase: self.phase,
             events: minute_events,
             home_score: self.home_score,
@@ -231,6 +242,7 @@ impl LiveMatchState {
     pub(super) fn make_result(&self, _is_finished: bool) -> MinuteResult {
         MinuteResult {
             minute: self.current_minute,
+            clock: self.clock(),
             phase: self.phase,
             events: Vec::new(),
             home_score: self.home_score,

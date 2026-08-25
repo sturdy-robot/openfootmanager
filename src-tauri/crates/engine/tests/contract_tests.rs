@@ -107,6 +107,9 @@ impl LiveState for SpatialFake {
         });
         MinuteResult {
             minute: MatchClock::new(MatchPeriod::FirstHalf, self.elapsed_ms).display_minute(),
+            // What the neutral clock buys a continuous engine: it reports its
+            // real millisecond time instead of rounding to one of our minutes.
+            clock: MatchClock::new(MatchPeriod::FirstHalf, self.elapsed_ms),
             phase: MatchPhase::FirstHalf,
             events: self.events.clone(),
             home_score: 0,
@@ -126,10 +129,10 @@ impl LiveState for SpatialFake {
     }
 
     fn snapshot(&self) -> MatchSnapshot {
-        // Left unimplemented on purpose. MatchSnapshot requires a whole-minute
-        // clock and one of the built-in engine's five zones, neither of which
-        // this engine has. That is a finding about the contract, not about this
-        // fake, and it is what the next step has to fix.
+        // Left unimplemented on purpose. MatchSnapshot still requires a
+        // whole-minute `current_minute`, which an engine keeping continuous
+        // time does not have. That is a finding about the contract rather than
+        // about this fake, and it is what the next step has to fix.
         unimplemented!("MatchSnapshot still demands a whole-minute current_minute")
     }
 
@@ -454,4 +457,80 @@ fn a_match_can_be_played_to_a_report_without_naming_the_engine() {
 #[test]
 fn an_unknown_engine_id_is_declined_rather_than_guessed() {
     assert!(kickoff_by_id("no-such-engine").is_none());
+}
+
+// ---------------------------------------------------------------------------
+// The clock the engine reports
+// ---------------------------------------------------------------------------
+
+#[test]
+fn every_phase_maps_to_the_period_whose_clock_is_showing() {
+    use engine::clock::MatchPeriod as P;
+    use engine::MatchPhase as Ph;
+
+    // An interval reports the period that just ended, because that is what the
+    // clock on the wall still reads.
+    assert_eq!(Ph::PreKickOff.period(0), P::FirstHalf);
+    assert_eq!(Ph::FirstHalf.period(20), P::FirstHalf);
+    assert_eq!(Ph::HalfTime.period(47), P::FirstHalf);
+    assert_eq!(Ph::SecondHalf.period(60), P::SecondHalf);
+    assert_eq!(Ph::FullTime.period(93), P::SecondHalf);
+    assert_eq!(Ph::ExtraTimeFirstHalf.period(100), P::ExtraTimeFirstHalf);
+    assert_eq!(Ph::ExtraTimeHalfTime.period(106), P::ExtraTimeFirstHalf);
+    assert_eq!(Ph::ExtraTimeSecondHalf.period(115), P::ExtraTimeSecondHalf);
+    assert_eq!(Ph::ExtraTimeEnd.period(122), P::ExtraTimeSecondHalf);
+    assert_eq!(Ph::PenaltyShootout.period(120), P::PenaltyShootout);
+}
+
+#[test]
+fn a_finished_match_is_placed_by_its_minute() {
+    use engine::clock::MatchPeriod as P;
+    use engine::MatchPhase as Ph;
+
+    // Finished is the one phase that cannot place itself: a match ends at full
+    // time, at the end of extra time, or after a shootout.
+    assert_eq!(Ph::Finished.period(93), P::SecondHalf, "ended in stoppage");
+    assert_eq!(Ph::Finished.period(123), P::ExtraTimeSecondHalf);
+}
+
+#[test]
+fn the_reported_clock_reads_stoppage_as_forty_five_plus_n() {
+    // The engine keeps one running minute on an absolute scale, so a first
+    // half that runs to 47 is 45+2 and a second half that runs to 93 is 90+3.
+    // Nothing downstream had a way to say that before.
+    let clock = engine::clock::MatchClock::from_match_minute(
+        engine::MatchPhase::FirstHalf.period(47),
+        47,
+    );
+    assert_eq!(clock.display_minute(), 45);
+    assert_eq!(clock.added_minute(), Some(2));
+
+    let second = engine::clock::MatchClock::from_match_minute(
+        engine::MatchPhase::SecondHalf.period(93),
+        93,
+    );
+    assert_eq!(second.display_minute(), 90);
+    assert_eq!(second.added_minute(), Some(3));
+}
+
+#[test]
+fn a_live_match_reports_a_clock_that_tracks_its_minute() {
+    let mut state = kickoff_by_id(engine::DEFAULT_ENGINE_ID).expect("known engine");
+    let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(7);
+
+    let mut guard = 0;
+    while !state.is_finished() && guard < 200 {
+        let result = state.step_minute(&mut rng);
+        // Two readings of one instant. The broadcast minute never runs ahead
+        // of the engine's running minute, except at kick-off, where football
+        // counts the opening minute as 1 and the engine counts elapsed as 0.
+        assert!(
+            result.clock.display_minute() <= result.minute.max(1),
+            "clock read {} while the running minute was {}",
+            result.clock.display_minute(),
+            result.minute
+        );
+        guard += 1;
+    }
+    assert!(state.is_finished());
 }

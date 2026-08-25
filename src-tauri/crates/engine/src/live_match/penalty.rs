@@ -87,6 +87,7 @@ impl LiveMatchState {
 
         MinuteResult {
             minute,
+            clock: self.clock_at(minute),
             phase: self.phase,
             events,
             home_score: self.home_score,

@@ -39,6 +39,40 @@ pub enum MatchPhase {
     Finished,
 }
 
+/// Serde default for [`MatchClock`] fields on the wire types: a feed written
+/// before the clock existed is read as kick-off rather than failing to parse.
+pub(crate) fn kickoff_clock() -> crate::clock::MatchClock {
+    crate::clock::MatchClock::new(crate::clock::MatchPeriod::FirstHalf, 0)
+}
+
+impl MatchPhase {
+    /// Which period of play this phase's clock reading belongs to.
+    ///
+    /// An interval reports the period that just ended, because that is what a
+    /// clock on the wall would still be showing.
+    ///
+    /// `Finished` is the one phase that cannot place itself: a match ends at
+    /// full time, at the end of extra time, or after a shootout. It falls back
+    /// to the minute. A match can never *finish* during the first half of extra
+    /// time, so there is only one boundary to find, and second-half stoppage
+    /// would have to reach sixteen minutes to cross it — which needs a
+    /// `stoppage_time_max` four times the default and is not football.
+    pub fn period(self, minute: u8) -> crate::clock::MatchPeriod {
+        use crate::clock::MatchPeriod as P;
+        match self {
+            MatchPhase::PreKickOff | MatchPhase::FirstHalf | MatchPhase::HalfTime => P::FirstHalf,
+            MatchPhase::SecondHalf | MatchPhase::FullTime => P::SecondHalf,
+            MatchPhase::ExtraTimeFirstHalf | MatchPhase::ExtraTimeHalfTime => {
+                P::ExtraTimeFirstHalf
+            }
+            MatchPhase::ExtraTimeSecondHalf | MatchPhase::ExtraTimeEnd => P::ExtraTimeSecondHalf,
+            MatchPhase::PenaltyShootout => P::PenaltyShootout,
+            MatchPhase::Finished if minute >= 106 => P::ExtraTimeSecondHalf,
+            MatchPhase::Finished => P::SecondHalf,
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // MatchCommand — actions injected by user or AI between minutes
 // ---------------------------------------------------------------------------
@@ -116,7 +150,17 @@ pub struct SetPieceTakers {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MinuteResult {
+    /// The running match minute, on the engine's own absolute scale: the first
+    /// half ends at `45 + stoppage` and the second at `90 + stoppage`. Kept
+    /// exactly as it was so nothing downstream shifts.
     pub minute: u8,
+    /// The same instant, period-relative and in milliseconds.
+    ///
+    /// Engine-neutral: an engine that keeps continuous time reports it here
+    /// truthfully instead of rounding to one of our minutes, and a consumer
+    /// gets "45+2" without re-deriving the convention.
+    #[serde(default = "crate::live_match::kickoff_clock")]
+    pub clock: crate::clock::MatchClock,
     pub phase: MatchPhase,
     pub events: Vec<MatchEvent>,
     pub home_score: u8,
@@ -133,6 +177,9 @@ pub struct MinuteResult {
 pub struct MatchSnapshot {
     pub phase: MatchPhase,
     pub current_minute: u8,
+    /// The same instant as `current_minute`, period-relative and precise.
+    #[serde(default = "crate::live_match::kickoff_clock")]
+    pub clock: crate::clock::MatchClock,
     pub home_score: u8,
     pub away_score: u8,
     pub possession: Side,
@@ -361,6 +408,22 @@ impl LiveMatchState {
     }
 
     /// Apply a command (substitution, tactic change, set piece assignment).
+    /// Where the match is in time, period-relative.
+    ///
+    /// Derived from the running minute rather than tracked separately, so it
+    /// cannot drift from it. The built-in engine resolves whole minutes, so
+    /// that is the resolution it reports; an engine that resolves finer steps
+    /// reports them.
+    pub fn clock(&self) -> crate::clock::MatchClock {
+        self.clock_at(self.current_minute)
+    }
+
+    /// The clock for a given running minute, so a result built around a local
+    /// minute cannot report a clock that disagrees with it.
+    pub(crate) fn clock_at(&self, minute: u8) -> crate::clock::MatchClock {
+        crate::clock::MatchClock::from_match_minute(self.phase.period(minute), minute)
+    }
+
     pub fn apply_command(
         &mut self,
         cmd: MatchCommand,

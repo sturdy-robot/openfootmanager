@@ -100,9 +100,22 @@ export interface PenaltyShootoutSnapshot {
   sudden_death: boolean;
 }
 
+/** Where a match is in time, period-relative and precise. */
+export interface MatchClock {
+  period:
+    | "FirstHalf"
+    | "SecondHalf"
+    | "ExtraTimeFirstHalf"
+    | "ExtraTimeSecondHalf"
+    | "PenaltyShootout";
+  /** Milliseconds since this period kicked off. Authoritative. */
+  period_elapsed_ms: number;
+}
+
 export interface MatchSnapshot {
   phase: string;
   current_minute: number;
+  clock: MatchClock;
   home_score: number;
   away_score: number;
   possession: "Home" | "Away";
@@ -131,6 +144,7 @@ export interface MatchSnapshot {
 
 export interface MinuteResult {
   minute: number;
+  clock: MatchClock;
   phase: string;
   events: MatchEvent[];
   home_score: number;

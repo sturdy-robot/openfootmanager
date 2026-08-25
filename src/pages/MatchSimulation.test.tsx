@@ -178,6 +178,7 @@ function makeSnapshot(
   return {
     phase: "PreKickOff",
     current_minute: 0,
+    clock: { period: "FirstHalf" as const, period_elapsed_ms: 0 },
     home_score: 0,
     away_score: 0,
     possession: "Home",
