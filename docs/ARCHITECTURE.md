@@ -96,7 +96,9 @@ Contains only structs and enums with no game logic. All other crates depend on i
 
 Self-contained simulation engine, deliberately **decoupled from `domain`**. Defines its own mirror types (`PlayerData`, `TeamData`, `Position`, `PlayStyle`) so it can be tested and evolved independently.
 
-See [MATCH_SIMULATION.md](MATCH_SIMULATION.md) for full details.
+The engine that ships is one implementation of a contract rather than a fixed part of the game: it is selected by id from `engine::registry`, and the live match, league simulation, the benchmark and the compliance suite all drive it through `InstantEngine` / `LiveState` rather than by naming a concrete type.
+
+See [MATCH_SIMULATION.md](MATCH_SIMULATION.md) for how the built-in engine works, and [ENGINE_CONTRACT.md](ENGINE_CONTRACT.md) for what a replacement has to implement.
 
 - **`engine.rs`** — Instant full-match simulation (`simulate()`, `simulate_with_rng()`)
 - **`live_match.rs`** — Step-by-step `LiveMatchState` with phase management, commands, substitutions

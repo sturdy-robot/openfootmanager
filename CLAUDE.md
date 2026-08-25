@@ -116,6 +116,7 @@ Read-only reviewers. Point them at your diff before you open a PR.
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Crate graph, state management, the full Tauri command table, data flow, key decisions |
 | [`docs/GAME_SYSTEMS.md`](docs/GAME_SYSTEMS.md) | Training, staff, traits, schedule generation, inbox, news, finances, transfers |
 | [`docs/MATCH_SIMULATION.md`](docs/MATCH_SIMULATION.md) | The engine: zone model, action resolution, attributes, live match phases, AI |
+| [`docs/ENGINE_CONTRACT.md`](docs/ENGINE_CONTRACT.md) | Writing a match engine the game can play on: the traits, capabilities, determinism rules, registry |
 | [`docs/SAVE_SYSTEM_DESIGN.md`](docs/SAVE_SYSTEM_DESIGN.md) | Save format and persistence design |
 | [`docs/MCP_SERVER.md`](docs/MCP_SERVER.md) | The MCP server: 89 tools, competition mode, transport, adding a tool |
 | [`docs/modding/`](docs/modding/) | `.ofm` packages, the CLI, the Package Editor, the entity schema reference |
