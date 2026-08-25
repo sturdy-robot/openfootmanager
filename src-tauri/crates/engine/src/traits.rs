@@ -148,6 +148,14 @@ pub trait LiveState {
 
     fn events(&self) -> &[MatchEvent];
 
+    /// Which engine is playing this match.
+    ///
+    /// A state that can name its own engine is what makes the fixture stamp
+    /// trustworthy: the caller records what actually played rather than
+    /// whatever it believed it asked for, and the two can be checked against
+    /// each other.
+    fn engine_id(&self) -> &'static str;
+
     /// The running match minute.
     fn minute(&self) -> u8;
 
@@ -281,6 +289,10 @@ impl LiveState for crate::live_match::LiveMatchState {
 
     fn events(&self) -> &[MatchEvent] {
         crate::live_match::LiveMatchState::events(self)
+    }
+
+    fn engine_id(&self) -> &'static str {
+        DEFAULT_ENGINE_ID
     }
 
     fn minute(&self) -> u8 {

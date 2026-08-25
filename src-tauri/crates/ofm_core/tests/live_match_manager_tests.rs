@@ -794,8 +794,15 @@ fn a_match_with_a_user_command_replays_identically() {
     let game = make_game_with_fixture();
     let session = live_match_manager::create_live_match(&game, 0, MatchMode::Live, false).unwrap();
     let side = session.user_side.unwrap_or(engine::Side::Home);
-    let on = session.match_state.bench(side)[0].id.clone();
-    let off = session.match_state.snapshot().home_team.players[10].id.clone();
+    // The snapshot carries both benches, so there is no need for a separate
+    // accessor outside the contract.
+    let snapshot = session.match_state.snapshot();
+    let bench = match side {
+        engine::Side::Home => &snapshot.home_bench,
+        engine::Side::Away => &snapshot.away_bench,
+    };
+    let on = bench[0].id.clone();
+    let off = snapshot.home_team.players[10].id.clone();
     drop(session);
 
     let substitution = (
@@ -845,5 +852,21 @@ fn the_user_and_ai_draw_from_separate_random_streams() {
         simulation_draws, ai_draws,
         "the AI and simulation streams are identical, so AI draws still shift \
          the simulation"
+    );
+}
+
+/// The fixture's engine stamp has to name the engine that actually played the
+/// match, not the one the caller believed it asked for. Reading it off the
+/// state rather than off a constant is what makes the replay guard trustworthy.
+#[test]
+fn a_session_records_the_engine_that_is_actually_playing() {
+    let game = make_game_with_fixture();
+    let session = live_match_manager::create_live_match(&game, 0, MatchMode::Live, false).unwrap();
+
+    assert_eq!(session.engine_id, session.match_state.engine_id());
+    assert!(
+        engine::registry::instant(&session.engine_id).is_some(),
+        "a session must name a registered engine, got {:?}",
+        session.engine_id
     );
 }

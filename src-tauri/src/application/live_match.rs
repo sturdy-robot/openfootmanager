@@ -43,6 +43,10 @@ pub fn finish_live_match(state: &StateManager) -> Result<FinishLiveMatchResponse
 
     // Capture the replay inputs before `into_report` consumes the match state.
     let seed = session.seed;
+    // Which engine actually played this, rather than whichever is built in.
+    // Stamping a constant here would have been right only for as long as there
+    // was one engine.
+    let engine_id = session.engine_id.clone();
     let replay = session.replay_input();
 
     let snapshot = session.snapshot();
@@ -107,7 +111,7 @@ pub fn finish_live_match(state: &StateManager) -> Result<FinishLiveMatchResponse
                     if let Some(fixture) = league.fixtures.get_mut(fixture_index) {
                         fixture.seed = seed;
                         fixture.engine_version = engine::ENGINE_VERSION;
-                        fixture.engine_id = engine::DEFAULT_ENGINE_ID.to_string();
+                        fixture.engine_id = engine_id.clone();
                         fixture.replay = Some(replay.clone());
                     }
                 }

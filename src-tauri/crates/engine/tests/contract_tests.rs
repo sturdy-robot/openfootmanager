@@ -148,6 +148,10 @@ impl LiveState for SpatialFake {
         &self.events
     }
 
+    fn engine_id(&self) -> &'static str {
+        "spatial-fake"
+    }
+
     fn minute(&self) -> u8 {
         MatchClock::new(MatchPeriod::FirstHalf, self.elapsed_ms).display_minute()
     }
@@ -186,6 +190,9 @@ impl LiveState for ZoneFake {
     }
     fn events(&self) -> &[MatchEvent] {
         &[]
+    }
+    fn engine_id(&self) -> &'static str {
+        "zone-fake"
     }
     fn minute(&self) -> u8 {
         0

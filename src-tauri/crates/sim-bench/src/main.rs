@@ -164,18 +164,6 @@ struct Cli {
     stoppage_time_max: Option<u8>,
 }
 
-/// Resolve an engine by id.
-///
-/// The registry exists so this tool never hard-codes which engine it drives:
-/// a replacement implements `InstantEngine`, gets an id here, and is
-/// immediately benchable and compliance-checkable.
-fn engine_by_id(id: &str) -> Option<Box<dyn engine::InstantEngine>> {
-    match id {
-        engine::DEFAULT_ENGINE_ID => Some(Box::new(engine::DefaultEngine)),
-        _ => None,
-    }
-}
-
 #[derive(Clone, Copy, ValueEnum, Debug)]
 enum StyleArg {
     Balanced,
@@ -246,11 +234,13 @@ fn main() {
         config.stoppage_time_max = v;
     }
 
-    let Some(active_engine) = engine_by_id(&cli.engine) else {
+    let Some(active_engine) = engine::registry::instant(&cli.engine) else {
+        // List what is actually registered rather than naming one engine, so
+        // the message stays right as engines are added.
         eprintln!(
             "Unknown engine {:?}. Known: {}",
             cli.engine,
-            engine::DEFAULT_ENGINE_ID
+            engine::registry::ids().join(", ")
         );
         std::process::exit(2);
     };
@@ -310,7 +300,7 @@ fn main() {
     );
 
     // Driven through the engine contract rather than a direct call, so any
-    // engine registered in `engine_by_id` can be benchmarked unchanged.
+    // engine in `engine::registry` can be benchmarked unchanged.
     let setup = engine::MatchSetup::league(home, away, config.clone());
     let start = Instant::now();
     let mut bench_stats = BenchStats::default();

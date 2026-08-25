@@ -5,6 +5,7 @@ pub mod descriptor;
 pub mod engine;
 pub mod event;
 pub mod live_match;
+pub mod registry;
 pub mod rejection;
 pub mod report;
 pub(crate) mod shared;

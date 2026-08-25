@@ -15,7 +15,7 @@ use domain::league::{
 use domain::manager::Manager;
 use domain::team::MatchRoles;
 use engine::ai::{self, AiPersonality, AiProfile};
-use engine::{LiveMatchState, MatchCommand, MatchConfig, MatchSnapshot, MinuteResult, Side};
+use engine::{LiveState, MatchCommand, MatchConfig, MatchSnapshot, MinuteResult, Side};
 
 /// Translate an engine command into its stored replay form.
 ///
@@ -139,7 +139,7 @@ fn resolve_match_role_assignment(
 }
 
 fn apply_saved_match_roles(
-    match_state: &mut LiveMatchState,
+    match_state: &mut dyn LiveState,
     side: Side,
     match_roles: &MatchRoles,
     starter_ids: &[String],
@@ -199,7 +199,15 @@ pub enum MatchMode {
 // ---------------------------------------------------------------------------
 
 pub struct LiveMatchSession {
-    pub match_state: LiveMatchState,
+    /// The match in progress, held behind the engine contract rather than as a
+    /// concrete `LiveMatchState`.
+    ///
+    /// `Send` because `StateManager` shares this session between the Tauri
+    /// command pool and, under the `mcp` feature, the MCP server's runtime.
+    pub match_state: Box<dyn LiveState + Send>,
+    /// Which engine is playing it. Stamped onto the fixture when the match
+    /// finishes, so a replay knows what produced the result.
+    pub engine_id: String,
     /// The simulation stream: everything the match engine itself draws.
     ///
     /// Deliberately separate from `ai_rng`. With one shared generator, a user
@@ -339,7 +347,7 @@ impl LiveMatchSession {
         // AI for home team (if not user-controlled)
         if self.user_side != Some(Side::Home) {
             let cmds = ai::ai_decide(
-                &self.match_state,
+                self.match_state.as_ref(),
                 Side::Home,
                 &self.ai_home,
                 &mut self.ai_rng,
@@ -352,7 +360,7 @@ impl LiveMatchSession {
         // AI for away team (if not user-controlled)
         if self.user_side != Some(Side::Away) {
             let cmds = ai::ai_decide(
-                &self.match_state,
+                self.match_state.as_ref(),
                 Side::Away,
                 &self.ai_away,
                 &mut self.ai_rng,
@@ -417,23 +425,24 @@ pub fn create_live_match(
 
     let config = MatchConfig::default();
 
-    let mut match_state = LiveMatchState::new(
-        home_xi,
-        away_xi,
-        config,
-        home_bench,
-        away_bench,
-        allows_extra_time,
-    );
+    // Built through the registry rather than by naming a type, so the engine
+    // the game plays on is a lookup rather than a compile-time decision.
+    let engine_id = engine::registry::DEFAULT_ENGINE_ID;
+    let setup = engine::MatchSetup::league(home_xi, away_xi, config)
+        .with_benches(home_bench, away_bench)
+        .with_extra_time(allows_extra_time)
+        .with_seed(seed);
+    let mut match_state = engine::registry::kickoff(engine_id, setup)
+        .ok_or_else(|| format!("be.error.liveMatch.unknownEngine:{engine_id}"))?;
     apply_saved_match_roles(
-        &mut match_state,
+        match_state.as_mut(),
         Side::Home,
         &home_match_roles,
         &home_starter_ids,
         home_auto_selection,
     );
     apply_saved_match_roles(
-        &mut match_state,
+        match_state.as_mut(),
         Side::Away,
         &away_match_roles,
         &away_starter_ids,
@@ -465,8 +474,13 @@ pub fn create_live_match(
     let ai_home = ai_profile_for(game, &home_team_id);
     let ai_away = ai_profile_for(game, &away_team_id);
 
+    // Taken from the state itself rather than from the id we asked for, so the
+    // fixture records what actually played the match.
+    let played_by = match_state.engine_id().to_string();
+
     Ok(LiveMatchSession {
         match_state,
+        engine_id: played_by,
         // Seeded from the fixture rather than thread entropy, so the match can
         // be re-simulated later and replayed exactly as it was played. The two
         // streams are derived from the same seed but kept independent.
