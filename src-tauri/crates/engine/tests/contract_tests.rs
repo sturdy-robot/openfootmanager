@@ -148,6 +148,14 @@ impl LiveState for SpatialFake {
         &self.events
     }
 
+    fn minute(&self) -> u8 {
+        MatchClock::new(MatchPeriod::FirstHalf, self.elapsed_ms).display_minute()
+    }
+
+    fn report(&self) -> MatchReport {
+        unimplemented!("reporting is not what this fake exists to test")
+    }
+
     fn into_report(self: Box<Self>) -> MatchReport {
         unimplemented!("reporting is not what this fake exists to test")
     }
@@ -178,6 +186,12 @@ impl LiveState for ZoneFake {
     }
     fn events(&self) -> &[MatchEvent] {
         &[]
+    }
+    fn minute(&self) -> u8 {
+        0
+    }
+    fn report(&self) -> MatchReport {
+        unimplemented!()
     }
     fn into_report(self: Box<Self>) -> MatchReport {
         unimplemented!()
@@ -533,4 +547,57 @@ fn a_live_match_reports_a_clock_that_tracks_its_minute() {
         guard += 1;
     }
     assert!(state.is_finished());
+}
+
+// ---------------------------------------------------------------------------
+// The in-match AI runs on the contract, not on our engine
+// ---------------------------------------------------------------------------
+
+#[test]
+fn the_dugout_ai_drives_an_erased_state() {
+    // ai_decide used to take &LiveMatchState and reach into its rolling window
+    // of Zone values, which no other engine has. It now takes &dyn LiveState,
+    // so an engine that implements the contract gets the manager AI for free.
+    use engine::ai::{ai_decide, AiPersonality, AiProfile};
+
+    let mut state = kickoff_by_id(engine::DEFAULT_ENGINE_ID).expect("known engine");
+    let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(11);
+
+    for _ in 0..60 {
+        state.step_minute(&mut rng);
+    }
+
+    let profile = AiProfile {
+        reputation: 600,
+        experience: 60,
+        personality: AiPersonality::Pragmatist,
+    };
+    // The call itself is the assertion: this only compiles because the AI reads
+    // the contract. Commands may or may not be issued on a given seed.
+    let _commands = ai_decide(state.as_ref(), Side::Home, &profile, &mut rng);
+}
+
+#[test]
+fn an_engine_that_does_not_track_territory_reports_no_pressure() {
+    // The default keeps the AI's territorial branch inert rather than making a
+    // number up, so an engine without the concept simply never sits deeper.
+    let fake = SpatialFake::new();
+    assert_eq!(fake.minutes_under_pressure(Side::Home), 0);
+    assert_eq!(fake.minutes_under_pressure(Side::Away), 0);
+}
+
+#[test]
+fn our_engine_counts_pressure_within_the_ten_minute_window() {
+    let mut state = kickoff_by_id(engine::DEFAULT_ENGINE_ID).expect("known engine");
+    let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(3);
+    for _ in 0..40 {
+        state.step_minute(&mut rng);
+    }
+    for side in [Side::Home, Side::Away] {
+        assert!(
+            state.minutes_under_pressure(side) <= 10,
+            "the window holds ten minutes, got {}",
+            state.minutes_under_pressure(side)
+        );
+    }
 }

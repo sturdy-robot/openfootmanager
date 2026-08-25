@@ -595,6 +595,22 @@ impl LiveMatchState {
     }
 
     /// Get the bench for a side
+    /// Recent minutes spent with the ball in `side`'s own defensive area.
+    ///
+    /// Counted from the rolling zone window. See
+    /// [`crate::traits::LiveState::minutes_under_pressure`] for why the AI is
+    /// given this number rather than the zones behind it.
+    pub fn minutes_under_pressure(&self, side: Side) -> u8 {
+        let own_half = match side {
+            Side::Home => [Zone::HomeBox, Zone::HomeDefense],
+            Side::Away => [Zone::AwayBox, Zone::AwayDefense],
+        };
+        self.recent_zones
+            .iter()
+            .filter(|z| own_half.contains(z))
+            .count() as u8
+    }
+
     pub fn bench(&self, side: Side) -> &[PlayerData] {
         match side {
             Side::Home => &self.home_bench,

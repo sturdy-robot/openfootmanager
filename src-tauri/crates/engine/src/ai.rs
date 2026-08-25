@@ -1,7 +1,7 @@
 use rand::{Rng, RngExt};
 
-use crate::live_match::{LiveMatchState, MatchCommand, MatchPhase};
-use crate::types::{PlayStyle, PlayerData, PlayerRole, Position, Side, Zone};
+use crate::live_match::{MatchCommand, MatchPhase};
+use crate::types::{PlayStyle, PlayerData, PlayerRole, Position, Side};
 
 // ---------------------------------------------------------------------------
 // AiPersonality — determines decision-making style
@@ -48,7 +48,7 @@ impl Default for AiProfile {
 /// Evaluate the current match state and return any commands the AI wants to
 /// execute. Should be called after each `step_minute` for AI-controlled sides.
 pub fn ai_decide<R: Rng + ?Sized>(
-    match_state: &LiveMatchState,
+    match_state: &dyn crate::traits::LiveState,
     side: Side,
     profile: &AiProfile,
     rng: &mut R,
@@ -93,7 +93,7 @@ pub fn ai_decide<R: Rng + ?Sized>(
 // ---------------------------------------------------------------------------
 
 fn consider_substitution<R: Rng + ?Sized>(
-    match_state: &LiveMatchState,
+    match_state: &dyn crate::traits::LiveState,
     side: Side,
     profile: &AiProfile,
     minute: u8,
@@ -105,7 +105,12 @@ fn consider_substitution<R: Rng + ?Sized>(
         Side::Home => &snap.home_team,
         Side::Away => &snap.away_team,
     };
-    let bench = match_state.bench(side);
+    // The snapshot already carries both benches, so there is no need to reach
+    // past the contract for them.
+    let bench: &[PlayerData] = match side {
+        Side::Home => &snap.home_bench,
+        Side::Away => &snap.away_bench,
+    };
 
     if bench.is_empty() {
         return None;
@@ -285,7 +290,7 @@ fn find_best_bench_replacement<'a>(
 // ---------------------------------------------------------------------------
 
 fn consider_tactic_change<R: Rng + ?Sized>(
-    match_state: &LiveMatchState,
+    match_state: &dyn crate::traits::LiveState,
     side: Side,
     profile: &AiProfile,
     minute: u8,
@@ -321,15 +326,7 @@ fn consider_tactic_change<R: Rng + ?Sized>(
     // Zone-reactive: if the ball has been stuck in our defensive half for most of
     // the last 10 minutes, shift to a more defensive style to soak pressure.
     // ---------------------------------------------------------------------------
-    let defensive_zones_for_side = match side {
-        Side::Home => [Zone::HomeBox, Zone::HomeDefense],
-        Side::Away => [Zone::AwayBox, Zone::AwayDefense],
-    };
-    let recent = match_state.recent_zones();
-    let pressure_ticks = recent
-        .iter()
-        .filter(|z| defensive_zones_for_side.contains(z))
-        .count();
+    let pressure_ticks = match_state.minutes_under_pressure(side);
     // 6+ of the last 10 minutes under defensive pressure → consider going defensive.
     // Guard: only when not already losing (a losing team should be attacking, not absorbing).
     if pressure_ticks >= 6

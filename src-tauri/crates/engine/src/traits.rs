@@ -148,6 +148,28 @@ pub trait LiveState {
 
     fn events(&self) -> &[MatchEvent];
 
+    /// The running match minute.
+    fn minute(&self) -> u8;
+
+    /// The report as it stands, without consuming the match.
+    fn report(&self) -> MatchReport;
+
+    /// How many of the recent minutes this side has spent penned in its own
+    /// defensive area, out of at most ten.
+    ///
+    /// Territorial pressure is ordinary football, but every engine measures it
+    /// differently, so the contract asks for the count rather than for the
+    /// zones it was derived from. The in-match AI reads this to decide whether
+    /// a side should sit deeper; before it existed the AI reached into the
+    /// built-in engine's rolling window of `Zone` values, which no other engine
+    /// has.
+    ///
+    /// Zero by default, so an engine that does not track territory simply never
+    /// triggers that decision rather than having to invent a number.
+    fn minutes_under_pressure(&self, _side: crate::types::Side) -> u8 {
+        0
+    }
+
     /// Where everyone is, for engines that model position.
     ///
     /// Returns `None` by default, which is the honest answer for an engine that
@@ -259,6 +281,18 @@ impl LiveState for crate::live_match::LiveMatchState {
 
     fn events(&self) -> &[MatchEvent] {
         crate::live_match::LiveMatchState::events(self)
+    }
+
+    fn minute(&self) -> u8 {
+        crate::live_match::LiveMatchState::minute(self)
+    }
+
+    fn report(&self) -> MatchReport {
+        crate::live_match::LiveMatchState::report(self)
+    }
+
+    fn minutes_under_pressure(&self, side: crate::types::Side) -> u8 {
+        crate::live_match::LiveMatchState::minutes_under_pressure(self, side)
     }
 
     fn into_report(self: Box<Self>) -> MatchReport {
