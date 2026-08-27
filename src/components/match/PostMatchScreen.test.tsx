@@ -1,4 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import PostMatchScreen, { computeGoalSources } from "./PostMatchScreen";
@@ -404,7 +406,166 @@ function makeGameState() {
   } as unknown as GameStateData;
 }
 
+function renderManagerPostMatch(
+  callbacks: { onContinue?: () => void; onFinish?: () => void } = {},
+): void {
+  render(
+    <ThemeProvider>
+      <PostMatchScreen
+        matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }}
+        snapshot={makeSnapshot()}
+        gameState={makeGameState()}
+        userSide="Home"
+        isSpectator={false}
+        importantEvents={[]}
+        onContinue={callbacks.onContinue ?? (() => {})}
+        onFinish={callbacks.onFinish ?? (() => {})}
+      />
+    </ThemeProvider>,
+  );
+}
+
+describe("PostMatchScreen bounded frame structure", function (): void {
+  const source = readFileSync(
+    "src/components/match/PostMatchScreen.tsx",
+    "utf-8",
+  ).replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+  const staticClassNames = [...source.matchAll(/className="([^"]*)"/g)].map(
+    (match) => match[1].split(/\s+/),
+  );
+
+  it("bounds the post-match column through every shrinking flex link", function (): void {
+    const shellBodyClasses = source
+      .match(/<MatchdayShell[^>]*>\s*<[a-z][\w-]*\s+className="([^"]*)"/)?.[1]
+      .split(/\s+/) ?? [];
+
+    expect(
+      shellBodyClasses,
+      "the shell body needs a full-height min-h-0 flex column to bound its descendants",
+    ).toEqual(expect.arrayContaining(["flex", "h-full", "min-h-0", "flex-col"]));
+  });
+
+  it("allows the tab panel scroller to shrink inside the bounded column", function (): void {
+    const tabScrollerClasses =
+      staticClassNames.find(
+        (classes) => classes.includes("flex-1") && classes.includes("overflow-auto"),
+      ) ?? [];
+
+    expect(
+      tabScrollerClasses,
+      "the flexing tab-panel scroll container needs min-h-0 before overflow-auto can contain it",
+    ).toEqual(expect.arrayContaining(["min-h-0", "flex-1", "overflow-auto"]));
+  });
+});
+
 describe("PostMatchScreen", function (): void {
+  it("puts the manager exit actions in the shell footer without changing their callbacks", function (): void {
+    const onContinue = vi.fn();
+    const onFinish = vi.fn();
+    renderManagerPostMatch({ onContinue, onFinish });
+
+    const footer = screen.getByRole("contentinfo");
+    const skip = within(footer).getByRole("button", { name: "match.skip" });
+    const continueButton = within(footer).getByRole("button", {
+      name: "match.continue",
+    });
+
+    fireEvent.click(skip);
+    expect(onFinish).toHaveBeenCalledTimes(1);
+    expect(onContinue).not.toHaveBeenCalled();
+
+    fireEvent.click(continueButton);
+    expect(onContinue).toHaveBeenCalledTimes(1);
+    expect(onFinish).toHaveBeenCalledTimes(1);
+  });
+
+  it("puts only the spectator exit action in the shell footer and keeps its callback", function (): void {
+    const onContinue = vi.fn();
+    const onFinish = vi.fn();
+    render(
+      <ThemeProvider>
+        <PostMatchScreen
+          matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }}
+          snapshot={makeSnapshot()}
+          gameState={makeGameState()}
+          userSide={null}
+          isSpectator={true}
+          importantEvents={[]}
+          onContinue={onContinue}
+          onFinish={onFinish}
+        />
+      </ThemeProvider>,
+    );
+
+    const footer = screen.getByRole("contentinfo");
+    const dashboard = within(footer).getByRole("button", {
+      name: "match.continueDashboard",
+    });
+    expect(within(footer).queryByRole("button", { name: "match.skip" })).toBeNull();
+    expect(within(footer).queryByRole("button", { name: "match.continue" })).toBeNull();
+
+    fireEvent.click(dashboard);
+    expect(onFinish).toHaveBeenCalledTimes(1);
+    expect(onContinue).not.toHaveBeenCalled();
+  });
+
+  it("labels the tablist and links every tab to a panel labelled by that tab", function (): void {
+    renderManagerPostMatch();
+
+    const tablist = screen.getByRole("tablist");
+    const panels = screen.getAllByRole("tabpanel", { hidden: true });
+    const tabNames = [
+      "match.postMatchTeamTalk",
+      "match.matchReport",
+      "match.playerRatings",
+      "match.tacticsTab",
+    ];
+
+    expect(within(tablist).getAllByRole("tab")).toHaveLength(4);
+    for (const name of tabNames) {
+      const tab = within(tablist).getByRole("tab", { name });
+      const controlledPanel = panels.find(
+        (panel) => panel.id === tab.getAttribute("aria-controls"),
+      );
+      expect(controlledPanel, `${name} must control an existing tabpanel`).toBeDefined();
+      expect(controlledPanel).toHaveAttribute("aria-labelledby", tab.id);
+    }
+    expect(tablist).toHaveAccessibleName("match.matchReport");
+  });
+
+  it("keeps the result, score, and all four panels while roving keyboard focus with selection", function (): void {
+    renderManagerPostMatch();
+
+    expect(screen.getByText("match.victory")).toBeInTheDocument();
+    expect(screen.getAllByText("2").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("1").length).toBeGreaterThan(0);
+
+    const teamTalkTab = screen.getByRole("tab", {
+      name: "match.postMatchTeamTalk",
+    });
+    const matchReportTab = screen.getByRole("tab", { name: "match.matchReport" });
+    const performanceScoresTab = screen.getByRole("tab", {
+      name: "match.playerRatings",
+    });
+    const tacticsTab = screen.getByRole("tab", { name: "match.tacticsTab" });
+
+    expect(screen.getByText("match.addressPlayers")).toBeVisible();
+    fireEvent.click(matchReportTab);
+    expect(screen.getByText("match.scorers")).toBeVisible();
+    fireEvent.click(performanceScoresTab);
+    expect(screen.getByText("match.performanceScores:Alpha FC")).toBeVisible();
+    expect(screen.getAllByText("match.performanceScoreExplainer")[0]).toBeVisible();
+    fireEvent.click(tacticsTab);
+    expect(screen.getByText("match.goalSources")).toBeVisible();
+
+    expect(tacticsTab).toHaveAttribute("aria-selected", "true");
+    expect(tacticsTab.tabIndex).toBe(0);
+    for (const inactiveTab of [teamTalkTab, matchReportTab, performanceScoresTab]) {
+      expect(inactiveTab).toHaveAttribute("aria-selected", "false");
+      expect(inactiveTab.tabIndex).toBe(-1);
+    }
+  });
+
   it("renders the Team Talk tab by default for a manager", function (): void {
     render(
       <ThemeProvider>

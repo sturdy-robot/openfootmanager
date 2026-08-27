@@ -224,8 +224,58 @@ export default function PostMatchScreen({
     },
   ];
 
+  /*
+    The way out of the report was two buttons inside the report, in the half
+    of the screen that scrolls. Every other stage now keeps its primary action
+    where the shell can hold it still.
+  */
+  const reportActions = (
+    <footer className="border-t border-gray-200 bg-white px-6 py-3 shadow-sm transition-colors duration-300 motion-reduce:transition-none dark:border-navy-700 dark:bg-navy-800">
+      <div className="mx-auto flex max-w-page items-center justify-center gap-3">
+        {isSpectator ? (
+          <button
+            className="flex items-center gap-2 rounded-lg bg-linear-to-r from-primary-500 to-primary-600 px-6 py-2 font-heading text-sm font-bold uppercase tracking-wider text-white shadow-md shadow-primary-500/20 transition-colors hover:from-primary-600 hover:to-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 motion-reduce:transition-none dark:focus-visible:ring-offset-navy-800"
+            onClick={onFinish}
+            type="button"
+          >
+            {t("match.continueDashboard")}
+            <ChevronRight aria-hidden="true" className="h-4 w-4" />
+          </button>
+        ) : (
+          <>
+            <button
+              className="flex items-center gap-2 rounded-lg bg-gray-100 px-5 py-2 font-heading text-sm font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 motion-reduce:transition-none dark:bg-navy-700 dark:text-gray-300 dark:hover:bg-navy-600 dark:focus-visible:ring-offset-navy-800"
+              onClick={onFinish}
+              type="button"
+            >
+              {t("match.skip")}
+            </button>
+            <button
+              className="flex items-center gap-2 rounded-lg bg-linear-to-r from-primary-500 to-primary-600 px-6 py-2 font-heading text-sm font-bold uppercase tracking-wider text-white shadow-md shadow-primary-500/20 transition-colors hover:from-primary-600 hover:to-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 motion-reduce:transition-none dark:focus-visible:ring-offset-navy-800"
+              onClick={onContinue}
+              type="button"
+            >
+              {t("match.continue")}
+              <ChevronRight aria-hidden="true" className="h-4 w-4" />
+            </button>
+          </>
+        )}
+      </div>
+    </footer>
+  );
+
   return (
-    <MatchdayShell bodyMode="frame" identity={matchdayIdentity}>
+    <MatchdayShell
+      bodyMode="frame"
+      footer={reportActions}
+      identity={matchdayIdentity}
+    >
+      {/*
+        A bounded column, so the tab panel below actually contains its own
+        scrolling. It was `flex-1 overflow-auto` with nothing above it setting
+        a height, which contains nothing at all.
+      */}
+      <div className="flex h-full min-h-0 flex-col">
       {/* Result Header */}
       <div
         className={`border-b border-gray-200 dark:border-navy-700 px-4 py-6 transition-colors duration-300 ${
@@ -327,44 +377,14 @@ export default function PostMatchScreen({
         </div>
       </div>
 
-      {/* Sticky Action Bar */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-navy-800 border-b border-gray-200 dark:border-navy-700 shadow-sm transition-colors duration-300">
-        <div className="px-6 py-3 flex items-center justify-center gap-3">
-          {isSpectator ? (
-            <button
-              type="button"
-              onClick={onFinish}
-              className="flex items-center gap-2 px-6 py-2 bg-linear-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 rounded-lg font-heading font-bold uppercase tracking-wider text-sm text-white shadow-md shadow-primary-500/20 transition-all"
-            >
-              {t("match.continueDashboard")}
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={onFinish}
-                className="flex items-center gap-2 px-5 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-navy-700 dark:hover:bg-navy-600 rounded-lg font-heading font-bold uppercase tracking-wider text-sm text-gray-700 dark:text-gray-300 transition-colors"
-              >
-                {t("match.skip")}
-              </button>
-              <button
-                type="button"
-                onClick={onContinue}
-                className="flex items-center gap-2 px-6 py-2 bg-linear-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 rounded-lg font-heading font-bold uppercase tracking-wider text-sm text-white shadow-md shadow-primary-500/20 transition-all"
-              >
-                {t("match.continue")}
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
       {/* Tab Bar */}
       <div className="bg-white dark:bg-navy-800 border-b border-gray-200 dark:border-navy-700 transition-colors duration-300">
         <div className="px-6">
-          <div className="flex gap-1" role="tablist">
+          <div
+            aria-label={t("match.matchReport")}
+            className="flex gap-1"
+            role="tablist"
+          >
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -374,6 +394,7 @@ export default function PostMatchScreen({
                 aria-selected={activeTab === tab.id}
                 aria-controls={`tabpanel-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
+                tabIndex={activeTab === tab.id ? 0 : -1}
                 className={`flex items-center gap-2 px-5 py-3 text-sm font-heading font-bold uppercase tracking-wider border-b-2 transition-colors ${
                   activeTab === tab.id
                     ? "border-primary-500 text-primary-600 dark:text-primary-400"
@@ -389,7 +410,7 @@ export default function PostMatchScreen({
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="min-h-0 flex-1 overflow-auto">
         <div className="px-6 py-6">
           {/* Team Talk Tab */}
           {!isSpectator && userSide && (
@@ -800,6 +821,7 @@ export default function PostMatchScreen({
           </div>
 
         </div>
+      </div>
       </div>
     </MatchdayShell>
   );
