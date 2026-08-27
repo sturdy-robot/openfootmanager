@@ -363,7 +363,16 @@ describe("atomic in-match management", () => {
           incoming_player_id: "bench-st",
         },
       ],
-      assignments: snapshot().home_set_pieces,
+      // The armband and the set-piece duties follow the substitution. Every
+      // duty is filled when the match is built, so sending them unchanged sent
+      // a free-kick taker who was no longer on the pitch — which the engine
+      // refuses, taking the three substitutions with it.
+      assignments: {
+        captain: "starter-0",
+        corner_taker: "starter-8",
+        free_kick_taker: "bench-cm",
+        penalty_taker: "bench-st",
+      },
     });
     expect(matchServiceMocks.applyMatchCommand).not.toHaveBeenCalled();
     expect(onSnapshotUpdate).toHaveBeenCalledOnce();
@@ -495,5 +504,84 @@ describe("atomic in-match management", () => {
         name: "Remove Starter 5 off, Bench Left Back on",
       }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("what the review of step 11 found", () => {
+  it("groups the bench by the exact position each player plays", () => {
+    // #371 asked for the exact position, not the engine's four buckets — and
+    // an unsorted list of eleven positions is still a list to be searched.
+    renderManagement();
+
+    const headings = screen
+      .getAllByRole("columnheader")
+      .map((heading) => heading.textContent);
+
+    expect(headings).toContain("Left Back");
+    expect(headings).toContain("Central Midfielder");
+    expect(headings).toContain("Striker");
+    expect(headings.indexOf("Left Back")).toBeLessThan(
+      headings.indexOf("Central Midfielder"),
+    );
+    expect(headings.indexOf("Central Midfielder")).toBeLessThan(
+      headings.indexOf("Striker"),
+    );
+  });
+
+  it("still offers formation and play style once the substitutions are gone", () => {
+    // A spent allowance stops substitutions and nothing else. Hiding the panel
+    // took the shape, the play style and every slot role with it.
+    renderManagement(snapshot({ home_subs_made: 5, max_subs: 5 }));
+
+    expect(
+      screen.getByRole("region", { name: "Pending changes" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("combobox", { name: "tactics.formation" }).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("sends a change from the dugout bar as a change set, not a bare command", async () => {
+    // `ChangeFormation` lands in the engine the moment it arrives, so leaving
+    // it here left two ways to manage a match — one atomic, one not.
+    matchServiceMocks.applyMatchTactics.mockResolvedValue(snapshot());
+    render(
+      <MatchLive
+        gameState={gameState()}
+        importantEvents={[]}
+        isSpectator={false}
+        matchdayIdentity={{ competitionName: "League", roundLabel: "Match Day" }}
+        onFullTime={vi.fn()}
+        onHalfTime={vi.fn()}
+        onImportantEvent={vi.fn()}
+        onSnapshotUpdate={vi.fn()}
+        snapshot={snapshot()}
+        userSide="Home"
+      />,
+    );
+
+    chooseFromSelect("match.formation", "4-3-3");
+
+    await vi.waitFor(() => {
+      expect(matchServiceMocks.applyMatchTactics).toHaveBeenCalledTimes(1);
+    });
+    expect(matchServiceMocks.applyMatchCommand).not.toHaveBeenCalled();
+    const changes = matchServiceMocks.applyMatchTactics.mock
+      .calls[0][0] as MatchTacticsChangeSet;
+    expect(changes.formation).toBe("4-3-3");
+    expect(changes.lineup_changes).toEqual([]);
+  });
+
+  it("takes a queued substitution back out when the same replacement is chosen again", () => {
+    renderManagement();
+    queueSubstitution(5, "bench-lb");
+
+    expect(pendingChanges()).toHaveTextContent(
+      "Starter 5 off, Bench Left Back on",
+    );
+
+    fireEvent.click(screen.getByTestId("sub-panel-bench-bench-lb"));
+
+    expect(pendingChanges()).toHaveTextContent("No pending changes");
   });
 });

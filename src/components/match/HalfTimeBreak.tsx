@@ -4,7 +4,6 @@ import { GameStateData } from "../../store/gameStore";
 import type { MatchdayIdentity } from "../../lib/competitionName";
 import MatchdayShell from "./MatchdayShell";
 import {
-  applyMatchCommand,
   applyMatchTactics,
   applyTeamTalk,
   type TeamTalkMoraleChange,
@@ -20,7 +19,12 @@ import {
 import { getEventDisplay, getPlayerName, makeTeamFallback } from "./helpers";
 import { getTalkIcon } from "./TeamTalkIcons";
 import { SubPanel } from "./SubPanel";
-import { buildMatchTacticsChangeSet, type MatchDraft } from "./MatchDraft.helpers";
+import {
+  EMPTY_MATCH_DRAFT,
+  buildMatchTacticsChangeSet,
+  type MatchDraft,
+} from "./MatchDraft.helpers";
+import { buildNaturalPositionMap } from "./SubPanel.helpers";
 import { resolveBackendError } from "../../utils/backendI18n";
 import { Badge, TeamLogo } from "../ui";
 import {
@@ -109,27 +113,35 @@ export default function HalfTimeBreak({
     }
   };
 
-  const handleFormationChange = async (formation: string) => {
+  /**
+   * A shape chosen at the break goes the same way as everything else.
+   *
+   * Half time is when several changes are made at once, so a formation that
+   * committed on its own while the substitutions were still queued was the
+   * split this step exists to close.
+   */
+  const submitTacticalChange = async (change: Partial<MatchDraft>) => {
     try {
-      const snap = await applyMatchCommand({
-        ChangeFormation: { side: userSide, formation },
-      });
+      const snap = await applyMatchTactics(
+        buildMatchTacticsChangeSet({
+          draft: { ...EMPTY_MATCH_DRAFT, ...change },
+          side: userSide,
+          snapshot,
+        }),
+      );
       onUpdateSnapshot(snap);
+      setSubmissionError(null);
     } catch (err) {
-      console.error("Formation change failed:", err);
+      console.error("Half-time tactical change failed:", err);
+      setSubmissionError(resolveBackendError(err));
     }
   };
 
-  const handlePlayStyleChange = async (playStyle: string) => {
-    try {
-      const snap = await applyMatchCommand({
-        ChangePlayStyle: { side: userSide, play_style: playStyle },
-      });
-      onUpdateSnapshot(snap);
-    } catch (err) {
-      console.error("Play style change failed:", err);
-    }
-  };
+  const handleFormationChange = (formation: string) =>
+    submitTacticalChange({ formation });
+
+  const handlePlayStyleChange = (playStyle: string) =>
+    submitTacticalChange({ playStyle });
 
 
   const handleDeliverTalk = async () => {
@@ -406,6 +418,19 @@ export default function HalfTimeBreak({
           <div className="flex flex-col gap-4">
             {!isSpectator && (
               <>
+                {/*
+                  A shape or style chosen here can be refused too, and the panel
+                  that normally carries the reason is closed. Shown only while
+                  it is, so a refusal is never reported twice.
+                */}
+                {!showSubPanel && submissionError ? (
+                  <p
+                    className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-300"
+                    role="alert"
+                  >
+                    {submissionError}
+                  </p>
+                ) : null}
                 {/* Formation */}
                 <div className="bg-white dark:bg-navy-800 rounded-xl border border-gray-200 dark:border-navy-700 shadow-sm p-4 transition-colors duration-300">
                   <h3 className="text-xs font-heading font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-3">
@@ -482,6 +507,7 @@ export default function HalfTimeBreak({
       {/* Substitution Modal — reuses the full SubPanel from MatchLive */}
       {showSubPanel && (
         <SubPanel
+          naturalPositionById={buildNaturalPositionMap(gameState.players)}
           snapshot={snapshot}
           side={userSide}
           onSubmitDraft={(draft) => {

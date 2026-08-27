@@ -2,7 +2,6 @@ import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { GameStateData } from "../../store/gameStore";
 import {
-  applyMatchCommand,
   applyMatchTactics,
   getMatchSnapshot,
   stepLiveMatch,
@@ -15,7 +14,12 @@ import { EventFeed, MatchStats, Lineups } from "./MatchPanels";
 import type { MatchdayIdentity } from "../../lib/competitionName";
 import MatchdayShell from "./MatchdayShell";
 import { SubPanel } from "./SubPanel";
-import { buildMatchTacticsChangeSet, type MatchDraft } from "./MatchDraft.helpers";
+import {
+  EMPTY_MATCH_DRAFT,
+  buildMatchTacticsChangeSet,
+  type MatchDraft,
+} from "./MatchDraft.helpers";
+import { buildNaturalPositionMap } from "./SubPanel.helpers";
 import { resolveBackendError } from "../../utils/backendI18n";
 import { FormationPitch } from "./FormationPitch";
 import { translatePositionAbbreviation } from "../squad/SquadTab.helpers";
@@ -80,16 +84,10 @@ export default function MatchLive({
 
   // The engine knows four coarse buckets; the store knows a left-back is a
   // left-back (#371).
-  const naturalPositionById = useMemo(() => {
-    const positions = new Map<string, string>();
-    for (const player of gameState.players) {
-      const natural = player.natural_position || player.position;
-      if (natural) {
-        positions.set(player.id, natural);
-      }
-    }
-    return positions;
-  }, [gameState.players]);
+  const naturalPositionById = useMemo(
+    () => buildNaturalPositionMap(gameState.players),
+    [gameState.players],
+  );
 
   const playerJerseyMap = useMemo(() => {
     const m = new Map<string, number>();
@@ -273,29 +271,36 @@ export default function MatchLive({
     }
   };
 
-  const handleFormationChange = async (formation: string) => {
+  /**
+   * A change from the dugout bar goes the same way as one from the panel.
+   *
+   * `ChangeFormation` and `ChangePlayStyle` land in the engine the moment they
+   * arrive, so keeping them here left two ways to manage a match — one atomic,
+   * one not — and a shape committed from the bar while substitutions were
+   * still queued in the panel.
+   */
+  const submitTacticalChange = async (change: Partial<MatchDraft>) => {
     if (!userSide || isSpectator) return;
     try {
-      const snap = await applyMatchCommand({
-        ChangeFormation: { side: userSide, formation }
-      });
+      const snap = await applyMatchTactics(
+        buildMatchTacticsChangeSet({
+          draft: { ...EMPTY_MATCH_DRAFT, ...change },
+          side: userSide,
+          snapshot,
+        }),
+      );
       onSnapshotUpdate(snap);
     } catch (err) {
-      console.error("Formation change failed:", err);
+      console.error("In-match tactical change failed:", err);
+      setSubmissionError(resolveBackendError(err));
     }
   };
 
-  const handlePlayStyleChange = async (playStyle: string) => {
-    if (!userSide || isSpectator) return;
-    try {
-      const snap = await applyMatchCommand({
-        ChangePlayStyle: { side: userSide, play_style: playStyle }
-      });
-      onSnapshotUpdate(snap);
-    } catch (err) {
-      console.error("Play style change failed:", err);
-    }
-  };
+  const handleFormationChange = (formation: string) =>
+    submitTacticalChange({ formation });
+
+  const handlePlayStyleChange = (playStyle: string) =>
+    submitTacticalChange({ playStyle });
 
   const userTeam = userSide === "Home" ? snapshot.home_team : snapshot.away_team;
   const userSubsMade = userSide === "Home"
@@ -315,7 +320,12 @@ export default function MatchLive({
               </span>
               <button
                 className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 font-heading text-xs font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 dark:bg-navy-700 dark:text-gray-200 dark:hover:bg-navy-600 dark:focus-visible:ring-primary-400 dark:focus-visible:ring-offset-navy-800"
-                onClick={() => setShowSubPanel((visible) => !visible)}
+                onClick={() => {
+                  // Reopening starts clean: a refusal the manager has already
+                  // acted on should not still be on screen next time.
+                  setSubmissionError(null);
+                  setShowSubPanel((visible) => !visible);
+                }}
                 type="button"
               >
                 <RefreshCw aria-hidden="true" className="h-4 w-4" />
@@ -345,6 +355,19 @@ export default function MatchLive({
                   </option>
                 ))}
               </Select>
+              {/*
+                A change made from here can be refused too, and the panel that
+                normally carries the reason is closed. Shown only while it is,
+                so a refusal is never reported twice.
+              */}
+              {!showSubPanel && submissionError ? (
+                <p
+                  className="w-full rounded-lg bg-red-50 px-2 py-1.5 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-300"
+                  role="alert"
+                >
+                  {submissionError}
+                </p>
+              ) : null}
             </div>
           </div>
         ) : undefined

@@ -1,6 +1,10 @@
+import { buildPitchRows } from "../squad/SquadTab.helpers";
+import { getRolesForPosition } from "../../lib/playerRoles";
+import type { PlayerRole } from "../../store/types";
 import type {
   MatchSnapshot,
   MatchTacticsChangeSet,
+  SetPieceTakers,
   Side,
   TacticsConfig,
 } from "./types";
@@ -70,7 +74,16 @@ export function queueLineupChange(
   side: Side,
   change: MatchLineupDraftChange,
 ): { draft: MatchDraft; refusedRemaining?: number } {
-  if (substitutionsRemaining(snapshot, side, draft) <= 0) {
+  // One change per slot, and the newest wins: choosing a different replacement
+  // for the same player is a correction, not a second substitution — so it is
+  // decided before the budget is consulted. Asked the other way round, a
+  // manager who had filled the queue could no longer change their mind about
+  // any of it.
+  const isCorrection = draft.lineupChanges.some(
+    (queued) => queued.slotIndex === change.slotIndex,
+  );
+
+  if (!isCorrection && substitutionsRemaining(snapshot, side, draft) <= 0) {
     const made =
       side === "Home" ? snapshot.home_subs_made : snapshot.away_subs_made;
     // The allowance itself, not what is left of it: the manager needs to know
@@ -78,8 +91,6 @@ export function queueLineupChange(
     return { draft, refusedRemaining: Math.max(0, snapshot.max_subs - made) };
   }
 
-  // One change per slot, and the newest wins: choosing a different replacement
-  // for the same player is a correction, not a second substitution.
   const lineupChanges = [
     ...draft.lineupChanges.filter(
       (queued) => queued.slotIndex !== change.slotIndex,
@@ -125,15 +136,19 @@ export function buildMatchTacticsChangeSet({
   snapshot: MatchSnapshot;
 }): MatchTacticsChangeSet {
   const team = teamFor(snapshot, side);
+  const formation = draft.formation ?? team.formation;
+  const slotPositions = buildPitchRows(formation).flatMap((row) => row.positions);
 
   return {
     side,
-    formation: draft.formation ?? team.formation,
+    formation,
     play_style: draft.playStyle ?? team.play_style,
     tactics: team.tactics as TacticsConfig,
-    slot_roles: team.players.map(
-      (player, slotIndex) =>
-        draft.slotRoles[slotIndex] ?? player.role ?? "Standard",
+    slot_roles: team.players.map((player, slotIndex) =>
+      roleForSlot({
+        current: draft.slotRoles[slotIndex] ?? player.role ?? "Standard",
+        position: slotPositions[slotIndex] ?? player.position,
+      }),
     ),
     lineup_changes: draft.lineupChanges.map((change) => ({
       slot_index: change.slotIndex,
@@ -142,7 +157,60 @@ export function buildMatchTacticsChangeSet({
       expected_outgoing_player_id: change.outgoingPlayerId,
       incoming_player_id: change.incomingPlayerId,
     })),
-    assignments:
+    assignments: reassignDuties(
       side === "Home" ? snapshot.home_set_pieces : snapshot.away_set_pieces,
+      draft.lineupChanges,
+    ),
+  };
+}
+
+/**
+ * A role belongs to a slot, and a formation change is what the slot means.
+ *
+ * The engine validates every role in the set against the shape it has just
+ * applied, so a striker's role left on a slot that became a full-back's would
+ * have the whole set refused — including the substitutions the manager
+ * actually came here to make.
+ */
+function roleForSlot({
+  current,
+  position,
+}: {
+  current: string;
+  position: string;
+}): string {
+  return getRolesForPosition(position).includes(current as PlayerRole)
+    ? current
+    : "Standard";
+}
+
+/**
+ * The armband and the set-piece duties follow the substitution.
+ *
+ * Every duty is filled when the match is built, so substituting a captain or a
+ * penalty taker meant sending an assignment for someone no longer on the pitch
+ * — which the engine refuses, taking the rest of the change set with it. The
+ * player coming on inherits the duty; the manager can hand it elsewhere after.
+ */
+function reassignDuties(
+  assignments: SetPieceTakers,
+  lineupChanges: MatchLineupDraftChange[],
+): SetPieceTakers {
+  if (lineupChanges.length === 0) return assignments;
+
+  const replacementFor = new Map(
+    lineupChanges.map((change) => [
+      change.outgoingPlayerId,
+      change.incomingPlayerId,
+    ]),
+  );
+  const successor = (playerId: string | null): string | null =>
+    playerId ? (replacementFor.get(playerId) ?? playerId) : playerId;
+
+  return {
+    captain: successor(assignments.captain),
+    corner_taker: successor(assignments.corner_taker),
+    free_kick_taker: successor(assignments.free_kick_taker),
+    penalty_taker: successor(assignments.penalty_taker),
   };
 }

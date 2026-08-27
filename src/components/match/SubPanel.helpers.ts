@@ -1,4 +1,6 @@
+import { positionSortRank } from "../squad/SquadTab.helpers";
 import type { EnginePlayerData, MatchSnapshot } from "./types";
+import type { PlayerData } from "../../store/types";
 
 export type MatchScenarioId =
   | "steady"
@@ -273,4 +275,68 @@ export function buildRecommendedSubstitutions(
   }
 
   return recommendations.map(({ score: _score, ...recommendation }) => recommendation);
+}
+
+/**
+ * Where each player actually plays, read from the store.
+ *
+ * The engine carries four coarse buckets, so this is the only place a
+ * left-back is still a left-back by the time the bench is drawn (#371).
+ */
+export function buildNaturalPositionMap(
+  players: PlayerData[],
+): Map<string, string> {
+  const positions = new Map<string, string>();
+  for (const player of players) {
+    const natural = player.natural_position || player.position;
+    if (natural) {
+      positions.set(player.id, natural);
+    }
+  }
+  return positions;
+}
+
+/** A run of bench players who play the same exact position. */
+export interface BenchPositionGroup {
+  position: string;
+  players: EnginePlayerData[];
+}
+
+/**
+ * The bench, grouped by the position each player actually plays.
+ *
+ * The engine carries four coarse buckets, so an unsorted bench offered a
+ * manager hunting a left-back a list of "Defenders" and left them to guess
+ * (#371). `naturalPositionById` comes from the store, where the exact position
+ * survives; a player missing from it keeps the engine's bucket rather than
+ * being dropped.
+ */
+export function groupBenchByExactPosition(
+  bench: EnginePlayerData[],
+  naturalPositionById?: Map<string, string>,
+): BenchPositionGroup[] {
+  const byPosition = new Map<string, EnginePlayerData[]>();
+
+  for (const player of bench) {
+    const position = naturalPositionById?.get(player.id) ?? player.position;
+    const group = byPosition.get(position);
+    if (group) {
+      group.push(player);
+    } else {
+      byPosition.set(position, [player]);
+    }
+  }
+
+  return [...byPosition.entries()]
+    .map(([position, players]) => ({
+      position,
+      players: [...players].sort(
+        (left, right) => right.ovr - left.ovr || left.name.localeCompare(right.name),
+      ),
+    }))
+    .sort(
+      (left, right) =>
+        positionSortRank(left.position) - positionSortRank(right.position) ||
+        left.position.localeCompare(right.position),
+    );
 }

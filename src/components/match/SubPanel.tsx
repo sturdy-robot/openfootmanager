@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from "react";
+import { useRef, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import {
   type MatchSnapshot,
@@ -23,8 +23,12 @@ import ContextMenu from "../ContextMenu";
 import {
   buildPitchRows,
   translatePositionAbbreviation,
+  translatePositionLabel,
 } from "../squad/SquadTab.helpers";
 import { getRoleOptions } from "../../lib/playerRoles";
+import { groupBenchByExactPosition } from "./SubPanel.helpers";
+import { useAnnouncer } from "../../hooks/useAnnouncer";
+import { LiveRegion } from "../ui/LiveRegion";
 import {
   EMPTY_MATCH_DRAFT,
   isMatchDraftEmpty,
@@ -71,6 +75,30 @@ const CompareBar = ({
   );
 };
 
+/** One queued change, with the control that takes it back out. */
+function PendingEntry({
+  onRemove,
+  summary,
+}: {
+  onRemove: () => void;
+  summary: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <li className="flex items-center justify-between gap-2 text-xs text-gray-700 dark:text-gray-200">
+      <span>{summary}</span>
+      <button
+        aria-label={t("match.removePendingChange", { change: summary })}
+        className="shrink-0 rounded-md p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 dark:text-gray-400 dark:hover:bg-navy-700 dark:hover:text-gray-100 dark:focus-visible:ring-offset-navy-800"
+        onClick={onRemove}
+        type="button"
+      >
+        <X aria-hidden="true" className="h-3.5 w-3.5" />
+      </button>
+    </li>
+  );
+}
+
 export function SubPanel({
   snapshot,
   side,
@@ -88,7 +116,7 @@ export function SubPanel({
    * built, reviewed and abandoned — and because a refusal has to leave it
    * exactly as it was so the manager corrects rather than restarts.
    */
-  onSubmitDraft: (draft: MatchDraft) => void;
+  onSubmitDraft: (draft: MatchDraft) => void | Promise<void>;
   /** Already localized; why the last submission was refused. */
   submissionError?: string | null;
   /**
@@ -103,9 +131,24 @@ export function SubPanel({
   const [selectedOff, setSelectedOff] = useState<string | null>(null);
   const [selectedBench, setSelectedBench] = useState<string | null>(null);
   const [queueRefusal, setQueueRefusal] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [draft, setDraft] = useState<MatchDraft>(EMPTY_MATCH_DRAFT);
+  const { announce, announcement } = useAnnouncer();
+  const applyRef = useRef<HTMLButtonElement>(null);
 
   const onDraftChange = setDraft;
+
+  /**
+   * Taking a change back out is the one queue action with nowhere obvious to
+   * land: the button that did it has just gone. Focus moves to Apply, which is
+   * the region's own control and stays there whether the queue is empty or not.
+   */
+  const removeFromQueue = (next: MatchDraft, removed: string) => {
+    setQueueRefusal(null);
+    onDraftChange(next);
+    announce(t("match.removedPendingChange", { change: removed }));
+    applyRef.current?.focus();
+  };
 
   const team = side === "Home" ? snapshot.home_team : snapshot.away_team;
   const bench = side === "Home" ? snapshot.home_bench : snapshot.away_bench;
@@ -124,6 +167,10 @@ export function SubPanel({
   );
   const availableBench = bench.filter(
     (p) => !subbedOffIds.has(p.id) && !subbedOnIds.has(p.id),
+  );
+  const benchGroups = groupBenchByExactPosition(
+    availableBench,
+    naturalPositionById,
   );
   const selectedPlayer = selectedOff
     ? team.players.find((p) => p.id === selectedOff)
@@ -172,7 +219,15 @@ export function SubPanel({
 
   const handleSelectBenchPlayer = (playerId: string) => {
     if (!selectedOff) return;
-    setSelectedBench((cur) => (cur === playerId ? null : playerId));
+    if (selectedBench === playerId) {
+      // Choosing the same replacement again takes the change back out, which
+      // is the only reading of a second click that is not a no-op.
+      setSelectedBench(null);
+      setQueueRefusal(null);
+      onDraftChange(removeLineupChange(draft, slotIndexOf(selectedOff)));
+      return;
+    }
+    setSelectedBench(playerId);
     queueSwap(selectedOff, playerId);
   };
 
@@ -181,7 +236,12 @@ export function SubPanel({
       ? -1
       : team.players.findIndex((player) => player.id === playerId);
 
-  const slotPositions = buildPitchRows(team.formation).flatMap(
+  // The shape the manager is about to send, not the one on the pitch. The
+  // engine applies the formation before it validates a single role, so a role
+  // picker still showing the old slot would offer roles the engine then
+  // refuses — taking the substitutions down with them.
+  const draftedFormation = draft.formation ?? team.formation;
+  const slotPositions = buildPitchRows(draftedFormation).flatMap(
     (row) => row.positions,
   );
 
@@ -213,14 +273,20 @@ export function SubPanel({
 
     setQueueRefusal(null);
     onDraftChange(result.draft);
-    setSelectedOff(null);
-    setSelectedBench(null);
+    // The pair stays selected. Nothing has been sent yet, so the comparison is
+    // still what the manager needs in front of them to judge the change they
+    // have just queued — and to take it back out if it does not hold up.
   }
 
-  const handleConfirmSubstitution = () => {
-    if (!selectedOff || !selectedBench) return;
-    queueSwap(selectedOff, selectedBench);
-  };
+  const formationSummary = draft.formation
+    ? `${t("tactics.formation")}: ${draft.formation}`
+    : null;
+  const playStyleSummary = draft.playStyle
+    ? `${t("tactics.playStyle")}: ${t(
+        `common.playStyles.${draft.playStyle}`,
+        draft.playStyle,
+      )}`
+    : null;
 
   const describeChange = (change: MatchLineupDraftChange): string =>
     t("match.pendingSubstitution", {
@@ -293,17 +359,12 @@ export function SubPanel({
           </button>
         </div>
 
-        {subsMade >= snapshot.max_subs ? (
-          <div className="flex flex-1 items-center justify-center p-12">
-            <div className="flex flex-col items-center gap-3">
-              <AlertTriangle className="h-8 w-8 text-yellow-500" />
-              <p className="font-heading text-sm font-bold uppercase tracking-wider text-yellow-500">
-                {t("match.allSubsUsed")}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <>
+        {/*
+          A spent substitution allowance stops substitutions and nothing else.
+          Formation, play style and a slot's role are still the manager's to
+          change, and hiding the whole panel took them away.
+        */}
+        <>
             <div className="shrink-0 border-b border-gray-200 px-4 py-3 dark:border-navy-700">
         {/*
           What the manager has decided, before any of it is sent. A break is
@@ -314,14 +375,26 @@ export function SubPanel({
           aria-label={t("match.pendingChanges")}
           className="rounded-xl border border-gray-200 bg-white p-3 dark:border-navy-600 dark:bg-navy-800"
         >
+          <LiveRegion announcement={announcement} />
           <div className="mb-2 flex items-center justify-between gap-2">
             <h3 className="font-heading text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
               {t("match.pendingChanges")}
             </h3>
             <button
               type="button"
-              disabled={isMatchDraftEmpty(draft)}
-              onClick={() => onSubmitDraft(draft)}
+              disabled={isMatchDraftEmpty(draft) || isSubmitting}
+              onClick={() => {
+                // A second press while the first is in flight sends the same
+                // set twice; the engine commits one and refuses the other for a
+                // slot that has already moved.
+                if (isSubmitting) return;
+                setIsSubmitting(true);
+                announce(t("match.applyingPendingChanges"));
+                void Promise.resolve(onSubmitDraft(draft)).finally(() => {
+                  setIsSubmitting(false);
+                });
+              }}
+              ref={applyRef}
               className="rounded-lg bg-primary-600 px-3 py-1.5 font-heading text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus-visible:ring-offset-navy-800"
             >
               {t("match.applyPendingChanges")}
@@ -354,60 +427,51 @@ export function SubPanel({
               {draft.lineupChanges.map((change) => {
                 const summary = describeChange(change);
                 return (
-                  <li
+                  <PendingEntry
                     key={`lineup-${change.slotIndex}`}
-                    className="flex items-center justify-between gap-2 text-xs text-gray-700 dark:text-gray-200"
-                  >
-                    <span>{summary}</span>
-                    <button
-                      type="button"
-                      aria-label={t("match.removePendingChange", {
-                        change: summary,
-                      })}
-                      onClick={() => {
-                        setQueueRefusal(null);
-                        onDraftChange(removeLineupChange(draft, change.slotIndex));
-                      }}
-                      className="shrink-0 rounded-md p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 dark:text-gray-400 dark:hover:bg-navy-700 dark:hover:text-gray-100 dark:focus-visible:ring-offset-navy-800"
-                    >
-                      <X aria-hidden="true" className="h-3.5 w-3.5" />
-                    </button>
-                  </li>
+                    onRemove={() => {
+                      if (change.outgoingPlayerId === selectedOff) {
+                        setSelectedBench(null);
+                      }
+                      removeFromQueue(
+                        removeLineupChange(draft, change.slotIndex),
+                        summary,
+                      );
+                    }}
+                    summary={summary}
+                  />
                 );
               })}
               {Object.entries(draft.slotRoles).map(([slotIndex, role]) => {
                 const summary = describeRole(Number(slotIndex), role);
                 return (
-                  <li
+                  <PendingEntry
                     key={`role-${slotIndex}`}
-                    className="flex items-center justify-between gap-2 text-xs text-gray-700 dark:text-gray-200"
-                  >
-                    <span>{summary}</span>
-                    <button
-                      type="button"
-                      aria-label={t("match.removePendingChange", {
-                        change: summary,
-                      })}
-                      onClick={() =>
-                        onDraftChange(removeSlotRole(draft, Number(slotIndex)))
-                      }
-                      className="shrink-0 rounded-md p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 dark:text-gray-400 dark:hover:bg-navy-700 dark:hover:text-gray-100 dark:focus-visible:ring-offset-navy-800"
-                    >
-                      <X aria-hidden="true" className="h-3.5 w-3.5" />
-                    </button>
-                  </li>
+                    onRemove={() =>
+                      removeFromQueue(
+                        removeSlotRole(draft, Number(slotIndex)),
+                        summary,
+                      )
+                    }
+                    summary={summary}
+                  />
                 );
               })}
-              {draft.formation ? (
-                <li className="text-xs text-gray-700 dark:text-gray-200">
-                  {t("tactics.formation")}: {draft.formation}
-                </li>
+              {formationSummary ? (
+                <PendingEntry
+                  onRemove={() =>
+                    removeFromQueue({ ...draft, formation: null }, formationSummary)
+                  }
+                  summary={formationSummary}
+                />
               ) : null}
-              {draft.playStyle ? (
-                <li className="text-xs text-gray-700 dark:text-gray-200">
-                  {t("tactics.playStyle")}:{" "}
-                  {t(`common.playStyles.${draft.playStyle}`, draft.playStyle)}
-                </li>
+              {playStyleSummary ? (
+                <PendingEntry
+                  onRemove={() =>
+                    removeFromQueue({ ...draft, playStyle: null }, playStyleSummary)
+                  }
+                  summary={playStyleSummary}
+                />
               ) : null}
             </ul>
           )}
@@ -566,7 +630,7 @@ export function SubPanel({
 
                 {/* Formation pitch */}
                 <FormationPitch
-                  formation={team.formation}
+                  formation={draftedFormation}
                   players={team.players}
                   sentOff={snapshot.sent_off}
                   selectedId={selectedOff}
@@ -705,7 +769,16 @@ export function SubPanel({
                   </p>
                 </div>
 
-                {availableBench.length === 0 ? (
+                {subsMade >= snapshot.max_subs ? (
+                  <div className="flex flex-1 items-center justify-center p-8">
+                    <div className="flex flex-col items-center gap-3">
+                      <AlertTriangle className="h-8 w-8 text-yellow-500" />
+                      <p className="font-heading text-sm font-bold uppercase tracking-wider text-yellow-500">
+                        {t("match.allSubsUsed")}
+                      </p>
+                    </div>
+                  </div>
+                ) : availableBench.length === 0 ? (
                   <div className="flex flex-1 items-center justify-center">
                     <p className="text-xs text-gray-600 dark:text-gray-500">
                       {t("match.noBenchAvailable")}
@@ -726,8 +799,18 @@ export function SubPanel({
                           <th className="w-24 py-2">{t("match.fitness")}</th>
                         </tr>
                       </thead>
-                      <tbody>
-                        {availableBench.map((p) => {
+                      {benchGroups.map((group) => (
+                      <tbody key={group.position}>
+                        <tr>
+                          <th
+                            className="pt-3 pb-1 font-heading text-[10px] uppercase tracking-widest text-gray-500 dark:text-gray-400"
+                            colSpan={4}
+                            scope="colgroup"
+                          >
+                            {translatePositionLabel(t, group.position)}
+                          </th>
+                        </tr>
+                        {group.players.map((p) => {
                           const posMatch = selectedPlayer
                             ? p.position === selectedPlayer.position
                             : true;
@@ -829,6 +912,7 @@ export function SubPanel({
                           );
                         })}
                       </tbody>
+                      ))}
                     </table>
                   </div>
                 )}
@@ -903,10 +987,10 @@ export function SubPanel({
                       </button>
                       <button
                         type="button"
-                        onClick={handleConfirmSubstitution}
-                        className="rounded-lg bg-green-500 px-3 py-1.5 font-heading text-xs font-bold uppercase tracking-wider text-white transition-colors hover:bg-green-400"
+                        onClick={() => handleSelectBenchPlayer(comparedPlayer.id)}
+                        className="rounded-lg bg-red-500/10 px-3 py-1.5 font-heading text-xs font-bold uppercase tracking-wider text-red-500 transition-colors hover:bg-red-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 dark:text-red-300 dark:focus-visible:ring-offset-navy-800"
                       >
-                        {t("match.confirmSubstitution")}
+                        {t("match.undoQueuedSubstitution")}
                       </button>
                     </div>
                   </div>
@@ -961,8 +1045,7 @@ export function SubPanel({
                 </p>
               )}
             </div>
-          </>
-        )}
+        </>
       </div>
     </div>
   );

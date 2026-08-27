@@ -20,12 +20,14 @@ import MatchLive from "./MatchLive";
 
 const matchServiceMocks = vi.hoisted(() => ({
   applyMatchCommand: vi.fn(),
+  applyMatchTactics: vi.fn(),
   getMatchSnapshot: vi.fn(),
   stepLiveMatch: vi.fn(),
 }));
 
 vi.mock("../../services/matchService", () => ({
   applyMatchCommand: matchServiceMocks.applyMatchCommand,
+  applyMatchTactics: matchServiceMocks.applyMatchTactics,
   getMatchSnapshot: matchServiceMocks.getMatchSnapshot,
   stepLiveMatch: matchServiceMocks.stepLiveMatch,
 }));
@@ -224,6 +226,7 @@ const source = (() => {
 beforeEach(() => {
   vi.useFakeTimers();
   matchServiceMocks.applyMatchCommand.mockReset();
+  matchServiceMocks.applyMatchTactics.mockReset();
   matchServiceMocks.getMatchSnapshot.mockReset();
   matchServiceMocks.stepLiveMatch.mockReset();
   matchServiceMocks.stepLiveMatch.mockResolvedValue([]);
@@ -327,17 +330,22 @@ describe("the live match centre", () => {
 
   it("changes the shape through the match, not the save", async () => {
     const next = snapshot({ current_minute: 24 });
-    matchServiceMocks.applyMatchCommand.mockResolvedValue(next);
+    matchServiceMocks.applyMatchTactics.mockResolvedValue(next);
     const { onSnapshotUpdate } = renderLive();
 
     fireEvent.click(screen.getByRole("combobox", { name: "match.formation" }));
     fireEvent.click(screen.getByRole("option", { name: "4-3-3" }));
 
+    // It goes as a change set rather than a bare `ChangeFormation`, which the
+    // engine applies the moment it arrives. Two ways to change a shape — one
+    // atomic, one not — is what atomic in-match management exists to remove.
     await vi.waitFor(() => {
-      expect(matchServiceMocks.applyMatchCommand).toHaveBeenCalledWith({
-        ChangeFormation: { side: "Home", formation: "4-3-3" },
-      });
+      expect(matchServiceMocks.applyMatchTactics).toHaveBeenCalledTimes(1);
     });
+    expect(
+      matchServiceMocks.applyMatchTactics.mock.calls[0][0],
+    ).toMatchObject({ formation: "4-3-3", lineup_changes: [], side: "Home" });
+    expect(matchServiceMocks.applyMatchCommand).not.toHaveBeenCalled();
     expect(onSnapshotUpdate).toHaveBeenCalledWith(next);
   });
 
