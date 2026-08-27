@@ -242,33 +242,36 @@ pub fn start_live_match(
     Ok(snapshot)
 }
 
+/// Step the match and answer with what actually has to reach the client.
+///
+/// This used to return the minutes alone, and every caller then asked for a
+/// full snapshot — which rebuilds both squads and the whole accumulated event
+/// log. Across a 93-minute match that was 3.4 MB of JSON to describe a final
+/// state of 61 KB (#478). The response carries the minutes, the handful of
+/// values that move every minute, and the whole match only on the ticks where
+/// something the delta cannot describe has changed.
 pub fn step_live_match(
     state: &StateManager,
     minutes: u16,
-) -> Result<Vec<engine::MinuteResult>, String> {
+) -> Result<engine::MatchStepResponse, String> {
     log::debug!("[cmd] step_live_match: minutes={}", minutes);
-    let results = state
-        .with_live_match(|session| {
-            if minutes <= 1 {
-                vec![session.step()]
-            } else {
-                session.step_many(minutes)
-            }
-        })
+    let response = state
+        .with_live_match(|session| session.step_response(minutes))
         .ok_or_else(|| "be.error.noActiveLiveMatch".to_string())?;
 
-    if let Some(last) = results.last() {
+    if let Some(last) = response.minutes.last() {
         info!(
-            "[cmd] step_live_match: minutes={}, result_count={}, last_minute={}, phase={:?}, finished={}",
+            "[cmd] step_live_match: minutes={}, result_count={}, last_minute={}, phase={:?}, finished={}, whole_snapshot={}",
             minutes,
-            results.len(),
+            response.minutes.len(),
             last.minute,
             last.phase,
-            last.is_finished
+            last.is_finished,
+            response.snapshot.is_some()
         );
     }
 
-    Ok(results)
+    Ok(response)
 }
 
 pub fn apply_match_command(

@@ -209,6 +209,7 @@ function snapshot(overrides: Partial<MatchSnapshot> = {}): MatchSnapshot {
     home_yellows: {},
     away_yellows: {},
     sent_off: [],
+    revision: 0,
     ...overrides,
   };
 }
@@ -321,7 +322,25 @@ beforeEach(() => {
   matchServiceMocks.applyMatchTactics.mockReset();
   matchServiceMocks.getMatchSnapshot.mockReset();
   matchServiceMocks.stepLiveMatch.mockReset();
-  matchServiceMocks.stepLiveMatch.mockResolvedValue([]);
+  // A step now answers with the minutes plus what changed, rather than
+  // the minutes plus an invitation to fetch the whole match again.
+  matchServiceMocks.stepLiveMatch.mockResolvedValue({
+    base_revision: 0,
+    revision: 0,
+    minutes: [],
+    delta: {
+      phase: "SecondHalf",
+      current_minute: 61,
+      home_score: 1,
+      away_score: 1,
+      possession: "Home",
+      ball_zone: "Middle",
+      home_possession_pct: 50,
+      away_possession_pct: 50,
+      conditions: [],
+    },
+    snapshot: null,
+  });
 });
 
 describe("atomic in-match management", () => {

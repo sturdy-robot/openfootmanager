@@ -1,11 +1,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { GameStateData } from "../../store/gameStore";
-import {
-  applyMatchTactics,
-  getMatchSnapshot,
-  stepLiveMatch,
-} from "../../services/matchService";
+import { applyMatchTactics, stepLiveMatch } from "../../services/matchService";
 import { FORMATIONS, MINUTES_PER_TICK, PLAY_STYLES, SPEED_MS, isPersistableSpeed, type EnginePlayerData, type MatchEvent, type MatchSnapshot, type Side, type SimSpeed } from "./types";
 import { getEventDisplay, makeTeamFallback, phaseLabel } from "./helpers";
 import { PitchToken, Select, TeamLogo, type PitchTokenMarker } from "../ui";
@@ -20,6 +16,7 @@ import {
   type MatchDraft,
 } from "./MatchDraft.helpers";
 import { buildNaturalPositionMap } from "./SubPanel.helpers";
+import { resolveMatchStep } from "./MatchStepReducer.helpers";
 import { resolveBackendError } from "../../utils/backendI18n";
 import { FormationPitch } from "./FormationPitch";
 import { translatePositionAbbreviation } from "../squad/SquadTab.helpers";
@@ -99,6 +96,12 @@ export default function MatchLive({
 
   const isFinished = snapshot.phase === "Finished";
 
+  // A step folds its response into the match on screen, and has to fold it
+  // into the newest one — not whichever it closed over when the timer that
+  // fired it was scheduled.
+  const snapshotRef = useRef(snapshot);
+  snapshotRef.current = snapshot;
+
   const renderLiveToken = (
     player: EnginePlayerData,
     slotPosition: string | undefined,
@@ -168,7 +171,8 @@ export default function MatchLive({
   // ofm_core/live_match_manager.rs; MINUTES_PER_TICK on this side is what makes batches possible.
   const stepMatch = useCallback(async (minutes: number) => {
     try {
-      const results = await stepLiveMatch(minutes);
+      const response = await stepLiveMatch(minutes);
+      const results = response.minutes;
       if (results.length > 0) {
         const lastResult = results[results.length - 1];
 
@@ -182,9 +186,8 @@ export default function MatchLive({
           }
         }
 
-        // Fetch full snapshot
-        const snap = await getMatchSnapshot();
-        onSnapshotUpdate(snap!);
+        const next = await resolveMatchStep(snapshotRef.current, response);
+        if (next) onSnapshotUpdate(next);
 
         // Check for phase transitions that should pause
         const phase = lastResult.phase;

@@ -3,8 +3,8 @@ import { invoke } from "@tauri-apps/api/core";
 import type { GameStateData } from "../store/gameStore";
 import type {
   MatchCommand,
-  MinuteResult,
   MatchSnapshot,
+  MatchStepResponse,
   MatchTacticsChangeSet,
   RoundSummary,
 } from "../components/match/types";
@@ -75,8 +75,17 @@ export function getMatchSnapshot(): Promise<MatchSnapshot | null> {
   return invoke<MatchSnapshot | null>("get_match_snapshot");
 }
 
-export function stepLiveMatch(minutes: number): Promise<MinuteResult[]> {
-  return invoke<MinuteResult[]>("step_live_match", { minutes });
+/**
+ * Step the match, and get back what actually changed.
+ *
+ * Every caller used to follow this with `getMatchSnapshot`, which rebuilds
+ * both squads and the whole accumulated event log — 3.4 MB of JSON across a
+ * match to describe a final state of 61 KB (#478). The response carries the
+ * minutes, the values that move every minute, and the whole match only when
+ * something the delta cannot describe has changed.
+ */
+export function stepLiveMatch(minutes: number): Promise<MatchStepResponse> {
+  return invoke<MatchStepResponse>("step_live_match", { minutes });
 }
 
 export function applyMatchCommand(

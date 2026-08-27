@@ -16,7 +16,8 @@ use domain::manager::Manager;
 use domain::team::MatchRoles;
 use engine::ai::{self, AiPersonality, AiProfile};
 use engine::{
-    LiveMatchState, MatchCommand, MatchConfig, MatchPhase, MatchSnapshot, MinuteResult, Side,
+    LiveMatchState, MatchCommand, MatchConfig, MatchPhase, MatchSnapshot, MatchStepResponse,
+    MinuteResult, Side,
 };
 
 const LIVE_MATCH_NO_LEAGUE_ERROR: &str = "be.error.liveMatch.noLeague";
@@ -167,6 +168,21 @@ impl LiveMatchSession {
             }
         }
         results
+    }
+
+    /// Step, and answer with what actually has to reach the client (#478).
+    ///
+    /// The baseline is taken here, before a minute runs, so the response stays
+    /// a function of the match rather than of a conversation: nothing anywhere
+    /// records what was last sent.
+    pub fn step_response(&mut self, minutes: u16) -> MatchStepResponse {
+        let baseline = self.match_state.baseline();
+        let results = if minutes <= 1 {
+            vec![self.step()]
+        } else {
+            self.step_many(minutes)
+        };
+        self.match_state.step_response(baseline, results)
     }
 
     /// Run the entire match to completion instantly.

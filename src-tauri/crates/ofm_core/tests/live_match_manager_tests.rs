@@ -773,3 +773,161 @@ fn extra_time_flag_passed_through() {
     let session = live_match_manager::create_live_match(&game, 0, MatchMode::Instant, true);
     assert!(session.is_ok());
 }
+
+// ---------------------------------------------------------------------------
+// The step response across a whole match (#478)
+//
+// The client keeps one snapshot and applies a delta to it every tick. Anything
+// the delta does not carry — lineups, benches, cards, sendings-off, set-piece
+// duties, the shootout — has to arrive as an inlined snapshot on the tick it
+// changed, or the client is quietly wrong about the match it is drawing.
+//
+// AI substitutions are the case that makes this hard: they are applied between
+// minutes, so they appear in no `MinuteResult` at all.
+// ---------------------------------------------------------------------------
+
+/// Everything a `MatchDelta` does not carry, in one comparable value.
+fn structure_of(snapshot: &engine::MatchSnapshot) -> String {
+    let lineup = |team: &engine::TeamData| {
+        team.players
+            .iter()
+            .map(|player| (player.id.clone(), player.role))
+            .collect::<Vec<_>>()
+    };
+    let bench = |players: &[engine::PlayerData]| {
+        players
+            .iter()
+            .map(|player| player.id.clone())
+            .collect::<Vec<_>>()
+    };
+    let mut home_yellows: Vec<_> = snapshot.home_yellows.iter().collect();
+    home_yellows.sort();
+    let mut away_yellows: Vec<_> = snapshot.away_yellows.iter().collect();
+    away_yellows.sort();
+    let mut sent_off: Vec<_> = snapshot.sent_off.iter().collect();
+    sent_off.sort();
+
+    // Written out rather than assembled into one tuple: `Debug` stops at
+    // twelve elements, and this is seventeen things the delta does not carry.
+    let mut parts = String::new();
+    parts.push_str(&format!("{:?}", lineup(&snapshot.home_team)));
+    parts.push_str(&format!("{:?}", lineup(&snapshot.away_team)));
+    parts.push_str(&snapshot.home_team.formation);
+    parts.push_str(&snapshot.away_team.formation);
+    parts.push_str(&format!("{:?}", snapshot.home_team.play_style));
+    parts.push_str(&format!("{:?}", snapshot.away_team.play_style));
+    parts.push_str(&format!("{:?}", bench(&snapshot.home_bench)));
+    parts.push_str(&format!("{:?}", bench(&snapshot.away_bench)));
+    parts.push_str(&format!(
+        "{}/{}/{}",
+        snapshot.home_subs_made,
+        snapshot.away_subs_made,
+        snapshot.substitutions.len()
+    ));
+    parts.push_str(&format!("{home_yellows:?}{away_yellows:?}{sent_off:?}"));
+    parts.push_str(&format!("{:?}", snapshot.home_set_pieces));
+    parts.push_str(&format!("{:?}", snapshot.away_set_pieces));
+    parts.push_str(&format!("{:?}", snapshot.penalty_shootout.is_some()));
+    parts
+}
+
+#[test]
+fn a_client_applying_only_deltas_is_never_wrong_about_the_match() {
+    let game = make_game_with_fixture();
+    let mut session =
+        live_match_manager::create_live_match(&game, 0, MatchMode::Live, false).unwrap();
+
+    // What a client that started from the opening snapshot would believe.
+    let mut believed = structure_of(&session.snapshot());
+    let mut ticks = 0;
+    let mut inlined = 0;
+
+    loop {
+        let response = session.step_response(1);
+        ticks += 1;
+
+        let truth = structure_of(&session.snapshot());
+        match &response.snapshot {
+            Some(snapshot) => {
+                inlined += 1;
+                assert_eq!(
+                    structure_of(snapshot),
+                    truth,
+                    "the inlined snapshot is not the match as it now stands"
+                );
+                believed = truth;
+            }
+            None => assert_eq!(
+                believed, truth,
+                "minute {} changed the match and sent no snapshot to say so",
+                response.delta.current_minute
+            ),
+        }
+
+        if response.minutes.last().is_some_and(|last| last.is_finished) {
+            break;
+        }
+        assert!(ticks < 200, "the match never finished");
+    }
+
+    // If every tick inlined a snapshot the protocol would have saved nothing,
+    // and this test would pass while proving the opposite of what it claims.
+    assert!(
+        inlined < ticks / 2,
+        "{inlined} of {ticks} ticks sent the whole match"
+    );
+}
+
+#[test]
+fn a_batched_step_returns_every_minute_and_one_delta() {
+    let game = make_game_with_fixture();
+    let mut session =
+        live_match_manager::create_live_match(&game, 0, MatchMode::Live, false).unwrap();
+
+    let response = session.step_response(5);
+
+    assert_eq!(response.minutes.len(), 5);
+    assert_eq!(
+        response.delta.current_minute,
+        response.minutes.last().unwrap().minute
+    );
+    assert_eq!(response.delta.phase, session.snapshot().phase);
+}
+
+#[test]
+fn every_event_reaches_the_client_exactly_once() {
+    // Events are no longer in the delta at all: they come from the minutes, and
+    // an inlined snapshot replaces the whole log rather than adding to it.
+    // Getting that wrong either drops a substitution or shows a goal twice.
+    let game = make_game_with_fixture();
+    let mut session =
+        live_match_manager::create_live_match(&game, 0, MatchMode::Live, false).unwrap();
+
+    let mut accumulated: Vec<engine::MatchEvent> = Vec::new();
+
+    loop {
+        let response = session.step_response(1);
+        match &response.snapshot {
+            Some(snapshot) => accumulated = snapshot.events.clone(),
+            None => {
+                for minute in &response.minutes {
+                    accumulated.extend(minute.events.iter().cloned());
+                }
+            }
+        }
+        if response.minutes.last().is_some_and(|last| last.is_finished) {
+            break;
+        }
+    }
+
+    let truth = session.snapshot().events;
+    assert_eq!(
+        accumulated.len(),
+        truth.len(),
+        "the client's event log and the engine's disagree"
+    );
+    for (client, engine_event) in accumulated.iter().zip(truth.iter()) {
+        assert_eq!(client.minute, engine_event.minute);
+        assert_eq!(client.event_type, engine_event.event_type);
+    }
+}

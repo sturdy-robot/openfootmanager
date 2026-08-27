@@ -11,8 +11,9 @@ pub use engine::simulate;
 pub use engine::simulate_with_rng;
 pub use event::{EventType, MatchEvent};
 pub use live_match::{
-    LiveMatchState, MatchCommand, MatchPhase, MatchSnapshot, MatchTacticsChangeSet, MinuteResult,
-    PenaltyShootoutSnapshot, SetPieceTakers, SubstitutionRecord, TacticalLineupChange,
+    LiveMatchState, MatchCommand, MatchDelta, MatchPhase, MatchSnapshot, MatchStepBaseline,
+    MatchStepResponse, MatchTacticsChangeSet, MinuteResult, PenaltyShootoutSnapshot,
+    PlayerCondition, SetPieceTakers, SubstitutionRecord, TacticalLineupChange,
 };
 pub use report::{GoalDetail, GoalSource, MatchReport, PlayerMatchStats, TeamStats};
 pub use types::{

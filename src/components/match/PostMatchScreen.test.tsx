@@ -175,6 +175,7 @@ function makeSnapshot() {
     home_yellows: {},
     away_yellows: {},
     sent_off: [],
+    revision: 0,
   };
 }
 

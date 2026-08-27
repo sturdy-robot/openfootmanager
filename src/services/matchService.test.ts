@@ -86,10 +86,10 @@ describe("matchService", () => {
   });
 
   it("steps the match by a number of minutes", async () => {
-    const minutes = [{ minute: 1 }];
-    mockedInvoke.mockResolvedValueOnce(minutes);
+    const response = { base_revision: 3, revision: 4, minutes: [{ minute: 1 }] };
+    mockedInvoke.mockResolvedValueOnce(response);
 
-    await expect(stepLiveMatch(1)).resolves.toBe(minutes);
+    await expect(stepLiveMatch(1)).resolves.toBe(response);
     expect(mockedInvoke).toHaveBeenCalledWith("step_live_match", {
       minutes: 1,
     });

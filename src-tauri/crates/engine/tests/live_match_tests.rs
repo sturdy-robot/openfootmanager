@@ -2216,3 +2216,225 @@ fn a_wide_role_is_accepted_in_the_forward_slot() {
         PlayerRole::InvertedWinger
     );
 }
+
+// ---------------------------------------------------------------------------
+// The step response — what actually has to cross IPC after a minute (#478)
+//
+// `get_match_snapshot` is called after every step, and the snapshot rebuilds
+// everything: the whole accumulated event log and both full squads. A
+// 93-minute match sends 3.4 MB of JSON to describe a final state of 61 KB.
+//
+// The response below is a pure function of (state now, the baseline taken
+// before these minutes ran, the minutes themselves). The engine keeps no
+// record of what it last sent — only counters that are part of match state.
+// ---------------------------------------------------------------------------
+
+#[test]
+fn the_delta_says_the_same_thing_as_the_snapshot() {
+    let mut state = make_live_match(false);
+    let mut rng = seeded_rng(31);
+    let baseline = state.baseline();
+    let minutes = vec![state.step_minute(&mut rng)];
+
+    let response = state.step_response(baseline, minutes);
+    let snapshot = state.snapshot();
+
+    assert_eq!(response.delta.phase, snapshot.phase);
+    assert_eq!(response.delta.current_minute, snapshot.current_minute);
+    assert_eq!(response.delta.home_score, snapshot.home_score);
+    assert_eq!(response.delta.away_score, snapshot.away_score);
+    assert_eq!(response.delta.possession, snapshot.possession);
+    assert_eq!(response.delta.ball_zone, snapshot.ball_zone);
+    assert_eq!(
+        response.delta.home_possession_pct,
+        snapshot.home_possession_pct
+    );
+    assert_eq!(
+        response.delta.away_possession_pct,
+        snapshot.away_possession_pct
+    );
+}
+
+#[test]
+fn the_delta_carries_a_condition_for_every_player_on_the_pitch() {
+    // Both squads are re-sent every simulated minute to deliver one changed
+    // `u8` per player. This is that `u8`, and nothing else.
+    let mut state = make_live_match(false);
+    let mut rng = seeded_rng(32);
+    let baseline = state.baseline();
+    let minutes = vec![state.step_minute(&mut rng)];
+
+    let response = state.step_response(baseline, minutes);
+    let snapshot = state.snapshot();
+
+    let mut reported: Vec<&str> = response
+        .delta
+        .conditions
+        .iter()
+        .map(|entry| entry.player_id.as_str())
+        .collect();
+    reported.sort_unstable();
+    let before_dedup = reported.len();
+    reported.dedup();
+    assert_eq!(before_dedup, reported.len(), "a player was reported twice");
+
+    let mut on_pitch: Vec<&str> = snapshot
+        .home_team
+        .players
+        .iter()
+        .chain(snapshot.away_team.players.iter())
+        .map(|player| player.id.as_str())
+        .collect();
+    on_pitch.sort_unstable();
+    assert_eq!(reported, on_pitch);
+
+    for entry in &response.delta.conditions {
+        let player = snapshot
+            .home_team
+            .players
+            .iter()
+            .chain(snapshot.away_team.players.iter())
+            .find(|player| player.id == entry.player_id)
+            .expect("condition for a player who is not on the pitch");
+        assert_eq!(entry.condition, player.condition);
+    }
+}
+
+#[test]
+fn an_ordinary_minute_carries_no_snapshot() {
+    let mut state = make_live_match(false);
+    let mut rng = seeded_rng(33);
+    // Past kick-off, which is itself a structural moment.
+    state.step_minute(&mut rng);
+
+    let baseline = state.baseline();
+    let minutes = vec![state.step_minute(&mut rng)];
+    let response = state.step_response(baseline, minutes);
+
+    assert!(
+        response.snapshot.is_none(),
+        "a minute that changed nothing structural still sent the whole match"
+    );
+}
+
+#[test]
+fn a_substitution_carries_the_whole_snapshot() {
+    // An AI substitution is applied between minutes and appears in no
+    // `MinuteResult` at all, so the response cannot detect it from the minutes
+    // it was handed. It compares the structure counter against the baseline.
+    let mut state = make_live_match(false);
+    let mut rng = seeded_rng(34);
+    state.step_minute(&mut rng);
+
+    let baseline = state.baseline();
+    let off = state.snapshot().home_team.players[9].id.clone();
+    state
+        .apply_command(MatchCommand::Substitute {
+            side: Side::Home,
+            player_off_id: off,
+            player_on_id: "home_sub_fwd1".into(),
+        })
+        .unwrap();
+    let minutes = vec![state.step_minute(&mut rng)];
+
+    let response = state.step_response(baseline, minutes);
+
+    let snapshot = response
+        .snapshot
+        .expect("a substitution has to bring the lineup with it");
+    assert!(
+        snapshot
+            .home_team
+            .players
+            .iter()
+            .any(|player| player.id == "home_sub_fwd1"),
+        "the inlined snapshot does not contain the player who came on"
+    );
+    // The substitution event is in the snapshot's log and in no minute result,
+    // which is the whole reason the snapshot has to be inlined.
+    assert!(
+        snapshot
+            .events
+            .iter()
+            .any(|event| event.event_type == EventType::Substitution)
+    );
+}
+
+#[test]
+fn a_batch_of_minutes_reports_the_state_once_at_the_end() {
+    let mut state = make_live_match(false);
+    let mut rng = seeded_rng(35);
+    state.step_minute(&mut rng);
+
+    let baseline = state.baseline();
+    let minutes: Vec<MinuteResult> = (0..5).map(|_| state.step_minute(&mut rng)).collect();
+    let last_minute = minutes.last().unwrap().minute;
+
+    let response = state.step_response(baseline, minutes);
+
+    assert_eq!(response.minutes.len(), 5);
+    assert_eq!(response.delta.current_minute, last_minute);
+}
+
+#[test]
+fn the_revision_moves_forward_and_each_response_starts_where_the_last_ended() {
+    let mut state = make_live_match(false);
+    let mut rng = seeded_rng(36);
+
+    let first_baseline = state.baseline();
+    let first_minutes = vec![state.step_minute(&mut rng)];
+    let first = state.step_response(first_baseline, first_minutes);
+    let second_baseline = state.baseline();
+    let second_minutes = vec![state.step_minute(&mut rng)];
+    let second = state.step_response(second_baseline, second_minutes);
+
+    assert!(first.revision > first.base_revision);
+    assert_eq!(second.base_revision, first.revision);
+    assert!(second.revision > second.base_revision);
+}
+
+#[test]
+fn a_command_moves_the_revision_too() {
+    // Otherwise a client that applied a command would believe it was still in
+    // step with a match that had moved underneath it.
+    let mut state = make_live_match(false);
+    state.step_minute(&mut seeded_rng(37));
+    let before = state.snapshot().revision;
+
+    state
+        .apply_command(MatchCommand::ChangePlayStyle {
+            side: Side::Home,
+            play_style: PlayStyle::Counter,
+        })
+        .unwrap();
+
+    assert!(state.snapshot().revision > before);
+}
+
+#[test]
+fn a_snapshot_carries_the_revision_it_was_taken_at() {
+    // `apply_match_tactics`, the half-time apply and the restore path all hand
+    // the client a whole snapshot. Without a revision on it, the client would
+    // fall out of step after every command and never recover.
+    let mut state = make_live_match(false);
+    let mut rng = seeded_rng(38);
+    let baseline = state.baseline();
+    let minutes = vec![state.step_minute(&mut rng)];
+    let response = state.step_response(baseline, minutes);
+
+    assert_eq!(state.snapshot().revision, response.revision);
+}
+
+#[test]
+fn a_finished_match_still_answers_with_its_final_revision() {
+    let mut state = make_live_match(false);
+    let mut rng = seeded_rng(39);
+    run_to_finish(&mut state, &mut rng);
+
+    let baseline = state.baseline();
+    let response = state.step_response(baseline, vec![]);
+
+    assert_eq!(response.base_revision, response.revision);
+    assert_eq!(response.delta.phase, MatchPhase::Finished);
+    assert_eq!(state.snapshot().revision, response.revision);
+}

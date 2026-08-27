@@ -50,11 +50,12 @@ pub fn match_start(
 
 /// Step the live match forward by N minutes.
 pub fn match_step(ctx: Arc<McpContext>, minutes: u16) -> Result<String, String> {
-    let results = crate::application::live_match::step_live_match(
+    let response = crate::application::live_match::step_live_match(
         &ctx.state_manager,
         minutes,
     )
     .map_err(|e| translate_error(&e))?;
+    let results = response.minutes;
 
     let mut lines: Vec<String> = Vec::new();
     for result in &results {

@@ -16,7 +16,7 @@ pub enum Position {
 // PlayStyle — mirrors domain::team::PlayStyle
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PlayStyle {
     Balanced,
     Attacking,
@@ -30,7 +30,7 @@ pub enum PlayStyle {
 // PlayerRole — mirrors domain::team::PlayerRole, kept independent
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash, Serialize, Deserialize)]
 pub enum PlayerRole {
     // Goalkeeper
     #[default]
@@ -164,7 +164,7 @@ impl PlayerData {
 // TacticsConfig — tactical settings that influence simulation modifiers
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash, Serialize, Deserialize)]
 pub enum PressingIntensity {
     Passive,
     #[default]
@@ -172,7 +172,7 @@ pub enum PressingIntensity {
     Aggressive,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash, Serialize, Deserialize)]
 pub enum DefensiveLine {
     VeryLow,
     Low,
@@ -181,7 +181,7 @@ pub enum DefensiveLine {
     High,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash, Serialize, Deserialize)]
 pub enum TacticsPitchWidth {
     Narrow,
     #[default]
@@ -189,7 +189,7 @@ pub enum TacticsPitchWidth {
     Wide,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash, Serialize, Deserialize)]
 pub enum TacticsBuildUpStyle {
     Short,
     #[default]
@@ -197,7 +197,7 @@ pub enum TacticsBuildUpStyle {
     Long,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash, Serialize, Deserialize)]
 pub enum MarkingStyle {
     #[default]
     Zonal,
@@ -205,14 +205,14 @@ pub enum MarkingStyle {
     ManToMan,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash, Serialize, Deserialize)]
 pub enum Tempo {
     Patient,
     #[default]
     Direct,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash, Serialize, Deserialize)]
 pub enum DefensiveShape {
     Stretched,
     #[default]
@@ -220,7 +220,7 @@ pub enum DefensiveShape {
     Compact,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash, Serialize, Deserialize)]
 pub enum CounterPressDuration {
     #[default]
     None,
@@ -228,7 +228,7 @@ pub enum CounterPressDuration {
     Long,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash, Serialize, Deserialize)]
 pub enum BreakSpeed {
     Slow,
     #[default]
@@ -236,7 +236,7 @@ pub enum BreakSpeed {
     Fast,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Hash, Serialize, Deserialize)]
 pub struct TacticsConfig {
     pub pressing_intensity: PressingIntensity,
     pub defensive_line: DefensiveLine,

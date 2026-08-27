@@ -2,8 +2,11 @@ mod helpers;
 mod penalty;
 mod simulation;
 mod snapshot;
+mod step_response;
 mod substitution;
 mod zone_resolution;
+
+pub use step_response::{MatchDelta, MatchStepBaseline, MatchStepResponse, PlayerCondition};
 
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -19,7 +22,7 @@ use crate::types::{
 // MatchPhase — tracks where we are in the match lifecycle
 // ---------------------------------------------------------------------------
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum MatchPhase {
     PreKickOff,
     FirstHalf,
@@ -169,6 +172,13 @@ pub struct MatchSnapshot {
     pub away_yellows: HashMap<String, u8>,
     pub sent_off: HashSet<String>,
     pub penalty_shootout: Option<PenaltyShootoutSnapshot>,
+    /// Where the match stood when this was taken.
+    ///
+    /// Carried here and not only on the step response because every screen
+    /// that applies a command is handed a whole snapshot — without it, a
+    /// client would fall out of step after every change and stay there.
+    #[serde(default)]
+    pub revision: u64,
 }
 
 // ---------------------------------------------------------------------------
@@ -264,6 +274,10 @@ pub struct LiveMatchState {
 
     // Rolling window of the last 10 ball_zone values (oldest first)
     recent_zones: VecDeque<Zone>,
+
+    // Strictly increasing across every mutation, so a client can tell whether
+    // the response it is holding describes the match it thinks it has.
+    revision: u64,
 }
 
 impl LiveMatchState {
@@ -314,11 +328,13 @@ impl LiveMatchState {
             player_conditions,
             penalty_state: PenaltyShootoutState::default(),
             recent_zones: VecDeque::with_capacity(10),
+            revision: 0,
         }
     }
 
     /// Step one minute forward. Returns the events that occurred.
     pub fn step_minute<R: Rng>(&mut self, rng: &mut R) -> MinuteResult {
+        self.revision += 1;
         match self.phase {
             MatchPhase::PreKickOff => self.start_match(rng),
             MatchPhase::FirstHalf => self.play_minute(rng),
@@ -336,6 +352,7 @@ impl LiveMatchState {
 
     /// Apply a command (substitution, tactic change, set piece assignment).
     pub fn apply_command(&mut self, cmd: MatchCommand) -> Result<(), String> {
+        self.revision += 1;
         match cmd {
             MatchCommand::Substitute {
                 side,
@@ -400,6 +417,9 @@ impl LiveMatchState {
     ) -> Result<(), String> {
         let mut candidate = self.clone();
         candidate.apply_tactics_change_set_in_place(&changes)?;
+        // Only a set that passed in full moves the match on. A refused one
+        // leaves the revision where it was, because nothing happened.
+        candidate.revision += 1;
         *self = candidate;
         Ok(())
     }
@@ -567,6 +587,7 @@ impl LiveMatchState {
     /// Simulate a red card for a player (adds to sent_off set).
     /// Primarily used for testing substitution guards.
     pub fn test_send_off(&mut self, player_id: &str) {
+        self.revision += 1;
         self.sent_off.insert(player_id.to_string());
     }
 }

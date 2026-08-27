@@ -164,6 +164,14 @@ export interface MatchSnapshot {
   away_yellows: Record<string, number>;
   sent_off: string[];
   penalty_shootout?: PenaltyShootoutSnapshot | null;
+  /**
+   * Where the match stood when this was taken.
+   *
+   * Every screen that applies a command is handed a whole snapshot, so the
+   * revision rides on the snapshot rather than only on the step response —
+   * without it a client falls out of step after every change and stays there.
+   */
+  revision: number;
 }
 
 export interface MinuteResult {
@@ -175,6 +183,45 @@ export interface MinuteResult {
   possession: "Home" | "Away";
   ball_zone: string;
   is_finished: boolean;
+}
+
+/** One player's condition, which is all that changes about them in a minute. */
+export interface PlayerCondition {
+  player_id: string;
+  condition: number;
+}
+
+/** Everything that moves every minute, and nothing else. */
+export interface MatchDelta {
+  phase: string;
+  current_minute: number;
+  home_score: number;
+  away_score: number;
+  possession: "Home" | "Away";
+  ball_zone: string;
+  home_possession_pct: number;
+  away_possession_pct: number;
+  /** Every player on the pitch, every tick. */
+  conditions: PlayerCondition[];
+}
+
+/**
+ * The answer to stepping the match, in place of a full snapshot per minute.
+ *
+ * The snapshot rebuilt both squads and the whole event log every tick — 3.4 MB
+ * of JSON across a match to describe a final state of 61 KB (#478).
+ */
+export interface MatchStepResponse {
+  base_revision: number;
+  revision: number;
+  /** Each simulated minute, carrying its own events; the client accumulates. */
+  minutes: MinuteResult[];
+  delta: MatchDelta;
+  /**
+   * Present only when something the delta cannot describe has changed. It
+   * replaces the whole match, event log included.
+   */
+  snapshot?: MatchSnapshot | null;
 }
 
 export interface RoundResultSummary {

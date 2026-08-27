@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next";
 import { GameStateData } from "../../store/gameStore";
 import type { MatchdayIdentity } from "../../lib/competitionName";
 import MatchdayShell from "./MatchdayShell";
-import { getMatchSnapshot, stepLiveMatch } from "../../services/matchService";
+import { stepLiveMatch } from "../../services/matchService";
+import { resolveMatchStep } from "./MatchStepReducer.helpers";
 import {
   MatchSnapshot,
   MatchEvent,
@@ -58,11 +59,17 @@ export default function PenaltyShootoutScreen({
   const ps = snapshot.penalty_shootout;
   const roundNumber = ps ? Math.max(ps.home_taken, ps.away_taken) : 0;
 
+  // A kick folds its response into the shootout on screen, and has to fold it
+  // into the newest one rather than whichever the timer closed over.
+  const snapshotRef = useRef(snapshot);
+  snapshotRef.current = snapshot;
+
   const stepMatch = useCallback(async () => {
     try {
       // Always one at a time, never batched like the live match: here a "minute" is a single
       // penalty, and the whole point of the screen is watching each one.
-      const results = await stepLiveMatch(1);
+      const response = await stepLiveMatch(1);
+      const results = response.minutes;
       if (results.length > 0) {
         for (const r of results) {
           for (const evt of r.events) {
@@ -72,8 +79,8 @@ export default function PenaltyShootoutScreen({
           }
         }
 
-        const snap = await getMatchSnapshot();
-        onSnapshotUpdate(snap!);
+        const next = await resolveMatchStep(snapshotRef.current, response);
+        if (next) onSnapshotUpdate(next);
 
         const lastResult = results[results.length - 1];
         if (lastResult.is_finished && !signaledRef.current) {

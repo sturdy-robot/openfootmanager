@@ -1,20 +1,39 @@
 use std::collections::HashMap;
 
 use super::{LiveMatchState, MatchPhase, MatchSnapshot, PenaltyShootoutSnapshot};
+use crate::types::PlayerData;
 
 // ---------------------------------------------------------------------------
 // Snapshot generation — read-only view of match state for the UI
 // ---------------------------------------------------------------------------
 
 impl LiveMatchState {
-    /// Get a full snapshot of the current match state for the UI.
-    pub fn snapshot(&self) -> MatchSnapshot {
-        let total_poss = self.home_possession_ticks + self.away_possession_ticks;
-        let home_pct = if total_poss > 0 {
-            self.home_possession_ticks as f64 / total_poss as f64 * 100.0
+    /// The live condition value the UI is shown for a player.
+    ///
+    /// Stamina depletion is tracked apart from the squad, so this is the one
+    /// reading of it — shared with the step response's delta, which otherwise
+    /// could disagree with the snapshot it is meant to replace.
+    pub(super) fn reported_condition(&self, player: &PlayerData) -> u8 {
+        self.player_conditions
+            .get(&player.id)
+            .map(|condition| condition.round() as u8)
+            .unwrap_or(player.condition)
+    }
+
+    /// Possession as percentages, home first. Even before a ball is kicked.
+    pub(super) fn possession_split(&self) -> (f64, f64) {
+        let total = self.home_possession_ticks + self.away_possession_ticks;
+        let home = if total > 0 {
+            self.home_possession_ticks as f64 / total as f64 * 100.0
         } else {
             50.0
         };
+        (home, 100.0 - home)
+    }
+
+    /// Get a full snapshot of the current match state for the UI.
+    pub fn snapshot(&self) -> MatchSnapshot {
+        let (home_pct, away_pct) = self.possession_split();
 
         // Separate yellows by side
         let mut home_yellows = HashMap::new();
@@ -35,9 +54,7 @@ impl LiveMatchState {
             .iter_mut()
             .chain(away_team.players.iter_mut())
         {
-            if let Some(&cond) = self.player_conditions.get(&p.id) {
-                p.condition = cond.round() as u8;
-            }
+            p.condition = self.reported_condition(p);
         }
 
         let has_shootout_data = self.penalty_state.home_taken > 0 || self.penalty_state.away_taken > 0;
@@ -65,7 +82,7 @@ impl LiveMatchState {
             home_bench: self.home_bench.clone(),
             away_bench: self.away_bench.clone(),
             home_possession_pct: home_pct,
-            away_possession_pct: 100.0 - home_pct,
+            away_possession_pct: away_pct,
             events: self.events.clone(),
             home_subs_made: self.home_subs_made,
             away_subs_made: self.away_subs_made,
@@ -78,6 +95,7 @@ impl LiveMatchState {
             away_yellows,
             sent_off: self.sent_off.clone(),
             penalty_shootout,
+            revision: self.revision,
         }
     }
 }
