@@ -201,45 +201,62 @@ export default function RoundDigestScreen({
     : null;
   const headingParts = [matchdayLabel, leagueName].filter(Boolean).join(" — ");
 
-  return (
-    <MatchdayShell bodyMode="frame" identity={matchdayIdentity}>
-      {/* Header */}
-      <div className="bg-white dark:bg-navy-800 border-b border-gray-200 dark:border-navy-700 px-6 py-4 transition-colors duration-300">
-        <div className="flex items-center justify-between">
-          <div>
-            {headingParts && (
-              <p className="text-xs font-heading uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-0.5">
-                {headingParts}
-              </p>
-            )}
-            <h1 className="text-lg font-heading font-bold text-gray-900 dark:text-white">
-              {isLeagueFixture
-                ? t("match.roundSummary")
-                : t("match.otherMatches")}
-            </h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onFinish}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-navy-700 dark:hover:bg-navy-600 rounded-lg font-heading font-bold uppercase tracking-wider text-sm text-gray-700 dark:text-gray-300 transition-colors"
-            >
-              {t("match.skip")}
-            </button>
-            <button
-              type="button"
-              onClick={onPressConference}
-              className="flex items-center gap-2 px-5 py-2 bg-linear-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 rounded-lg font-heading font-bold uppercase tracking-wider text-sm text-white shadow-md shadow-primary-500/20 transition-all"
-            >
-              {t("match.pressConference")}
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+  /*
+    Skip and the press conference were inside the stage's own header band,
+    in the half of the screen that scrolls. The shell can hold them still.
+  */
+  const digestActions = (
+    <footer className="border-t border-gray-200 bg-white px-6 py-3 transition-colors duration-300 motion-reduce:transition-none dark:border-navy-700 dark:bg-navy-800">
+      <div className="mx-auto flex max-w-page items-center justify-end gap-3">
+        <button
+          className="rounded-lg bg-gray-100 px-4 py-2 font-heading text-sm font-bold uppercase tracking-wider text-gray-700 transition-colors hover:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 motion-reduce:transition-none dark:bg-navy-700 dark:text-gray-300 dark:hover:bg-navy-600 dark:focus-visible:ring-offset-navy-800"
+          onClick={onFinish}
+          type="button"
+        >
+          {t("match.skip")}
+        </button>
+        <button
+          className="flex items-center gap-2 rounded-lg bg-linear-to-r from-primary-500 to-primary-600 px-5 py-2 font-heading text-sm font-bold uppercase tracking-wider text-white shadow-md shadow-primary-500/20 transition-colors hover:from-primary-600 hover:to-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 motion-reduce:transition-none dark:focus-visible:ring-offset-navy-800"
+          onClick={onPressConference}
+          type="button"
+        >
+          {t("match.pressConference")}
+          <ChevronRight aria-hidden="true" className="h-4 w-4" />
+        </button>
       </div>
+    </footer>
+  );
 
+  return (
+    <MatchdayShell
+      bodyMode="frame"
+      footer={digestActions}
+      header={
+        /*
+          The stage said its own name in a band at the top of the body, which
+          is what the shell's header is for — and every other matchday stage
+          now uses it.
+        */
+        <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h1 className="font-heading text-lg font-bold text-gray-900 dark:text-white">
+            {isLeagueFixture ? t("match.roundSummary") : t("match.otherMatches")}
+          </h1>
+          {headingParts ? (
+            <p className="font-heading text-xs uppercase tracking-widest text-gray-500 dark:text-gray-400">
+              {headingParts}
+            </p>
+          ) : null}
+        </div>
+      }
+      identity={matchdayIdentity}
+    >
+      {/*
+        A bounded column, so the fixture list below owns its own scrolling
+        rather than making the page longer.
+      */}
+      <div className="flex h-full min-h-0 flex-col">
       {/* Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="min-h-0 flex-1 overflow-auto">
         <div className="px-6 py-6 flex flex-col gap-6">
           {/* Your Result Hero Card */}
           <div
@@ -351,10 +368,13 @@ export default function RoundDigestScreen({
           <div className="grid grid-cols-3 gap-6">
             {/* Other Results — 2 cols for league (leaves room for table), full width for friendly */}
             <div className={`flex flex-col gap-3 ${isLeagueFixture ? "col-span-2" : "col-span-3"}`}>
-              <h2 className="text-xs font-heading font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
-                {isLeagueFixture
-                  ? t("match.otherMatchesToday")
-                  : t("match.otherMatches")}
+              {/*
+                The same wording either way: the shell header already names
+                the stage, and saying "Other matches" twice on a friendly told
+                a screen reader the same thing in two places.
+              */}
+              <h2 className="font-heading text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                {t("match.otherMatchesToday")}
               </h2>
               {otherMatchEntries.length > 0 ? (
                 <div className="grid grid-cols-2 gap-3">
@@ -655,6 +675,7 @@ export default function RoundDigestScreen({
           </div>
         </div>
       )}
+      </div>
     </MatchdayShell>
   );
 }

@@ -1,4 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import RoundDigestScreen from "./RoundDigestScreen";
@@ -320,13 +322,136 @@ const defaultProps = {
   onFinish: vi.fn(),
 };
 
-describe("RoundDigestScreen", function () {
-  it("renders the matchday heading and league name for a league fixture", function () {
-    render(<RoundDigestScreen
-      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }} {...defaultProps} />);
+const roundDigestSource = readFileSync(
+  "src/components/match/RoundDigestScreen.tsx",
+  "utf-8",
+).replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+const roundDigestStaticClassNames = [
+  ...roundDigestSource.matchAll(/className="([^"]*)"/g),
+].map((match) => match[1].split(/\s+/));
 
-    expect(screen.getByText(/Matchday 1/)).toBeInTheDocument();
-    expect(screen.getByText("match.roundSummary")).toBeInTheDocument();
+describe("RoundDigestScreen bounded frame structure", function () {
+  it("bounds the digest body through every shrinking flex link", function () {
+    const boundedBodyClasses =
+      roundDigestStaticClassNames.find(
+        (classes) =>
+          classes.includes("flex") &&
+          classes.includes("h-full") &&
+          classes.includes("min-h-0") &&
+          classes.includes("flex-col"),
+      ) ?? [];
+
+    expect(
+      boundedBodyClasses,
+      "the shell body needs a full-height min-h-0 flex column to bound its descendants",
+    ).toEqual(
+      expect.arrayContaining(["flex", "h-full", "min-h-0", "flex-col"]),
+    );
+  });
+
+  it("lets the digest content scroll inside its bounded pane", function () {
+    const digestScrollerClasses =
+      roundDigestStaticClassNames.find(
+        (classes) =>
+          classes.includes("flex-1") &&
+          (classes.includes("overflow-auto") ||
+            classes.includes("overflow-y-auto")),
+      ) ?? [];
+
+    expect(
+      digestScrollerClasses,
+      "the flexing digest scroller needs min-h-0 before overflow can contain the fixture list",
+    ).toEqual(expect.arrayContaining(["min-h-0", "flex-1"]));
+  });
+});
+
+describe("RoundDigestScreen", function () {
+  it("names the league digest once in the shell header without losing either round fixture", function () {
+    render(
+      <RoundDigestScreen
+        matchdayIdentity={{
+          competitionName: "Test League",
+          roundLabel: "Matchday 1",
+        }}
+        {...defaultProps}
+      />,
+    );
+
+    const banner = screen.getByRole("banner", {
+      name: "Test League · Matchday 1",
+    });
+    const shell = banner.parentElement;
+    expect(shell).not.toBeNull();
+    expect(shell).toHaveTextContent(
+      /Alpha FC[\s\S]*2\s*–\s*1[\s\S]*Beta FC/,
+    );
+    expect(shell).toHaveTextContent("Gamma FC 3 – 0 Beta FC");
+
+    const summaryHeadings = screen.getAllByRole("heading", {
+      name: "match.roundSummary",
+    });
+    expect(summaryHeadings).toHaveLength(1);
+    expect(
+      banner,
+      "the round-summary heading belongs to MatchdayShell's named header",
+    ).toContainElement(summaryHeadings[0]);
+  });
+
+  it("names a friendly digest once in the shell header and keeps its empty state", function () {
+    const gameState = makeGameState();
+    gameState.league!.fixtures = [];
+
+    render(
+      <RoundDigestScreen
+        matchdayIdentity={{ competitionName: null, roundLabel: "Friendly" }}
+        {...defaultProps}
+        gameState={gameState}
+        isLeagueFixture={false}
+        roundSummary={null}
+      />,
+    );
+
+    const banner = screen.getByRole("banner", { name: "Friendly" });
+    expect(banner.parentElement).toHaveTextContent(
+      "match.otherMatchesUnavailable",
+    );
+    const friendlyHeadings = screen.getAllByRole("heading", {
+      name: "match.otherMatches",
+    });
+    expect(
+      friendlyHeadings,
+      "the friendly stage name must not be repeated in the digest body",
+    ).toHaveLength(1);
+    expect(banner).toContainElement(friendlyHeadings[0]);
+  });
+
+  it("keeps the league-round empty state while naming the stage in the shell header", function () {
+    const summary = makeRoundSummary();
+    summary.completed_results = summary.completed_results.slice(0, 1);
+
+    render(
+      <RoundDigestScreen
+        matchdayIdentity={{
+          competitionName: "Test League",
+          roundLabel: "Matchday 1",
+        }}
+        {...defaultProps}
+        roundSummary={summary}
+      />,
+    );
+
+    const banner = screen.getByRole("banner", {
+      name: "Test League · Matchday 1",
+    });
+    expect(banner.parentElement).toHaveTextContent(
+      "match.roundSummaryUnavailable",
+    );
+    expect(
+      banner,
+      "the round-summary heading belongs to MatchdayShell's named header",
+    ).toContainElement(
+      screen.getByRole("heading", { name: "match.roundSummary" }),
+    );
   });
 
   it("renders the hero result card with score and win badge", function () {
@@ -398,23 +523,36 @@ describe("RoundDigestScreen", function () {
     expect(screen.getAllByText(/Beta FC/).length).toBeGreaterThan(0);
   });
 
-  it("calls onPressConference when the press conference button is clicked", function () {
+  it("puts both actions in the shell footer without changing their callbacks", function () {
     const onPressConference = vi.fn();
+    const onFinish = vi.fn();
     render(
       <RoundDigestScreen
-      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }} {...defaultProps} onPressConference={onPressConference} />,
+        matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }}
+        {...defaultProps}
+        onPressConference={onPressConference}
+        onFinish={onFinish}
+      />,
     );
 
-    fireEvent.click(screen.getByText("match.pressConference"));
+    const footer = screen.queryByRole("contentinfo");
+    expect(
+      footer,
+      "the digest actions must be composed into MatchdayShell's footer slot",
+    ).not.toBeNull();
+    const skip = within(footer as HTMLElement).getByRole("button", {
+      name: "match.skip",
+    });
+    const pressConference = within(footer as HTMLElement).getByRole("button", {
+      name: "match.pressConference",
+    });
+
+    fireEvent.click(skip);
+    expect(onFinish).toHaveBeenCalledOnce();
+    expect(onPressConference).not.toHaveBeenCalled();
+
+    fireEvent.click(pressConference);
     expect(onPressConference).toHaveBeenCalledOnce();
-  });
-
-  it("calls onFinish when the skip button is clicked", function () {
-    const onFinish = vi.fn();
-    render(<RoundDigestScreen
-      matchdayIdentity={{ competitionName: null, roundLabel: "Match Day" }} {...defaultProps} onFinish={onFinish} />);
-
-    fireEvent.click(screen.getByText("match.skip"));
     expect(onFinish).toHaveBeenCalledOnce();
   });
 
