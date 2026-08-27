@@ -2825,7 +2825,9 @@
         "playerAlreadySubstitutedOff": "Ese jugador ya fue sustituido",
         "playerNotOnBench": "El jugador no está en el banquillo",
         "playerNotInStartingXi": "El jugador no está en el once inicial",
-        "commandNotSupported": "Este motor no admite esa instrucción"
+        "commandNotSupported": "Este motor no admite esa instrucción",
+        "unknownEngine": "No hay ningún motor de partido instalado con ese nombre.",
+        "configForAnotherEngine": "Ese motor de partido recibió una configuración escrita para otro motor."
       },
       "csv": {
         "writeFailed": "No se pudo escribir el archivo CSV."

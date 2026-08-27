@@ -2793,7 +2793,9 @@
         "playerAlreadySubstitutedOff": "该球员已经被换下",
         "playerNotOnBench": "球员不在替补席上",
         "playerNotInStartingXi": "球员不在首发阵容中",
-        "commandNotSupported": "此引擎不支持该指令"
+        "commandNotSupported": "此引擎不支持该指令",
+        "unknownEngine": "没有安装该名称的比赛引擎。",
+        "configForAnotherEngine": "该比赛引擎收到的是为其他引擎编写的设置。"
       },
       "csv": {
         "writeFailed": "无法写入 CSV 文件。"

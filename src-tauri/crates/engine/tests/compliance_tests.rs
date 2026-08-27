@@ -8,7 +8,7 @@
 use engine::ai::{AiPersonality, AiProfile};
 use engine::compliance;
 use engine::traits::{DefaultEngine, MatchSetup};
-use engine::types::{MatchConfig, PlayStyle, PlayerData, PlayerRole, Position, Slot, TeamData};
+use engine::types::{PlayStyle, PlayerData, PlayerRole, Position, Slot, TeamData};
 
 const SEED: u64 = 0xDEC0_DE01;
 
@@ -220,7 +220,7 @@ fn setup(allows_extra_time: bool) -> MatchSetup {
     let (home, home_bench) = team("home", 70);
     let (away, away_bench) = team("away", 70);
     let mut setup =
-        MatchSetup::league(home, away, MatchConfig::default()).with_benches(home_bench, away_bench);
+        MatchSetup::league(home, away).with_benches(home_bench, away_bench);
     setup.allows_extra_time = allows_extra_time;
     // Somebody in each dugout, so substitutions actually happen.
     //
@@ -306,7 +306,9 @@ fn default_engine_is_compliant_in_knockout_ties() {
     let mut shootouts = 0;
     for offset in 0..400 {
         let mut rng = StdRng::seed_from_u64((SEED ^ 0xFFFF) + offset);
-        let result = DefaultEngine.simulate(&setup, &mut rng);
+        let result = DefaultEngine
+        .simulate(&setup, &mut rng)
+        .expect("no config, so nothing to decline");
         if result.total_minutes > 95 {
             reached_extra_time += 1;
         }
@@ -355,7 +357,9 @@ fn golden_report_is_unchanged() {
 
     let setup = setup(false);
     let mut rng = StdRng::seed_from_u64(SEED);
-    let result = DefaultEngine.simulate(&setup, &mut rng);
+    let result = DefaultEngine
+        .simulate(&setup, &mut rng)
+        .expect("no config, so nothing to decline");
 
     let mut hasher = DefaultHasher::new();
     compliance::fingerprint(&result).hash(&mut hasher);
@@ -395,7 +399,9 @@ fn golden_report_is_unchanged_with_instructions() {
     setup.away.tactics.build_up_style = TacticsBuildUpStyle::Long;
 
     let mut rng = StdRng::seed_from_u64(SEED);
-    let result = DefaultEngine.simulate(&setup, &mut rng);
+    let result = DefaultEngine
+        .simulate(&setup, &mut rng)
+        .expect("no config, so nothing to decline");
 
     let mut hasher = DefaultHasher::new();
     compliance::fingerprint(&result).hash(&mut hasher);
@@ -422,7 +428,9 @@ fn ratings_spread_across_the_scale() {
     let mut all: Vec<f32> = Vec::new();
     for offset in 0..120 {
         let mut rng = StdRng::seed_from_u64(SEED + offset);
-        let report = DefaultEngine.simulate(&setup, &mut rng);
+        let report = DefaultEngine
+        .simulate(&setup, &mut rng)
+        .expect("no config, so nothing to decline");
         all.extend(
             report
                 .player_stats

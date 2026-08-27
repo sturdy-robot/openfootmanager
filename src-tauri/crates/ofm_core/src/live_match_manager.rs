@@ -15,7 +15,7 @@ use domain::league::{
 use domain::manager::Manager;
 use domain::team::MatchRoles;
 use engine::ai::{self, AiPersonality, AiProfile};
-use engine::{LiveState, LiveUpdate, MatchCommand, MatchConfig, MatchSnapshot, Side};
+use engine::{LiveState, LiveUpdate, MatchCommand, MatchSnapshot, Side};
 
 /// Translate an engine command into its stored replay form.
 ///
@@ -458,17 +458,19 @@ pub fn create_live_match(
     let home_auto_selection = auto_select_set_pieces(game, &home_starter_ids);
     let away_auto_selection = auto_select_set_pieces(game, &away_starter_ids);
 
-    let config = MatchConfig::default();
-
     // Built through the registry rather than by naming a type, so the engine
     // the game plays on is a lookup rather than a compile-time decision.
+    //
+    // No engine config: the game has no tuning of its own to pass yet, so every
+    // engine runs on its own defaults. Wiring league or difficulty settings in
+    // here is what `MatchSetup::with_config` exists for.
     let engine_id = engine::registry::DEFAULT_ENGINE_ID;
-    let setup = engine::MatchSetup::league(home_xi, away_xi, config)
+    let setup = engine::MatchSetup::league(home_xi, away_xi)
         .with_benches(home_bench, away_bench)
         .with_extra_time(allows_extra_time)
         .with_seed(seed);
-    let mut match_state = engine::registry::kickoff(engine_id, setup)
-        .ok_or_else(|| format!("be.error.liveMatch.unknownEngine:{engine_id}"))?;
+    let mut match_state =
+        engine::registry::kickoff(engine_id, setup).map_err(|err| err.to_string())?;
     apply_saved_match_roles(
         match_state.as_mut(),
         Side::Home,

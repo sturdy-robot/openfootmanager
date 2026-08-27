@@ -2806,7 +2806,9 @@
         "playerAlreadySubstitutedOff": "Игрок уже заменен",
         "playerNotOnBench": "Игрок не на скамейке запасных",
         "playerNotInStartingXi": "Игрок не в стартовом составе",
-        "commandNotSupported": "Этот движок не поддерживает эту команду"
+        "commandNotSupported": "Этот движок не поддерживает эту команду",
+        "unknownEngine": "Движок матча с таким названием не установлен.",
+        "configForAnotherEngine": "Этому движку матча переданы настройки, написанные для другого движка."
       },
       "csv": {
         "writeFailed": "Не удалось записать CSV-файл."

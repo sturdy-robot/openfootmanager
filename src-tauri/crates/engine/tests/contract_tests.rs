@@ -346,7 +346,7 @@ fn a_player_parked_off_the_pitch_is_caught() {
 #[test]
 fn the_built_in_engine_is_capability_compliant() {
     use engine::traits::{DefaultEngine, LiveEngine, MatchSetup};
-    use engine::{MatchConfig, PlayStyle, PlayerData, Position, TacticsConfig, TeamData};
+    use engine::{PlayStyle, PlayerData, Position, TacticsConfig, TeamData};
 
     fn player(id: &str, position: Position) -> PlayerData {
         PlayerData {
@@ -402,8 +402,8 @@ fn the_built_in_engine_is_capability_compliant() {
         }
     }
 
-    let setup = MatchSetup::league(team("home"), team("away"), MatchConfig::default());
-    let state = DefaultEngine.kickoff(setup);
+    let setup = MatchSetup::league(team("home"), team("away"));
+    let state = DefaultEngine.kickoff(setup).expect("no config, so nothing to decline");
     let descriptor = engine::EngineInfo::descriptor(&DefaultEngine);
 
     let report = check_capabilities(&state, &descriptor);
@@ -427,69 +427,79 @@ fn kickoff_by_id(id: &str) -> Option<Box<dyn engine::LiveState + Send>> {
 
 /// As above, but for a tie that has to be settled: extra time, and a shootout
 /// if it is still level.
-fn kickoff_by_id_with(id: &str, allows_extra_time: bool) -> Option<Box<dyn engine::LiveState + Send>> {
-    use engine::traits::{DefaultEngine, LiveEngineObject, MatchSetup};
-    use engine::{MatchConfig, PlayStyle, PlayerData, Position, TacticsConfig, TeamData};
+/// The synthetic squads every test in this file plays with.
+use engine::{PlayStyle, PlayerData, Position, TacticsConfig, TeamData};
 
-    fn player(id: &str, position: Position) -> PlayerData {
-        PlayerData {
-            id: id.to_string(),
-            name: id.to_string(),
-            position,
-            ovr: 70,
-            condition: 90,
-            fitness: 75,
-            pace: 70,
-            stamina: 70,
-            strength: 70,
-            agility: 70,
-            passing: 70,
-            shooting: 70,
-            tackling: 70,
-            dribbling: 70,
-            defending: 70,
-            positioning: 70,
-            vision: 70,
-            decisions: 70,
-            composure: 70,
-            aggression: 70,
-            teamwork: 70,
-            leadership: 70,
-            handling: 70,
-            reflexes: 70,
-            aerial: 70,
-            traits: vec![],
-            slot: None,
-            role: engine::PlayerRole::Standard,
-        }
+fn player(id: &str, position: Position) -> PlayerData {
+    PlayerData {
+        id: id.to_string(),
+        name: id.to_string(),
+        position,
+        ovr: 70,
+        condition: 90,
+        fitness: 75,
+        pace: 70,
+        stamina: 70,
+        strength: 70,
+        agility: 70,
+        passing: 70,
+        shooting: 70,
+        tackling: 70,
+        dribbling: 70,
+        defending: 70,
+        positioning: 70,
+        vision: 70,
+        decisions: 70,
+        composure: 70,
+        aggression: 70,
+        teamwork: 70,
+        leadership: 70,
+        handling: 70,
+        reflexes: 70,
+        aerial: 70,
+        traits: vec![],
+        slot: None,
+        role: engine::PlayerRole::Standard,
     }
-    fn team(id: &str) -> TeamData {
-        let mut players = vec![player(&format!("{id}_gk"), Position::Goalkeeper)];
-        for i in 0..4 {
-            players.push(player(&format!("{id}_d{i}"), Position::Defender));
-        }
-        for i in 0..4 {
-            players.push(player(&format!("{id}_m{i}"), Position::Midfielder));
-        }
-        for i in 0..2 {
-            players.push(player(&format!("{id}_f{i}"), Position::Forward));
-        }
-        TeamData {
-            id: id.to_string(),
-            name: id.to_string(),
-            formation: "4-4-2".to_string(),
-            play_style: PlayStyle::Balanced,
-            tactics: TacticsConfig::default(),
-            players,
-        }
+}
+fn team(id: &str) -> TeamData {
+    let mut players = vec![player(&format!("{id}_gk"), Position::Goalkeeper)];
+    for i in 0..4 {
+        players.push(player(&format!("{id}_d{i}"), Position::Defender));
     }
+    for i in 0..4 {
+        players.push(player(&format!("{id}_m{i}"), Position::Midfielder));
+    }
+    for i in 0..2 {
+        players.push(player(&format!("{id}_f{i}"), Position::Forward));
+    }
+    TeamData {
+        id: id.to_string(),
+        name: id.to_string(),
+        formation: "4-4-2".to_string(),
+        play_style: PlayStyle::Balanced,
+        tactics: TacticsConfig::default(),
+        players,
+    }
+}
+
+/// A fixture with nothing attached: no benches, no dugouts, no engine config.
+fn plain_setup() -> engine::MatchSetup {
+    engine::MatchSetup::league(team("home"), team("away"))
+}
+
+fn kickoff_by_id_with(id: &str, allows_extra_time: bool) -> Option<Box<dyn engine::LiveState + Send>> {
+    use engine::traits::{DefaultEngine, LiveEngineObject};
 
     if id != engine::DEFAULT_ENGINE_ID {
         return None;
     }
-    let setup = MatchSetup::league(team("home"), team("away"), MatchConfig::default())
-        .with_extra_time(allows_extra_time);
-    Some(DefaultEngine.kickoff_boxed(setup))
+    let setup = plain_setup().with_extra_time(allows_extra_time);
+    Some(
+        DefaultEngine
+            .kickoff_boxed(setup)
+            .expect("no config, so nothing to decline"),
+    )
 }
 
 #[test]
@@ -1108,4 +1118,121 @@ fn a_shootout_names_the_side_on_the_spot() {
         takers.contains(&Side::Home) && takers.contains(&Side::Away),
         "both sides take kicks, so the reported side has to change: {takers:?}"
     );
+}
+
+// ---------------------------------------------------------------------------
+// Per-engine config
+//
+// `MatchConfig` used to sit on `MatchSetup`, so every engine was handed this
+// engine's tuning constants whether they meant anything to it or not. Read
+// their own doc comments — "calibrated against the effective shooting skill the
+// engine actually produces" — and it is plain whose they are.
+// ---------------------------------------------------------------------------
+
+/// A second engine's settings, for testing that ours declines them.
+#[derive(Debug)]
+struct OtherEngineConfig;
+
+impl engine::EngineConfig for OtherEngineConfig {
+    fn engine_id(&self) -> &'static str {
+        "spatial-fake"
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
+#[test]
+fn supplying_the_engines_own_defaults_changes_nothing() {
+    // The pin that keeps this plumbing honest. Moving config off the shared
+    // setup must not move a single draw: an explicit default config and no
+    // config at all have to produce the same match, seed for seed.
+    use engine::InstantEngine;
+
+    let bare = plain_setup();
+    let with_defaults = plain_setup().with_config(std::sync::Arc::new(
+        engine::MatchConfig::default(),
+    ));
+
+    let mut a = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(20260802);
+    let mut b = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(20260802);
+
+    let from_bare = engine::DefaultEngine.simulate(&bare, &mut a).expect("ours");
+    let from_defaults = engine::DefaultEngine
+        .simulate(&with_defaults, &mut b)
+        .expect("ours");
+
+    assert_eq!(
+        engine::compliance::fingerprint(&from_bare),
+        engine::compliance::fingerprint(&from_defaults),
+        "an explicit default config has to be the same match as no config"
+    );
+}
+
+#[test]
+fn tuning_actually_reaches_the_engine() {
+    // The other half: if the config were quietly dropped rather than read, the
+    // test above would pass while nothing worked. Something absurd has to show.
+    use engine::InstantEngine;
+
+    let goalless = plain_setup().with_config(std::sync::Arc::new(engine::MatchConfig {
+        shot_accuracy_base: 0.0,
+        goal_conversion_base: 0.0,
+        ..engine::MatchConfig::default()
+    }));
+
+    let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(20260802);
+    let report = engine::DefaultEngine
+        .simulate(&goalless, &mut rng)
+        .expect("ours");
+
+    assert_eq!(
+        report.home_goals + report.away_goals,
+        report.home_penalties.unwrap_or(0) + report.away_penalties.unwrap_or(0),
+        "with no shot accuracy and no conversion, only a penalty can score"
+    );
+}
+
+#[test]
+fn an_engine_declines_another_engines_tuning() {
+    // Declined, not ignored. Falling back to defaults would run the match under
+    // settings nobody chose and tell nobody.
+    use engine::InstantEngine;
+
+    let foreign = plain_setup().with_config(std::sync::Arc::new(OtherEngineConfig));
+    let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(1);
+
+    let err = engine::DefaultEngine
+        .simulate(&foreign, &mut rng)
+        .expect_err("this config belongs to another engine");
+    assert_eq!(
+        err,
+        engine::EngineError::ConfigForAnotherEngine {
+            expected: engine::DEFAULT_ENGINE_ID,
+            found: "spatial-fake",
+        }
+    );
+
+    // And the watched path refuses it the same way, rather than the two
+    // disagreeing about whether a fixture can be played at all.
+    let foreign = plain_setup().with_config(std::sync::Arc::new(OtherEngineConfig));
+    assert!(engine::registry::kickoff(engine::DEFAULT_ENGINE_ID, foreign).is_err());
+}
+
+#[test]
+fn an_unknown_engine_id_is_a_typed_error_with_a_key() {
+    // It used to be a bare `format!("be.error.liveMatch.unknownEngine:{id}")`
+    // built in `ofm_core`, and that key existed in none of the eleven locale
+    // files. A closed error set is what makes that impossible.
+    let err = match engine::registry::kickoff("no-such-engine", plain_setup()) {
+        Err(err) => err,
+        Ok(_) => panic!("nothing is registered under that id"),
+    };
+    assert_eq!(
+        err,
+        engine::EngineError::UnknownEngine {
+            requested: "no-such-engine".to_string()
+        }
+    );
+    assert_eq!(err.to_string(), "be.error.liveMatch.unknownEngine");
 }

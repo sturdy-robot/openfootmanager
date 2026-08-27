@@ -38,8 +38,10 @@ pub fn simulate_with_rng<R: Rng + ?Sized>(
     config: &MatchConfig,
     rng: &mut R,
 ) -> MatchReport {
-    let setup = MatchSetup::league(home.clone(), away.clone(), config.clone());
-    simulate_setup(&setup, rng)
+    // Infallible where [`simulate_setup`] is not: the caller handed us a
+    // `MatchConfig` by type, so there is no foreign config to decline.
+    let setup = MatchSetup::league(home.clone(), away.clone());
+    simulate_resolved(&setup, config, rng)
 }
 
 /// Simulate a match described by `setup`.
@@ -47,11 +49,32 @@ pub fn simulate_with_rng<R: Rng + ?Sized>(
 /// Prefer this over [`simulate_with_rng`] when the caller has benches or a
 /// knockout tie: it is the same entry point the live match uses, so a fixture
 /// resolved here behaves exactly as it would if the player had watched it.
-pub fn simulate_setup<R: Rng + ?Sized>(setup: &MatchSetup, rng: &mut R) -> MatchReport {
+pub fn simulate_setup<R: Rng + ?Sized>(
+    setup: &MatchSetup,
+    rng: &mut R,
+) -> Result<MatchReport, crate::error::EngineError> {
+    let config = crate::config::read_config::<MatchConfig>(
+        setup.engine_config.as_ref(),
+        crate::traits::DEFAULT_ENGINE_ID,
+    )?
+    .cloned()
+    .unwrap_or_default();
+    Ok(simulate_resolved(setup, &config, rng))
+}
+
+/// The batch driver, once the tuning is known to be ours.
+///
+/// Split out so [`simulate_with_rng`], which is handed a `MatchConfig`
+/// directly, does not have to unwrap a `Result` that cannot be `Err`.
+fn simulate_resolved<R: Rng + ?Sized>(
+    setup: &MatchSetup,
+    config: &MatchConfig,
+    rng: &mut R,
+) -> MatchReport {
     let mut state = LiveMatchState::new(
         setup.home.clone(),
         setup.away.clone(),
-        setup.config.clone(),
+        config.clone(),
         setup.home_bench.clone(),
         setup.away_bench.clone(),
         setup.allows_extra_time,

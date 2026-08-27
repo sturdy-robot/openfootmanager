@@ -128,7 +128,13 @@ pub fn run_all<E: InstantEngine + ?Sized>(
     for index in 0..matches {
         let seed = base_seed.wrapping_add(index as u64);
         let mut rng = StdRng::seed_from_u64(seed);
-        let result = engine.simulate(setup, &mut rng);
+        let Ok(result) = engine.simulate(setup, &mut rng) else {
+            report.fail(
+                Invariant::Determinism,
+                "the engine refused the setup, so nothing could be checked",
+            );
+            return report;
+        };
         check_one(&result, setup, seed, &mut report);
     }
 
@@ -145,10 +151,22 @@ pub fn check_determinism<E: InstantEngine + ?Sized>(
     report: &mut ComplianceReport,
 ) {
     let mut first_rng = StdRng::seed_from_u64(seed);
-    let first = engine.simulate(setup, &mut first_rng);
+    let Ok(first) = engine.simulate(setup, &mut first_rng) else {
+        report.fail(
+            Invariant::Determinism,
+            "the engine refused the setup, so nothing could be checked",
+        );
+        return;
+    };
 
     let mut second_rng = StdRng::seed_from_u64(seed);
-    let second = engine.simulate(setup, &mut second_rng);
+    let Ok(second) = engine.simulate(setup, &mut second_rng) else {
+        report.fail(
+            Invariant::Determinism,
+            "the engine refused the setup, so nothing could be checked",
+        );
+        return;
+    };
 
     for detail in compare_reports(&first, &second) {
         report.fail(Invariant::Determinism, detail);

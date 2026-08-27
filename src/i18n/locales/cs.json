@@ -2807,7 +2807,9 @@
         "playerAlreadySubstitutedOff": "Hráč již byl vystřídán",
         "playerNotOnBench": "Hráč není na lavički",
         "playerNotInStartingXi": "Hráč není v základní sestavě",
-        "commandNotSupported": "Tento engine tento pokyn nepodporuje"
+        "commandNotSupported": "Tento engine tento pokyn nepodporuje",
+        "unknownEngine": "Pod tímto názvem není nainstalován žádný zápasový engine.",
+        "configForAnotherEngine": "Tento zápasový engine dostal nastavení napsaná pro jiný engine."
       },
       "csv": {
         "writeFailed": "Nepodařilo se zapsat soubor CSV."

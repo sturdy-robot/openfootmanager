@@ -49,14 +49,15 @@ and present the output as history.
 ### `InstantEngine`
 
 ```rust
-fn simulate(&self, setup: &MatchSetup, rng: &mut dyn Rng) -> MatchReport
+fn simulate(&self, setup: &MatchSetup, rng: &mut dyn Rng) -> Result<MatchReport, EngineError>
 ```
 
-Same seed and same inputs must produce the same report. See *Determinism* below.
+Same seed and same inputs must produce the same report. See *Determinism* below. The only failure
+is a setup carrying a config written for another engine — see *Your own tuning*.
 
 ### `LiveEngine` / `LiveState`
 
-`kickoff` returns your state; `LiveState` is the match in progress.
+`kickoff` returns your state, or declines the setup; `LiveState` is the match in progress.
 
 | Method | Meaning |
 |---|---|
@@ -132,9 +133,50 @@ Treat them as promises you are expected to keep, and expect the checks to arrive
 | `commands` | Which `MatchCommandKind`s you accept. Anything absent must be refused with `CommandRejection::Unsupported` rather than ignored, so a caller can stop offering it. |
 | *(implied)* `squad()` | Listing `Substitute` among your commands obliges you to implement `LiveState::squad()`, and implementing it obliges you to accept `Substitute`. Checked in both directions. |
 
+### Errors
+
+`EngineError` is closed, for the same reason `CommandRejection` is: the game renders these, and an
+engine returning a string of its own puts text on screen that no locale file contains. Two
+variants today — an unknown engine id, and a config written for another engine — each owning a
+static translation key checked against `en.json`.
+
+That check is not theoretical. `be.error.liveMatch.unknownEngine` was first written as a bare
+`format!` string in `ofm_core` and shipped in **zero** of the eleven locales, because nothing was
+looking.
+
 **Do not fabricate what you do not model.** The built-in engine advertises no spatial telemetry
 because it resolves bands and lanes, not coordinates. A made-up position is worse than an absent
 one: whatever draws it will believe it.
+
+---
+
+## Your own tuning
+
+`MatchSetup` used to carry a `MatchConfig` — ten constants with names like `shot_accuracy_base`
+and `goal_conversion_base`. Those are the built-in engine's, and their own doc comments say so:
+one is "calibrated against the effective shooting skill the engine actually produces". Every
+engine inherited them anyway.
+
+Now the setup carries config the way a courier carries a parcel. It holds it; it does not open it.
+
+```rust
+impl EngineConfig for MyConfig {
+    fn engine_id(&self) -> &'static str { "my-engine" }
+    fn as_any(&self) -> &dyn std::any::Any { self }
+}
+
+// in kickoff / simulate
+let config = engine::read_config::<MyConfig>(setup.engine_config.as_ref(), "my-engine")?
+    .cloned()
+    .unwrap_or_default();
+```
+
+`Ok(None)` means the caller had no opinion — use your defaults, which is what every path in the
+game does today. `Err` means the parcel is addressed to somebody else: **decline the match**.
+Falling back to your defaults would run a fixture under settings nobody chose and tell nobody.
+
+The type is what matches, not the id — a downcast cannot be fooled. `engine_id()` exists so an
+engine declining somebody else's config can say whose it was.
 
 ---
 
@@ -200,10 +242,11 @@ the wrong id on the fixture.
 The contract is not finished. These are known and being worked on; they are written down so
 nobody discovers them the hard way.
 
-- **`MatchSetup` still carries `MatchConfig`**, whose fields are the built-in engine's tuning
-  constants — shot accuracy, goal conversion, foul probability. Another engine can ignore them,
-  but their presence in the shared setup is not honest, and they should move behind a per-engine
-  configuration channel. This is the next thing to fix.
+- **A config is not recorded on the fixture.** Replay re-simulates from a stored seed and engine
+  id, but not from stored tuning, so a match replays under whatever the running build's defaults
+  are. Nothing varies tuning in the game today, so nothing is wrong yet; the moment league or
+  difficulty settings pick a config, replay needs it persisted — which needs a serialized form,
+  and `EngineConfig` is deliberately not one. This is the next thing to fix.
 - **`LiveEngine::kickoff` drops `MatchSetup::seed` and both `AiProfile`s.** The instant path uses
   them; the live path currently expects the caller to own the RNG and drive the AI. Fixing this is
   a behaviour change and is scheduled with the other engine-behaviour work.
@@ -216,6 +259,8 @@ nobody discovers them the hard way.
 - `crates/engine/src/descriptor.rs` — capabilities and versioning
 - `crates/engine/src/compliance.rs` — what an engine is checked against
 - `crates/engine/src/view.rs` — what a caller can see of a match in progress
+- `crates/engine/src/config.rs` — tuning an engine defines for itself
+- `crates/engine/src/error.rs` — why a match could not start
 - `crates/engine/tests/contract_tests.rs` — two deliberately unlike fake engines, driven through
   trait objects
 - [`MATCH_SIMULATION.md`](MATCH_SIMULATION.md) — how the built-in engine works

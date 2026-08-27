@@ -11,6 +11,7 @@
 //! stable ABI and a security model, and is deliberately not what this is.
 
 use crate::descriptor::{EngineDescriptor, EngineInfo};
+use crate::error::EngineError;
 use crate::traits::{DefaultEngine, InstantEngine, LiveEngineObject, LiveState, MatchSetup};
 
 /// The engine the game uses unless told otherwise.
@@ -34,11 +35,18 @@ pub fn live(id: &str) -> Option<Box<dyn LiveEngineObject>> {
 
 /// Start a match on a named engine.
 ///
-/// Returns `None` for an unknown id rather than falling back to the built-in
-/// engine. A silent fallback would stamp the wrong engine id on the fixture and
-/// make the replay guard confidently wrong about what produced the result.
-pub fn kickoff(id: &str, setup: MatchSetup) -> Option<Box<dyn LiveState + Send>> {
-    live(id).map(|engine| engine.kickoff_boxed(setup))
+/// Declines an unknown id rather than falling back to the built-in engine. A
+/// silent fallback would stamp the wrong engine id on the fixture and make the
+/// replay guard confidently wrong about what produced the result.
+///
+/// The unknown id is a typed [`EngineError`] rather than a bare `None` so it
+/// carries a translation key. `ofm_core` used to build that key by hand with a
+/// `format!`, and the key it built existed in none of the eleven locale files.
+pub fn kickoff(id: &str, setup: MatchSetup) -> Result<Box<dyn LiveState + Send>, EngineError> {
+    let engine = live(id).ok_or_else(|| EngineError::UnknownEngine {
+        requested: id.to_string(),
+    })?;
+    engine.kickoff_boxed(setup)
 }
 
 /// What every registered engine says about itself.

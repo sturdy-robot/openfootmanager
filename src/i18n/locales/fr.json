@@ -2793,7 +2793,9 @@
         "playerAlreadySubstitutedOff": "Ce joueur a déjà été remplacé",
         "playerNotOnBench": "Le joueur n'est pas sur le banc",
         "playerNotInStartingXi": "Le joueur n'est pas dans le onze de départ",
-        "commandNotSupported": "Ce moteur ne prend pas en charge cette instruction"
+        "commandNotSupported": "Ce moteur ne prend pas en charge cette instruction",
+        "unknownEngine": "Aucun moteur de match n'est installé sous ce nom.",
+        "configForAnotherEngine": "Ce moteur de match a reçu des réglages écrits pour un autre moteur."
       },
       "csv": {
         "writeFailed": "Échec de l'écriture du fichier CSV."

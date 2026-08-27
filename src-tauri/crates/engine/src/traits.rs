@@ -23,6 +23,8 @@
 use rand::Rng;
 
 use crate::advance::{AdvanceRequest, LiveUpdate};
+use crate::config::SharedConfig;
+use crate::error::EngineError;
 use crate::ai::AiProfile;
 use crate::event::MatchEvent;
 use crate::live_match::{MatchCommand, MatchPhase};
@@ -36,7 +38,13 @@ use crate::types::{MatchConfig, PlayerData, TeamData};
 pub struct MatchSetup {
     pub home: TeamData,
     pub away: TeamData,
-    pub config: MatchConfig,
+    /// Tuning for whichever engine is playing, carried without being read.
+    ///
+    /// `None` means the caller has no opinion and the engine should use its own
+    /// defaults, which is what every production path does today. See
+    /// [`crate::config`] for why this is opaque rather than a `MatchConfig`
+    /// every engine inherits.
+    pub engine_config: Option<SharedConfig>,
     pub home_bench: Vec<PlayerData>,
     pub away_bench: Vec<PlayerData>,
     /// Knockout ties go to extra time and, if still level, a shootout.
@@ -51,15 +59,15 @@ pub struct MatchSetup {
 }
 
 impl MatchSetup {
-    /// A bare fixture: no benches, no dugouts, no extra time.
+    /// A bare fixture: no benches, no dugouts, no extra time, engine defaults.
     ///
     /// Useful for measuring the engine in isolation. A real fixture should
     /// carry benches and managers, or nobody ever makes a substitution.
-    pub fn league(home: TeamData, away: TeamData, config: MatchConfig) -> Self {
+    pub fn league(home: TeamData, away: TeamData) -> Self {
         Self {
             home,
             away,
-            config,
+            engine_config: None,
             home_bench: Vec::new(),
             away_bench: Vec::new(),
             allows_extra_time: false,
@@ -99,6 +107,15 @@ impl MatchSetup {
         self
     }
 
+    /// Hand the engine tuning of its own.
+    ///
+    /// The setup does not read it. An engine given a config written for a
+    /// different engine declines the match rather than ignoring it.
+    pub fn with_config(mut self, config: SharedConfig) -> Self {
+        self.engine_config = Some(config);
+        self
+    }
+
     /// Give each side a bench to pick substitutes from.
     pub fn with_benches(mut self, home: Vec<PlayerData>, away: Vec<PlayerData>) -> Self {
         self.home_bench = home;
@@ -116,7 +133,13 @@ pub trait InstantEngine: crate::descriptor::EngineInfo {
     ///
     /// Must be deterministic: the same `rng` seed and the same inputs must
     /// produce the same report. See [`crate::compliance`].
-    fn simulate(&self, setup: &MatchSetup, rng: &mut dyn Rng) -> MatchReport;
+    ///
+    /// Fails only when the setup carries a config written for another engine.
+    /// The batch path refuses it for the same reason the watched one does: a
+    /// fixture resolved unwatched under settings nobody chose, while the same
+    /// fixture watched refuses to start, is precisely the batch/live divergence
+    /// this engine has spent the project removing.
+    fn simulate(&self, setup: &MatchSetup, rng: &mut dyn Rng) -> Result<MatchReport, EngineError>;
 }
 
 /// An engine that can be stepped a minute at a time, accepting commands
@@ -124,7 +147,11 @@ pub trait InstantEngine: crate::descriptor::EngineInfo {
 pub trait LiveEngine: crate::descriptor::EngineInfo {
     type State: LiveState;
 
-    fn kickoff(&self, setup: MatchSetup) -> Self::State;
+    /// Start a match.
+    ///
+    /// Fails when the setup carries a config written for another engine — see
+    /// [`crate::config::read_config`].
+    fn kickoff(&self, setup: MatchSetup) -> Result<Self::State, EngineError>;
 }
 
 /// A match in progress.
@@ -273,7 +300,7 @@ impl crate::descriptor::EngineInfo for DefaultEngine {
 }
 
 impl InstantEngine for DefaultEngine {
-    fn simulate(&self, setup: &MatchSetup, rng: &mut dyn Rng) -> MatchReport {
+    fn simulate(&self, setup: &MatchSetup, rng: &mut dyn Rng) -> Result<MatchReport, EngineError> {
         // Straight through, not via `simulate_with_rng`: that takes the two
         // teams and a config, so routing through it silently discarded the
         // benches, the extra-time flag and the dugouts this setup carries — and
@@ -285,15 +312,22 @@ impl InstantEngine for DefaultEngine {
 impl LiveEngine for DefaultEngine {
     type State = crate::live_match::LiveMatchState;
 
-    fn kickoff(&self, setup: MatchSetup) -> Self::State {
-        crate::live_match::LiveMatchState::new(
+    fn kickoff(&self, setup: MatchSetup) -> Result<Self::State, EngineError> {
+        let config = crate::config::read_config::<MatchConfig>(
+            setup.engine_config.as_ref(),
+            DEFAULT_ENGINE_ID,
+        )?
+        .cloned()
+        .unwrap_or_default();
+
+        Ok(crate::live_match::LiveMatchState::new(
             setup.home,
             setup.away,
-            setup.config,
+            config,
             setup.home_bench,
             setup.away_bench,
             setup.allows_extra_time,
-        )
+        ))
     }
 }
 
@@ -372,7 +406,7 @@ impl LiveState for crate::live_match::LiveMatchState {
 /// fail in the crate that stores it, behind a feature flag that is off by
 /// default.
 pub trait LiveEngineObject: crate::descriptor::EngineInfo {
-    fn kickoff_boxed(&self, setup: MatchSetup) -> Box<dyn LiveState + Send>;
+    fn kickoff_boxed(&self, setup: MatchSetup) -> Result<Box<dyn LiveState + Send>, EngineError>;
 }
 
 impl<T> LiveEngineObject for T
@@ -380,7 +414,7 @@ where
     T: LiveEngine + crate::descriptor::EngineInfo,
     T::State: Send + 'static,
 {
-    fn kickoff_boxed(&self, setup: MatchSetup) -> Box<dyn LiveState + Send> {
-        Box::new(self.kickoff(setup))
+    fn kickoff_boxed(&self, setup: MatchSetup) -> Result<Box<dyn LiveState + Send>, EngineError> {
+        Ok(Box::new(self.kickoff(setup)?))
     }
 }

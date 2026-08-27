@@ -199,6 +199,28 @@ impl StyleArg {
     }
 }
 
+
+/// Build a setup for the engine being benchmarked.
+///
+/// The `--shot-accuracy-base` family are the **built-in** engine's tuning
+/// constants — read their doc comments in `engine::MatchConfig` and they say so
+/// themselves. So they are attached only when the built-in engine is the one
+/// running. Handing them to another engine would have it decline the run, which
+/// is correct of the engine and useless as a benchmark.
+fn setup_for(
+    engine_id: &str,
+    home: engine::TeamData,
+    away: engine::TeamData,
+    config: &MatchConfig,
+) -> engine::MatchSetup {
+    let setup = engine::MatchSetup::league(home, away);
+    if engine_id == engine::DEFAULT_ENGINE_ID {
+        setup.with_config(std::sync::Arc::new(config.clone()))
+    } else {
+        setup
+    }
+}
+
 fn main() {
     let cli = Cli::parse();
 
@@ -301,15 +323,20 @@ fn main() {
 
     // Driven through the engine contract rather than a direct call, so any
     // engine in `engine::registry` can be benchmarked unchanged.
-    let setup = engine::MatchSetup::league(home, away, config.clone());
+    let setup = setup_for(active_engine.id(), home, away, &config);
     let start = Instant::now();
     let mut bench_stats = BenchStats::default();
 
     for i in 0..cli.games {
         let game_seed = base_seed.wrapping_add(i as u64);
         let mut rng = StdRng::seed_from_u64(game_seed);
-        let report = active_engine.simulate(&setup, &mut rng);
-        bench_stats.add(&report, &setup.home, &setup.away);
+        match active_engine.simulate(&setup, &mut rng) {
+            Ok(report) => bench_stats.add(&report, &setup.home, &setup.away),
+            Err(err) => {
+                eprintln!("engine {:?} refused the setup: {err}", active_engine.id());
+                std::process::exit(2);
+            }
+        }
     }
 
     bench_stats.total_time_secs = start.elapsed().as_secs_f64();
@@ -404,7 +431,7 @@ fn run_compliance(active: &dyn engine::InstantEngine, config: &MatchConfig, cli:
         "4-4-2",
         &mut team_rng,
     );
-    let setup = engine::MatchSetup::league(home, away, config.clone());
+    let setup = setup_for(active.id(), home, away, config);
 
     eprintln!(
         "Checking engine {:?} over {} matches (seed: {base_seed})…",

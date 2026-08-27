@@ -2793,7 +2793,9 @@
         "playerAlreadySubstitutedOff": "Dieser Spieler wurde bereits ausgewechselt",
         "playerNotOnBench": "Spieler ist nicht auf der Bank",
         "playerNotInStartingXi": "Spieler ist nicht in der Startelf",
-        "commandNotSupported": "Diese Engine unterstützt diese Anweisung nicht"
+        "commandNotSupported": "Diese Engine unterstützt diese Anweisung nicht",
+        "unknownEngine": "Unter diesem Namen ist keine Spiel-Engine installiert.",
+        "configForAnotherEngine": "Diese Spiel-Engine hat Einstellungen erhalten, die für eine andere Engine geschrieben wurden."
       },
       "csv": {
         "writeFailed": "Die CSV-Datei konnte nicht geschrieben werden."

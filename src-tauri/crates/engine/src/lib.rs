@@ -2,8 +2,10 @@ pub mod advance;
 pub mod ai;
 pub mod clock;
 pub mod compliance;
+pub mod config;
 pub mod descriptor;
 pub mod engine;
+pub mod error;
 pub mod event;
 pub mod live_match;
 pub mod registry;
@@ -50,6 +52,8 @@ pub use engine::simulate_setup;
 pub use engine::simulate_with_rng;
 pub use advance::{AdvanceRequest, LiveUpdate, StopReason};
 pub use clock::{MatchClock, MatchPeriod};
+pub use config::{EngineConfig, SharedConfig, read_config};
+pub use error::EngineError;
 pub use descriptor::{
     CONTRACT_VERSION, EngineDescriptor, EngineInfo, MatchCommandKind, NativeStep,
 };

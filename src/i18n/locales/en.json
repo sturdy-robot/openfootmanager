@@ -2806,7 +2806,9 @@
         "playerAlreadySubstitutedOff": "Player has already been substituted off",
         "playerNotOnBench": "Player not on bench",
         "playerNotInStartingXi": "Player not in starting XI",
-        "commandNotSupported": "This engine does not support that instruction"
+        "commandNotSupported": "This engine does not support that instruction",
+        "unknownEngine": "No match engine is installed under that name.",
+        "configForAnotherEngine": "That match engine was given settings written for a different engine."
       },
       "csv": {
         "writeFailed": "Failed to write the CSV file."

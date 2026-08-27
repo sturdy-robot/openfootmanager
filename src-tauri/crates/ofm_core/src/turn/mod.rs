@@ -570,7 +570,7 @@ where
     // fatigue model the same match is running.
     let (home_data, home_bench) = build_team_with_bench(game, &home_team_id);
     let (away_data, away_bench) = build_team_with_bench(game, &away_team_id);
-    let setup = engine::MatchSetup::league(home_data, away_data, engine::MatchConfig::default())
+    let setup = engine::MatchSetup::league(home_data, away_data)
         .with_benches(home_bench, away_bench)
         // A cup tie goes to extra time here exactly as it does when the player
         // watches it. Without this the batch path jumped from the ninetieth
@@ -587,7 +587,10 @@ where
     // Seeded rather than drawn from thread entropy, so re-simulating this
     // fixture reproduces the same match.
     let mut rng = StdRng::seed_from_u64(seed);
-    let mut report = engine::simulate_setup(&setup, &mut rng);
+    // Cannot fail: the setup two lines above carries no engine config, and a
+    // foreign config is the only thing an engine declines here.
+    let mut report = engine::simulate_setup(&setup, &mut rng)
+        .expect("this setup carries no engine config, so nothing can be declined");
     // A level knockout tie must produce a winner: resolve it with a simulated
     // shootout so the home side no longer advances by default on a draw.
     if is_knockout && report.home_goals == report.away_goals {

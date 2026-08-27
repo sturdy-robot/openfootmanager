@@ -2806,7 +2806,9 @@
         "playerAlreadySubstitutedOff": "Oyuncu zaten oyundan alınmış",
         "playerNotOnBench": "Oyuncu yedek kulübesinde değil",
         "playerNotInStartingXi": "Oyuncu ilk 11'de değil",
-        "commandNotSupported": "Bu motor bu talimatı desteklemiyor"
+        "commandNotSupported": "Bu motor bu talimatı desteklemiyor",
+        "unknownEngine": "Bu adla kurulu bir maç motoru yok.",
+        "configForAnotherEngine": "Bu maç motoruna başka bir motor için yazılmış ayarlar verildi."
       },
       "csv": {
         "writeFailed": "CSV dosyası yazılamadı."
