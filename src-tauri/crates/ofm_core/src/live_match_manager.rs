@@ -214,6 +214,14 @@ pub struct LiveMatchSession {
     /// competition this fixture belongs to. Held here because the match screen
     /// shows it and the engine has no reason to report it back.
     pub allows_extra_time: bool,
+    /// What the two clubs are called.
+    ///
+    /// Only reached for an engine that manages no squad and so has no teams of
+    /// its own. The alternative — letting the engine write a placeholder — puts
+    /// English on the match screen from the one crate the locale files cannot
+    /// reach.
+    pub home_team_name: String,
+    pub away_team_name: String,
     /// The simulation stream: everything the match engine itself draws.
     ///
     /// Deliberately separate from `ai_rng`. With one shared generator, a user
@@ -307,7 +315,14 @@ impl LiveMatchSession {
     /// whether the tie goes to extra time is the session's own knowledge,
     /// because the session is what decided the fixture was a knockout.
     pub fn snapshot(&self) -> MatchSnapshot {
-        MatchSnapshot::compose(self.match_state.as_ref(), self.allows_extra_time)
+        MatchSnapshot::compose(
+            self.match_state.as_ref(),
+            engine::SnapshotContext {
+                allows_extra_time: self.allows_extra_time,
+                home_team_name: self.home_team_name.clone(),
+                away_team_name: self.away_team_name.clone(),
+            },
+        )
     }
 
     /// The full match report, without ending the match.
@@ -416,6 +431,8 @@ pub fn create_live_match(
     let (away_xi, away_bench) = build_team_with_bench(game, &away_team_id);
     let kickoff_home = capture_lineup(game, &home_team_id, &home_xi, &home_bench);
     let kickoff_away = capture_lineup(game, &away_team_id, &away_xi, &away_bench);
+    let home_team_name = home_xi.name.clone();
+    let away_team_name = away_xi.name.clone();
     let home_starter_ids = home_xi
         .players
         .iter()
@@ -500,6 +517,8 @@ pub fn create_live_match(
         match_state,
         engine_id: played_by,
         allows_extra_time,
+        home_team_name,
+        away_team_name,
         // Seeded from the fixture rather than thread entropy, so the match can
         // be re-simulated later and replayed exactly as it was played. The two
         // streams are derived from the same seed but kept independent.

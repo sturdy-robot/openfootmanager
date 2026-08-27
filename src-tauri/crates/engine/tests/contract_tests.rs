@@ -892,10 +892,23 @@ fn the_game_can_render_a_match_from_an_engine_that_manages_no_squad() {
     // engine with no squad produces a snapshot with no squad, instead of being
     // unable to produce one at all.
     let fake = SpatialFake::new();
-    let snapshot = engine::MatchSnapshot::compose(&fake, false);
+    let snapshot = engine::MatchSnapshot::compose(
+        &fake,
+        engine::SnapshotContext {
+            allows_extra_time: false,
+            home_team_name: "Ipswich Town".to_string(),
+            away_team_name: "Norwich City".to_string(),
+        },
+    );
 
     assert_eq!(snapshot.phase, MatchPhase::FirstHalf);
     assert!(snapshot.home_team.players.is_empty());
+    assert_eq!(
+        snapshot.home_team.name, "Ipswich Town",
+        "the club's real name, supplied by the caller. An engine writing its \
+         own placeholder here would be putting English on the match screen \
+         from the one crate the locale files cannot reach"
+    );
     assert!(snapshot.home_bench.is_empty());
     assert_eq!(snapshot.max_subs, 0, "no substitutions are on offer");
     assert!(snapshot.sent_off.is_empty());
@@ -915,7 +928,14 @@ fn a_composed_snapshot_carries_the_engine_running_minute() {
         state.advance(AdvanceRequest::one_minute(), &mut rng);
     }
 
-    let snapshot = engine::MatchSnapshot::compose(state.as_ref(), false);
+    let snapshot = engine::MatchSnapshot::compose(
+        state.as_ref(),
+        engine::SnapshotContext {
+            allows_extra_time: false,
+            home_team_name: String::new(),
+            away_team_name: String::new(),
+        },
+    );
     assert_eq!(snapshot.current_minute, state.minute());
 }
 

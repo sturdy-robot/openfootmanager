@@ -144,9 +144,13 @@ one: whatever draws it will believe it.
   work on any engine. It reads `progress()`, `squad()`, `minute()` and `minutes_under_pressure()`,
   and nothing else. An engine reporting no squad gets no AI — every decision a manager makes is about the team,
   so there is nothing to decide — which is consistent with such an engine accepting no commands.
-- **The match screen.** `MatchSnapshot::compose(state, allows_extra_time)` builds the game's whole
-  match view out of contract calls, so what the player sees works for any engine. An engine with no
-  squad simply produces a view with no squad rather than being unable to produce one.
+- **The match screen.** `MatchSnapshot::compose(state, context)` builds the game's whole match view
+  out of contract calls, so what the player sees works for any engine. An engine with no squad
+  simply produces a view with no squad rather than being unable to produce one. `SnapshotContext`
+  is the short list of things the caller supplies because they are facts about the *fixture* and
+  not about the simulation: whether the tie goes to extra time, and what the two clubs are called.
+  Never invent a team name — the match screen renders it, and the engine crate is the one place
+  the game's eleven locales cannot reach.
 - **The compliance suite.** `compliance::run_all` checks determinism, report and event agreement,
   discipline, substitution legality and shootout resolution.
 - **The benchmark.** `ofm-sim-bench --engine <id>` measures any registered engine against the same

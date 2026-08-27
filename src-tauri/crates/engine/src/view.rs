@@ -25,9 +25,12 @@
 //! position and slot, and a formation change redistributes the rest — so the
 //! caller cannot mirror the squad without reimplementing the engine.
 //!
-//! `MatchSnapshot` still exists, and the game still receives it. It is now
-//! **composed** by `ofm_core` from these two plus what the session itself
-//! knows, rather than handed over whole by the engine.
+//! `MatchSnapshot` still exists, and the game still receives it. It is no longer
+//! handed over whole by the engine: [`crate::MatchSnapshot::compose`] builds it
+//! from these two, from the rest of the contract, and from the short list of
+//! fixture facts the caller supplies in [`crate::SnapshotContext`] — whether
+//! the tie goes to extra time, and what the two clubs are called. It therefore
+//! composes for any engine rather than only for ours.
 
 use std::collections::{HashMap, HashSet};
 

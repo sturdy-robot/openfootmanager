@@ -4,6 +4,7 @@ mod penalty;
 mod possession;
 mod simulation;
 mod snapshot;
+pub use snapshot::SnapshotContext;
 mod squad_cache;
 mod substitution;
 mod zone_resolution;

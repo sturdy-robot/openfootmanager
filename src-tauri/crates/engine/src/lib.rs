@@ -56,7 +56,7 @@ pub use descriptor::{
 pub use event::{EventDetail, EventType, MatchEvent, ShotTechnique};
 pub use live_match::{
     LiveMatchState, MatchCommand, MatchPhase, MatchSnapshot, MinuteResult, PenaltyShootoutSnapshot,
-    SetPieceTakers, SubstitutionRecord,
+    SetPieceTakers, SnapshotContext, SubstitutionRecord,
 };
 pub use rejection::CommandRejection;
 pub use spatial::{

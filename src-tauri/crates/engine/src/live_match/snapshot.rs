@@ -116,37 +116,106 @@ impl LiveMatchState {
         }
     }
 
-    /// The whole match screen in one value, for the game's own use.
+    /// The whole match screen in one value.
     ///
-    /// No longer part of the engine contract. Kept because the engine's own
-    /// tests read it and because it is still the IPC wire type.
+    /// No longer part of the engine contract, and no longer on any production
+    /// path — the game composes its own from [`MatchSnapshot::compose`], which
+    /// works for any engine. Kept because the engine's own integration tests
+    /// read it, and it goes through the same composer so it cannot drift.
     pub fn snapshot(&self) -> MatchSnapshot {
-        MatchSnapshot::compose(self, self.allows_extra_time)
+        MatchSnapshot::compose(
+            self,
+            SnapshotContext {
+                allows_extra_time: self.allows_extra_time,
+                home_team_name: self.home.name.clone(),
+                away_team_name: self.away.name.clone(),
+            },
+        )
     }
+}
+
+/// What the caller knows about a fixture that the engine does not.
+///
+/// Small on purpose. Everything else in a [`MatchSnapshot`] comes from the
+/// contract; this is the short list of things that are properties of the
+/// *fixture* rather than of the match being simulated, so the engine has no way
+/// to report them and must not invent them.
+#[derive(Debug, Clone)]
+pub struct SnapshotContext {
+    /// Whether a level score at ninety minutes goes to extra time. A property
+    /// of the competition, decided before anybody kicked off.
+    pub allows_extra_time: bool,
+    /// What to call each side when the engine reports no squad, and so no teams
+    /// of its own.
+    ///
+    /// Supplied rather than defaulted because the alternative is the engine
+    /// writing "Home" into a field the match screen renders — English prose in
+    /// the one crate the game's eleven locales cannot reach.
+    pub home_team_name: String,
+    pub away_team_name: String,
 }
 
 impl MatchSnapshot {
     /// Build the game's match-screen view out of what the contract reports.
     ///
-    /// Everything here comes from [`crate::LiveState`], so this composes a
-    /// snapshot for **any** engine rather than only for ours — which is the
-    /// point of the split. An engine that manages no personnel reports no
-    /// squad, and the squad half comes back empty: there genuinely are no
-    /// substitutes to show, and empty says so where invented names would not.
-    pub fn compose(state: &dyn crate::traits::LiveState, allows_extra_time: bool) -> Self {
+    /// Everything but `context` comes from [`crate::LiveState`], so this
+    /// composes a snapshot for **any** engine rather than only for ours — which
+    /// is the point of the split. An engine that manages no personnel reports
+    /// no squad, and the squad half comes back empty: there genuinely are no
+    /// substitutes to show, and empty says so where invented players would not.
+    pub fn compose(state: &dyn crate::traits::LiveState, context: SnapshotContext) -> Self {
         let progress = state.progress();
-        let squad = state.squad();
-
         let share = progress.possession_share;
         let xg = progress.expected_goals;
 
-        let empty_team = |name: &str| crate::types::TeamData {
-            id: String::new(),
-            name: name.to_string(),
-            formation: String::new(),
-            play_style: crate::types::PlayStyle::Balanced,
-            tactics: crate::types::TacticsConfig::default(),
-            players: Vec::new(),
+        // Taken apart rather than borrowed and re-cloned field by field.
+        // `squad()` already hands over an owned copy of both squads, both
+        // benches and everything else, and this runs on every UI tick.
+        let (
+            home_team,
+            away_team,
+            home_bench,
+            away_bench,
+            home_subs_made,
+            away_subs_made,
+            max_subs,
+            home_set_pieces,
+            away_set_pieces,
+            substitutions,
+            home_yellows,
+            away_yellows,
+            sent_off,
+        ) = match state.squad() {
+            Some(squad) => (
+                squad.home.team,
+                squad.away.team,
+                squad.home.bench,
+                squad.away.bench,
+                squad.home.subs_made,
+                squad.away.subs_made,
+                squad.max_subs,
+                squad.home.set_pieces,
+                squad.away.set_pieces,
+                squad.substitutions,
+                squad.home.yellows,
+                squad.away.yellows,
+                squad.sent_off,
+            ),
+            None => (
+                empty_team(&context.home_team_name),
+                empty_team(&context.away_team_name),
+                Vec::new(),
+                Vec::new(),
+                0,
+                0,
+                0,
+                Default::default(),
+                Default::default(),
+                Vec::new(),
+                HashMap::new(),
+                HashMap::new(),
+                Default::default(),
+            ),
         };
 
         MatchSnapshot {
@@ -158,48 +227,39 @@ impl MatchSnapshot {
             home_score: progress.home_score,
             away_score: progress.away_score,
             possession: progress.possession,
-            home_team: squad
-                .as_ref()
-                .map(|s| s.home.team.clone())
-                .unwrap_or_else(|| empty_team("Home")),
-            away_team: squad
-                .as_ref()
-                .map(|s| s.away.team.clone())
-                .unwrap_or_else(|| empty_team("Away")),
-            home_bench: squad.as_ref().map(|s| s.home.bench.clone()).unwrap_or_default(),
-            away_bench: squad.as_ref().map(|s| s.away.bench.clone()).unwrap_or_default(),
+            home_team,
+            away_team,
+            home_bench,
+            away_bench,
             home_possession_pct: share.map(|s| s.home).unwrap_or(50.0),
             away_possession_pct: share.map(|s| s.away).unwrap_or(50.0),
             events: state.events().to_vec(),
-            home_subs_made: squad.as_ref().map(|s| s.home.subs_made).unwrap_or(0),
-            away_subs_made: squad.as_ref().map(|s| s.away.subs_made).unwrap_or(0),
-            max_subs: squad.as_ref().map(|s| s.max_subs).unwrap_or(0),
-            home_set_pieces: squad
-                .as_ref()
-                .map(|s| s.home.set_pieces.clone())
-                .unwrap_or_default(),
-            away_set_pieces: squad
-                .as_ref()
-                .map(|s| s.away.set_pieces.clone())
-                .unwrap_or_default(),
-            substitutions: squad
-                .as_ref()
-                .map(|s| s.substitutions.clone())
-                .unwrap_or_default(),
+            home_subs_made,
+            away_subs_made,
+            max_subs,
+            home_set_pieces,
+            away_set_pieces,
+            substitutions,
             home_xg: xg.map(|x| x.home).unwrap_or(0.0),
             away_xg: xg.map(|x| x.away).unwrap_or(0.0),
             momentum: progress.momentum,
-            allows_extra_time,
-            home_yellows: squad
-                .as_ref()
-                .map(|s| s.home.yellows.clone())
-                .unwrap_or_default(),
-            away_yellows: squad
-                .as_ref()
-                .map(|s| s.away.yellows.clone())
-                .unwrap_or_default(),
-            sent_off: squad.as_ref().map(|s| s.sent_off.clone()).unwrap_or_default(),
+            allows_extra_time: context.allows_extra_time,
+            home_yellows,
+            away_yellows,
+            sent_off,
             penalty_shootout: progress.shootout,
         }
+    }
+}
+
+/// A side with nobody in it, for an engine that reports no squad.
+fn empty_team(name: &str) -> crate::types::TeamData {
+    crate::types::TeamData {
+        id: String::new(),
+        name: name.to_string(),
+        formation: String::new(),
+        play_style: crate::types::PlayStyle::Balanced,
+        tactics: crate::types::TacticsConfig::default(),
+        players: Vec::new(),
     }
 }
