@@ -3,7 +3,6 @@
 use std::sync::Arc;
 use crate::mcp_server::context::McpContext;
 use crate::mcp_server::tools_impl::helpers::{require_game};
-use crate::mcp_server::formatting::translate_error;
 use tauri::Manager as TauriManager;
 
 // ─── game_list_saves ────────────────────────────────────────────────────────
@@ -96,7 +95,7 @@ pub fn game_select_team(ctx: Arc<McpContext>, team_id: String) -> Result<String,
     let mut game = require_game(&ctx.state_manager)?;
 
     if game.manager.team_id.is_some() {
-        return Err("Already have a team assigned. Use `jobs_apply` to switch.".to_string());
+        return Err("be.error.mcp.teamAlreadyAssigned".to_string());
     }
 
     // Use bootstrap_team_selection logic
@@ -204,8 +203,7 @@ pub fn game_export_world_safe(ctx: Arc<McpContext>) -> Result<String, String> {
     crate::commands::world::export_world_database_internal(
         &ctx.state_manager,
         &export_path,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     Ok(format!("## World Exported\n\nWritten to: {}", export_path.display()))
 }
@@ -216,7 +214,7 @@ pub fn game_delete_save(ctx: Arc<McpContext>, save_id: String) -> Result<String,
     // Prevent deleting the currently active save
     if let Some(active_id) = ctx.state_manager.get_save_id() {
         if active_id == save_id {
-            return Err("Cannot delete the currently active save. Use game_exit first.".to_string());
+            return Err("be.error.mcp.cannotDeleteActiveSave".to_string());
         }
     }
 

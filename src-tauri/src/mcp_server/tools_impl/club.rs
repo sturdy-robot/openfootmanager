@@ -3,13 +3,11 @@
 use std::sync::Arc;
 use crate::mcp_server::context::McpContext;
 use crate::mcp_server::tools_impl::helpers::{require_game};
-use crate::mcp_server::formatting::translate_error;
 
 // ─── club_upgrade_facility ──────────────────────────────────────────────────
 
 pub fn club_upgrade_facility(ctx: Arc<McpContext>, facility: String) -> Result<String, String> {
-    crate::commands::club::upgrade_facility_internal(&ctx.state_manager, &facility)
-        .map_err(|e| translate_error(&e))?;
+    crate::commands::club::upgrade_facility_internal(&ctx.state_manager, &facility)?;
 
     {
         use tauri::Emitter;
@@ -44,8 +42,7 @@ pub fn staff_get(ctx: Arc<McpContext>) -> Result<String, String> {
 // ─── staff_hire ──────────────────────────────────────────────────────────────
 
 pub fn staff_hire(ctx: Arc<McpContext>, staff_id: String) -> Result<String, String> {
-    crate::commands::staff::hire_staff_internal(&ctx.state_manager, &staff_id)
-        .map_err(|e| translate_error(&e))?;
+    crate::commands::staff::hire_staff_internal(&ctx.state_manager, &staff_id)?;
 
     {
         use tauri::Emitter;
@@ -60,8 +57,7 @@ pub fn staff_hire(ctx: Arc<McpContext>, staff_id: String) -> Result<String, Stri
 // ─── staff_release ───────────────────────────────────────────────────────────
 
 pub fn staff_release(ctx: Arc<McpContext>, staff_id: String) -> Result<String, String> {
-    crate::commands::staff::release_staff_internal(&ctx.state_manager, &staff_id)
-        .map_err(|e| translate_error(&e))?;
+    crate::commands::staff::release_staff_internal(&ctx.state_manager, &staff_id)?;
 
     {
         use tauri::Emitter;
@@ -78,8 +74,7 @@ pub fn staff_release(ctx: Arc<McpContext>, staff_id: String) -> Result<String, S
 pub fn club_request_board_support(ctx: Arc<McpContext>) -> Result<String, String> {
     let response = crate::commands::finances::request_board_support_internal(
         &ctx.state_manager,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     {
         use tauri::Emitter;
@@ -96,8 +91,7 @@ pub fn club_request_board_support(ctx: Arc<McpContext>) -> Result<String, String
 pub fn club_request_marketing(ctx: Arc<McpContext>) -> Result<String, String> {
     let response = crate::commands::finances::request_marketing_campaign_internal(
         &ctx.state_manager,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     {
         use tauri::Emitter;
@@ -114,8 +108,7 @@ pub fn club_request_marketing(ctx: Arc<McpContext>) -> Result<String, String> {
 pub fn club_request_sponsor_pitch(ctx: Arc<McpContext>) -> Result<String, String> {
     let response = crate::commands::finances::request_sponsor_pitch_internal(
         &ctx.state_manager,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     {
         use tauri::Emitter;
