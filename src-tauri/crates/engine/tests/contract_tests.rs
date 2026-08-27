@@ -6,13 +6,15 @@
 //! the contract work is aiming at. `MatchSnapshot` still demands a
 //! `current_minute: u8`, which an engine with a continuous clock should not
 //! have to invent, so the fake below leaves `snapshot()` unimplemented and says
-//! so. The zone half of that complaint is now gone: neither `MinuteResult` nor
-//! `MatchSnapshot` carries a `ball_zone` any more.
+//! so. Two thirds of that complaint are gone: no wire type carries a
+//! `ball_zone` any more, and `advance` no longer forces every engine to resolve
+//! play in units of one of our minutes — the fake below runs at 100 ms.
 
+use engine::advance::{AdvanceRequest, LiveUpdate, StopReason};
 use engine::clock::{MatchClock, MatchPeriod};
 use engine::compliance::check_capabilities;
 use engine::descriptor::{EngineDescriptor, MatchCommandKind, NativeStep, CONTRACT_VERSION};
-use engine::live_match::{MatchCommand, MatchPhase, MatchSnapshot, MinuteResult};
+use engine::live_match::{MatchCommand, MatchPhase, MatchSnapshot};
 use engine::rejection::CommandRejection;
 use engine::report::MatchReport;
 use engine::spatial::{
@@ -92,30 +94,49 @@ impl SpatialTelemetry for SpatialFake {
     }
 }
 
+/// This fake's native step, and the point of the whole exercise: 100 ms is not
+/// a divisor of anything the built-in engine does.
+const SPATIAL_FAKE_STEP_MS: u32 = 100;
+
 impl LiveState for SpatialFake {
-    fn step_minute(&mut self, _rng: &mut dyn rand::Rng) -> MinuteResult {
-        self.elapsed_ms += 60_000;
-        self.ball_x = (self.ball_x + 0.05).min(1.0);
-        self.events.push(MatchEvent {
-            minute: MatchClock::new(MatchPeriod::FirstHalf, self.elapsed_ms).display_minute(),
-            event_type: EventType::PassCompleted,
-            side: Side::Home,
-            zone: Zone::Midfield,
-            player_id: None,
-            secondary_player_id: None,
-            detail: None,
-        });
-        MinuteResult {
-            minute: MatchClock::new(MatchPeriod::FirstHalf, self.elapsed_ms).display_minute(),
+    fn advance(&mut self, request: AdvanceRequest, _rng: &mut dyn rand::Rng) -> LiveUpdate {
+        let mut events = Vec::new();
+        let mut resolved_ms = 0;
+
+        // At least one step, then until the budget is met. Nothing here rounds
+        // to a minute, which under `step_minute` was not expressible.
+        loop {
+            self.elapsed_ms += SPATIAL_FAKE_STEP_MS;
+            resolved_ms += SPATIAL_FAKE_STEP_MS;
+            self.ball_x = (self.ball_x + 0.001).min(1.0);
+            let event = MatchEvent {
+                minute: MatchClock::new(MatchPeriod::FirstHalf, self.elapsed_ms).display_minute(),
+                event_type: EventType::PassCompleted,
+                side: Side::Home,
+                zone: Zone::Midfield,
+                player_id: None,
+                secondary_player_id: None,
+                detail: None,
+            };
+            self.events.push(event.clone());
+            events.push(event);
+            if resolved_ms >= request.budget_ms {
+                break;
+            }
+        }
+
+        LiveUpdate {
             // What the neutral clock buys a continuous engine: it reports its
             // real millisecond time instead of rounding to one of our minutes.
             clock: MatchClock::new(MatchPeriod::FirstHalf, self.elapsed_ms),
+            resolved_ms,
             phase: MatchPhase::FirstHalf,
-            events: self.events.clone(),
+            events,
             home_score: 0,
             away_score: 0,
             possession: Side::Home,
             is_finished: false,
+            stopped: StopReason::BudgetSpent,
         }
     }
 
@@ -173,7 +194,7 @@ impl LiveState for SpatialFake {
 struct ZoneFake;
 
 impl LiveState for ZoneFake {
-    fn step_minute(&mut self, _rng: &mut dyn rand::Rng) -> MinuteResult {
+    fn advance(&mut self, _request: AdvanceRequest, _rng: &mut dyn rand::Rng) -> LiveUpdate {
         unimplemented!()
     }
     fn apply_command(&mut self, _cmd: MatchCommand) -> Result<(), CommandRejection> {
@@ -241,7 +262,7 @@ fn frames_advance_with_the_match() {
     let mut fake = SpatialFake::new();
     let before = fake.telemetry().unwrap().frame();
     let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(1);
-    fake.step_minute(&mut rng);
+    fake.advance(AdvanceRequest::millis(SPATIAL_FAKE_STEP_MS), &mut rng);
     let after = fake.telemetry().unwrap().frame();
 
     assert!(after.clock > before.clock, "the frame clock has to move");
@@ -389,6 +410,12 @@ fn the_built_in_engine_is_capability_compliant() {
 /// Stand-in for the engine registry: hands back a live match without the caller
 /// knowing which engine produced it.
 fn kickoff_by_id(id: &str) -> Option<Box<dyn engine::LiveState + Send>> {
+    kickoff_by_id_with(id, false)
+}
+
+/// As above, but for a tie that has to be settled: extra time, and a shootout
+/// if it is still level.
+fn kickoff_by_id_with(id: &str, allows_extra_time: bool) -> Option<Box<dyn engine::LiveState + Send>> {
     use engine::traits::{DefaultEngine, LiveEngineObject, MatchSetup};
     use engine::{MatchConfig, PlayStyle, PlayerData, Position, TacticsConfig, TeamData};
 
@@ -448,7 +475,8 @@ fn kickoff_by_id(id: &str) -> Option<Box<dyn engine::LiveState + Send>> {
     if id != engine::DEFAULT_ENGINE_ID {
         return None;
     }
-    let setup = MatchSetup::league(team("home"), team("away"), MatchConfig::default());
+    let setup = MatchSetup::league(team("home"), team("away"), MatchConfig::default())
+        .with_extra_time(allows_extra_time);
     Some(DefaultEngine.kickoff_boxed(setup))
 }
 
@@ -462,7 +490,7 @@ fn a_match_can_be_played_to_a_report_without_naming_the_engine() {
 
     let mut guard = 0;
     while !state.is_finished() && guard < 200 {
-        state.step_minute(&mut rng);
+        state.advance(AdvanceRequest::one_minute(), &mut rng);
         guard += 1;
     }
     assert!(state.is_finished(), "the match should reach full time");
@@ -541,15 +569,15 @@ fn a_live_match_reports_a_clock_that_tracks_its_minute() {
 
     let mut guard = 0;
     while !state.is_finished() && guard < 200 {
-        let result = state.step_minute(&mut rng);
+        let update = state.advance(AdvanceRequest::one_minute(), &mut rng);
         // Two readings of one instant. The broadcast minute never runs ahead
         // of the engine's running minute, except at kick-off, where football
         // counts the opening minute as 1 and the engine counts elapsed as 0.
         assert!(
-            result.clock.display_minute() <= result.minute.max(1),
+            update.clock.display_minute() <= state.minute().max(1),
             "clock read {} while the running minute was {}",
-            result.clock.display_minute(),
-            result.minute
+            update.clock.display_minute(),
+            state.minute()
         );
         guard += 1;
     }
@@ -571,7 +599,7 @@ fn the_dugout_ai_drives_an_erased_state() {
     let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(11);
 
     for _ in 0..60 {
-        state.step_minute(&mut rng);
+        state.advance(AdvanceRequest::one_minute(), &mut rng);
     }
 
     let profile = AiProfile {
@@ -598,7 +626,7 @@ fn our_engine_counts_pressure_within_the_ten_minute_window() {
     let mut state = kickoff_by_id(engine::DEFAULT_ENGINE_ID).expect("known engine");
     let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(3);
     for _ in 0..40 {
-        state.step_minute(&mut rng);
+        state.advance(AdvanceRequest::one_minute(), &mut rng);
     }
     for side in [Side::Home, Side::Away] {
         assert!(
@@ -607,4 +635,208 @@ fn our_engine_counts_pressure_within_the_ten_minute_window() {
             state.minutes_under_pressure(side)
         );
     }
+}
+
+// ---------------------------------------------------------------------------
+// The advance bargain
+//
+// `step_minute` made one of our minutes the unit every engine had to resolve
+// in. These pin what replaced it, from both sides: an engine asked for less
+// than it can do still makes progress, and an engine asked for more does not
+// run past a moment the caller has to be given.
+// ---------------------------------------------------------------------------
+
+/// Get past kick-off, which is a phase transition and resolves no time.
+fn kicked_off(seed: u64) -> (Box<dyn engine::LiveState + Send>, rand::rngs::StdRng) {
+    let mut state = kickoff_by_id(engine::DEFAULT_ENGINE_ID).expect("known engine");
+    let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(seed);
+    let opening = state.advance(AdvanceRequest::one_minute(), &mut rng);
+    assert_eq!(opening.phase, MatchPhase::FirstHalf);
+    assert_eq!(
+        opening.stopped,
+        StopReason::PhaseBoundary,
+        "kick-off is a transition, not a minute of football"
+    );
+    assert_eq!(opening.resolved_ms, 0, "no time passes at kick-off");
+    (state, rng)
+}
+
+#[test]
+fn a_budget_below_the_native_step_still_resolves_one_step() {
+    // The alternative — resolving nothing because a millisecond is less than a
+    // minute — leaves the caller spinning on a match that never moves.
+    let (mut state, mut rng) = kicked_off(20260827);
+    let update = state.advance(AdvanceRequest::millis(1), &mut rng);
+    assert_eq!(
+        update.resolved_ms, 60_000,
+        "the built-in engine's native step is one minute, so that is the floor"
+    );
+
+    // Zero is the floor's real test: a budget check made before the first step
+    // rather than after it looks correct at one millisecond and stalls here.
+    let update = state.advance(AdvanceRequest::millis(0), &mut rng);
+    assert_eq!(
+        update.resolved_ms, 60_000,
+        "asking for no time must still move the match on, or the caller spins"
+    );
+}
+
+#[test]
+fn an_engine_overshoots_a_budget_by_at_most_one_native_step() {
+    // 1050 ms is deliberately not a multiple of the fake's 100 ms step, so the
+    // only two answers that satisfy the contract are 1100 (round up) and a
+    // violation.
+    let mut fake = SpatialFake::new();
+    let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(5);
+    let update = fake.advance(AdvanceRequest::millis(1050), &mut rng);
+
+    assert!(
+        update.resolved_ms >= 1050,
+        "an engine that stops short of the budget has not met the request, got {}",
+        update.resolved_ms
+    );
+    assert!(
+        update.resolved_ms < 1050 + SPATIAL_FAKE_STEP_MS,
+        "overshoot is capped at one native step, got {}",
+        update.resolved_ms
+    );
+}
+
+#[test]
+fn a_continuous_engine_reports_a_time_our_minutes_cannot_express() {
+    // The whole reason `step_minute` had to go. Driven through an erased state,
+    // because that is how a registry hands an engine out.
+    let mut boxed: Box<dyn engine::LiveState + Send> = Box::new(SpatialFake::new());
+    let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(9);
+
+    let update = boxed.advance(AdvanceRequest::millis(250), &mut rng);
+
+    assert_eq!(update.clock.period_elapsed_ms, 300);
+    assert_eq!(
+        update.clock.elapsed_minutes(),
+        0,
+        "three hundred milliseconds is not a minute, and the engine no longer has to pretend it is"
+    );
+}
+
+#[test]
+fn a_bigger_budget_resolves_more_than_one_minute_in_one_call() {
+    let (mut state, mut rng) = kicked_off(20260827);
+    let update = state.advance(AdvanceRequest::minutes(5), &mut rng);
+
+    assert_eq!(update.resolved_ms, 5 * 60_000);
+    assert_eq!(update.stopped, StopReason::BudgetSpent);
+    assert_eq!(
+        state.minute(),
+        5,
+        "five minutes of budget is five minutes of football"
+    );
+}
+
+#[test]
+fn half_time_stops_an_advance_that_still_has_budget_left() {
+    // A caller that asked for the whole match must still be handed half time:
+    // it is when substitutions are made, and the player has to see it.
+    let (mut state, mut rng) = kicked_off(20260827);
+    let budget = AdvanceRequest::minutes(90);
+
+    let mut guard = 0;
+    let update = loop {
+        let update = state.advance(budget, &mut rng);
+        if update.phase == MatchPhase::HalfTime {
+            break update;
+        }
+        guard += 1;
+        assert!(guard < 10, "half time should arrive in the first such call");
+    };
+
+    assert_eq!(update.stopped, StopReason::PhaseBoundary);
+    assert!(
+        update.resolved_ms < budget.budget_ms,
+        "the call stopped early: it resolved {} of a {} ms budget",
+        update.resolved_ms,
+        budget.budget_ms
+    );
+    assert!(
+        update.resolved_ms >= 45 * 60_000,
+        "and it stopped at half time, not before it"
+    );
+}
+
+#[test]
+fn advancing_a_finished_match_changes_nothing() {
+    // There is no error to return here — the state is intact and the answer is
+    // simply that there is nothing left. Calling again has to be safe, because
+    // a fast-forward loop will.
+    let mut state = kickoff_by_id(engine::DEFAULT_ENGINE_ID).expect("known engine");
+    let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(20260802);
+
+    let mut guard = 0;
+    while !state.is_finished() && guard < 200 {
+        state.advance(AdvanceRequest::one_minute(), &mut rng);
+        guard += 1;
+    }
+    assert!(state.is_finished());
+
+    let before = state.advance(AdvanceRequest::minutes(10), &mut rng);
+    let after = state.advance(AdvanceRequest::minutes(10), &mut rng);
+
+    for update in [&before, &after] {
+        assert_eq!(update.stopped, StopReason::Finished);
+        assert_eq!(update.resolved_ms, 0);
+        assert!(update.events.is_empty());
+        assert!(update.is_finished);
+    }
+    assert_eq!(before.clock, after.clock, "the clock has stopped for good");
+}
+
+#[test]
+fn a_shootout_hands_back_one_round_at_a_time() {
+    // The kick moves the tie on without moving the clock, so neither the budget
+    // nor a phase change can end the call. Without a stop for an engine's own
+    // boundary, one advance would swallow the entire shootout and the player
+    // would watch none of it.
+    let mut found = None;
+    for seed in 0..40u64 {
+        let mut state =
+            kickoff_by_id_with(engine::DEFAULT_ENGINE_ID, true).expect("known engine");
+        let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(seed);
+        let mut guard = 0;
+        while !state.is_finished() && guard < 300 {
+            let update = state.advance(AdvanceRequest::minutes(120), &mut rng);
+            if update.phase == MatchPhase::PenaltyShootout {
+                found = Some((state, rng));
+                break;
+            }
+            guard += 1;
+        }
+        if found.is_some() {
+            break;
+        }
+    }
+
+    let (mut state, mut rng) = found.expect("forty seeds should produce one shootout");
+
+    let first = state.advance(AdvanceRequest::minutes(120), &mut rng);
+    assert_eq!(first.resolved_ms, 0, "a penalty kick takes no match time");
+    assert!(
+        !first.events.is_empty(),
+        "a round with no events is a stalled engine, not a boundary"
+    );
+    assert_eq!(
+        first.stopped,
+        StopReason::NativeBoundary,
+        "the engine stopped at a boundary of its own, with the whole budget to spare"
+    );
+
+    let mut calls = 1;
+    while !state.is_finished() && calls < 60 {
+        state.advance(AdvanceRequest::minutes(120), &mut rng);
+        calls += 1;
+    }
+    assert!(state.is_finished(), "the shootout has to produce a winner");
+    assert!(
+        calls > 1,
+        "one call swallowed the whole shootout; the player would watch none of it"
+    );
 }

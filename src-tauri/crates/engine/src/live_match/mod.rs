@@ -390,6 +390,82 @@ impl LiveMatchState {
         }
     }
 
+    /// Resolve some play, and say what stopped it.
+    ///
+    /// This is the contract entry point. It runs whole minutes because that is
+    /// this engine's native step, so a caller asking for less than a minute
+    /// still gets one — an engine that resolved nothing would leave the caller
+    /// spinning — and a caller asking for more gets minutes until something
+    /// interrupts.
+    ///
+    /// Four things interrupt, in this order of precedence:
+    ///
+    /// 1. full time, because there is nothing left to resolve;
+    /// 2. a phase change, because half time is a moment the player has to be
+    ///    given, not one that goes past inside a longer call;
+    /// 3. a step that resolved no time at all — a penalty kick, an interval —
+    ///    because the match moved on without the clock and the caller should
+    ///    see each of those separately, exactly as it did when every call was
+    ///    one minute;
+    /// 4. the budget running out.
+    pub fn advance<R: Rng + ?Sized>(
+        &mut self,
+        request: crate::advance::AdvanceRequest,
+        rng: &mut R,
+    ) -> crate::advance::LiveUpdate {
+        use crate::advance::StopReason;
+
+        const MS_PER_MINUTE: u32 = 60_000;
+
+        let mut events = Vec::new();
+        let mut resolved_ms: u32 = 0;
+        let stopped;
+
+        loop {
+            let minute_before = self.current_minute;
+            let phase_before = self.phase;
+
+            let result = self.step_minute(rng);
+            events.extend(result.events);
+
+            // How much time that step actually consumed. Taken from the running
+            // minute rather than from the clock, because the clock restarts at
+            // each period and would read a half-time transition as travelling
+            // backwards.
+            let step_ms = self.current_minute.saturating_sub(minute_before) as u32 * MS_PER_MINUTE;
+            resolved_ms = resolved_ms.saturating_add(step_ms);
+
+            if result.is_finished {
+                stopped = StopReason::Finished;
+                break;
+            }
+            if self.phase != phase_before {
+                stopped = StopReason::PhaseBoundary;
+                break;
+            }
+            if step_ms == 0 {
+                stopped = StopReason::NativeBoundary;
+                break;
+            }
+            if resolved_ms >= request.budget_ms {
+                stopped = StopReason::BudgetSpent;
+                break;
+            }
+        }
+
+        crate::advance::LiveUpdate {
+            clock: self.clock(),
+            resolved_ms,
+            phase: self.phase,
+            events,
+            home_score: self.home_score,
+            away_score: self.away_score,
+            possession: self.possession,
+            is_finished: self.phase == MatchPhase::Finished,
+            stopped,
+        }
+    }
+
     /// Step one minute forward. Returns the events that occurred.
     pub fn step_minute<R: Rng + ?Sized>(&mut self, rng: &mut R) -> MinuteResult {
         match self.phase {

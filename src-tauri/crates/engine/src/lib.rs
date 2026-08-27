@@ -1,3 +1,4 @@
+pub mod advance;
 pub mod ai;
 pub mod clock;
 pub mod compliance;
@@ -46,6 +47,7 @@ pub mod replay;
 pub use engine::simulate;
 pub use engine::simulate_setup;
 pub use engine::simulate_with_rng;
+pub use advance::{AdvanceRequest, LiveUpdate, StopReason};
 pub use clock::{MatchClock, MatchPeriod};
 pub use descriptor::{
     CONTRACT_VERSION, EngineDescriptor, EngineInfo, MatchCommandKind, NativeStep,

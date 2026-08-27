@@ -22,9 +22,10 @@
 
 use rand::Rng;
 
+use crate::advance::{AdvanceRequest, LiveUpdate};
 use crate::ai::AiProfile;
 use crate::event::MatchEvent;
-use crate::live_match::{MatchCommand, MatchPhase, MatchSnapshot, MinuteResult};
+use crate::live_match::{MatchCommand, MatchPhase, MatchSnapshot};
 use crate::report::MatchReport;
 use crate::types::{MatchConfig, PlayerData, TeamData};
 
@@ -127,8 +128,18 @@ pub trait LiveEngine: crate::descriptor::EngineInfo {
 
 /// A match in progress.
 pub trait LiveState {
-    /// Advance one minute. Returns what happened.
-    fn step_minute(&mut self, rng: &mut dyn Rng) -> MinuteResult;
+    /// Resolve some play. Returns what happened and why it stopped.
+    ///
+    /// The caller asks for an amount of match time; the engine answers with
+    /// what it actually resolved. It must resolve at least one native step
+    /// unless a boundary intervenes, may overshoot the budget by at most one
+    /// native step, and must stop at a phase boundary whatever the budget says.
+    /// See [`crate::advance`] for the full bargain.
+    ///
+    /// This replaced a `step_minute` that fixed the cadence at exactly one
+    /// minute — which is the built-in engine's native step, and no other
+    /// engine's business.
+    fn advance(&mut self, request: AdvanceRequest, rng: &mut dyn Rng) -> LiveUpdate;
 
     /// Apply a command between minutes (substitution, tactical change).
     ///
@@ -264,8 +275,8 @@ impl LiveEngine for DefaultEngine {
 }
 
 impl LiveState for crate::live_match::LiveMatchState {
-    fn step_minute(&mut self, rng: &mut dyn Rng) -> MinuteResult {
-        crate::live_match::LiveMatchState::step_minute(self, rng)
+    fn advance(&mut self, request: AdvanceRequest, rng: &mut dyn Rng) -> LiveUpdate {
+        crate::live_match::LiveMatchState::advance(self, request, rng)
     }
 
     fn apply_command(

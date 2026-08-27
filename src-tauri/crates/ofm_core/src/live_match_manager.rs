@@ -250,7 +250,25 @@ pub struct LiveMatchSession {
 impl LiveMatchSession {
     /// Step one minute and apply AI decisions for computer-controlled sides.
     pub fn step(&mut self) -> MinuteResult {
-        let result = self.match_state.step_minute(&mut self.rng);
+        let update = self
+            .match_state
+            .advance(engine::AdvanceRequest::one_minute(), &mut self.rng);
+        // Rebuilt as a `MinuteResult` so the IPC surface and the frontend do
+        // not move in the same commit as the contract. The running minute comes
+        // from the state, never from the clock: a shootout's period opens at
+        // minute 121 while the engine still reads 120, so the two do not round
+        // trip. Both this shim and `MinuteResult` go when the frontend moves to
+        // updates.
+        let result = MinuteResult {
+            minute: self.match_state.minute(),
+            clock: update.clock,
+            phase: update.phase,
+            events: update.events,
+            home_score: update.home_score,
+            away_score: update.away_score,
+            possession: update.possession,
+            is_finished: update.is_finished,
+        };
 
         // Apply AI decisions for non-user sides (only during playing phases)
         if !result.is_finished {

@@ -60,7 +60,7 @@ Same seed and same inputs must produce the same report. See *Determinism* below.
 
 | Method | Meaning |
 |---|---|
-| `step_minute(rng) -> MinuteResult` | Advance one minute of play |
+| `advance(request, rng) -> LiveUpdate` | Resolve some play. See *Cadence* below |
 | `apply_command(cmd) -> Result<(), CommandRejection>` | A decision from the dugout, between minutes |
 | `snapshot() -> MatchSnapshot` | Everything the UI reads |
 | `phase() -> MatchPhase` | Which part of the match this is |
@@ -70,6 +70,32 @@ Same seed and same inputs must produce the same report. See *Determinism* below.
 | `minute() -> u8` | The running match minute |
 | `report() -> MatchReport` | The report as it stands |
 | `into_report(self: Box<Self>) -> MatchReport` | The final report, consuming the match |
+
+### Cadence
+
+`advance` is where the caller says how much play it wants and the engine says what it actually
+resolved. The bargain:
+
+- Resolve **at least one native step** unless a boundary intervenes. A caller that asks for a
+  millisecond must still get progress, or it spins on a match that never moves.
+- Stop as soon as you have resolved **at least** the budget. You may overshoot by at most one
+  native step, never by more.
+- Stop at a **phase boundary** whatever the budget says. Half time is when substitutions are made
+  and the player has to be shown it; a half time that goes past inside a longer call is a half
+  time nobody saw.
+- You **may** stop early at a natural boundary of your own with budget left — the end of a
+  possession, of a frame batch, of a shootout round — and `StopReason::NativeBoundary` says so.
+
+`resolved_ms` of zero is a legitimate answer. An interval and a penalty kick both move the match on
+without the clock running.
+
+Commands and the dugout AI act **between** advance calls. So the granularity at which anyone can
+intervene is the caller's chosen budget, bounded below by your native step — which is the honest
+version of what `step_minute` used to fix at exactly one minute.
+
+`LiveUpdate` deliberately carries no running minute. That is the built-in engine's way of counting,
+not the contract's, and it cannot be recovered from the clock in a shootout, where the period opens
+at minute 121 while the engine still reads 120. A caller that needs it asks `minute()`.
 
 `into_report` takes `Box<Self>` on purpose. With a bare `self` receiver the method is left out of
 the vtable, and an erased match can be played to full time and then never finished
@@ -163,9 +189,6 @@ nobody discovers them the hard way.
   `current_minute`. An engine keeping continuous time has to round to a minute to fill it in.
   `MinuteResult` and `MatchSnapshot` both now carry a `MatchClock` alongside it, which is
   period-relative and in milliseconds, but the minute has not gone away yet.
-- **`step_minute` fixes the cadence at one minute.** An engine resolving frames must batch up to a
-  minute before it can report. The intended replacement is an `advance(budget)` call the engine
-  may return early from, at its own natural boundary.
 - **`MatchSetup` still carries `MatchConfig`**, whose fields are the built-in engine's tuning
   constants — shot accuracy, goal conversion, foul probability. Another engine can ignore them,
   but their presence in the shared setup is not honest, and they should move behind a per-engine
