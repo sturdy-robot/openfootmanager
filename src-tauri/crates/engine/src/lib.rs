@@ -14,6 +14,7 @@ pub mod sim;
 pub mod spatial;
 pub mod traits;
 pub mod types;
+pub mod view;
 
 /// The engine's behaviour version.
 ///
@@ -66,6 +67,7 @@ pub use traits::{
     DEFAULT_ENGINE_ID, DefaultEngine, InstantEngine, LiveEngine, LiveEngineObject, LiveState,
     MatchSetup,
 };
+pub use view::{MatchProgress, PerSide, SideSquad, SquadState};
 pub use types::{
     BreakSpeed, CounterPressDuration, DefensiveLine, DefensiveShape, MarkingStyle, MatchConfig,
     PlayStyle, PlayerData, PlayerRole, Position, PressingIntensity, Side, Slot,

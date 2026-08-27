@@ -208,6 +208,12 @@ pub struct LiveMatchSession {
     /// Which engine is playing it. Stamped onto the fixture when the match
     /// finishes, so a replay knows what produced the result.
     pub engine_id: String,
+    /// Whether a level score at ninety minutes goes to extra time.
+    ///
+    /// The session's own knowledge, not the engine's: it is a property of the
+    /// competition this fixture belongs to. Held here because the match screen
+    /// shows it and the engine has no reason to report it back.
+    pub allows_extra_time: bool,
     /// The simulation stream: everything the match engine itself draws.
     ///
     /// Deliberately separate from `ai_rng`. With one shared generator, a user
@@ -294,8 +300,14 @@ impl LiveMatchSession {
         results
     }
 
+    /// The whole match screen, composed from what the engine reports.
+    ///
+    /// The engine no longer hands this over whole. It supplies where the match
+    /// stands and — if it manages personnel at all — who is on the pitch;
+    /// whether the tie goes to extra time is the session's own knowledge,
+    /// because the session is what decided the fixture was a knockout.
     pub fn snapshot(&self) -> MatchSnapshot {
-        self.match_state.snapshot()
+        MatchSnapshot::compose(self.match_state.as_ref(), self.allows_extra_time)
     }
 
     /// The full match report, without ending the match.
@@ -487,6 +499,7 @@ pub fn create_live_match(
     Ok(LiveMatchSession {
         match_state,
         engine_id: played_by,
+        allows_extra_time,
         // Seeded from the fixture rather than thread entropy, so the match can
         // be re-simulated later and replayed exactly as it was played. The two
         // streams are derived from the same seed but kept independent.

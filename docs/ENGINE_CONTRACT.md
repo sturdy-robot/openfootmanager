@@ -62,8 +62,9 @@ Same seed and same inputs must produce the same report. See *Determinism* below.
 |---|---|
 | `advance(request, rng) -> LiveUpdate` | Resolve some play. See *Cadence* below |
 | `apply_command(cmd) -> Result<(), CommandRejection>` | A decision from the dugout, between minutes |
-| `snapshot() -> MatchSnapshot` | Everything the UI reads |
+| `progress() -> MatchProgress` | Where the match stands: phase, clock, score, who has the ball |
 | `phase() -> MatchPhase` | Which part of the match this is |
+| `squad() -> Option<SquadState>` | Who is on the pitch and the bench. Optional — see below |
 | `is_finished() -> bool` | Whether the match is over |
 | `events() -> &[MatchEvent]` | The match so far |
 | `engine_id() -> &'static str` | Which engine is playing |
@@ -110,13 +111,18 @@ under the `mcp` feature, the MCP server's runtime.
 
 Optional, and declared in the descriptor.
 
-`compliance::check_capabilities` verifies the spatial claim in both directions today: it fails an
-engine that advertises telemetry and returns none, and equally one that returns telemetry it never
-advertised, because nothing will ever ask for it. It also rejects coordinates that are not real
-numbers or are off the field of play.
+`compliance::check_capabilities` verifies two claims in both directions today.
 
-The other three are declarations the suite does not yet check. Treat them as promises you are
-expected to keep, and expect the checks to arrive.
+**Positions.** It fails an engine that advertises telemetry and returns none, and equally one that
+returns telemetry it never advertised, because nothing will ever ask for it. It also rejects
+coordinates that are not real numbers or are off the field of play.
+
+**Squads.** It fails an engine that accepts `Substitute` but reports no squad — the game would
+offer a change with nothing to pick from — and equally one that reports a squad no command can
+change.
+
+`extra_time`, `penalty_shootout` and `in_match_ai` are declarations the suite does not yet check.
+Treat them as promises you are expected to keep, and expect the checks to arrive.
 
 | Capability | What it means |
 |---|---|
@@ -124,6 +130,7 @@ expected to keep, and expect the checks to arrive.
 | `extra_time`, `penalty_shootout` | You resolve knockout ties. |
 | `in_match_ai` | You manage the dugout yourself rather than expecting the caller to. |
 | `commands` | Which `MatchCommandKind`s you accept. Anything absent must be refused with `CommandRejection::Unsupported` rather than ignored, so a caller can stop offering it. |
+| *(implied)* `squad()` | Listing `Substitute` among your commands obliges you to implement `LiveState::squad()`, and implementing it obliges you to accept `Substitute`. Checked in both directions. |
 
 **Do not fabricate what you do not model.** The built-in engine advertises no spatial telemetry
 because it resolves bands and lanes, not coordinates. A made-up position is worse than an absent
@@ -134,7 +141,12 @@ one: whatever draws it will believe it.
 ## What you get for free
 
 - **The dugout AI.** `ai_decide` runs on `&dyn LiveState`, so substitutions and tactical changes
-  work on any engine. It reads the snapshot and `minutes_under_pressure`, and nothing else.
+  work on any engine. It reads `progress()`, `squad()` and `minutes_under_pressure()`, and nothing
+  else. An engine reporting no squad gets no AI — every decision a manager makes is about the team,
+  so there is nothing to decide — which is consistent with such an engine accepting no commands.
+- **The match screen.** `MatchSnapshot::compose(state, allows_extra_time)` builds the game's whole
+  match view out of contract calls, so what the player sees works for any engine. An engine with no
+  squad simply produces a view with no squad rather than being unable to produce one.
 - **The compliance suite.** `compliance::run_all` checks determinism, report and event agreement,
   discipline, substitution legality and shootout resolution.
 - **The benchmark.** `ofm-sim-bench --engine <id>` measures any registered engine against the same
@@ -184,16 +196,10 @@ the wrong id on the fixture.
 The contract is not finished. These are known and being worked on; they are written down so
 nobody discovers them the hard way.
 
-- **`MatchSnapshot` is still shaped around the built-in engine.** Twenty-seven fields, including
-  both squads, both benches, per-side yellow-card maps and shootout state, and a whole-minute
-  `current_minute`. An engine keeping continuous time has to round to a minute to fill it in. It
-  carries a `MatchClock` alongside — period-relative, in milliseconds — but the minute has not gone
-  away, which is why the continuous fake in `contract_tests.rs` still leaves `snapshot()`
-  unimplemented and says so. This is the next thing to fix.
 - **`MatchSetup` still carries `MatchConfig`**, whose fields are the built-in engine's tuning
   constants — shot accuracy, goal conversion, foul probability. Another engine can ignore them,
   but their presence in the shared setup is not honest, and they should move behind a per-engine
-  configuration channel.
+  configuration channel. This is the next thing to fix.
 - **`LiveEngine::kickoff` drops `MatchSetup::seed` and both `AiProfile`s.** The instant path uses
   them; the live path currently expects the caller to own the RNG and drive the AI. Fixing this is
   a behaviour change and is scheduled with the other engine-behaviour work.
@@ -205,6 +211,7 @@ nobody discovers them the hard way.
 - `crates/engine/src/traits.rs` — the contract itself
 - `crates/engine/src/descriptor.rs` — capabilities and versioning
 - `crates/engine/src/compliance.rs` — what an engine is checked against
+- `crates/engine/src/view.rs` — what a caller can see of a match in progress
 - `crates/engine/tests/contract_tests.rs` — two deliberately unlike fake engines, driven through
   trait objects
 - [`MATCH_SIMULATION.md`](MATCH_SIMULATION.md) — how the built-in engine works

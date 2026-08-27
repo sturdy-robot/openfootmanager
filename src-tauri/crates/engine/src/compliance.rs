@@ -649,6 +649,27 @@ pub fn check_capabilities(
         ..Default::default()
     };
 
+    // An engine that accepts substitutions is the only thing that knows the
+    // squad afterwards, because a substitution rewrites the incoming player's
+    // position and slot. So accepting the command and reporting no squad
+    // leaves the game unable to offer the substitution it would accept. The
+    // reverse claim is just as dead: a squad nobody can change is a squad
+    // nothing will ever ask for.
+    let accepts_substitutions = descriptor
+        .commands
+        .contains(&crate::descriptor::MatchCommandKind::Substitute);
+    match (accepts_substitutions, state.squad().is_some()) {
+        (true, false) => report.fail(
+            Invariant::Capabilities,
+            "descriptor accepts substitutions but the live state reports no squad, so nothing can pick one",
+        ),
+        (false, true) => report.fail(
+            Invariant::Capabilities,
+            "the live state reports a squad the descriptor gives no way to change",
+        ),
+        _ => {}
+    }
+
     let telemetry = state.telemetry();
     match (descriptor.spatial_telemetry, telemetry.is_some()) {
         (true, false) => report.fail(

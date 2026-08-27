@@ -55,11 +55,11 @@ pub fn ai_decide<R: Rng + ?Sized>(
 ) -> Vec<MatchCommand> {
     let mut commands = Vec::new();
 
-    let snap = match_state.snapshot();
-    let minute = snap.current_minute;
+    let progress = match_state.progress();
+    let minute = match_state.minute();
 
     // AI only acts during playing phases
-    match snap.phase {
+    match progress.phase {
         MatchPhase::FirstHalf
         | MatchPhase::SecondHalf
         | MatchPhase::ExtraTimeFirstHalf
@@ -67,21 +67,28 @@ pub fn ai_decide<R: Rng + ?Sized>(
         _ => return commands,
     }
 
-    // --- Substitution decisions ---
-    let subs_made = match side {
-        Side::Home => snap.home_subs_made,
-        Side::Away => snap.away_subs_made,
+    // Everything a manager does needs to know the squad: who is tiring, who is
+    // on the bench, and what the side is currently set up to do. An engine that
+    // manages no personnel reports none, and there is nothing here to decide —
+    // the AI stands down rather than guessing at a team it cannot see.
+    let Some(squad) = match_state.squad() else {
+        return commands;
     };
+    let pressure = match_state.minutes_under_pressure(side);
 
-    if subs_made < snap.max_subs
+    // --- Substitution decisions ---
+    let subs_made = squad.side(side).subs_made;
+    if subs_made < squad.max_subs
         && let Some(sub_cmd) =
-            consider_substitution(match_state, side, profile, minute, subs_made, rng)
+            consider_substitution(&squad, &progress, side, profile, minute, subs_made, rng)
     {
         commands.push(sub_cmd);
     }
 
     // --- Tactical adjustments ---
-    if let Some(tactic_cmd) = consider_tactic_change(match_state, side, profile, minute, rng) {
+    if let Some(tactic_cmd) =
+        consider_tactic_change(&squad, &progress, side, profile, minute, pressure, rng)
+    {
         commands.push(tactic_cmd);
     }
 
@@ -93,24 +100,16 @@ pub fn ai_decide<R: Rng + ?Sized>(
 // ---------------------------------------------------------------------------
 
 fn consider_substitution<R: Rng + ?Sized>(
-    match_state: &dyn crate::traits::LiveState,
+    squad: &crate::view::SquadState,
+    progress: &crate::view::MatchProgress,
     side: Side,
     profile: &AiProfile,
     minute: u8,
     subs_made: u8,
     rng: &mut R,
 ) -> Option<MatchCommand> {
-    let snap = match_state.snapshot();
-    let team = match side {
-        Side::Home => &snap.home_team,
-        Side::Away => &snap.away_team,
-    };
-    // The snapshot already carries both benches, so there is no need to reach
-    // past the contract for them.
-    let bench: &[PlayerData] = match side {
-        Side::Home => &snap.home_bench,
-        Side::Away => &snap.away_bench,
-    };
+    let team = &squad.side(side).team;
+    let bench: &[PlayerData] = &squad.side(side).bench;
 
     if bench.is_empty() {
         return None;
@@ -118,8 +117,8 @@ fn consider_substitution<R: Rng + ?Sized>(
 
     // Determine score differential from this side's perspective
     let (own_goals, opp_goals) = match side {
-        Side::Home => (snap.home_score, snap.away_score),
-        Side::Away => (snap.away_score, snap.home_score),
+        Side::Home => (progress.home_score, progress.away_score),
+        Side::Away => (progress.away_score, progress.home_score),
     };
     let goal_diff = own_goals as i8 - opp_goals as i8;
 
@@ -141,7 +140,7 @@ fn consider_substitution<R: Rng + ?Sized>(
         if p.position == Position::Goalkeeper {
             continue; // Don't sub the goalkeeper for fatigue
         }
-        if snap.sent_off.contains(&p.id) {
+        if squad.sent_off.contains(&p.id) {
             continue;
         }
         let condition = p.condition as f64; // snapshot condition
@@ -160,7 +159,7 @@ fn consider_substitution<R: Rng + ?Sized>(
     if let Some((tired_player, _)) = worst_player {
         // Find best replacement from bench with same position
         if let Some(replacement) =
-            find_best_bench_replacement(bench, tired_player.position, &snap.sent_off, None)
+            find_best_bench_replacement(bench, tired_player.position, &squad.sent_off, None)
         {
             return Some(MatchCommand::Substitute {
                 side,
@@ -182,7 +181,7 @@ fn consider_substitution<R: Rng + ?Sized>(
                 .iter()
                 .filter(|p| {
                     (p.position == Position::Defender || p.position == Position::Midfielder)
-                        && !snap.sent_off.contains(&p.id)
+                        && !squad.sent_off.contains(&p.id)
                 })
                 .collect();
 
@@ -196,7 +195,7 @@ fn consider_substitution<R: Rng + ?Sized>(
                 && let Some(attacker_on) = find_best_bench_replacement(
                     bench,
                     Position::Forward,
-                    &snap.sent_off,
+                    &squad.sent_off,
                     preferred_role,
                 )
             {
@@ -217,12 +216,12 @@ fn consider_substitution<R: Rng + ?Sized>(
             let forwards: Vec<&PlayerData> = team
                 .players
                 .iter()
-                .filter(|p| p.position == Position::Forward && !snap.sent_off.contains(&p.id))
+                .filter(|p| p.position == Position::Forward && !squad.sent_off.contains(&p.id))
                 .collect();
 
             if let Some(player_off) = forwards.first()
                 && let Some(defender_on) =
-                    find_best_bench_replacement(bench, Position::Defender, &snap.sent_off, None)
+                    find_best_bench_replacement(bench, Position::Defender, &squad.sent_off, None)
             {
                 return Some(MatchCommand::Substitute {
                     side,
@@ -290,21 +289,19 @@ fn find_best_bench_replacement<'a>(
 // ---------------------------------------------------------------------------
 
 fn consider_tactic_change<R: Rng + ?Sized>(
-    match_state: &dyn crate::traits::LiveState,
+    squad: &crate::view::SquadState,
+    progress: &crate::view::MatchProgress,
     side: Side,
     profile: &AiProfile,
     minute: u8,
+    pressure_ticks: u8,
     rng: &mut R,
 ) -> Option<MatchCommand> {
-    let snap = match_state.snapshot();
-    let team = match side {
-        Side::Home => &snap.home_team,
-        Side::Away => &snap.away_team,
-    };
+    let team = &squad.side(side).team;
 
     let (own_goals, opp_goals) = match side {
-        Side::Home => (snap.home_score, snap.away_score),
-        Side::Away => (snap.away_score, snap.home_score),
+        Side::Home => (progress.home_score, progress.away_score),
+        Side::Away => (progress.away_score, progress.home_score),
     };
     let goal_diff = own_goals as i8 - opp_goals as i8;
     let experience_factor = profile.experience as f64 / 100.0;
@@ -326,7 +323,6 @@ fn consider_tactic_change<R: Rng + ?Sized>(
     // Zone-reactive: if the ball has been stuck in our defensive half for most of
     // the last 10 minutes, shift to a more defensive style to soak pressure.
     // ---------------------------------------------------------------------------
-    let pressure_ticks = match_state.minutes_under_pressure(side);
     // 6+ of the last 10 minutes under defensive pressure → consider going defensive.
     // Guard: only when not already losing (a losing team should be attacking, not absorbing).
     if pressure_ticks >= 6

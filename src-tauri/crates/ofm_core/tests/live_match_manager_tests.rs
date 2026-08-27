@@ -787,8 +787,7 @@ fn play_live(user_command: Option<(u8, engine::MatchCommand)>) -> Vec<String> {
 
     session
         .match_state
-        .snapshot()
-        .events
+        .events()
         .iter()
         .map(|event| {
             format!(
@@ -825,15 +824,12 @@ fn a_match_with_a_user_command_replays_identically() {
     let game = make_game_with_fixture();
     let session = live_match_manager::create_live_match(&game, 0, MatchMode::Live, false).unwrap();
     let side = session.user_side.unwrap_or(engine::Side::Home);
-    // The snapshot carries both benches, so there is no need for a separate
+    // The squad query carries both benches, so there is no need for a separate
     // accessor outside the contract.
-    let snapshot = session.match_state.snapshot();
-    let bench = match side {
-        engine::Side::Home => &snapshot.home_bench,
-        engine::Side::Away => &snapshot.away_bench,
-    };
+    let squad = session.match_state.squad().expect("the built-in engine manages a squad");
+    let bench = &squad.side(side).bench;
     let on = bench[0].id.clone();
-    let off = snapshot.home_team.players[10].id.clone();
+    let off = squad.home.team.players[10].id.clone();
     drop(session);
 
     let substitution = (

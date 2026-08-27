@@ -2,25 +2,26 @@
 //! be driven: through trait objects, without reaching for the built-in engine's
 //! concrete types.
 //!
-//! These are not yet the full "a third party can implement `LiveState`" suite
-//! the contract work is aiming at. `MatchSnapshot` still demands a
-//! `current_minute: u8`, which an engine with a continuous clock should not
-//! have to invent, so the fake below leaves `snapshot()` unimplemented and says
-//! so. Two thirds of that complaint are gone: no wire type carries a
-//! `ball_zone` any more, and `advance` no longer forces every engine to resolve
-//! play in units of one of our minutes — the fake below runs at 100 ms.
+//! The fake below is deliberately everything the built-in engine is not: it
+//! keeps continuous time in 100 ms steps, it has coordinates, it has never
+//! heard of a possession chain, and it manages no personnel at all. It used to
+//! be unable to implement `LiveState` honestly — `snapshot()` demanded both
+//! squads, both benches, per-side yellow-card maps and a whole-minute
+//! `current_minute`, so it left the method `unimplemented!()` and said why.
+//! It now implements the whole contract.
 
 use engine::advance::{AdvanceRequest, LiveUpdate, StopReason};
 use engine::clock::{MatchClock, MatchPeriod};
 use engine::compliance::check_capabilities;
 use engine::descriptor::{EngineDescriptor, MatchCommandKind, NativeStep, CONTRACT_VERSION};
-use engine::live_match::{MatchCommand, MatchPhase, MatchSnapshot};
+use engine::live_match::{MatchCommand, MatchPhase};
 use engine::rejection::CommandRejection;
 use engine::report::MatchReport;
 use engine::spatial::{
     BallPosition, PitchGeometry, PitchPoint, PlayerPosition, SpatialFrame, SpatialTelemetry,
 };
 use engine::traits::LiveState;
+use engine::view::MatchProgress;
 use engine::{EventType, MatchEvent, Side, Zone};
 
 // ---------------------------------------------------------------------------
@@ -53,7 +54,11 @@ impl SpatialFake {
             engine_version: 1,
             contract_version: CONTRACT_VERSION,
             native_step: NativeStep::Millis(100),
-            commands: &[MatchCommandKind::Substitute],
+            // It manages no personnel, so it accepts no command that would
+            // change any. Claiming `Substitute` while reporting no squad is a
+            // compliance failure, and rightly: the game would offer a
+            // substitution nothing could pick.
+            commands: &[],
             spatial_telemetry: true,
             extra_time: false,
             penalty_shootout: false,
@@ -143,18 +148,19 @@ impl LiveState for SpatialFake {
     fn apply_command(&mut self, cmd: MatchCommand) -> Result<(), CommandRejection> {
         // Everything except a substitution is outside what this engine models,
         // and the descriptor says so too.
-        match cmd.kind() {
-            MatchCommandKind::Substitute => Ok(()),
-            other => Err(CommandRejection::Unsupported(other)),
-        }
+        Err(CommandRejection::Unsupported(cmd.kind()))
     }
 
-    fn snapshot(&self) -> MatchSnapshot {
-        // Left unimplemented on purpose. MatchSnapshot still requires a
-        // whole-minute `current_minute`, which an engine keeping continuous
-        // time does not have. That is a finding about the contract rather than
-        // about this fake, and it is what the next step has to fix.
-        unimplemented!("MatchSnapshot still demands a whole-minute current_minute")
+    fn progress(&self) -> MatchProgress {
+        // The whole required surface, and nothing this engine does not model.
+        // No squads, no benches, no bookings, no whole-minute clock.
+        MatchProgress::new(
+            MatchPhase::FirstHalf,
+            MatchClock::new(MatchPeriod::FirstHalf, self.elapsed_ms),
+            0,
+            0,
+            Side::Home,
+        )
     }
 
     fn phase(&self) -> MatchPhase {
@@ -200,8 +206,14 @@ impl LiveState for ZoneFake {
     fn apply_command(&mut self, _cmd: MatchCommand) -> Result<(), CommandRejection> {
         Ok(())
     }
-    fn snapshot(&self) -> MatchSnapshot {
-        unimplemented!()
+    fn progress(&self) -> MatchProgress {
+        MatchProgress::new(
+            MatchPhase::FirstHalf,
+            MatchClock::new(MatchPeriod::FirstHalf, 0),
+            0,
+            0,
+            Side::Home,
+        )
     }
     fn phase(&self) -> MatchPhase {
         MatchPhase::FirstHalf
@@ -838,5 +850,129 @@ fn a_shootout_hands_back_one_round_at_a_time() {
     assert!(
         calls > 1,
         "one call swallowed the whole shootout; the player would watch none of it"
+    );
+}
+
+// ---------------------------------------------------------------------------
+// The squad is a question, not a requirement
+//
+// `snapshot()` demanded both squads, both benches, per-side yellow-card maps,
+// set-piece takers, a substitution log and a whole-minute minute — the match
+// screen, written down as a trait method. An engine that models none of it
+// still had to construct all of it, which is why the continuous fake in this
+// file could not implement the contract at all.
+// ---------------------------------------------------------------------------
+
+#[test]
+fn a_continuous_engine_can_report_its_whole_state_now() {
+    // The test that could not be written before. Driven through an erased box,
+    // because that is how a registry hands an engine out.
+    let mut boxed: Box<dyn engine::LiveState + Send> = Box::new(SpatialFake::new());
+    let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(4);
+    boxed.advance(AdvanceRequest::millis(250), &mut rng);
+
+    let progress = boxed.progress();
+    assert_eq!(progress.clock.period_elapsed_ms, 300);
+    assert_eq!(progress.phase, MatchPhase::FirstHalf);
+    assert!(
+        progress.expected_goals.is_none(),
+        "an engine that does not measure xg says so rather than reporting zero"
+    );
+    assert!(progress.momentum.is_empty());
+    assert!(
+        boxed.squad().is_none(),
+        "and it manages no personnel, which is now an answer rather than a panic"
+    );
+}
+
+#[test]
+fn the_game_can_render_a_match_from_an_engine_that_manages_no_squad() {
+    // `MatchSnapshot` is still what the match screen receives, but it is now
+    // composed from the contract rather than handed over by the engine. So an
+    // engine with no squad produces a snapshot with no squad, instead of being
+    // unable to produce one at all.
+    let fake = SpatialFake::new();
+    let snapshot = engine::MatchSnapshot::compose(&fake, false);
+
+    assert_eq!(snapshot.phase, MatchPhase::FirstHalf);
+    assert!(snapshot.home_team.players.is_empty());
+    assert!(snapshot.home_bench.is_empty());
+    assert_eq!(snapshot.max_subs, 0, "no substitutions are on offer");
+    assert!(snapshot.sent_off.is_empty());
+    assert_eq!(
+        snapshot.home_possession_pct, 50.0,
+        "an unmeasured share reads as even rather than as nothing"
+    );
+}
+
+#[test]
+fn a_composed_snapshot_carries_the_engine_running_minute() {
+    // Never re-derived from the clock. `display_minute` caps at the period's
+    // regulation end, so a first half running to 47 would read back as 45.
+    let mut state = kickoff_by_id(engine::DEFAULT_ENGINE_ID).expect("known engine");
+    let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(21);
+    for _ in 0..50 {
+        state.advance(AdvanceRequest::one_minute(), &mut rng);
+    }
+
+    let snapshot = engine::MatchSnapshot::compose(state.as_ref(), false);
+    assert_eq!(snapshot.current_minute, state.minute());
+}
+
+#[test]
+fn accepting_substitutions_without_reporting_a_squad_is_a_violation() {
+    // The game would offer a change nothing could pick from.
+    let mut lying = SpatialFake::descriptor();
+    lying.commands = &[MatchCommandKind::Substitute];
+
+    let report = check_capabilities(&SpatialFake::new(), &lying);
+    assert!(
+        report
+            .violations
+            .iter()
+            .any(|v| v.detail.contains("reports no squad")),
+        "got {:?}",
+        report.violations
+    );
+}
+
+#[test]
+fn reporting_a_squad_nothing_can_change_is_also_a_violation() {
+    // The mirror image, and the same reasoning as the spatial check: a
+    // capability nobody can act on rots into a stale claim.
+    let state = kickoff_by_id(engine::DEFAULT_ENGINE_ID).expect("known engine");
+    let mut silent = engine::EngineInfo::descriptor(&engine::DefaultEngine);
+    silent.commands = &[];
+
+    let report = check_capabilities(state.as_ref(), &silent);
+    assert!(
+        report
+            .violations
+            .iter()
+            .any(|v| v.detail.contains("no way to change")),
+        "got {:?}",
+        report.violations
+    );
+}
+
+#[test]
+fn the_dugout_ai_stands_down_when_it_cannot_see_the_squad() {
+    // Every branch of the manager AI reads the team: who is tiring, who is on
+    // the bench, what the side is set up to do. Given none of it, it issues
+    // nothing rather than guessing.
+    use engine::ai::{ai_decide, AiPersonality, AiProfile};
+
+    let fake = SpatialFake::new();
+    let profile = AiProfile {
+        reputation: 600,
+        experience: 90,
+        personality: AiPersonality::Reactive,
+    };
+    let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(13);
+
+    let commands = ai_decide(&fake, Side::Home, &profile, &mut rng);
+    assert!(
+        commands.is_empty(),
+        "the AI cannot manage a team it cannot see, got {commands:?}"
     );
 }

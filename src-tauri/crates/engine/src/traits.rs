@@ -25,8 +25,9 @@ use rand::Rng;
 use crate::advance::{AdvanceRequest, LiveUpdate};
 use crate::ai::AiProfile;
 use crate::event::MatchEvent;
-use crate::live_match::{MatchCommand, MatchPhase, MatchSnapshot};
+use crate::live_match::{MatchCommand, MatchPhase};
 use crate::report::MatchReport;
+use crate::view::{MatchProgress, SquadState};
 use crate::types::{MatchConfig, PlayerData, TeamData};
 
 /// Everything needed to kick a match off, in one struct so the trait signature
@@ -151,7 +152,29 @@ pub trait LiveState {
         cmd: MatchCommand,
     ) -> Result<(), crate::rejection::CommandRejection>;
 
-    fn snapshot(&self) -> MatchSnapshot;
+    /// Where the match stands: phase, clock, score, who has the ball.
+    ///
+    /// This replaced a `snapshot()` returning the game's whole match screen —
+    /// both squads, both benches, yellow-card maps, set-piece takers. An engine
+    /// that models none of that had to construct all of it. See
+    /// [`crate::view`].
+    fn progress(&self) -> MatchProgress;
+
+    /// Who is on the pitch and who is on the bench.
+    ///
+    /// `None` from an engine that does not manage personnel — a scoreline
+    /// engine, a bare experiment. An engine that lists
+    /// [`crate::MatchCommandKind::Substitute`] among the commands it accepts
+    /// must return `Some`: it is changing the squad, so it is the only thing
+    /// that knows the squad. The compliance suite checks both directions.
+    ///
+    /// Not derivable by the caller. A substitution rewrites the incoming
+    /// player's position and slot, and a formation change redistributes the
+    /// rest, so anything mirroring this outside the engine is reimplementing
+    /// the engine.
+    fn squad(&self) -> Option<SquadState> {
+        None
+    }
 
     fn phase(&self) -> MatchPhase;
 
@@ -286,8 +309,12 @@ impl LiveState for crate::live_match::LiveMatchState {
         crate::live_match::LiveMatchState::apply_command(self, cmd)
     }
 
-    fn snapshot(&self) -> MatchSnapshot {
-        crate::live_match::LiveMatchState::snapshot(self)
+    fn progress(&self) -> MatchProgress {
+        crate::live_match::LiveMatchState::progress(self)
+    }
+
+    fn squad(&self) -> Option<SquadState> {
+        Some(crate::live_match::LiveMatchState::squad(self))
     }
 
     fn phase(&self) -> MatchPhase {
