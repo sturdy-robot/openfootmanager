@@ -1969,6 +1969,8 @@
     "extraTimeHalfTime": "加时赛中场",
     "penaltyShootout": "点球大战",
     "shootout": {
+      "feedScored": "罚进",
+      "feedMissed": "罚失",
       "kickScored": "第 {{n}} 轮，{{team}}：罚进",
       "kickMissed": "第 {{n}} 轮，{{team}}：罚失",
       "kickPending": "第 {{n}} 轮，{{team}}：尚未主罚",
@@ -2542,6 +2544,8 @@
       }
     },
     "matchReport": "比赛报告",
+    "reportSections": "报告分区",
+    "matchPanels": "比赛面板",
     "playerRatings": "球员评分",
     "tacticsTab": "战术",
     "goalSources": "进球来源",

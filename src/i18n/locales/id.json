@@ -2003,6 +2003,8 @@
     "extraTimeHalfTime": "Turun Minum Perpanjangan Waktu",
     "penaltyShootout": "Adu Penalti",
     "shootout": {
+      "feedScored": "Gol",
+      "feedMissed": "Gagal",
       "kickScored": "Tendangan {{n}}, {{team}}: gol",
       "kickMissed": "Tendangan {{n}}, {{team}}: gagal",
       "kickPending": "Tendangan {{n}}, {{team}}: belum diambil",
@@ -2542,6 +2544,8 @@
       }
     },
     "matchReport": "Laporan Pertandingan",
+    "reportSections": "Bagian laporan",
+    "matchPanels": "Panel pertandingan",
     "playerRatings": "Rating Pemain",
     "tacticsTab": "Taktik",
     "goalSources": "Sumber Gol",

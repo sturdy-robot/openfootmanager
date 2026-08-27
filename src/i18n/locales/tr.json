@@ -2003,6 +2003,8 @@
     "extraTimeHalfTime": "Uzatma Devre Arası",
     "penaltyShootout": "Penaltı Atışları",
     "shootout": {
+      "feedScored": "Gol",
+      "feedMissed": "Kaçtı",
       "kickScored": "{{n}}. atış, {{team}}: gol",
       "kickMissed": "{{n}}. atış, {{team}}: kaçtı",
       "kickPending": "{{n}}. atış, {{team}}: henüz atılmadı",
@@ -2542,6 +2544,8 @@
       }
     },
     "matchReport": "Maç Raporu",
+    "reportSections": "Rapor bölümleri",
+    "matchPanels": "Maç panelleri",
     "playerRatings": "Oyuncu Puanları",
     "tacticsTab": "Taktikler",
     "goalSources": "Gol Kaynakları",

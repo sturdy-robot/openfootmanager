@@ -188,7 +188,7 @@ export function PerformanceScorePanel({
                       ? "text-gray-600 dark:text-gray-300"
                   : entry.score >= 5
                         ? "text-yellow-700 dark:text-yellow-400"
-                        : "text-red-400"
+                        : "text-red-700 dark:text-red-400"
               }`}
             >
               {entry.score.toFixed(1)}

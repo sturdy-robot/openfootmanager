@@ -135,6 +135,7 @@ export function SubPanel({
   const [draft, setDraft] = useState<MatchDraft>(EMPTY_MATCH_DRAFT);
   const { announce, announcement } = useAnnouncer();
   const applyRef = useRef<HTMLButtonElement>(null);
+  const queueRegionRef = useRef<HTMLElement>(null);
 
   const onDraftChange = setDraft;
 
@@ -147,6 +148,14 @@ export function SubPanel({
     setQueueRefusal(null);
     onDraftChange(next);
     announce(t("match.removedPendingChange", { change: removed }));
+
+    // Apply is disabled the moment the queue empties, and a focused element
+    // that becomes disabled drops focus to the body — outside the panel. So
+    // the review region takes it when there is nothing left to apply.
+    if (isMatchDraftEmpty(next)) {
+      queueRegionRef.current?.focus();
+      return;
+    }
     applyRef.current?.focus();
   };
 
@@ -221,10 +230,18 @@ export function SubPanel({
     if (!selectedOff) return;
     if (selectedBench === playerId) {
       // Choosing the same replacement again takes the change back out, which
-      // is the only reading of a second click that is not a no-op.
+      // is the only reading of a second click that is not a no-op. It goes
+      // through the same path as the queue's own remove button, so it is
+      // announced rather than being the one silent way to undo something.
+      const slotIndex = slotIndexOf(selectedOff);
+      const change = draft.lineupChanges.find(
+        (queued) => queued.slotIndex === slotIndex,
+      );
       setSelectedBench(null);
-      setQueueRefusal(null);
-      onDraftChange(removeLineupChange(draft, slotIndexOf(selectedOff)));
+      removeFromQueue(
+        removeLineupChange(draft, slotIndex),
+        change ? describeChange(change) : "",
+      );
       return;
     }
     setSelectedBench(playerId);
@@ -352,10 +369,12 @@ export function SubPanel({
             </Badge>
           </div>
           <button
+            aria-label={t("common.close")}
+            className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 motion-reduce:transition-none dark:text-gray-400 dark:hover:bg-navy-600 dark:hover:text-white dark:focus-visible:ring-offset-navy-800"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-navy-600 dark:hover:text-white"
+            type="button"
           >
-            <span className="font-heading text-sm">✕</span>
+            <X aria-hidden="true" className="h-4 w-4" />
           </button>
         </div>
 
@@ -373,7 +392,9 @@ export function SubPanel({
         */}
         <section
           aria-label={t("match.pendingChanges")}
-          className="rounded-xl border border-gray-200 bg-white p-3 dark:border-navy-600 dark:bg-navy-800"
+          className="rounded-xl border border-gray-200 bg-white p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:border-navy-600 dark:bg-navy-800"
+          ref={queueRegionRef}
+          tabIndex={-1}
         >
           <LiveRegion announcement={announcement} />
           <div className="mb-2 flex items-center justify-between gap-2">

@@ -1969,6 +1969,8 @@
     "extraTimeHalfTime": "Mi-Temps des Prolongations",
     "penaltyShootout": "Séance de Tirs au But",
     "shootout": {
+      "feedScored": "Marqué",
+      "feedMissed": "Manqué",
       "kickScored": "Tir {{n}}, {{team}} : marqué",
       "kickMissed": "Tir {{n}}, {{team}} : manqué",
       "kickPending": "Tir {{n}}, {{team}} : à tirer",
@@ -2542,6 +2544,8 @@
       }
     },
     "matchReport": "Rapport de match",
+    "reportSections": "Sections du rapport",
+    "matchPanels": "Panneaux du match",
     "playerRatings": "Évaluations",
     "tacticsTab": "Tactique",
     "goalSources": "Sources de buts",

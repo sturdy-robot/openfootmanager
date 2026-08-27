@@ -1988,6 +1988,8 @@
     "extraTimeHalfTime": "Intervallo dei Tempi Supplementari",
     "penaltyShootout": "Calci di Rigore",
     "shootout": {
+      "feedScored": "Segnato",
+      "feedMissed": "Sbagliato",
       "kickScored": "Rigore {{n}}, {{team}}: segnato",
       "kickMissed": "Rigore {{n}}, {{team}}: sbagliato",
       "kickPending": "Rigore {{n}}, {{team}}: da battere",
@@ -2561,6 +2563,8 @@
       }
     },
     "matchReport": "Rapporto partita",
+    "reportSections": "Sezioni del rapporto",
+    "matchPanels": "Pannelli della partita",
     "playerRatings": "Valutazioni",
     "tacticsTab": "Tattica",
     "goalSources": "Fonti dei gol",

@@ -1969,6 +1969,8 @@
     "extraTimeHalfTime": "Перерыв в Дополнительном Времени",
     "penaltyShootout": "Серия Пенальти",
     "shootout": {
+      "feedScored": "Забит",
+      "feedMissed": "Не забит",
       "kickScored": "Удар {{n}}, {{team}}: забит",
       "kickMissed": "Удар {{n}}, {{team}}: не забит",
       "kickPending": "Удар {{n}}, {{team}}: ещё не пробит",
@@ -2542,6 +2544,8 @@
       }
     },
     "matchReport": "Отчёт о матче",
+    "reportSections": "Разделы отчёта",
+    "matchPanels": "Панели матча",
     "playerRatings": "Рейтинги игроков",
     "tacticsTab": "Тактика",
     "goalSources": "Источники голов",

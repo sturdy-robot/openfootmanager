@@ -2003,6 +2003,8 @@
     "extraTimeHalfTime": "Poločas prodloužení",
     "penaltyShootout": "Penaltový rozstřel",
     "shootout": {
+      "feedScored": "Proměněno",
+      "feedMissed": "Neproměněno",
       "kickScored": "Pokus {{n}}, {{team}}: proměněný",
       "kickMissed": "Pokus {{n}}, {{team}}: neproměněný",
       "kickPending": "Pokus {{n}}, {{team}}: ještě se kope",
@@ -2542,6 +2544,8 @@
       }
     },
     "matchReport": "Zpráva ze zápasu",
+    "reportSections": "Části zprávy",
+    "matchPanels": "Panely zápasu",
     "playerRatings": "Hodnocení hráčů",
     "tacticsTab": "Taktika",
     "goalSources": "Zdroje gólů",

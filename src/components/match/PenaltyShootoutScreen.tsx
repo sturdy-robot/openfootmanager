@@ -260,6 +260,11 @@ export default function PenaltyShootoutScreen({
               <span className="text-gray-400 dark:text-gray-500 tabular-nums w-6 text-right">
                 {evt.minute}&apos;
               </span>
+              {/*
+                Said as well as drawn. Green ball against red cross is a
+                colour and a pictograph, which is nothing at all to a screen
+                reader and little to anyone who cannot separate the two.
+              */}
               <span
                 className={
                   evt.event_type === "ShootoutGoal"
@@ -267,7 +272,14 @@ export default function PenaltyShootoutScreen({
                     : "text-red-500 dark:text-red-400"
                 }
               >
-                {evt.event_type === "ShootoutGoal" ? "⚽" : "✗"}
+                <span aria-hidden="true">
+                  {evt.event_type === "ShootoutGoal" ? "⚽" : "✗"}
+                </span>
+                <span className="sr-only">
+                  {evt.event_type === "ShootoutGoal"
+                    ? t("match.shootout.feedScored")
+                    : t("match.shootout.feedMissed")}
+                </span>
               </span>
               <span>
                 {evt.side === "Home"

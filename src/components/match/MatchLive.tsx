@@ -17,6 +17,7 @@ import {
 } from "./MatchDraft.helpers";
 import { buildNaturalPositionMap } from "./SubPanel.helpers";
 import { resolveMatchStep } from "./MatchStepReducer.helpers";
+import { nextTabIndex } from "./tablistNavigation";
 import { resolveBackendError } from "../../utils/backendI18n";
 import { FormationPitch } from "./FormationPitch";
 import { translatePositionAbbreviation } from "../squad/SquadTab.helpers";
@@ -127,7 +128,7 @@ export default function MatchLive({
         key: "yellow-card",
         label: t("match.eventTypes.YellowCard"),
         shortLabel: "🟨",
-        toneClassName: "border-yellow-200 bg-yellow-400 text-navy-950",
+        toneClassName: "border-yellow-200 bg-yellow-400 text-navy-900",
       });
     }
 
@@ -558,7 +559,7 @@ export default function MatchLive({
 
         <aside className="flex min-h-0 flex-col border-l border-gray-200 bg-white transition-colors dark:border-navy-700 dark:bg-navy-800">
           <div
-            aria-label={t("match.live")}
+            aria-label={t("match.matchPanels")}
             className="flex border-b border-gray-200 dark:border-navy-700"
             role="tablist"
           >
@@ -566,7 +567,7 @@ export default function MatchLive({
               { id: "events" as ActivePanel, label: t("match.events"), icon: <MessageSquare className="h-4 w-4" /> },
               { id: "stats" as ActivePanel, label: t("match.stats"), icon: <BarChart3 className="h-4 w-4" /> },
               { id: "lineups" as ActivePanel, label: t("match.lineups"), icon: <Users className="h-4 w-4" /> },
-            ]).map((tab) => (
+            ]).map((tab, index, tabs) => (
               <button
                 aria-controls={`match-${tab.id}-panel`}
                 aria-selected={activePanel === tab.id}
@@ -578,6 +579,19 @@ export default function MatchLive({
                 id={`match-${tab.id}-tab`}
                 key={tab.id}
                 onClick={() => setActivePanel(tab.id)}
+                onKeyDown={(event) => {
+                  // The roving tabindex takes every unselected tab out of the
+                  // tab order, which is the point of it — but only if the
+                  // arrows put them back within reach. Without this the
+                  // pattern is worse than plain buttons were.
+                  const next = nextTabIndex(index, tabs.length, event.key);
+                  if (next === null) return;
+                  event.preventDefault();
+                  setActivePanel(tabs[next].id);
+                  document
+                    .getElementById(`match-${tabs[next].id}-tab`)
+                    ?.focus();
+                }}
                 role="tab"
                 tabIndex={activePanel === tab.id ? 0 : -1}
                 type="button"

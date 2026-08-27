@@ -209,7 +209,7 @@ export default function HalfTimeBreak({
           </div>
 
           <div className="flex min-w-[10rem] flex-1 items-center gap-2 text-xs">
-            <span className="w-10 text-right font-heading font-bold text-primary-400">
+            <span className="w-10 text-right font-heading font-bold text-primary-600 dark:text-primary-400">
               {snapshot.home_possession_pct.toFixed(0)}%
             </span>
             <div className="flex h-1.5 flex-1 overflow-hidden rounded-full bg-gray-300 transition-colors duration-300 motion-reduce:transition-none dark:bg-navy-700">
@@ -218,11 +218,11 @@ export default function HalfTimeBreak({
                 style={{ width: `${snapshot.home_possession_pct}%` }}
               />
               <div
-                className="h-full bg-indigo-500"
+                className="h-full bg-accent-500"
                 style={{ width: `${snapshot.away_possession_pct}%` }}
               />
             </div>
-            <span className="w-10 font-heading font-bold text-indigo-400">
+            <span className="w-10 font-heading font-bold text-accent-600 dark:text-accent-400">
               {snapshot.away_possession_pct.toFixed(0)}%
             </span>
           </div>

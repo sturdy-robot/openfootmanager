@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { nextTabIndex } from "./tablistNavigation";
 import { useTranslation } from "react-i18next";
 import { GameStateData } from "../../store/gameStore";
 import type { MatchdayIdentity } from "../../lib/competitionName";
@@ -381,11 +382,11 @@ export default function PostMatchScreen({
       <div className="bg-white dark:bg-navy-800 border-b border-gray-200 dark:border-navy-700 transition-colors duration-300">
         <div className="px-6">
           <div
-            aria-label={t("match.matchReport")}
+            aria-label={t("match.reportSections")}
             className="flex gap-1"
             role="tablist"
           >
-            {tabs.map((tab) => (
+            {tabs.map((tab, index) => (
               <button
                 key={tab.id}
                 id={`tab-${tab.id}`}
@@ -394,6 +395,17 @@ export default function PostMatchScreen({
                 aria-selected={activeTab === tab.id}
                 aria-controls={`tabpanel-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
+                onKeyDown={(event) => {
+                  // The roving tabindex takes every unselected tab out of the
+                  // tab order, which is the point of it — but only if the
+                  // arrows put them back within reach. Without this the
+                  // pattern is worse than plain buttons were.
+                  const next = nextTabIndex(index, tabs.length, event.key);
+                  if (next === null) return;
+                  event.preventDefault();
+                  setActiveTab(tabs[next].id);
+                  document.getElementById(`tab-${tabs[next].id}`)?.focus();
+                }}
                 tabIndex={activeTab === tab.id ? 0 : -1}
                 className={`flex items-center gap-2 px-5 py-3 text-sm font-heading font-bold uppercase tracking-wider border-b-2 transition-colors ${
                   activeTab === tab.id

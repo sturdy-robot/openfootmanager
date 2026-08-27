@@ -530,7 +530,10 @@ describe("PostMatchScreen", function (): void {
       expect(controlledPanel, `${name} must control an existing tabpanel`).toBeDefined();
       expect(controlledPanel).toHaveAttribute("aria-labelledby", tab.id);
     }
-    expect(tablist).toHaveAccessibleName("match.matchReport");
+    // Named for the whole report, not for one of its own tabs: "Match report,
+    // tab list" containing "Match report, tab" tells a screen-reader user less
+    // than it seems to.
+    expect(tablist).toHaveAccessibleName("match.reportSections");
   });
 
   it("keeps the result, score, and all four panels while roving keyboard focus with selection", function (): void {
@@ -862,5 +865,42 @@ describe("computeGoalSources", function (): void {
     expect(computeGoalSources(events, "Home")).toEqual({
       openPlay: 0, corners: 0, freekicks: 0, penalties: 1,
     });
+  });
+});
+
+describe("PostMatchScreen tab keyboard", function (): void {
+  it("moves between report sections with the arrow keys", function (): void {
+    // A roving tabindex takes the unselected tabs out of the tab order. That
+    // is only an improvement if the arrows put them back within reach —
+    // otherwise three of the four sections cannot be reached at all without a
+    // pointer, which is worse than the plain buttons that were here before.
+    renderManagerPostMatch();
+
+    const tabs = screen.getAllByRole("tab");
+    tabs[0].focus();
+
+    fireEvent.keyDown(tabs[0], { key: "ArrowRight" });
+    expect(tabs[1]).toHaveFocus();
+    expect(tabs[1]).toHaveAttribute("aria-selected", "true");
+
+    fireEvent.keyDown(tabs[1], { key: "End" });
+    expect(tabs[tabs.length - 1]).toHaveFocus();
+
+    fireEvent.keyDown(tabs[tabs.length - 1], { key: "ArrowRight" });
+    expect(tabs[0], "the ends of a tab list are not walls").toHaveFocus();
+
+    fireEvent.keyDown(tabs[0], { key: "ArrowLeft" });
+    expect(tabs[tabs.length - 1]).toHaveFocus();
+  });
+
+  it("leaves a key that means nothing here alone", function (): void {
+    renderManagerPostMatch();
+
+    const tabs = screen.getAllByRole("tab");
+    tabs[0].focus();
+    fireEvent.keyDown(tabs[0], { key: "a" });
+
+    expect(tabs[0]).toHaveFocus();
+    expect(tabs[0]).toHaveAttribute("aria-selected", "true");
   });
 });

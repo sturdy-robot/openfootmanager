@@ -1969,6 +1969,8 @@
     "extraTimeHalfTime": "Intervalo do Prolongamento",
     "penaltyShootout": "Grandes Penalidades",
     "shootout": {
+      "feedScored": "Marcado",
+      "feedMissed": "Falhado",
       "kickScored": "Penálti {{n}}, {{team}}: marcado",
       "kickMissed": "Penálti {{n}}, {{team}}: falhado",
       "kickPending": "Penálti {{n}}, {{team}}: por marcar",
@@ -2542,6 +2544,8 @@
       }
     },
     "matchReport": "Relatório do jogo",
+    "reportSections": "Secções do relatório",
+    "matchPanels": "Painéis do jogo",
     "playerRatings": "Avaliações",
     "tacticsTab": "Tática",
     "goalSources": "Fontes de golo",

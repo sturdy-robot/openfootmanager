@@ -2003,6 +2003,8 @@
     "extraTimeHalfTime": "Extra Time Half Time",
     "penaltyShootout": "Penalty Shootout",
     "shootout": {
+      "feedScored": "Scored",
+      "feedMissed": "Missed",
       "kickScored": "Kick {{n}}, {{team}}: scored",
       "kickMissed": "Kick {{n}}, {{team}}: missed",
       "kickPending": "Kick {{n}}, {{team}}: still to take",
@@ -2542,6 +2544,8 @@
       }
     },
     "matchReport": "Match Report",
+    "reportSections": "Report sections",
+    "matchPanels": "Match panels",
     "playerRatings": "Player Ratings",
     "tacticsTab": "Tactics",
     "goalSources": "Goal Sources",

@@ -1969,6 +1969,8 @@
     "extraTimeHalfTime": "Verlängerung Halbzeit",
     "penaltyShootout": "Elfmeterschießen",
     "shootout": {
+      "feedScored": "Verwandelt",
+      "feedMissed": "Vergeben",
       "kickScored": "Schuss {{n}}, {{team}}: verwandelt",
       "kickMissed": "Schuss {{n}}, {{team}}: vergeben",
       "kickPending": "Schuss {{n}}, {{team}}: noch offen",
@@ -2542,6 +2544,8 @@
       }
     },
     "matchReport": "Spielbericht",
+    "reportSections": "Berichtsabschnitte",
+    "matchPanels": "Spielbereiche",
     "playerRatings": "Spielerbewertungen",
     "tacticsTab": "Taktik",
     "goalSources": "Torquellen",
