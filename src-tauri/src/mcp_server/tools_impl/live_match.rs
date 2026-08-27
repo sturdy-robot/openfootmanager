@@ -281,8 +281,7 @@ fn apply_press_conference(
     // The match the conference is about — the last one played in any competition, not the last
     // league match. Copied out of the borrow so the morale loops below can take `game` mutably.
     let (home_team_id, away_team_id, home_score, away_score) =
-        last_completed_match(game, &user_team_id)
-            .ok_or("be.error.liveMatch.noCompletedMatch")?;
+        last_completed_match(game, &user_team_id).ok_or("be.error.liveMatch.noCompletedMatch")?;
 
     let team_name = |id: &str| {
         game.teams
