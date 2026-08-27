@@ -28,6 +28,7 @@ import {
 import { getRoleOptions } from "../../lib/playerRoles";
 import { groupBenchByExactPosition } from "./SubPanel.helpers";
 import { useAnnouncer } from "../../hooks/useAnnouncer";
+import { useDialogFocusTrap } from "../../hooks/useDialogFocusTrap";
 import { LiveRegion } from "../ui/LiveRegion";
 import {
   EMPTY_MATCH_DRAFT,
@@ -136,6 +137,7 @@ export function SubPanel({
   const { announce, announcement } = useAnnouncer();
   const applyRef = useRef<HTMLButtonElement>(null);
   const queueRegionRef = useRef<HTMLElement>(null);
+  const dialog = useDialogFocusTrap<HTMLDivElement>(onClose);
 
   const onDraftChange = setDraft;
 
@@ -349,16 +351,30 @@ export function SubPanel({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
       onClick={onClose}
+      role="presentation"
     >
+      {/*
+        A real dialog. The panel was a pair of divs over a backdrop: everything
+        behind it stayed in the tab order, so a keyboard user tabbed straight
+        out into live-match controls they could not see, and it could be
+        dismissed by clicking outside but not by pressing a key.
+      */}
       <div
-        className="bg-white dark:bg-navy-800 rounded-2xl border border-gray-200 dark:border-navy-600 shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden transition-colors duration-300"
+        aria-labelledby="sub-panel-title"
+        aria-modal="true"
+        className="bg-white dark:bg-navy-800 rounded-2xl border border-gray-200 dark:border-navy-600 shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden transition-colors duration-300 motion-reduce:transition-none"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={dialog.onKeyDown}
+        role="dialog"
       >
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-gray-200 bg-linear-to-r from-gray-100 to-white px-5 py-3 dark:border-navy-700 dark:from-navy-700 dark:to-navy-800">
           <div className="flex items-center gap-2.5">
             <RefreshCw className="h-4 w-4 text-accent-400" />
-            <h3 className="font-heading text-sm font-bold uppercase tracking-widest text-gray-900 dark:text-white">
+            <h3
+              className="font-heading text-sm font-bold uppercase tracking-widest text-gray-900 dark:text-white"
+              id="sub-panel-title"
+            >
               {t("match.substitutionsTitle")}
             </h3>
             <Badge

@@ -1,11 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type JSX,
-  type KeyboardEvent,
-} from "react";
+import { useEffect, useMemo, useRef, useState, type JSX } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 
@@ -17,6 +10,7 @@ import {
   translatePositionLabel,
 } from "../squad/SquadTab.helpers";
 import { isPlayerEligibleForTacticsLineup } from "./TacticsTab.helpers";
+import { useDialogFocusTrap } from "../../hooks/useDialogFocusTrap";
 
 interface TacticsAssignmentDialogProps {
   candidates: PlayerData[];
@@ -26,9 +20,6 @@ interface TacticsAssignmentDialogProps {
   slotIndex: number;
   slotPosition: string;
 }
-
-const FOCUSABLE_SELECTOR =
-  'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export default function TacticsAssignmentDialog({
   candidates,
@@ -66,34 +57,7 @@ export default function TacticsAssignmentDialog({
       );
   }, [candidates, occupant?.id, search, slotPosition]);
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      onClose();
-      return;
-    }
-    if (event.key !== "Tab") {
-      return;
-    }
-
-    const focusable = Array.from(
-      event.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
-    );
-    if (focusable.length === 0) {
-      event.preventDefault();
-      return;
-    }
-
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  };
+  const dialog = useDialogFocusTrap<HTMLDivElement>(onClose);
 
   // Portalled to the body. The tactics workbench declares `@container/tactics`,
   // and a container is a containing block for `position: fixed` descendants —
@@ -112,7 +76,7 @@ export default function TacticsAssignmentDialog({
         onClick={(event) => {
           event.stopPropagation();
         }}
-        onKeyDown={handleKeyDown}
+        onKeyDown={dialog.onKeyDown}
         role="dialog"
       >
         <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-5 py-4 dark:border-navy-700">
