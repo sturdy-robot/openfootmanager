@@ -771,7 +771,14 @@ fn targets_table(stats: &BenchStats, _xg: f64) -> String {
     for verdict in targets::evaluate(stats) {
         let value_str = verdict.unit.value(verdict.value);
         let target_str = verdict.unit.band(verdict.low, verdict.high);
-        let badge = if verdict.passed && verdict.unexpected_pass {
+        // An unsourced band gets neither a pass nor a fail badge: both would be
+        // claims about real football that the row cannot support.
+        let badge = if !verdict.enforceable() {
+            let inside = if verdict.passed { "inside" } else { "outside" };
+            format!(
+                r#"<span class="tag" title="This band has no recorded source, so it is reported and not enforced.">{inside} — unsourced</span>"#
+            )
+        } else if verdict.passed && verdict.unexpected_pass {
             r#"<span class="tag tag-ok">✓ Fixed — untrack</span>"#.to_string()
         } else if verdict.passed {
             r#"<span class="tag tag-ok">✓ OK</span>"#.to_string()
@@ -779,6 +786,23 @@ fn targets_table(stats: &BenchStats, _xg: f64) -> String {
             format!(r#"<span class="tag tag-warn" title="{reason}">Known</span>"#)
         } else {
             r#"<span class="tag tag-bad">✗ Off target</span>"#.to_string()
+        };
+        let source = match verdict.provenance {
+            targets::Provenance::Measured {
+                source,
+                competition,
+                season,
+                retrieved,
+            } => format!(
+                r#"<span title="{source}, retrieved {retrieved}">{competition} {season}</span>"#
+            ),
+            targets::Provenance::ModelInvariant { why } => {
+                format!(r#"<span title="{why}">model invariant</span>"#)
+            }
+            targets::Provenance::Unsourced => {
+                r#"<span title="Nobody recorded where this number came from.">unsourced</span>"#
+                    .to_string()
+            }
         };
         let label = match verdict.note {
             Some(note) => format!(r#"<span title="{note}">{}</span>"#, verdict.label),
@@ -789,6 +813,7 @@ fn targets_table(stats: &BenchStats, _xg: f64) -> String {
   <td style="padding:8px 12px;color:var(--muted)">{label}</td>
   <td style="padding:8px 12px;font-weight:700;font-variant-numeric:tabular-nums">{value_str}</td>
   <td style="padding:8px 12px;color:var(--muted)">{target_str}</td>
+  <td style="padding:8px 12px;color:var(--muted);font-size:0.85em">{source}</td>
   <td style="padding:8px 12px">{badge}</td>
 </tr>"#
         ));
@@ -796,13 +821,19 @@ fn targets_table(stats: &BenchStats, _xg: f64) -> String {
 
     format!(
         r#"<div class="card">
-  <h2>Real-Football Benchmark Comparison</h2>
+  <h2>Calibration bands</h2>
+  <p style="color:var(--muted);font-size:0.85em;margin:0 0 12px">
+    A band marked <strong>unsourced</strong> has no recorded origin. It is shown for orientation and
+    enforced on nobody &mdash; a number nobody can point at is not a target, and calibrating to
+    satisfy one turns a guess into engine behaviour.
+  </p>
   <table style="width:100%;border-collapse:collapse">
     <thead>
       <tr style="border-bottom:1px solid var(--border)">
         <th style="padding:8px 12px;text-align:left;color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase">Metric</th>
         <th style="padding:8px 12px;text-align:left;color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase">Simulated</th>
-        <th style="padding:8px 12px;text-align:left;color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase">Real-World Target</th>
+        <th style="padding:8px 12px;text-align:left;color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase">Band</th>
+        <th style="padding:8px 12px;text-align:left;color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase">Source</th>
         <th style="padding:8px 12px;text-align:left;color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase">Status</th>
       </tr>
     </thead>

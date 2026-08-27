@@ -110,10 +110,20 @@ jobs:
         run: cargo check --manifest-path src-tauri/Cargo.toml --workspace
 
       # The match engine's calibration gate. `ofm-sim-bench` exits non-zero when
-      # a metric falls outside its real-football band in `sim-bench/src/targets.rs`.
-      # Bands the engine is known to miss are listed there as `KNOWN_FAILING`
-      # with a reason and do not fail the build — but a listed metric that
-      # starts passing does, which is the prompt to remove its entry.
+      # an *enforceable* metric falls outside its band in `sim-bench/src/targets.rs`.
+      #
+      # Read that qualifier. Twenty of the twenty-one bands are currently marked
+      # `Provenance::Unsourced` — nobody recorded where the numbers came from,
+      # and two that were spot-checked against published figures were wrong — so
+      # they are reported and never enforced. This step therefore gates on one
+      # model invariant today, and is a much weaker check than it looks. It gets
+      # its teeth back one band at a time, as each is sourced and moved to
+      # `Provenance::Measured`; `UNSOURCED_BUDGET` is the ratchet and a unit test
+      # fails if the count rises.
+      #
+      # Bands the engine is known to miss are listed as `KNOWN_FAILING` with a
+      # reason and do not fail the build — but a listed metric that starts
+      # passing does, which is the prompt to remove its entry.
       #
       # Release build: the debug profile is `opt-level = 1` and a meaningful
       # sample would take minutes. 2000 games is enough to keep the per-game

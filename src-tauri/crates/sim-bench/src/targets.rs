@@ -59,8 +59,64 @@ impl Unit {
     }
 }
 
-/// One calibrated metric: what it is, what the engine produced, and the band a
-/// real-football-like simulation is expected to land in.
+/// Where a band came from.
+///
+/// Required on every target, because the alternative is what this table used to
+/// be: twenty-one numbers under a comment claiming "sources are top-flight
+/// European league averages", with no source recorded for any of them and no
+/// way to tell which had been checked. Two that were spot-checked against
+/// published figures turned out to be wrong.
+///
+/// A band nobody can point at is not a target. It is somebody's recollection,
+/// and calibrating an engine against it means tuning toward a number that
+/// cannot be defended — so an unsourced band is reported and never enforced.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum Provenance {
+    /// Taken from a named source. Every field is required: a citation that
+    /// cannot be followed back is not a citation.
+    ///
+    /// Not constructed yet, and deliberately left that way rather than filled
+    /// in from memory. Inventing a plausible citation would be worse than the
+    /// unsourced numbers this type exists to expose — it would make them look
+    /// checked. The shape is enforced by
+    /// `provenance_tests::a_measured_band_can_be_followed_back_to_its_source`,
+    /// which is vacuous today and bites the moment somebody adds one.
+    #[allow(dead_code)]
+    Measured {
+        source: &'static str,
+        competition: &'static str,
+        season: &'static str,
+        /// When the figure was read. Published aggregates are restated as
+        /// seasons are added, so a number without a date cannot be checked
+        /// against its source later.
+        retrieved: &'static str,
+    },
+    /// Not a claim about football at all: an assertion about the simulation.
+    ///
+    /// "No forward finishes a match having never passed the ball" is not a
+    /// statistic anybody publishes; it is how we say the engine is not broken.
+    /// These are enforced, because nothing about them depends on a source.
+    ModelInvariant { why: &'static str },
+    /// A number somebody typed. Reported, never enforced, and the count only
+    /// goes down — see [`UNSOURCED_BUDGET`].
+    Unsourced,
+}
+
+impl Provenance {
+    /// Whether a run may be failed on this band.
+    ///
+    /// The whole point of the split. An unsourced band still appears in the
+    /// report — it is a useful orientation — but it cannot fail CI and must not
+    /// be a calibration target, because tuning the engine to satisfy a number
+    /// with no source is how a wrong number becomes engine behaviour.
+    pub fn enforceable(self) -> bool {
+        !matches!(self, Provenance::Unsourced)
+    }
+}
+
+/// One calibrated metric: what it is, what the engine produced, the band it is
+/// expected to land in, and where that band came from.
 #[derive(Debug, Clone)]
 pub struct Target {
     pub label: &'static str,
@@ -71,6 +127,8 @@ pub struct Target {
     pub read: fn(&BenchStats) -> f64,
     /// Why this band, when the number is not self-evident.
     pub note: Option<&'static str>,
+    /// Where the band came from. No default: a new target must say.
+    pub provenance: Provenance,
 }
 
 impl Target {
@@ -86,10 +144,20 @@ impl Target {
 
 /// The calibration table.
 ///
-/// Sources are top-flight European league averages. Where the engine is
-/// currently outside a band, that is recorded as debt in `KNOWN_FAILING` rather
-/// than by widening the band — a target that moves to match the engine stops
-/// being a target.
+/// Every band records where it came from. Today that record is uncomfortable:
+/// **twenty of the twenty-one are `Unsourced`** — numbers that were written
+/// down under a comment claiming they were top-flight European league averages,
+/// with nothing recorded to support it, and two of two spot-checks against
+/// published figures coming back wrong.
+///
+/// They are kept and reported, because they are a useful orientation and
+/// throwing them away would lose the only picture the bench has. They are not
+/// enforced, because an unsourced band is not a target: calibrating to satisfy
+/// one is how somebody's recollection becomes engine behaviour.
+///
+/// Where the engine is outside an *enforced* band, that is recorded as debt in
+/// `KNOWN_FAILING` rather than by widening the band — a target that moves to
+/// match the engine stops being a target.
 pub fn all() -> Vec<Target> {
     vec![
         Target {
@@ -99,6 +167,7 @@ pub fn all() -> Vec<Target> {
             high: 3.0,
             read: |s| s.gpg(),
             note: None,
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Clean sheets (home)",
@@ -107,6 +176,7 @@ pub fn all() -> Vec<Target> {
             high: 35.0,
             read: |s| s.clean_sheet_home_pct(),
             note: None,
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Clean sheets (away)",
@@ -115,6 +185,7 @@ pub fn all() -> Vec<Target> {
             high: 35.0,
             read: |s| s.clean_sheet_away_pct(),
             note: None,
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Both teams scored",
@@ -123,6 +194,7 @@ pub fn all() -> Vec<Target> {
             high: 55.0,
             read: |s| s.btts_pct(),
             note: None,
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Home win %",
@@ -131,6 +203,7 @@ pub fn all() -> Vec<Target> {
             high: 52.0,
             read: |s| s.home_win_pct(),
             note: Some("Between evenly matched sides; a stronger home side raises this."),
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Shots/game",
@@ -139,6 +212,7 @@ pub fn all() -> Vec<Target> {
             high: 32.0,
             read: |s| s.shots_pg(),
             note: None,
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Shots on target %",
@@ -147,6 +221,7 @@ pub fn all() -> Vec<Target> {
             high: 45.0,
             read: |s| s.shot_accuracy_pct(),
             note: None,
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Goal conversion %",
@@ -155,6 +230,7 @@ pub fn all() -> Vec<Target> {
             high: 40.0,
             read: |s| s.goal_conversion_pct(),
             note: Some("Goals as a share of shots on target."),
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Yellow cards/game",
@@ -163,6 +239,7 @@ pub fn all() -> Vec<Target> {
             high: 4.0,
             read: |s| s.yellows_pg(),
             note: None,
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Red cards/game",
@@ -171,6 +248,7 @@ pub fn all() -> Vec<Target> {
             high: 0.15,
             read: |s| s.reds_pg(),
             note: None,
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Fouls/game",
@@ -179,6 +257,7 @@ pub fn all() -> Vec<Target> {
             high: 28.0,
             read: |s| s.fouls_pg(),
             note: None,
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Penalties/game",
@@ -187,6 +266,7 @@ pub fn all() -> Vec<Target> {
             high: 0.50,
             read: |s| s.penalties_pg(),
             note: None,
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Penalty conversion %",
@@ -195,6 +275,7 @@ pub fn all() -> Vec<Target> {
             high: 85.0,
             read: |s| s.penalty_conversion_pct(),
             note: None,
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Corners/game",
@@ -203,6 +284,7 @@ pub fn all() -> Vec<Target> {
             high: 14.0,
             read: |s| s.corners_pg(),
             note: None,
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Goal kicks/game",
@@ -211,6 +293,7 @@ pub fn all() -> Vec<Target> {
             high: 14.0,
             read: |s| s.goal_kicks_pg(),
             note: None,
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Crosses/game",
@@ -219,6 +302,7 @@ pub fn all() -> Vec<Target> {
             high: 30.0,
             read: |s| s.crosses_pg(),
             note: None,
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Open play goals %",
@@ -227,6 +311,7 @@ pub fn all() -> Vec<Target> {
             high: 75.0,
             read: |s| s.open_play_goal_pct(),
             note: None,
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Corner goals %",
@@ -235,6 +320,7 @@ pub fn all() -> Vec<Target> {
             high: 20.0,
             read: |s| s.corner_goal_pct(),
             note: None,
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Free kick goals %",
@@ -243,6 +329,7 @@ pub fn all() -> Vec<Target> {
             high: 15.0,
             read: |s| s.free_kick_goal_pct(),
             note: None,
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Penalty goals %",
@@ -251,6 +338,7 @@ pub fn all() -> Vec<Target> {
             high: 15.0,
             read: |s| s.penalty_goal_pct(),
             note: None,
+            provenance: Provenance::Unsourced,
         },
         Target {
             label: "Forwards with 0 passes %",
@@ -262,9 +350,22 @@ pub fn all() -> Vec<Target> {
                 "A forward who never touches the ball in 90 minutes is a \
                  simulation artefact, not a football event.",
             ),
+            provenance: Provenance::ModelInvariant {
+                why: "Nobody publishes this. It is not a football statistic — it \
+                      is how the bench says a forward is being simulated as a \
+                      footballer rather than as a shot generator.",
+            },
         },
     ]
 }
+
+/// How many bands are still allowed to have no source.
+///
+/// A ratchet, not a budget to spend: the test below fails if the count rises,
+/// so a new target must come with a citation, and the number comes down as the
+/// existing ones are sourced. It cannot be raised to make a build pass without
+/// that being the whole of the diff.
+pub const UNSOURCED_BUDGET: usize = 20;
 
 /// Bands the engine is known to miss today, with the reason.
 ///
@@ -304,6 +405,15 @@ pub struct TargetVerdict {
     /// Set when a metric listed as known debt has started passing, so the entry
     /// can be removed.
     pub unexpected_pass: bool,
+    /// Where the band came from, and therefore whether it can fail a run.
+    pub provenance: Provenance,
+}
+
+impl TargetVerdict {
+    /// Whether this verdict may fail the run.
+    pub fn enforceable(&self) -> bool {
+        self.provenance.enforceable()
+    }
 }
 
 /// Every metric's verdict, in table order.
@@ -323,6 +433,7 @@ pub fn evaluate(stats: &BenchStats) -> Vec<TargetVerdict> {
                 note: target.note,
                 known_failure: known.filter(|_| !passed),
                 unexpected_pass: passed && known.is_some(),
+                provenance: target.provenance,
             }
         })
         .collect()
@@ -330,13 +441,17 @@ pub fn evaluate(stats: &BenchStats) -> Vec<TargetVerdict> {
 
 /// Whether a run should be treated as a failure by a caller such as CI.
 ///
-/// Known-failing metrics do not fail the run, but a known-failing metric that
-/// starts *passing* does — that is the signal to delete its entry, and it keeps
-/// the debt list honest.
+/// Only enforceable bands count. An unsourced one is reported and skipped: it
+/// cannot fail a build, because failing a build is a claim that the engine is
+/// wrong, and a band with no source cannot support that claim.
+///
+/// Known-failing metrics do not fail the run either, but a known-failing metric
+/// that starts *passing* does — that is the signal to delete its entry, and it
+/// keeps the debt list honest.
 pub fn run_failed(verdicts: &[TargetVerdict]) -> bool {
-    verdicts
-        .iter()
-        .any(|verdict| (!verdict.passed && verdict.known_failure.is_none()) || verdict.unexpected_pass)
+    verdicts.iter().filter(|v| v.enforceable()).any(|verdict| {
+        (!verdict.passed && verdict.known_failure.is_none()) || verdict.unexpected_pass
+    })
 }
 
 #[cfg(test)]
@@ -379,6 +494,10 @@ mod tests {
             high: 32.0,
             passed: false,
             note: None,
+            // Enforceable, because this test is about the known-debt mechanism
+            // rather than about provenance. An unsourced band cannot fail a run
+            // at all, which is what `an_unsourced_band_cannot_fail_a_run` pins.
+            provenance: Provenance::ModelInvariant { why: "test" },
             known_failure: None,
             unexpected_pass: false,
         };
@@ -402,9 +521,119 @@ mod tests {
             high: 3.0,
             passed: true,
             note: None,
+            provenance: Provenance::ModelInvariant { why: "test" },
             known_failure: None,
             unexpected_pass: true,
         };
         assert!(run_failed(&[fixed]));
+    }
+}
+
+#[cfg(test)]
+mod provenance_tests {
+    use super::*;
+
+    #[test]
+    fn the_unsourced_count_only_ratchets_down() {
+        let unsourced = all()
+            .iter()
+            .filter(|t| t.provenance == Provenance::Unsourced)
+            .count();
+        assert!(
+            unsourced <= UNSOURCED_BUDGET,
+            "{unsourced} bands have no source; the ratchet allows {UNSOURCED_BUDGET}. \
+             A new target needs a citation, not another unsourced band. If you have \
+             just sourced one, lower UNSOURCED_BUDGET to match in the same change."
+        );
+    }
+
+    #[test]
+    fn a_measured_band_can_be_followed_back_to_its_source() {
+        // A citation nobody can chase is not a citation. Vacuous today — there
+        // are no measured bands yet — and the point is that it bites the moment
+        // somebody adds one.
+        for target in all() {
+            if let Provenance::Measured {
+                source,
+                competition,
+                season,
+                retrieved,
+            } = target.provenance
+            {
+                for (field, value) in [
+                    ("source", source),
+                    ("competition", competition),
+                    ("season", season),
+                    ("retrieved", retrieved),
+                ] {
+                    assert!(
+                        !value.trim().is_empty(),
+                        "{} cites a source with an empty {field}",
+                        target.label
+                    );
+                }
+            }
+        }
+    }
+
+    fn verdict(label: &'static str, provenance: Provenance) -> TargetVerdict {
+        TargetVerdict {
+            label,
+            unit: Unit::PerGame,
+            value: 99.0,
+            low: 0.0,
+            high: 1.0,
+            passed: false,
+            note: None,
+            known_failure: None,
+            unexpected_pass: false,
+            provenance,
+        }
+    }
+
+    #[test]
+    fn an_unsourced_band_cannot_fail_a_run() {
+        // Wildly out of band, and it still does not fail the build. Failing a
+        // build says the engine is wrong; a number with no source cannot say
+        // that.
+        assert!(!run_failed(&[verdict(
+            "Yellow cards/game",
+            Provenance::Unsourced
+        )]));
+    }
+
+    #[test]
+    fn a_model_invariant_still_fails_a_run() {
+        // Nothing about "no forward finishes a match having never passed"
+        // depends on a source, so nothing excuses it.
+        assert!(run_failed(&[verdict(
+            "Forwards with 0 passes %",
+            Provenance::ModelInvariant { why: "test" }
+        )]));
+    }
+
+    #[test]
+    fn a_measured_band_fails_a_run() {
+        assert!(run_failed(&[verdict(
+            "Goals/game",
+            Provenance::Measured {
+                source: "test",
+                competition: "test",
+                season: "test",
+                retrieved: "test",
+            }
+        )]));
+    }
+
+    #[test]
+    fn something_is_still_enforced() {
+        // The gate must not become decorative. If every band ends up unsourced,
+        // `ofm-sim-bench` can no longer fail on anything and CI would go quietly
+        // green on a broken engine.
+        let enforced = all().iter().filter(|t| t.provenance.enforceable()).count();
+        assert!(
+            enforced > 0,
+            "no band is enforceable, so the calibration gate cannot fail on anything"
+        );
     }
 }

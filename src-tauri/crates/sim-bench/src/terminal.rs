@@ -345,17 +345,27 @@ fn metric(label: &str, value: f64, decimals: usize) {
 /// the report — the bands used to be written out three times and had already
 /// drifted apart between the terminal and HTML outputs.
 fn calibration(stats: &BenchStats) {
-    section("CALIBRATION vs REAL FOOTBALL");
+    section("CALIBRATION BANDS");
 
     let verdicts = targets::evaluate(stats);
     let mut table = Table::new();
     table.load_preset(comfy_table::presets::UTF8_FULL);
-    table.set_header(vec!["Metric", "Value", "Target", ""]);
+    table.set_header(vec!["Metric", "Value", "Band", "Source", ""]);
 
     for verdict in &verdicts {
         let value = verdict.unit.value(verdict.value);
         let band = verdict.unit.band(verdict.low, verdict.high);
-        let mark = if verdict.passed {
+        // An unsourced band gets neither a tick nor a cross. Both would be
+        // claims about real football that this row cannot make: it is a number
+        // somebody typed, shown for orientation and enforced on nobody.
+        let mark = if !verdict.enforceable() {
+            if verdict.passed {
+                "·".dimmed()
+            } else {
+                "!".dimmed()
+            }
+            .to_string()
+        } else if verdict.passed {
             "✓".green().bold().to_string()
         } else if verdict.known_failure.is_some() {
             // Known debt: visibly off-target, but not a new regression.
@@ -363,14 +373,42 @@ fn calibration(stats: &BenchStats) {
         } else {
             "✗".red().bold().to_string()
         };
+        let source = match verdict.provenance {
+            targets::Provenance::Measured {
+                competition,
+                season,
+                ..
+            } => format!("{competition} {season}").normal().to_string(),
+            targets::Provenance::ModelInvariant { .. } => "model".cyan().to_string(),
+            targets::Provenance::Unsourced => "unsourced".dimmed().to_string(),
+        };
         table.add_row(vec![
             Cell::new(verdict.label),
             Cell::new(value),
             Cell::new(band),
+            Cell::new(source),
             Cell::new(mark),
         ]);
     }
     println!("{table}");
+
+    let unsourced = verdicts.iter().filter(|v| !v.enforceable()).count();
+    if unsourced > 0 {
+        println!(
+            "  {} {} of {} bands have no source, so they are reported and not enforced \
+             (ratchet: {}).",
+            "note:".yellow(),
+            unsourced,
+            verdicts.len(),
+            targets::UNSOURCED_BUDGET
+        );
+        println!(
+            "  {}",
+            "A band nobody can point at is not a target; calibrating to satisfy one \
+             turns a guess into engine behaviour."
+                .dimmed()
+        );
+    }
 
     for verdict in &verdicts {
         if let Some(note) = verdict.note {
