@@ -604,9 +604,17 @@ fn is_role_valid_for_position(role: PlayerRole, position: crate::types::Position
                 | PlayerRole::InsideForward
                 | PlayerRole::InvertedWinger
         ),
+        // The engine keeps four coarse positions, so this bucket holds a
+        // 4-3-3's wingers as well as its striker — and `ofm_core::tactics`,
+        // the backend's own role authority, accepts winger roles here for
+        // exactly that reason. Leaving them out refused every wide role the
+        // squad screen had already accepted.
         Position::Forward => matches!(
             role,
             PlayerRole::Standard
+                | PlayerRole::WideForward
+                | PlayerRole::InsideForward
+                | PlayerRole::InvertedWinger
                 | PlayerRole::Poacher
                 | PlayerRole::TargetMan
                 | PlayerRole::DeepLyingForward

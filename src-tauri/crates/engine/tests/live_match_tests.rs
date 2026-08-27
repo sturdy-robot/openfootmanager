@@ -2185,3 +2185,34 @@ fn very_weak_team_still_finishes() {
     // Strong team should likely dominate
     assert!(snap.events.len() > 50, "Should generate plenty of events");
 }
+
+#[test]
+fn a_wide_role_is_accepted_in_the_forward_slot() {
+    // The engine keeps four coarse positions, so a 4-3-3's wingers arrive here
+    // as forwards. `ofm_core::tactics::role_valid_for_position` accepts wide
+    // roles in that same bucket, and the squad screen offers them; the engine
+    // refusing one refused the whole in-match change set.
+    let mut state = make_live_match(false);
+    state.step_minute(&mut seeded_rng(11));
+    let before = state.snapshot();
+
+    let mut slot_roles = vec![PlayerRole::Standard; 11];
+    slot_roles[10] = PlayerRole::InvertedWinger;
+
+    let changes = MatchTacticsChangeSet {
+        side: Side::Home,
+        formation: "4-4-2".into(),
+        play_style: before.home_team.play_style,
+        tactics: TacticsConfig::default(),
+        slot_roles,
+        lineup_changes: vec![],
+        assignments: SetPieceTakers::default(),
+    };
+
+    state.apply_tactics_change_set(changes).unwrap();
+
+    assert_eq!(
+        state.snapshot().home_team.players[10].role,
+        PlayerRole::InvertedWinger
+    );
+}
