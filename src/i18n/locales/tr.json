@@ -2002,6 +2002,10 @@
     "extraTimeHalfTime": "Uzatma Devre Arası",
     "penaltyShootout": "Penaltı Atışları",
     "shootout": {
+      "kickScored": "{{n}}. atış, {{team}}: gol",
+      "kickMissed": "{{n}}. atış, {{team}}: kaçtı",
+      "kickPending": "{{n}}. atış, {{team}}: henüz atılmadı",
+      "stepKick": "Sonraki atış",
       "round": "Tur {{n}}/5",
       "suddenDeath": "Ani Ölüm",
       "shootoutScore": "Penaltılar: {{h}} – {{a}}",

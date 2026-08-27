@@ -1987,6 +1987,10 @@
     "extraTimeHalfTime": "Intervallo dei Tempi Supplementari",
     "penaltyShootout": "Calci di Rigore",
     "shootout": {
+      "kickScored": "Rigore {{n}}, {{team}}: segnato",
+      "kickMissed": "Rigore {{n}}, {{team}}: sbagliato",
+      "kickPending": "Rigore {{n}}, {{team}}: da battere",
+      "stepKick": "Rigore successivo",
       "round": "Turno {{n}} di 5",
       "suddenDeath": "Morte Improvvisa",
       "shootoutScore": "Rigori: {{h}} – {{a}}",

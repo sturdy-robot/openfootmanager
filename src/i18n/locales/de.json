@@ -1968,6 +1968,10 @@
     "extraTimeHalfTime": "Verlängerung Halbzeit",
     "penaltyShootout": "Elfmeterschießen",
     "shootout": {
+      "kickScored": "Schuss {{n}}, {{team}}: verwandelt",
+      "kickMissed": "Schuss {{n}}, {{team}}: vergeben",
+      "kickPending": "Schuss {{n}}, {{team}}: noch offen",
+      "stepKick": "Nächster Schuss",
       "round": "Runde {{n}} von 5",
       "suddenDeath": "Plötzlicher Tod",
       "shootoutScore": "Elfmeter: {{h}} – {{a}}",

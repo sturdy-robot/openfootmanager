@@ -1968,6 +1968,10 @@
     "extraTimeHalfTime": "Перерыв в Дополнительном Времени",
     "penaltyShootout": "Серия Пенальти",
     "shootout": {
+      "kickScored": "Удар {{n}}, {{team}}: забит",
+      "kickMissed": "Удар {{n}}, {{team}}: не забит",
+      "kickPending": "Удар {{n}}, {{team}}: ещё не пробит",
+      "stepKick": "Следующий удар",
       "round": "Серия {{n}} из 5",
       "suddenDeath": "Золотой гол",
       "shootoutScore": "Пенальти: {{h}} – {{a}}",

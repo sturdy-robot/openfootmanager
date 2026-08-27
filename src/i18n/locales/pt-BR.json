@@ -1911,6 +1911,10 @@
     "extraTimeHalfTime": "Intervalo da Prorrogação",
     "penaltyShootout": "Disputa de Pênaltis",
     "shootout": {
+      "kickScored": "Pênalti {{n}}, {{team}}: convertido",
+      "kickMissed": "Pênalti {{n}}, {{team}}: perdido",
+      "kickPending": "Pênalti {{n}}, {{team}}: ainda por bater",
+      "stepKick": "Próximo pênalti",
       "round": "Rodada {{n}} de 5",
       "suddenDeath": "Morte Súbita",
       "shootoutScore": "Pênaltis: {{h}} – {{a}}",

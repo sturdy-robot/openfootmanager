@@ -2002,6 +2002,10 @@
     "extraTimeHalfTime": "Poločas prodloužení",
     "penaltyShootout": "Penaltový rozstřel",
     "shootout": {
+      "kickScored": "Pokus {{n}}, {{team}}: proměněný",
+      "kickMissed": "Pokus {{n}}, {{team}}: neproměněný",
+      "kickPending": "Pokus {{n}}, {{team}}: ještě se kope",
+      "stepKick": "Další pokus",
       "round": "{{n}}. série z 5",
       "suddenDeath": "Náhlá smrt",
       "shootoutScore": "Penalty: {{h}} – {{a}}",

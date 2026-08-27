@@ -2002,6 +2002,10 @@
     "extraTimeHalfTime": "Turun Minum Perpanjangan Waktu",
     "penaltyShootout": "Adu Penalti",
     "shootout": {
+      "kickScored": "Tendangan {{n}}, {{team}}: gol",
+      "kickMissed": "Tendangan {{n}}, {{team}}: gagal",
+      "kickPending": "Tendangan {{n}}, {{team}}: belum diambil",
+      "stepKick": "Tendangan berikutnya",
       "round": "Babak {{n}} dari 5",
       "suddenDeath": "Sudden Death",
       "shootoutScore": "Penalti: {{h}} – {{a}}",

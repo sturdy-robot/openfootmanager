@@ -118,22 +118,83 @@ export default function PenaltyShootoutScreen({
   );
 
   return (
-    <MatchdayShell bodyMode="centered" identity={matchdayIdentity}>
-      <div className="flex flex-col items-center">
-      {/* Header */}
-      <div className="w-full max-w-lg mb-6 text-center">
-        <p className="text-xs font-heading uppercase tracking-widest text-accent-600 dark:text-accent-400 mb-1">
-          {ps?.sudden_death
-            ? t("match.shootout.suddenDeath")
-            : roundNumber > 0
-              ? t("match.shootout.round", { n: roundNumber })
-              : t("match.penaltyShootout")}
-        </p>
-        <h1 className="text-2xl font-heading font-bold text-gray-900 dark:text-white">
-          {t("match.penaltyShootout")}
-        </h1>
-      </div>
+    <MatchdayShell
+      bodyMode="centered"
+      header={
+        /*
+          The shootout is the same match still being decided, so it reads like
+          one: the score and the round sit beside the competition, and the
+          transport is beside them rather than stranded below the kick feed.
+        */
+        <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <p className="font-heading text-xs uppercase tracking-widest text-accent-600 dark:text-accent-400">
+            {ps?.sudden_death
+              ? t("match.shootout.suddenDeath")
+              : roundNumber > 0
+                ? t("match.shootout.round", { n: roundNumber })
+                : t("match.penaltyShootout")}
+          </p>
 
+          <div className="flex items-center gap-3">
+            <span className="truncate font-heading font-bold text-gray-800 dark:text-gray-200">
+              {snapshot.home_team.name}
+            </span>
+            <span className="font-heading text-2xl font-bold tabular-nums text-gray-900 dark:text-white">
+              {ps?.home_scored ?? 0}
+            </span>
+            <span className="font-heading text-gray-400 dark:text-gray-500">–</span>
+            <span className="font-heading text-2xl font-bold tabular-nums text-gray-900 dark:text-white">
+              {ps?.away_scored ?? 0}
+            </span>
+            <span className="truncate font-heading font-bold text-gray-800 dark:text-gray-200">
+              {snapshot.away_team.name}
+            </span>
+          </div>
+
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              aria-label={isRunning ? t("match.pause") : t("match.live")}
+              className="rounded-full bg-white p-2 shadow transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 motion-reduce:transition-none dark:bg-navy-700 dark:hover:bg-navy-600 dark:focus-visible:ring-offset-navy-900"
+              onClick={() => {
+                setIsRunning((running) => !running);
+                setSpeed(isRunning ? "paused" : "normal");
+              }}
+              type="button"
+            >
+              {isRunning ? (
+                <Pause aria-hidden="true" className="h-5 w-5 text-gray-700 dark:text-gray-200" />
+              ) : (
+                <Play aria-hidden="true" className="h-5 w-5 text-gray-700 dark:text-gray-200" />
+              )}
+            </button>
+            <button
+              aria-label={t("match.fast")}
+              className="rounded-full bg-white p-2 shadow transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 motion-reduce:transition-none dark:bg-navy-700 dark:hover:bg-navy-600 dark:focus-visible:ring-offset-navy-900"
+              onClick={() => {
+                setSpeed("fast");
+                setIsRunning(true);
+              }}
+              type="button"
+            >
+              <FastForward aria-hidden="true" className="h-5 w-5 text-gray-700 dark:text-gray-200" />
+            </button>
+            <button
+              aria-label={t("match.shootout.stepKick")}
+              className="rounded-full bg-white p-2 shadow transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 motion-reduce:transition-none dark:bg-navy-700 dark:hover:bg-navy-600 dark:focus-visible:ring-offset-navy-900"
+              onClick={() => {
+                setIsRunning(false);
+                void stepMatch();
+              }}
+              type="button"
+            >
+              <SkipForward aria-hidden="true" className="h-5 w-5 text-gray-700 dark:text-gray-200" />
+            </button>
+          </div>
+        </div>
+      }
+      identity={matchdayIdentity}
+    >
+      <div className="flex flex-col items-center">
       {/* Score card */}
       <div className="w-full max-w-lg bg-white dark:bg-navy-800 rounded-2xl shadow-lg p-6 mb-4">
         <div className="flex items-center justify-between gap-4">
@@ -169,16 +230,20 @@ export default function PenaltyShootoutScreen({
         {ps && (
           <div className="mt-6 space-y-3">
             <KickRow
+              events={snapshot.events}
               label={snapshot.home_team.name}
-              taken={ps.home_taken}
-              scored={ps.home_scored}
               maxRounds={ps.sudden_death ? ps.home_taken + 1 : 5}
+              scored={ps.home_scored}
+              side="Home"
+              taken={ps.home_taken}
             />
             <KickRow
+              events={snapshot.events}
               label={snapshot.away_team.name}
-              taken={ps.away_taken}
-              scored={ps.away_scored}
               maxRounds={ps.sudden_death ? ps.away_taken + 1 : 5}
+              scored={ps.away_scored}
+              side="Away"
+              taken={ps.away_taken}
             />
           </div>
         )}
@@ -214,47 +279,27 @@ export default function PenaltyShootoutScreen({
         </div>
       )}
 
-      {/* Speed controls */}
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            setIsRunning((r) => !r);
-            if (!isRunning) setSpeed("normal");
-            else setSpeed("paused");
-          }}
-          className="p-2 rounded-full bg-white dark:bg-navy-700 shadow hover:shadow-md transition-all"
-          aria-label={isRunning ? t("match.pause") : t("match.live")}
-        >
-          {isRunning ? (
-            <Pause className="w-5 h-5 text-gray-700 dark:text-gray-200" />
-          ) : (
-            <Play className="w-5 h-5 text-gray-700 dark:text-gray-200" />
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => { setSpeed("fast"); setIsRunning(true); }}
-          className="p-2 rounded-full bg-white dark:bg-navy-700 shadow hover:shadow-md transition-all"
-          aria-label={t("match.fast")}
-        >
-          <FastForward className="w-5 h-5 text-gray-700 dark:text-gray-200" />
-        </button>
-        <button
-          type="button"
-          onClick={async () => {
-            setIsRunning(false);
-            await stepMatch();
-          }}
-          className="p-2 rounded-full bg-white dark:bg-navy-700 shadow hover:shadow-md transition-all"
-          aria-label={t("match.step1Min")}
-        >
-          <SkipForward className="w-5 h-5 text-gray-700 dark:text-gray-200" />
-        </button>
-      </div>
       </div>
     </MatchdayShell>
   );
+}
+
+/** What happened to one kick, in the order it was taken. */
+type KickOutcome = "scored" | "missed" | "pending";
+
+/**
+ * The kicks a side has taken, in order.
+ *
+ * Counts cannot answer this. Two of three scored says nothing about *which*
+ * one was missed, and drawing the first two as goals put the miss on the wrong
+ * kick whenever a side missed and then scored. The events know.
+ */
+function kicksTaken(events: MatchEvent[], side: "Home" | "Away"): KickOutcome[] {
+  return events
+    .filter(
+      (event) => event.side === side && SHOOTOUT_EVENTS.has(event.event_type),
+    )
+    .map((event) => (event.event_type === "ShootoutGoal" ? "scored" : "missed"));
 }
 
 export function KickRow({
@@ -262,42 +307,78 @@ export function KickRow({
   taken,
   scored,
   maxRounds,
+  events,
+  side,
 }: {
   label: string;
-  taken: number;
-  scored: number;
   maxRounds: number;
+  /**
+   * The shootout's events. With them the row can say which kick was missed;
+   * `taken` and `scored` are only enough to say how many were.
+   */
+  events?: MatchEvent[];
+  side?: "Home" | "Away";
+  taken?: number;
+  scored?: number;
 }) {
-  const cells = Math.max(maxRounds, taken);
+  const { t } = useTranslation();
+
+  const outcomes =
+    events && side
+      ? kicksTaken(events, side)
+      : // No event log: the best that can be said is how many went in, and the
+        // order shown is a guess. Only reachable before a kick is taken.
+        Array.from({ length: taken ?? 0 }, (_, index) =>
+          index < (scored ?? 0) ? "scored" : "missed",
+        );
+
+  const cells = Math.max(maxRounds, outcomes.length);
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-xs text-gray-500 dark:text-gray-400 w-20 truncate text-right">
+      <span className="w-20 truncate text-right text-xs text-gray-500 dark:text-gray-400">
         {label}
       </span>
-      <div className="flex gap-1.5 flex-wrap">
-        {Array.from({ length: cells }).map((_, i) => {
-          if (i >= taken) {
+      <div className="flex flex-wrap gap-1.5">
+        {Array.from({ length: cells }).map((_, index) => {
+          const outcome: KickOutcome = outcomes[index] ?? "pending";
+          // Named, because a green ball and a red cross are a colour and a
+          // pictograph — nothing a screen reader can read, and nothing a
+          // colour-blind manager can tell apart.
+          const name = t(
+            outcome === "scored"
+              ? "match.shootout.kickScored"
+              : outcome === "missed"
+                ? "match.shootout.kickMissed"
+                : "match.shootout.kickPending",
+            { n: index + 1, team: label },
+          );
+
+          if (outcome === "pending") {
             return (
               <span
-                key={i}
-                className="w-6 h-6 rounded-full border-2 border-gray-200 dark:border-gray-600 flex items-center justify-center text-xs text-gray-300"
+                aria-label={name}
+                className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-gray-200 text-xs text-gray-400 dark:border-gray-600 dark:text-gray-500"
+                key={index}
+                role="img"
               >
                 ?
               </span>
             );
           }
-          const isGoal = i < scored;
+
           return (
             <span
-              key={i}
-              className={`w-6 h-6 rounded-full flex items-center justify-center text-sm ${
-                isGoal
-                  ? "bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400"
-                  : "bg-red-100 dark:bg-red-900/40 text-red-500 dark:text-red-400"
+              aria-label={name}
+              className={`flex h-6 w-6 items-center justify-center rounded-full text-sm ${
+                outcome === "scored"
+                  ? "bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-400"
+                  : "bg-red-100 text-red-500 dark:bg-red-900/40 dark:text-red-400"
               }`}
+              key={index}
+              role="img"
             >
-              {isGoal ? "⚽" : "✗"}
+              {outcome === "scored" ? "\u26bd" : "\u2717"}
             </span>
           );
         })}

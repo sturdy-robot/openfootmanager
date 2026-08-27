@@ -1968,6 +1968,10 @@
     "extraTimeHalfTime": "Medio Tiempo de Prórroga",
     "penaltyShootout": "Tanda de Penaltis",
     "shootout": {
+      "kickScored": "Penalti {{n}}, {{team}}: marcado",
+      "kickMissed": "Penalti {{n}}, {{team}}: fallado",
+      "kickPending": "Penalti {{n}}, {{team}}: por lanzar",
+      "stepKick": "Siguiente penalti",
       "round": "Ronda {{n}} de 5",
       "suddenDeath": "Muerte Súbita",
       "shootoutScore": "Penaltis: {{h}} – {{a}}",

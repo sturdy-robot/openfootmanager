@@ -2002,6 +2002,10 @@
     "extraTimeHalfTime": "Extra Time Half Time",
     "penaltyShootout": "Penalty Shootout",
     "shootout": {
+      "kickScored": "Kick {{n}}, {{team}}: scored",
+      "kickMissed": "Kick {{n}}, {{team}}: missed",
+      "kickPending": "Kick {{n}}, {{team}}: still to take",
+      "stepKick": "Next kick",
       "round": "Round {{n}} of 5",
       "suddenDeath": "Sudden Death",
       "shootoutScore": "Penalties: {{h}} – {{a}}",

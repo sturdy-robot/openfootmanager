@@ -1968,6 +1968,10 @@
     "extraTimeHalfTime": "Mi-Temps des Prolongations",
     "penaltyShootout": "Séance de Tirs au But",
     "shootout": {
+      "kickScored": "Tir {{n}}, {{team}} : marqué",
+      "kickMissed": "Tir {{n}}, {{team}} : manqué",
+      "kickPending": "Tir {{n}}, {{team}} : à tirer",
+      "stepKick": "Tir suivant",
       "round": "Tir {{n}} sur 5",
       "suddenDeath": "Mort Subite",
       "shootoutScore": "Tirs au but: {{h}} – {{a}}",
