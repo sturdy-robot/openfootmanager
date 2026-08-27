@@ -6,7 +6,6 @@ use crate::application::press_conference::{
     first_player_outside_squad, last_completed_match, todays_article_id,
 };
 use crate::mcp_server::context::McpContext;
-use crate::mcp_server::formatting::translate_error;
 
 /// Format a match event as a readable string.
 fn fmt_event(event: &engine::MatchEvent) -> String {
@@ -37,8 +36,7 @@ pub fn match_start(
         allows_et,
         None,
         None,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     {
         use tauri::Emitter;
@@ -56,8 +54,7 @@ pub fn match_step(ctx: Arc<McpContext>, minutes: u16) -> Result<String, String> 
     let results = crate::application::live_match::step_live_match(
         &ctx.state_manager,
         minutes,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     let mut lines: Vec<String> = Vec::new();
     for result in &results {
@@ -67,8 +64,7 @@ pub fn match_step(ctx: Arc<McpContext>, minutes: u16) -> Result<String, String> 
     }
 
     // Get the latest snapshot for score
-    let snapshot = crate::application::live_match::get_match_snapshot(&ctx.state_manager)
-        .map_err(|e| translate_error(&e))?;
+    let snapshot = crate::application::live_match::get_match_snapshot(&ctx.state_manager)?;
 
     {
         use tauri::Emitter;
@@ -109,8 +105,7 @@ pub fn match_command(
     let snapshot = crate::application::live_match::apply_match_command(
         &ctx.state_manager,
         command,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     {
         use tauri::Emitter;
@@ -127,8 +122,7 @@ pub fn match_command(
 
 /// Get current match snapshot without advancing time.
 pub fn match_snapshot(ctx: Arc<McpContext>) -> Result<String, String> {
-    let snapshot = crate::application::live_match::get_match_snapshot(&ctx.state_manager)
-        .map_err(|e| translate_error(&e))?;
+    let snapshot = crate::application::live_match::get_match_snapshot(&ctx.state_manager)?;
 
     Ok(format!(
         "## Match Snapshot\n\n**Minute**: {}\n**Score**: {} - {}\n**Phase**: {:?}\n**Possession**: Home {:.0}% / Away {:.0}%",
@@ -143,8 +137,7 @@ pub fn match_snapshot(ctx: Arc<McpContext>) -> Result<String, String> {
 
 /// Finish the live match: generate report, update game state, clean up.
 pub fn match_finish(ctx: Arc<McpContext>) -> Result<String, String> {
-    let response = crate::application::live_match::finish_live_match(&ctx.state_manager)
-        .map_err(|e| translate_error(&e))?;
+    let response = crate::application::live_match::finish_live_match(&ctx.state_manager)?;
 
     {
         use tauri::Emitter;
@@ -259,7 +252,7 @@ fn apply_press_conference(
     // One conference per game day.
     let (article_id, already_held) = todays_article_id(game);
     if already_held {
-        return Err("A press conference has already been held today.".to_string());
+        return Err("be.error.liveMatch.pressConferenceAlreadyHeld".to_string());
     }
 
     // Derive user team and last match result from game state
@@ -267,7 +260,7 @@ fn apply_press_conference(
         .manager
         .team_id
         .clone()
-        .ok_or("No team assigned to manager")?;
+        .ok_or("be.error.noTeamAssigned")?;
     let user_team_name = game
         .teams
         .iter()
@@ -289,7 +282,7 @@ fn apply_press_conference(
     // league match. Copied out of the borrow so the morale loops below can take `game` mutably.
     let (home_team_id, away_team_id, home_score, away_score) =
         last_completed_match(game, &user_team_id)
-            .ok_or("No completed match found for your team")?;
+            .ok_or("be.error.liveMatch.noCompletedMatch")?;
 
     let team_name = |id: &str| {
         game.teams

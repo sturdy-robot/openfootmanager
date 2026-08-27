@@ -3,7 +3,6 @@
 use std::sync::Arc;
 use crate::mcp_server::context::McpContext;
 use crate::mcp_server::tools_impl::helpers::require_game;
-use crate::mcp_server::formatting::translate_error;
 
 // ─── scout_send ─────────────────────────────────────────────────────────────
 
@@ -12,8 +11,7 @@ pub fn scout_send(ctx: Arc<McpContext>, scout_id: String, player_id: String) -> 
     // leaves the game untouched even though `update_game` cannot roll back.
     ctx.state_manager
         .update_game(|game| ofm_core::scouting::send_scout(game, &scout_id, &player_id))
-        .ok_or_else(|| "be.error.noActiveGameSession".to_string())?
-        .map_err(|e| translate_error(&e))?;
+        .ok_or_else(|| "be.error.noActiveGameSession".to_string())??;
 
     let scout_name = ctx.state_manager.get_game(|g| {
         g.staff.iter().find(|s| s.id == scout_id)
@@ -105,8 +103,7 @@ pub fn scout_youth_start(ctx: Arc<McpContext>, scout_id: String, region: Option<
                 target_position,
             )
         })
-        .ok_or_else(|| "be.error.noActiveGameSession".to_string())?
-        .map_err(|e| translate_error(&e))?;
+        .ok_or_else(|| "be.error.noActiveGameSession".to_string())??;
 
     {
         use tauri::Emitter;
@@ -158,8 +155,7 @@ pub fn scout_youth_cancel(ctx: Arc<McpContext>, assignment_id: String) -> Result
     // the retain matched nothing and removed nothing.
     ctx.state_manager
         .update_game(|game| ofm_core::scouting::cancel_youth_scouting(game, &assignment_id))
-        .ok_or_else(|| "be.error.noActiveGameSession".to_string())?
-        .map_err(|e| translate_error(&e))?;
+        .ok_or_else(|| "be.error.noActiveGameSession".to_string())??;
 
     {
         use tauri::Emitter;
@@ -179,8 +175,7 @@ pub fn scout_youth_reassign(ctx: Arc<McpContext>, assignment_id: String, scout_i
         .update_game(|game| {
             ofm_core::scouting::reassign_youth_scouting(game, &assignment_id, &scout_id)
         })
-        .ok_or_else(|| "be.error.noActiveGameSession".to_string())?
-        .map_err(|e| translate_error(&e))?;
+        .ok_or_else(|| "be.error.noActiveGameSession".to_string())??;
 
     {
         use tauri::Emitter;

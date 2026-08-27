@@ -3,7 +3,6 @@
 use std::sync::Arc;
 use crate::mcp_server::context::McpContext;
 use crate::mcp_server::tools_impl::helpers::{require_game, user_team, format_position, age_from_dob};
-use crate::mcp_server::formatting::translate_error;
 
 // ─── squad_get ──────────────────────────────────────────────────────────────
 
@@ -75,8 +74,7 @@ pub fn squad_get(ctx: Arc<McpContext>) -> Result<String, String> {
 
 pub fn squad_set_starting_xi(ctx: Arc<McpContext>, player_ids: Vec<String>) -> Result<String, String> {
     // Call the internal function from commands/squad.rs
-    crate::commands::squad::set_starting_xi_internal(&ctx.state_manager, player_ids.clone())
-        .map_err(|e| translate_error(&e))?;
+    crate::commands::squad::set_starting_xi_internal(&ctx.state_manager, player_ids.clone())?;
 
     let game = require_game(&ctx.state_manager)?;
     let team = user_team(&game)?;
@@ -105,8 +103,7 @@ pub fn squad_set_starting_xi(ctx: Arc<McpContext>, player_ids: Vec<String>) -> R
 // ─── squad_set_formation ────────────────────────────────────────────────────
 
 pub fn squad_set_formation(ctx: Arc<McpContext>, formation: String) -> Result<String, String> {
-    crate::commands::squad::set_formation_internal(&ctx.state_manager, &formation)
-        .map_err(|e| translate_error(&e))?;
+    crate::commands::squad::set_formation_internal(&ctx.state_manager, &formation)?;
 
     let game = require_game(&ctx.state_manager)?;
     let team = user_team(&game)?;
@@ -125,8 +122,7 @@ pub fn squad_set_formation(ctx: Arc<McpContext>, formation: String) -> Result<St
 // ─── squad_set_play_style ───────────────────────────────────────────────────
 
 pub fn squad_set_play_style(ctx: Arc<McpContext>, play_style: String) -> Result<String, String> {
-    crate::commands::squad::set_play_style_internal(&ctx.state_manager, &play_style)
-        .map_err(|e| translate_error(&e))?;
+    crate::commands::squad::set_play_style_internal(&ctx.state_manager, &play_style)?;
 
     let game = require_game(&ctx.state_manager)?;
     let team = user_team(&game)?;
@@ -159,8 +155,7 @@ pub fn squad_set_match_roles(
         corner_taker,
     };
 
-    crate::commands::squad::set_team_match_roles_internal(&ctx.state_manager, match_roles)
-        .map_err(|e| translate_error(&e))?;
+    crate::commands::squad::set_team_match_roles_internal(&ctx.state_manager, match_roles)?;
 
     {
         use tauri::Emitter;
@@ -181,8 +176,7 @@ pub fn squad_auto_set_pieces(ctx: Arc<McpContext>) -> Result<String, String> {
     let result = crate::commands::squad::auto_select_set_pieces_internal(
         &ctx.state_manager,
         &team.starting_xi_ids,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     // Apply the auto-selected roles
     let match_roles = domain::team::MatchRoles {
@@ -193,8 +187,7 @@ pub fn squad_auto_set_pieces(ctx: Arc<McpContext>) -> Result<String, String> {
         corner_taker: result.get("corner_taker").and_then(|v| v.as_str()).map(|s| s.to_string()),
     };
 
-    crate::commands::squad::set_team_match_roles_internal(&ctx.state_manager, match_roles)
-        .map_err(|e| translate_error(&e))?;
+    crate::commands::squad::set_team_match_roles_internal(&ctx.state_manager, match_roles)?;
 
     let game = require_game(&ctx.state_manager)?;
 
@@ -234,8 +227,7 @@ pub fn squad_auto_set_pieces(ctx: Arc<McpContext>) -> Result<String, String> {
 // ─── squad_set_player_role ──────────────────────────────────────────────────
 
 pub fn squad_set_player_role(ctx: Arc<McpContext>, player_id: String, squad_role: String) -> Result<String, String> {
-    crate::commands::squad::set_player_squad_role_internal(&ctx.state_manager, &player_id, &squad_role)
-        .map_err(|e| translate_error(&e))?;
+    crate::commands::squad::set_player_squad_role_internal(&ctx.state_manager, &player_id, &squad_role)?;
 
     let game = require_game(&ctx.state_manager)?;
     let player_name = game.players.iter()

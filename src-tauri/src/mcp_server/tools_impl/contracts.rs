@@ -3,7 +3,6 @@
 use std::sync::Arc;
 use crate::mcp_server::context::McpContext;
 use crate::mcp_server::tools_impl::helpers::{require_game};
-use crate::mcp_server::formatting::translate_error;
 
 // ─── contract_propose_renewal ───────────────────────────────────────────────
 
@@ -19,8 +18,7 @@ pub fn contract_propose_renewal(ctx: Arc<McpContext>, player_id: String, weekly_
         &player_id,
         weekly_wage,
         contract_years,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     let mut output = format!("## Contract Renewal: {} — {}💰/wk × {}yr\n\n", player_name, weekly_wage, contract_years);
     output.push_str(&format!("**Outcome**: {:?}\n", response.outcome));
@@ -66,8 +64,7 @@ pub fn contract_delegate_renewals(ctx: Arc<McpContext>, player_ids: Option<Vec<S
         player_ids,
         max_wage_increase_pct,
         max_contract_years,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     {
         use tauri::Emitter;
@@ -86,8 +83,7 @@ pub fn contract_preview_renewal(ctx: Arc<McpContext>, player_id: String, weekly_
         &ctx.state_manager,
         &player_id,
         weekly_wage,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     Ok(format!("## Renewal Preview\n\n**Wage Offer**: {}/wk\nThis is a preview — no offer was made.", weekly_wage))
 }
@@ -97,8 +93,7 @@ pub fn contract_preview_renewal(ctx: Arc<McpContext>, player_id: String, weekly_
 // ─── contract_set_exit_intent ───────────────────────────────────────────────
 
 pub fn contract_set_exit_intent(ctx: Arc<McpContext>, player_id: String, reason: Option<String>) -> Result<String, String> {
-    crate::commands::contracts::set_contract_exit_intent_internal(&ctx.state_manager, &player_id, reason)
-        .map_err(|e| translate_error(&e))?;
+    crate::commands::contracts::set_contract_exit_intent_internal(&ctx.state_manager, &player_id, reason)?;
 
     {
         use tauri::Emitter;
@@ -119,8 +114,7 @@ pub fn contract_set_exit_intent(ctx: Arc<McpContext>, player_id: String, reason:
 // ─── contract_clear_exit_intent ─────────────────────────────────────────────
 
 pub fn contract_clear_exit_intent(ctx: Arc<McpContext>, player_id: String) -> Result<String, String> {
-    crate::commands::contracts::clear_contract_exit_intent_internal(&ctx.state_manager, &player_id)
-        .map_err(|e| translate_error(&e))?;
+    crate::commands::contracts::clear_contract_exit_intent_internal(&ctx.state_manager, &player_id)?;
 
     {
         use tauri::Emitter;
@@ -138,8 +132,7 @@ pub fn contract_preview_termination(ctx: Arc<McpContext>, player_id: String) -> 
     let _response = crate::commands::contracts::preview_contract_termination_internal(
         &ctx.state_manager,
         &player_id,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     Ok("## Termination Preview\n\n**Cost**: (see projection details)\nThis is a preview — no contract was terminated.".to_string())
 }
@@ -155,8 +148,7 @@ pub fn contract_terminate(ctx: Arc<McpContext>, player_id: String) -> Result<Str
         .map(|p| p.match_name.clone())
         .unwrap_or_else(|| player_id.clone());
 
-    crate::commands::contracts::terminate_contract_now_internal(&ctx.state_manager, &player_id)
-        .map_err(|e| translate_error(&e))?;
+    crate::commands::contracts::terminate_contract_now_internal(&ctx.state_manager, &player_id)?;
 
     {
         use tauri::Emitter;

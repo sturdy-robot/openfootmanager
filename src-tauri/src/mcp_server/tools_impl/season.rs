@@ -3,7 +3,6 @@
 use std::sync::Arc;
 use crate::mcp_server::context::McpContext;
 use crate::mcp_server::tools_impl::helpers::{require_game};
-use crate::mcp_server::formatting::translate_error;
 
 // ─── season_check_complete ──────────────────────────────────────────────────
 
@@ -33,8 +32,7 @@ pub fn season_advance(ctx: Arc<McpContext>) -> Result<String, String> {
     let response = crate::application::time_advancement::advance_time_with_mode(
         &ctx.state_manager,
         "delegate",
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     {
         use tauri::Emitter;

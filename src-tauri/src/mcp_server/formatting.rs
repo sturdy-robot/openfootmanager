@@ -50,6 +50,78 @@ pub fn translate_error(key: &str) -> String {
         "be.error.transfers.insufficientFunds" => "Insufficient transfer funds.".to_string(),
         "be.error.transfers.offerNotPending" => "Offer is no longer pending.".to_string(),
         "be.error.transfers.transferWindowClosed" => "Transfer window is closed.".to_string(),
+        "be.error.mcp.noLeagueYet" => "No league found. The season may not have started yet.".to_string(),
+        "be.error.mcp.teamAlreadyAssigned" => "You already manage a team. Use `jobs_apply` to switch.".to_string(),
+        "be.error.mcp.cannotDeleteActiveSave" => "Cannot delete the save you are playing. Use `game_exit` first.".to_string(),
+        "be.error.liveMatch.pressConferenceAlreadyHeld" => "A press conference has already been held today.".to_string(),
+        "be.error.liveMatch.noCompletedMatch" => "No completed match found for your team.".to_string(),
         _ => format!("Error: {}", key),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::translate_error;
+
+    /// The wrapper renders a key exactly once.
+    ///
+    /// `err_result` (`tools.rs`) already calls `translate_error` on its way out, so a tool that
+    /// translated its own errors handed the wrapper a finished sentence, which fell through to the
+    /// `_` arm and came back wearing an "Error: " prefix. Every one of 57 call sites did this. The
+    /// prefix is what a reader sees when the rule is broken again.
+    #[test]
+    fn translating_a_key_twice_is_not_the_same_as_translating_it_once() {
+        let once = translate_error("be.error.playerNotInSquad");
+        assert_eq!(once, "Player is not in your squad.");
+        assert_eq!(
+            translate_error(&once),
+            "Error: Player is not in your squad.",
+            "a second pass wraps the sentence — tools must emit keys, not prose"
+        );
+    }
+
+    /// Every `be.error.*` key an MCP tool emits has to be renderable, or the agent is handed the
+    /// key itself. This is the check that keeps `formatting.rs` in step with the tools as they
+    /// grow, rather than trusting whoever adds the next one to remember.
+    #[test]
+    fn every_key_the_tools_emit_has_a_mapping() {
+        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/src/mcp_server/tools_impl");
+        let mut unmapped: Vec<String> = Vec::new();
+
+        for entry in std::fs::read_dir(dir).expect("tools_impl is readable") {
+            let path = entry.expect("readable entry").path();
+            if path.extension().and_then(|e| e.to_str()) != Some("rs") {
+                continue;
+            }
+            let source = std::fs::read_to_string(&path).expect("readable source");
+            for key in keys_in(&source) {
+                if translate_error(&key) == format!("Error: {}", key) {
+                    unmapped.push(format!("{}: {}", path.display(), key));
+                }
+            }
+        }
+
+        assert!(
+            unmapped.is_empty(),
+            "these keys reach the agent unrendered — add them to `translate_error`:\n{}",
+            unmapped.join("\n")
+        );
+    }
+
+    /// Every `"be.error…"` string literal in a source file.
+    fn keys_in(source: &str) -> Vec<String> {
+        let mut found = Vec::new();
+        let mut rest = source;
+        while let Some(start) = rest.find("\"be.error.") {
+            let after = &rest[start + 1..];
+            match after.find('"') {
+                Some(end) => {
+                    found.push(after[..end].to_string());
+                    rest = &after[end..];
+                }
+                None => break,
+            }
+        }
+        found
     }
 }

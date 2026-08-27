@@ -27,7 +27,7 @@ pub(crate) fn user_team(game: &ofm_core::game::Game) -> Result<&domain::team::Te
 pub(crate) fn require_league(game: &ofm_core::game::Game) -> Result<&domain::league::League, String> {
     game.league
         .as_ref()
-        .ok_or_else(|| "No league found. Season may not have started yet.".to_string())
+        .ok_or_else(|| "be.error.mcp.noLeagueYet".to_string())
 }
 
 /// Format a player position as a short code.

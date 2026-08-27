@@ -3,7 +3,6 @@
 use std::sync::Arc;
 use crate::mcp_server::context::McpContext;
 use crate::mcp_server::tools_impl::helpers::{require_game, format_position, age_from_dob};
-use crate::mcp_server::formatting::translate_error;
 
 // ─── transfer_toggle_listed ────────────────────────────────────────────────
 
@@ -14,8 +13,7 @@ pub fn transfer_toggle_listed(ctx: Arc<McpContext>, player_id: String) -> Result
         .map(|p| p.match_name.clone())
         .unwrap_or_default();
 
-    crate::commands::transfers::toggle_transfer_list_internal(&ctx.state_manager, &player_id)
-        .map_err(|e| translate_error(&e))?;
+    crate::commands::transfers::toggle_transfer_list_internal(&ctx.state_manager, &player_id)?;
 
     let game = require_game(&ctx.state_manager)?;
     let is_listed = game.players.iter()
@@ -43,8 +41,7 @@ pub fn transfer_toggle_loan(ctx: Arc<McpContext>, player_id: String) -> Result<S
         .map(|p| p.match_name.clone())
         .unwrap_or_default();
 
-    crate::commands::transfers::toggle_loan_list_internal(&ctx.state_manager, &player_id)
-        .map_err(|e| translate_error(&e))?;
+    crate::commands::transfers::toggle_loan_list_internal(&ctx.state_manager, &player_id)?;
 
     let game = require_game(&ctx.state_manager)?;
     let is_loaned = game.players.iter()
@@ -76,8 +73,7 @@ pub fn transfer_make_bid(ctx: Arc<McpContext>, player_id: String, fee: u64) -> R
         &ctx.state_manager,
         &player_id,
         fee,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     let mut output = format!("## Transfer Bid: {} — {} 💰\n\n", player_name, fee);
 
@@ -120,8 +116,7 @@ pub fn transfer_preview_bid(ctx: Arc<McpContext>, player_id: String, fee: u64) -
         &ctx.state_manager,
         &player_id,
         fee,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
     let p = &response.projection;
 
     Ok(format!(
@@ -146,8 +141,7 @@ pub fn transfer_respond_to_offer(ctx: Arc<McpContext>, player_id: String, offer_
         &player_id,
         &offer_id,
         accept,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     {
         use tauri::Emitter;
@@ -168,8 +162,7 @@ pub fn transfer_counter_offer(ctx: Arc<McpContext>, player_id: String, offer_id:
         &player_id,
         &offer_id,
         requested_fee,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     let mut output = format!("## Counter Offer: {} 💰\n\n", requested_fee);
     output.push_str(&format!("**Decision**: {:?}\n", response.decision));
@@ -266,8 +259,7 @@ pub fn transfer_free_agent_offer(ctx: Arc<McpContext>, player_id: String, weekly
         &player_id,
         weekly_wage,
         contract_years,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     {
         use tauri::Emitter;
@@ -286,8 +278,7 @@ pub fn transfer_free_agent_preview(ctx: Arc<McpContext>, player_id: String, week
         &ctx.state_manager,
         &player_id,
         weekly_wage,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
     let p = &response.projection;
 
     Ok(format!(

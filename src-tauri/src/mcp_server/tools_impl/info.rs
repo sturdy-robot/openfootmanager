@@ -3,7 +3,6 @@
 use std::sync::Arc;
 use crate::mcp_server::context::McpContext;
 use crate::mcp_server::tools_impl::helpers::{require_game, user_team, require_league, format_position, age_from_dob};
-use crate::mcp_server::formatting::translate_error;
 
 // ─── info_game_state ────────────────────────────────────────────────────────
 
@@ -429,8 +428,7 @@ pub fn info_finances(ctx: Arc<McpContext>) -> Result<String, String> {
     let response = crate::commands::finances::get_finance_snapshot_internal(
         &ctx.state_manager,
         None,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     let snap = &response.snapshot;
 
@@ -580,8 +578,7 @@ pub fn info_player_stats(ctx: Arc<McpContext>, player_id: String) -> Result<Stri
     let response = crate::commands::stats::get_player_stats_overview_internal(
         &ctx.state_manager,
         &player_id,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     let game = require_game(&ctx.state_manager)?;
     let player_name = game.players.iter()
@@ -601,8 +598,7 @@ pub fn info_player_match_history(ctx: Arc<McpContext>, player_id: String, limit:
         &ctx.state_manager,
         &player_id,
         limit,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     let game = require_game(&ctx.state_manager)?;
     let player_name = game.players.iter()
@@ -727,8 +723,7 @@ pub fn info_team_stats(ctx: Arc<McpContext>, team_id: String) -> Result<String, 
     let response = crate::commands::stats::get_team_stats_overview_internal(
         &ctx.state_manager,
         &team_id,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     let game = require_game(&ctx.state_manager)?;
     let team_name = game.teams.iter()
@@ -751,8 +746,7 @@ pub fn info_team_match_history(ctx: Arc<McpContext>, team_id: String, limit: Opt
         &ctx.state_manager,
         &team_id,
         limit,
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     let game = require_game(&ctx.state_manager)?;
     let team_name = game.teams.iter()
@@ -787,8 +781,7 @@ pub fn info_finance_snapshot(ctx: Arc<McpContext>, team_id: Option<String>) -> R
     let response = crate::commands::finances::get_finance_snapshot_internal(
         &ctx.state_manager,
         team_id.as_deref(),
-    )
-    .map_err(|e| translate_error(&e))?;
+    )?;
 
     let snap = &response.snapshot;
 
