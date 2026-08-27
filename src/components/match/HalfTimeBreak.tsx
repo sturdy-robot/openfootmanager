@@ -26,15 +26,10 @@ import {
 } from "./MatchDraft.helpers";
 import { buildNaturalPositionMap } from "./SubPanel.helpers";
 import { resolveBackendError } from "../../utils/backendI18n";
-import { Badge, TeamLogo } from "../ui";
+import { Badge, Select, TeamLogo } from "../ui";
 import {
   Play,
   RefreshCw,
-  Shield,
-  Zap,
-  Target,
-  Crosshair,
-  Flag,
   MessageCircle,
 } from "lucide-react";
 
@@ -48,15 +43,6 @@ interface HalfTimeBreakProps {
   onResume: () => void;
   onUpdateSnapshot: (snap: MatchSnapshot) => void;
 }
-
-const PLAY_STYLE_ICONS: Record<string, React.ReactNode> = {
-  Balanced: <Target className="w-3.5 h-3.5" />,
-  Attacking: <Zap className="w-3.5 h-3.5" />,
-  Defensive: <Shield className="w-3.5 h-3.5" />,
-  Possession: <RefreshCw className="w-3.5 h-3.5" />,
-  Counter: <Crosshair className="w-3.5 h-3.5" />,
-  HighPress: <Flag className="w-3.5 h-3.5" />,
-};
 
 export default function HalfTimeBreak({
   matchdayIdentity,
@@ -166,101 +152,97 @@ export default function HalfTimeBreak({
   };
 
   return (
-    <MatchdayShell bodyMode="frame" identity={matchdayIdentity}>
-      {/* Header scoreboard */}
-      <div className="bg-linear-to-r from-gray-200 via-white to-gray-200 dark:from-navy-800 dark:via-navy-900 dark:to-navy-800 border-b border-gray-200 dark:border-navy-700 px-4 py-4 transition-colors duration-300">
-        <div className="relative">
-          <div className="absolute right-0 top-0 flex items-center gap-3">
-            <button
-              onClick={onResume}
-              className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 rounded-xl font-heading font-bold uppercase tracking-wider text-sm text-white shadow-lg shadow-primary-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <Play className="w-4 h-4" />
-              {t("match.resumeMatch")}
-            </button>
+    <MatchdayShell
+      bodyMode="frame"
+      header={
+        /*
+          The break reads as the same match, paused. The live screen already
+          moved its score and its controls up here; half time kept its own
+          scoreboard band in the body with Resume floated over the top of it,
+          so the two stages disagreed about where a manager looks.
+        */
+        <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <TeamLogo
+              className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg font-heading font-bold"
+              imageClassName="h-7 w-7 object-contain drop-shadow"
+              style={{
+                backgroundColor: homeTeamColor + "30",
+                borderColor: homeTeamColor,
+                borderWidth: 2,
+              }}
+              team={homeFullTeam ?? makeTeamFallback(snapshot.home_team.name)}
+            />
+            <p className="truncate font-heading font-bold text-gray-800 dark:text-gray-200">
+              {snapshot.home_team.name}
+            </p>
           </div>
-          <div className="flex items-center justify-center gap-8">
-            <div className="flex items-center gap-3">
-              <TeamLogo
-                team={homeFullTeam ?? makeTeamFallback(snapshot.home_team.name)}
-                className="w-12 h-12 rounded-xl flex items-center justify-center font-heading font-bold overflow-hidden"
-                imageClassName="h-9 w-9 object-contain drop-shadow"
-                style={{
-                  backgroundColor: homeTeamColor + "30",
-                  borderColor: homeTeamColor,
-                  borderWidth: 2,
-                }}
+
+          <div className="flex items-center gap-3">
+            <span className="font-heading text-3xl font-bold tabular-nums text-gray-900 dark:text-white">
+              {snapshot.home_score}
+            </span>
+            <p className="font-heading text-xs uppercase tracking-widest text-accent-700 dark:text-accent-400">
+              {snapshot.phase === "ExtraTimeHalfTime"
+                ? t("match.extraTimeHalfTime")
+                : t("match.halfTime")}
+            </p>
+            <span className="font-heading text-3xl font-bold tabular-nums text-gray-900 dark:text-white">
+              {snapshot.away_score}
+            </span>
+          </div>
+
+          <div className="flex min-w-0 items-center gap-3">
+            <p className="truncate font-heading font-bold text-gray-800 dark:text-gray-200">
+              {snapshot.away_team.name}
+            </p>
+            <TeamLogo
+              className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg font-heading font-bold"
+              imageClassName="h-7 w-7 object-contain drop-shadow"
+              style={{
+                backgroundColor: awayTeamColor + "30",
+                borderColor: awayTeamColor,
+                borderWidth: 2,
+              }}
+              team={awayFullTeam ?? makeTeamFallback(snapshot.away_team.name)}
+            />
+          </div>
+
+          <div className="flex min-w-[10rem] flex-1 items-center gap-2 text-xs">
+            <span className="w-10 text-right font-heading font-bold text-primary-400">
+              {snapshot.home_possession_pct.toFixed(0)}%
+            </span>
+            <div className="flex h-1.5 flex-1 overflow-hidden rounded-full bg-gray-300 transition-colors duration-300 motion-reduce:transition-none dark:bg-navy-700">
+              <div
+                className="h-full bg-primary-500"
+                style={{ width: `${snapshot.home_possession_pct}%` }}
               />
-              <p className="font-heading font-bold text-gray-800 dark:text-gray-200">
-                {snapshot.home_team.name}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <span className="text-5xl font-heading font-bold text-gray-900 dark:text-white tabular-nums">
-                {snapshot.home_score}
-              </span>
-              <div className="text-center">
-                <p className="text-xs font-heading uppercase tracking-widest text-accent-700 dark:text-accent-400">
-                  {snapshot.phase === "ExtraTimeHalfTime"
-                    ? t("match.extraTimeHalfTime")
-                    : t("match.halfTime")}
-                </p>
-                <p className="text-lg font-heading font-bold text-gray-500 dark:text-gray-500">
-                  {t("match.ht")}
-                </p>
-              </div>
-              <span className="text-5xl font-heading font-bold text-gray-900 dark:text-white tabular-nums">
-                {snapshot.away_score}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <p className="font-heading font-bold text-gray-800 dark:text-gray-200">
-                {snapshot.away_team.name}
-              </p>
-              <TeamLogo
-                team={awayFullTeam ?? makeTeamFallback(snapshot.away_team.name)}
-                className="w-12 h-12 rounded-xl flex items-center justify-center font-heading font-bold overflow-hidden"
-                imageClassName="h-9 w-9 object-contain drop-shadow"
-                style={{
-                  backgroundColor: awayTeamColor + "30",
-                  borderColor: awayTeamColor,
-                  borderWidth: 2,
-                }}
+              <div
+                className="h-full bg-indigo-500"
+                style={{ width: `${snapshot.away_possession_pct}%` }}
               />
             </div>
+            <span className="w-10 font-heading font-bold text-indigo-400">
+              {snapshot.away_possession_pct.toFixed(0)}%
+            </span>
           </div>
 
-          {/* Possession bar */}
-          <div className="max-w-md mx-auto mt-3">
-            <div className="flex items-center gap-2 text-xs">
-              <span className="font-heading font-bold text-primary-400 w-12 text-right">
-                {snapshot.home_possession_pct.toFixed(0)}%
-              </span>
-              <div className="flex-1 h-1.5 bg-gray-300 dark:bg-navy-700 rounded-full overflow-hidden flex transition-colors duration-300">
-                <div
-                  className="h-full bg-primary-500 transition-all"
-                  style={{ width: `${snapshot.home_possession_pct}%` }}
-                />
-                <div
-                  className="h-full bg-indigo-500 transition-all"
-                  style={{ width: `${snapshot.away_possession_pct}%` }}
-                />
-              </div>
-              <span className="font-heading font-bold text-indigo-400 w-12">
-                {snapshot.away_possession_pct.toFixed(0)}%
-              </span>
-            </div>
-          </div>
+          <button
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 px-5 py-2 font-heading text-sm font-bold uppercase tracking-wider text-white shadow-lg shadow-primary-500/20 transition-colors hover:from-primary-600 hover:to-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 motion-reduce:transition-none dark:focus-visible:ring-offset-navy-900"
+            onClick={onResume}
+            type="button"
+          >
+            <Play aria-hidden="true" className="h-4 w-4" />
+            {t("match.resumeMatch")}
+          </button>
         </div>
-      </div>
-
+      }
+      identity={matchdayIdentity}
+    >
       {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="px-6 py-6 grid grid-cols-3 gap-6">
+      <div className="mx-auto grid h-full min-h-0 w-full max-w-page grid-cols-1 gap-6 px-6 py-6 xl:grid-cols-3">
           {/* Left: First Half Summary */}
-          <div className="flex flex-col gap-4">
+          <div className="flex min-h-0 flex-col gap-4 xl:overflow-y-auto">
             <div className="bg-white dark:bg-navy-800 rounded-xl border border-gray-200 dark:border-navy-700 shadow-sm p-4 transition-colors duration-300">
               <h3 className="text-xs font-heading font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-3">
                 {t("match.firstHalfEvents")}
@@ -301,7 +283,7 @@ export default function HalfTimeBreak({
           </div>
 
           {/* Center: Team Talk (user only) */}
-          <div className="flex flex-col gap-4">
+          <div className="flex min-h-0 flex-col gap-4 xl:overflow-y-auto">
             {!isSpectator ? (
               <div className="bg-white dark:bg-navy-800 rounded-xl border border-gray-200 dark:border-navy-700 shadow-sm p-4 transition-colors duration-300">
                 <div className="flex items-center gap-2 mb-4">
@@ -415,7 +397,7 @@ export default function HalfTimeBreak({
           </div>
 
           {/* Right: Tactical Changes (user only) */}
-          <div className="flex flex-col gap-4">
+          <div className="flex min-h-0 flex-col gap-4 xl:overflow-y-auto">
             {!isSpectator && (
               <>
                 {/*
@@ -431,49 +413,55 @@ export default function HalfTimeBreak({
                     {submissionError}
                   </p>
                 ) : null}
-                {/* Formation */}
-                <div className="bg-white dark:bg-navy-800 rounded-xl border border-gray-200 dark:border-navy-700 shadow-sm p-4 transition-colors duration-300">
-                  <h3 className="text-xs font-heading font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-3">
+                {/*
+                  Eight formations and six styles laid out as fourteen buttons
+                  is not a decision anyone makes at speed, and the live dugout
+                  already stopped asking for one.
+                */}
+                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-colors duration-300 motion-reduce:transition-none dark:border-navy-700 dark:bg-navy-800">
+                  <h3 className="mb-3 font-heading text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
                     {t("match.formation")}
                   </h3>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {FORMATIONS.map((f) => (
-                      <button
-                        key={f}
-                        onClick={() => handleFormationChange(f)}
-                        className={`py-2 rounded-lg text-xs font-heading font-bold transition-all ${
-                          userTeam.formation === f
-                            ? "bg-primary-500/20 text-primary-400 ring-1 ring-primary-500/50"
-                            : "bg-gray-100 text-gray-600 hover:text-gray-900 dark:bg-navy-700 dark:text-gray-400 dark:hover:text-gray-300"
-                        }`}
-                      >
-                        {f}
-                      </button>
+                  <Select
+                    aria-label={t("match.formation")}
+                    fullWidth
+                    onChange={(event) =>
+                      void handleFormationChange(event.target.value)
+                    }
+                    selectSize="sm"
+                    value={
+                      FORMATIONS.includes(userTeam.formation)
+                        ? userTeam.formation
+                        : FORMATIONS[0]
+                    }
+                  >
+                    {FORMATIONS.map((formation) => (
+                      <option key={formation} value={formation}>
+                        {formation}
+                      </option>
                     ))}
-                  </div>
+                  </Select>
                 </div>
 
-                {/* Play Style */}
-                <div className="bg-white dark:bg-navy-800 rounded-xl border border-gray-200 dark:border-navy-700 shadow-sm p-4 transition-colors duration-300">
-                  <h3 className="text-xs font-heading font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-3">
+                <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-colors duration-300 motion-reduce:transition-none dark:border-navy-700 dark:bg-navy-800">
+                  <h3 className="mb-3 font-heading text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
                     {t("match.playStyle")}
                   </h3>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <Select
+                    aria-label={t("match.playStyle")}
+                    fullWidth
+                    onChange={(event) =>
+                      void handlePlayStyleChange(event.target.value)
+                    }
+                    selectSize="sm"
+                    value={userTeam.play_style}
+                  >
                     {PLAY_STYLES.map((style) => (
-                      <button
-                        key={style}
-                        onClick={() => handlePlayStyleChange(style)}
-                        className={`flex items-center gap-1.5 py-2 px-3 rounded-lg text-xs font-heading font-bold transition-all ${
-                          userTeam.play_style === style
-                            ? "bg-primary-500/20 text-primary-400 ring-1 ring-primary-500/50"
-                            : "bg-gray-100 text-gray-600 hover:text-gray-900 dark:bg-navy-700 dark:text-gray-400 dark:hover:text-gray-300"
-                        }`}
-                      >
-                        {PLAY_STYLE_ICONS[style]}
-                        {t(`common.playStyles.${style}`)}
-                      </button>
+                      <option key={style} value={style}>
+                        {t(`common.playStyles.${style}`, style)}
+                      </option>
                     ))}
-                  </div>
+                  </Select>
                 </div>
 
                 {/* Substitutions */}
@@ -501,7 +489,6 @@ export default function HalfTimeBreak({
               </>
             )}
           </div>
-        </div>
       </div>
 
       {/* Substitution Modal — reuses the full SubPanel from MatchLive */}

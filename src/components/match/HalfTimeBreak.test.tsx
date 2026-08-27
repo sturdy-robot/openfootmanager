@@ -1,9 +1,12 @@
+import { readFileSync } from "node:fs";
+
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameStateData } from "../../store/gameStore";
 import type {
   EnginePlayerData,
+  MatchEvent,
   MatchSnapshot,
   MatchTacticsChangeSet,
   TacticsConfig,
@@ -33,8 +36,29 @@ vi.mock("react-i18next", () => ({
         typeof options === "object" && options !== null
           ? (options as Record<string, unknown>)
           : {};
-      if (key === "match.makeSubstitution") return "Make substitution";
-      if (key === "match.pendingChanges") return "Pending changes";
+      const translations: Record<string, string> = {
+        "match.deliverTeamTalk": "Deliver Team Talk",
+        "match.delivered": "Delivered",
+        "match.firstHalfEvents": "First Half Events",
+        "match.formation": "Formation",
+        "match.halfTime": "Half Time",
+        "match.ht": "HT",
+        "match.makeSubstitution": "Make substitution",
+        "match.pendingChanges": "Pending changes",
+        "match.playStyle": "Play Style",
+        "match.resumeMatch": "Resume Match",
+        "match.substitutionsTitle": "Substitutions",
+        "match.teamTalk": "Team Talk",
+        "match.teamTalkOptions.aggressive.label": "Get Fired Up",
+        "match.teamTalkOptions.assertive.label": "Demand More",
+        "match.teamTalkOptions.calm.label": "Stay Calm",
+        "match.teamTalkOptions.disappointed.label": "Show Disappointment",
+        "match.teamTalkOptions.motivational.description":
+          "Inspire the players to give their best.",
+        "match.teamTalkOptions.motivational.label": "Motivate",
+        "match.teamTalkOptions.praise.label": "Praise",
+      };
+      if (key in translations) return translations[key];
       if ("defaultValue" in values) return String(values.defaultValue);
       if (typeof options === "string") return options;
       return key;
@@ -208,22 +232,37 @@ function gameState(): GameStateData {
   } as unknown as GameStateData;
 }
 
-function renderBreak() {
+function renderBreak({
+  importantEvents = [],
+}: {
+  importantEvents?: MatchEvent[];
+} = {}) {
+  const onResume = vi.fn();
   const onUpdateSnapshot = vi.fn();
   render(
     <HalfTimeBreak
       gameState={gameState()}
-      importantEvents={[]}
+      importantEvents={importantEvents}
       isSpectator={false}
       matchdayIdentity={{ competitionName: "League", roundLabel: "Match Day" }}
-      onResume={vi.fn()}
+      onResume={onResume}
       onUpdateSnapshot={onUpdateSnapshot}
       snapshot={snapshot()}
       userSide="Home"
     />,
   );
-  return { onUpdateSnapshot };
+  return { onResume, onUpdateSnapshot };
 }
+
+const halfTimeSource = (() => {
+  try {
+    return readFileSync("src/components/match/HalfTimeBreak.tsx", "utf-8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/[^\n]*/g, "");
+  } catch {
+    return "";
+  }
+})();
 
 beforeEach(() => {
   matchServiceMocks.applyMatchCommand.mockReset();
@@ -244,23 +283,199 @@ describe("half time", () => {
     expect(within(leftBack).queryByText("DEF")).not.toBeInTheDocument();
   });
 
-  it("sends a shape chosen at the break as one change set, not a bare command", async () => {
-    // Half time is when a manager makes several changes at once, so a formation
-    // committing on its own while the substitutions were still queued was the
-    // exact split atomic management exists to close.
-    matchServiceMocks.applyMatchTactics.mockResolvedValue(snapshot());
-    const { onUpdateSnapshot } = renderBreak();
-
-    fireEvent.click(screen.getByRole("button", { name: "4-3-3" }));
-
-    await vi.waitFor(() => {
-      expect(matchServiceMocks.applyMatchTactics).toHaveBeenCalledTimes(1);
+  it("moves the match into the shell header without losing the break workflows", async () => {
+    matchServiceMocks.applyTeamTalk.mockResolvedValue([
+      {
+        player_id: "starter-9",
+        player_name: "Starter 9",
+        old_morale: 70,
+        new_morale: 75,
+        delta: 5,
+      },
+    ]);
+    renderBreak({
+      importantEvents: [
+        {
+          minute: 31,
+          event_type: "Goal",
+          side: "Home",
+          zone: "Box",
+          player_id: "starter-9",
+          secondary_player_id: null,
+        },
+      ],
     });
-    expect(matchServiceMocks.applyMatchCommand).not.toHaveBeenCalled();
-    const changes = matchServiceMocks.applyMatchTactics.mock
-      .calls[0][0] as MatchTacticsChangeSet;
-    expect(changes.formation).toBe("4-3-3");
-    expect(changes.lineup_changes).toEqual([]);
-    expect(onUpdateSnapshot).toHaveBeenCalledOnce();
+
+    // Recomposition must leave every half-time job available. Exercise the
+    // stateful ones before checking where the scoreboard was composed.
+    expect(
+      screen.getByRole("heading", { name: "First Half Events" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Starter 9")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Team Talk" }),
+    ).toBeInTheDocument();
+    for (const option of [
+      "Stay Calm",
+      "Motivate",
+      "Demand More",
+      "Get Fired Up",
+      "Praise",
+      "Show Disappointment",
+    ]) {
+      expect(
+        screen.getByRole("button", { name: new RegExp(option) }),
+      ).toBeInTheDocument();
+    }
+    fireEvent.click(screen.getByRole("button", { name: /Motivate/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Deliver Team Talk" }));
+    expect(await screen.findByText("Delivered")).toBeInTheDocument();
+    expect(screen.getByText("+5")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Make substitution" }));
+    expect(
+      screen.getByRole("heading", { name: "Substitutions" }),
+    ).toBeInTheDocument();
+
+    const header = screen.getByRole("banner", {
+      name: "League · Match Day",
+    });
+    const identityOutsideHeader = ["Home FC", "Half Time", "Away FC"].flatMap(
+      (text) =>
+        screen
+          .getAllByText(text, { exact: true })
+          .filter((node) => !header.contains(node))
+          .map(() => text),
+    );
+    const missingScoresFromHeader = ["0", "1"].filter(
+      (text) => within(header).queryByText(text, { exact: true }) === null,
+    );
+    expect(
+      { identityOutsideHeader, missingScoresFromHeader },
+      "the shell header must own both teams, the score, and the phase",
+    ).toEqual({ identityOutsideHeader: [], missingScoresFromHeader: [] });
+  });
+
+  it("keeps Resume in the shell header and invokes it exactly once", () => {
+    const { onResume } = renderBreak();
+    const header = screen.getByRole("banner", {
+      name: "League · Match Day",
+    });
+    const resume = screen.getByRole("button", { name: "Resume Match" });
+
+    fireEvent.click(resume);
+
+    expect(onResume).toHaveBeenCalledOnce();
+    expect(
+      header.contains(resume),
+      "Resume must be composed into the shell header instead of overlaying the body",
+    ).toBe(true);
+  });
+
+  it("offers formation and play style as two comboboxes instead of fourteen buttons", () => {
+    renderBreak();
+
+    const controlState = {
+      formationCombobox: Boolean(
+        screen.queryByRole("combobox", { name: "Formation" }),
+      ),
+      formationButton: Boolean(
+        screen.queryByRole("button", { name: "4-3-3" }),
+      ),
+      playStyleCombobox: Boolean(
+        screen.queryByRole("combobox", { name: "Play Style" }),
+      ),
+    };
+
+    expect(
+      controlState,
+      "half-time must expose two compact choices and remove the formation chip wall",
+    ).toEqual({
+      formationCombobox: true,
+      formationButton: false,
+      playStyleCombobox: true,
+    });
+  });
+
+  it.each([
+    {
+      controlName: "Formation",
+      expectedChange: { formation: "4-3-3", play_style: "Balanced" },
+      optionName: "4-3-3",
+    },
+    {
+      controlName: "Play Style",
+      expectedChange: { formation: "4-4-2", play_style: "Attacking" },
+      optionName: "Attacking",
+    },
+  ])(
+    "sends a $controlName choice as one change set, not a bare command",
+    async ({ controlName, expectedChange, optionName }) => {
+      // Half time is when a manager makes several changes at once, so neither
+      // compact control may fall back to an immediately applied bare command.
+      matchServiceMocks.applyMatchTactics.mockResolvedValue(snapshot());
+      const { onUpdateSnapshot } = renderBreak();
+
+      const control = screen.queryByRole("combobox", { name: controlName });
+      expect(
+        control,
+        `${controlName} must be reachable as a combobox before its choice can be applied`,
+      ).not.toBeNull();
+      fireEvent.click(control as HTMLElement);
+      fireEvent.click(screen.getByRole("option", { name: optionName }));
+
+      await vi.waitFor(() => {
+        expect(matchServiceMocks.applyMatchTactics).toHaveBeenCalledTimes(1);
+      });
+      expect(matchServiceMocks.applyMatchCommand).not.toHaveBeenCalled();
+      const changes = matchServiceMocks.applyMatchTactics.mock
+        .calls[0][0] as MatchTacticsChangeSet;
+      expect(changes).toMatchObject(expectedChange);
+      expect(changes.lineup_changes).toEqual([]);
+      expect(onUpdateSnapshot).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("bounds all three body columns and removes the unbounded body scroller", () => {
+    const classNames = [...halfTimeSource.matchAll(/className="([^"]*)"/g)].map(
+      (match) => match[1],
+    );
+    const hasToken = (className: string, token: string) =>
+      className.split(/\s+/).some((candidate) => candidate === token);
+    const hasResponsiveToken = (className: string, token: string) =>
+      className
+        .split(/\s+/)
+        .some(
+          (candidate) =>
+            candidate === token || candidate.endsWith(`:${token}`),
+        );
+
+    const unboundedPageScrollers = classNames.filter(
+      (className) =>
+        hasToken(className, "flex-1") &&
+        (hasToken(className, "overflow-auto") ||
+          hasToken(className, "overflow-y-auto")) &&
+        !hasResponsiveToken(className, "min-h-0"),
+    );
+    const boundedScrollingPanes = classNames.filter(
+      (className) =>
+        hasResponsiveToken(className, "min-h-0") &&
+        (hasResponsiveToken(className, "overflow-auto") ||
+          hasResponsiveToken(className, "overflow-y-auto")),
+    );
+    const violations = [
+      ...unboundedPageScrollers.map(
+        (className) => `unbounded page-level scroller: ${className}`,
+      ),
+      ...(boundedScrollingPanes.length >= 3
+        ? []
+        : [
+            `expected three bounded scrolling columns, found ${boundedScrollingPanes.length}`,
+          ]),
+    ];
+
+    expect(
+      violations,
+      "the half-time body must be a fixed frame whose three panes own scrolling",
+    ).toEqual([]);
   });
 });
