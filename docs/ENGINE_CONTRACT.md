@@ -141,8 +141,8 @@ one: whatever draws it will believe it.
 ## What you get for free
 
 - **The dugout AI.** `ai_decide` runs on `&dyn LiveState`, so substitutions and tactical changes
-  work on any engine. It reads `progress()`, `squad()` and `minutes_under_pressure()`, and nothing
-  else. An engine reporting no squad gets no AI — every decision a manager makes is about the team,
+  work on any engine. It reads `progress()`, `squad()`, `minute()` and `minutes_under_pressure()`,
+  and nothing else. An engine reporting no squad gets no AI — every decision a manager makes is about the team,
   so there is nothing to decide — which is consistent with such an engine accepting no commands.
 - **The match screen.** `MatchSnapshot::compose(state, allows_extra_time)` builds the game's whole
   match view out of contract calls, so what the player sees works for any engine. An engine with no

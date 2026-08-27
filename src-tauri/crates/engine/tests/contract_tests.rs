@@ -976,3 +976,116 @@ fn the_dugout_ai_stands_down_when_it_cannot_see_the_squad() {
         "the AI cannot manage a team it cannot see, got {commands:?}"
     );
 }
+
+#[test]
+fn an_interval_resolves_no_football() {
+    // The contract says zero is a legitimate answer and names an interval as
+    // the case. The reference engine has to mean it.
+    //
+    // Only bites when the first half runs to exactly 45: the second half opens
+    // at `max(current, 46)`, so with any stoppage the minute does not move and
+    // a resolved time read off the minute alone looks right by accident. So
+    // find the seed where it does move, which is the whole point.
+    let mut found = None;
+    for seed in 0..80u64 {
+        let (mut state, mut rng) = kicked_off(seed);
+        let mut guard = 0;
+        while state.phase() != MatchPhase::HalfTime && guard < 60 {
+            state.advance(AdvanceRequest::one_minute(), &mut rng);
+            guard += 1;
+        }
+        if state.minute() == 45 {
+            found = Some((state, rng));
+            break;
+        }
+    }
+
+    let (mut state, mut rng) =
+        found.expect("eighty seeds should include one first half with no stoppage");
+
+    let second_half = state.advance(AdvanceRequest::one_minute(), &mut rng);
+    assert_eq!(second_half.phase, MatchPhase::SecondHalf);
+    assert_eq!(
+        state.minute(),
+        46,
+        "the running minute moved, which is exactly what makes this the hard case"
+    );
+    assert_eq!(
+        second_half.resolved_ms, 0,
+        "coming out for the second half is not a minute of football"
+    );
+    assert_eq!(second_half.stopped, StopReason::PhaseBoundary);
+}
+
+#[test]
+fn entering_extra_time_resolves_no_football_either() {
+    // The harder of the two: extra time restarts the running minute at 91
+    // whatever the second half ran to, so this transition always moves it.
+    let mut found = None;
+    for seed in 0..40u64 {
+        let mut state =
+            kickoff_by_id_with(engine::DEFAULT_ENGINE_ID, true).expect("known engine");
+        let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(seed);
+        let mut guard = 0;
+        while !state.is_finished() && guard < 300 {
+            if state.phase() == MatchPhase::FullTime {
+                found = Some((state, rng));
+                break;
+            }
+            state.advance(AdvanceRequest::one_minute(), &mut rng);
+            guard += 1;
+        }
+        if found.is_some() {
+            break;
+        }
+    }
+
+    let (mut state, mut rng) = found.expect("forty knockout ties should reach full time level");
+    let extra_time = state.advance(AdvanceRequest::one_minute(), &mut rng);
+    if extra_time.phase == MatchPhase::ExtraTimeFirstHalf {
+        assert_eq!(
+            extra_time.resolved_ms, 0,
+            "kicking off extra time is not a minute of football"
+        );
+    }
+}
+
+#[test]
+fn a_shootout_names_the_side_on_the_spot() {
+    // `possession` comes from the step, not from the engine's own reading,
+    // which during a shootout still holds whoever last had the ball in extra
+    // time. Both sides take kicks, so a stale value cannot alternate.
+    let mut found = None;
+    for seed in 0..40u64 {
+        let mut state =
+            kickoff_by_id_with(engine::DEFAULT_ENGINE_ID, true).expect("known engine");
+        let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(seed);
+        let mut guard = 0;
+        while !state.is_finished() && guard < 300 {
+            let update = state.advance(AdvanceRequest::minutes(120), &mut rng);
+            if update.phase == MatchPhase::PenaltyShootout {
+                found = Some((state, rng));
+                break;
+            }
+            guard += 1;
+        }
+        if found.is_some() {
+            break;
+        }
+    }
+
+    let (mut state, mut rng) = found.expect("forty seeds should produce one shootout");
+
+    let mut takers = Vec::new();
+    let mut guard = 0;
+    while !state.is_finished() && guard < 60 {
+        let round = state.advance(AdvanceRequest::minutes(120), &mut rng);
+        takers.push(round.possession);
+        guard += 1;
+    }
+
+    assert!(
+        takers.contains(&Side::Home) && takers.contains(&Side::Away),
+        "both sides take kicks, so the reported side has to change: {takers:?}"
+    );
+}

@@ -46,6 +46,22 @@ pub(crate) fn kickoff_clock() -> crate::clock::MatchClock {
 }
 
 impl MatchPhase {
+    /// Whether football is being played, as opposed to an interval, the
+    /// moments either side of one, or a shootout.
+    ///
+    /// These are exactly the phases [`LiveMatchState::step_minute`] resolves as
+    /// a minute of play; every other phase is a transition that moves the match
+    /// on without the clock running.
+    pub fn is_playing(self) -> bool {
+        matches!(
+            self,
+            MatchPhase::FirstHalf
+                | MatchPhase::SecondHalf
+                | MatchPhase::ExtraTimeFirstHalf
+                | MatchPhase::ExtraTimeSecondHalf
+        )
+    }
+
     /// Which period of play this phase's clock reading belongs to.
     ///
     /// An interval reports the period that just ended, because that is what a
@@ -419,6 +435,8 @@ impl LiveMatchState {
 
         let mut events = Vec::new();
         let mut resolved_ms: u32 = 0;
+        // Assigned on every pass before any break, exactly like `stopped`.
+        let mut possession;
         let stopped;
 
         loop {
@@ -427,12 +445,26 @@ impl LiveMatchState {
 
             let result = self.step_minute(rng);
             events.extend(result.events);
+            // From the step rather than from the state: during a shootout the
+            // side on the spot is the one taking the kick, and the engine's own
+            // `possession` still reads whoever last had the ball in extra time.
+            possession = result.possession;
 
-            // How much time that step actually consumed. Taken from the running
-            // minute rather than from the clock, because the clock restarts at
-            // each period and would read a half-time transition as travelling
-            // backwards.
-            let step_ms = self.current_minute.saturating_sub(minute_before) as u32 * MS_PER_MINUTE;
+            // How much football that step actually resolved.
+            //
+            // Only a playing phase resolves any. An interval and the entry to
+            // extra time both bump the running minute — the second half starts
+            // at 46, extra time at 91 — without a minute of football being
+            // played, and reporting those as sixty seconds would contradict
+            // the contract this engine is the reference for. Taken from the
+            // running minute rather than from the clock, because the clock
+            // restarts at each period and would read a half-time transition as
+            // travelling backwards.
+            let step_ms = if phase_before.is_playing() {
+                self.current_minute.saturating_sub(minute_before) as u32 * MS_PER_MINUTE
+            } else {
+                0
+            };
             resolved_ms = resolved_ms.saturating_add(step_ms);
 
             if result.is_finished {
@@ -460,7 +492,7 @@ impl LiveMatchState {
             events,
             home_score: self.home_score,
             away_score: self.away_score,
-            possession: self.possession,
+            possession,
             is_finished: self.phase == MatchPhase::Finished,
             stopped,
         }
