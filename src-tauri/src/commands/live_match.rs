@@ -80,12 +80,12 @@ pub fn start_live_match(
     )
 }
 
-/// Step the live match forward by N minutes. Returns the events from each minute.
+/// Step the live match forward by N minutes. Returns what each one resolved.
 #[tauri::command]
 pub fn step_live_match(
     state: State<'_, Arc<StateManager>>,
     minutes: u16,
-) -> Result<Vec<engine::MinuteResult>, String> {
+) -> Result<Vec<engine::LiveUpdate>, String> {
     step_live_match_service(&state, minutes)
 }
 

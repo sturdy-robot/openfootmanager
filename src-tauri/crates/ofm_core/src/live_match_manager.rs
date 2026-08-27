@@ -15,7 +15,7 @@ use domain::league::{
 use domain::manager::Manager;
 use domain::team::MatchRoles;
 use engine::ai::{self, AiPersonality, AiProfile};
-use engine::{LiveState, MatchCommand, MatchConfig, MatchSnapshot, MinuteResult, Side};
+use engine::{LiveState, LiveUpdate, MatchCommand, MatchConfig, MatchSnapshot, Side};
 
 /// Translate an engine command into its stored replay form.
 ///
@@ -248,38 +248,26 @@ pub struct LiveMatchSession {
 }
 
 impl LiveMatchSession {
-    /// Step one minute and apply AI decisions for computer-controlled sides.
-    pub fn step(&mut self) -> MinuteResult {
+    /// Resolve a minute of play and let the computer-controlled dugouts act.
+    ///
+    /// A minute is the caller's choice, not the contract's: it is what the
+    /// watched match ticks at and what the managers get to decide between. An
+    /// engine with a finer native step still resolves at most a minute here.
+    pub fn step(&mut self) -> LiveUpdate {
         let update = self
             .match_state
             .advance(engine::AdvanceRequest::one_minute(), &mut self.rng);
-        // Rebuilt as a `MinuteResult` so the IPC surface and the frontend do
-        // not move in the same commit as the contract. The running minute comes
-        // from the state, never from the clock: a shootout's period opens at
-        // minute 121 while the engine still reads 120, so the two do not round
-        // trip. Both this shim and `MinuteResult` go when the frontend moves to
-        // updates.
-        let result = MinuteResult {
-            minute: self.match_state.minute(),
-            clock: update.clock,
-            phase: update.phase,
-            events: update.events,
-            home_score: update.home_score,
-            away_score: update.away_score,
-            possession: update.possession,
-            is_finished: update.is_finished,
-        };
 
         // Apply AI decisions for non-user sides (only during playing phases)
-        if !result.is_finished {
+        if !update.is_finished {
             self.apply_ai_decisions();
         }
 
-        result
+        update
     }
 
     /// Step multiple minutes at once (for fast-forward / instant sim).
-    pub fn step_many(&mut self, count: u16) -> Vec<MinuteResult> {
+    pub fn step_many(&mut self, count: u16) -> Vec<LiveUpdate> {
         let mut results = Vec::with_capacity(count as usize);
         for _ in 0..count {
             let result = self.step();
@@ -293,7 +281,7 @@ impl LiveMatchSession {
     }
 
     /// Run the entire match to completion instantly.
-    pub fn run_to_completion(&mut self) -> Vec<MinuteResult> {
+    pub fn run_to_completion(&mut self) -> Vec<LiveUpdate> {
         let mut results = Vec::with_capacity(100);
         loop {
             let result = self.step();

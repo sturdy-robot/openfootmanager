@@ -5,7 +5,7 @@ import { GameStateData } from "../../store/gameStore";
 import {
   MatchSnapshot,
   MatchEvent,
-  MinuteResult,
+  LiveUpdate,
   SimSpeed,
   SPEED_MS,
 } from "./types";
@@ -57,7 +57,7 @@ export default function PenaltyShootoutScreen({
 
   const stepMatch = useCallback(async () => {
     try {
-      const results = await invoke<MinuteResult[]>("step_live_match", {
+      const results = await invoke<LiveUpdate[]>("step_live_match", {
         minutes: 1,
       });
       if (results.length > 0) {

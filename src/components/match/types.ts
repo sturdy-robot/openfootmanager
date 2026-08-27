@@ -142,15 +142,28 @@ export interface MatchSnapshot {
   penalty_shootout?: PenaltyShootoutSnapshot | null;
 }
 
-export interface MinuteResult {
-  minute: number;
+/** Why the engine stopped resolving. See docs/ENGINE_CONTRACT.md. */
+export type StopReason = "BudgetSpent" | "PhaseBoundary" | "Finished" | "NativeBoundary";
+
+/**
+ * What one `step_live_match` call resolved.
+ *
+ * Carries no running minute on purpose: that is the built-in engine's way of
+ * counting, and an engine keeping continuous time has none. The minute on
+ * screen comes from `MatchSnapshot.current_minute` and from each event.
+ */
+export interface LiveUpdate {
   clock: MatchClock;
+  /** Match time actually resolved. Zero at an interval and at a penalty kick. */
+  resolved_ms: number;
   phase: string;
+  /** What happened during this call, not the match so far. */
   events: MatchEvent[];
   home_score: number;
   away_score: number;
   possession: "Home" | "Away";
   is_finished: boolean;
+  stopped: StopReason;
 }
 
 export interface RoundResultSummary {

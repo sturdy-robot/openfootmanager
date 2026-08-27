@@ -187,7 +187,7 @@ All frontend↔backend communication goes through Tauri's `invoke()` mechanism. 
 | Command | Parameters | Returns | Description |
 |---------|-----------|---------|-------------|
 | `start_live_match` | fixture_index, mode, allows_extra_time | `MatchSnapshot` | Initialize a live match session |
-| `step_live_match` | minutes | `Vec<MinuteResult>` | Advance simulation by N minutes |
+| `step_live_match` | minutes | `Vec<LiveUpdate>` | Advance simulation by N minutes |
 | `apply_match_command` | command | `MatchSnapshot` | Send a tactical command |
 | `get_match_snapshot` | — | `MatchSnapshot` | Get current match state |
 | `finish_live_match` | — | `Game` | Apply results and clean up |

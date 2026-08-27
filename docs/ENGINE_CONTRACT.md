@@ -186,9 +186,10 @@ nobody discovers them the hard way.
 
 - **`MatchSnapshot` is still shaped around the built-in engine.** Twenty-seven fields, including
   both squads, both benches, per-side yellow-card maps and shootout state, and a whole-minute
-  `current_minute`. An engine keeping continuous time has to round to a minute to fill it in.
-  `MinuteResult` and `MatchSnapshot` both now carry a `MatchClock` alongside it, which is
-  period-relative and in milliseconds, but the minute has not gone away yet.
+  `current_minute`. An engine keeping continuous time has to round to a minute to fill it in. It
+  carries a `MatchClock` alongside — period-relative, in milliseconds — but the minute has not gone
+  away, which is why the continuous fake in `contract_tests.rs` still leaves `snapshot()`
+  unimplemented and says so. This is the next thing to fix.
 - **`MatchSetup` still carries `MatchConfig`**, whose fields are the built-in engine's tuning
   constants — shot accuracy, goal conversion, foul probability. Another engine can ignore them,
   but their presence in the shared setup is not honest, and they should move behind a per-engine

@@ -276,7 +276,7 @@ pub fn start_live_match(
 pub fn step_live_match(
     state: &StateManager,
     minutes: u16,
-) -> Result<Vec<engine::MinuteResult>, String> {
+) -> Result<Vec<engine::LiveUpdate>, String> {
     log::debug!("[cmd] step_live_match: minutes={}", minutes);
     let results = state
         .with_live_match(|session| {
@@ -293,7 +293,7 @@ pub fn step_live_match(
             "[cmd] step_live_match: minutes={}, result_count={}, last_minute={}, phase={:?}, finished={}",
             minutes,
             results.len(),
-            last.minute,
+            last.clock.display_minute(),
             last.phase,
             last.is_finished
         );

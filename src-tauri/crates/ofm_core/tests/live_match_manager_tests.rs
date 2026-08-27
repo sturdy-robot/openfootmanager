@@ -466,6 +466,37 @@ fn step_advances_match() {
 }
 
 #[test]
+fn a_step_says_how_much_it_resolved_and_why_it_stopped() {
+    // The session hands the frontend engine updates now rather than a
+    // minute-shaped result. What the UI keys on has to survive that: kick-off
+    // and half time each arrive as their own update, so the pause-at-half-time
+    // logic still has a call to fire on.
+    let game = make_game_with_fixture();
+    let mut session =
+        live_match_manager::create_live_match(&game, 0, MatchMode::Spectator, false).unwrap();
+
+    let kick_off = session.step();
+    assert_eq!(kick_off.phase, engine::MatchPhase::FirstHalf);
+    assert_eq!(kick_off.resolved_ms, 0, "no football is played at kick-off");
+    assert_eq!(kick_off.stopped, engine::StopReason::PhaseBoundary);
+
+    let first = session.step();
+    assert_eq!(first.resolved_ms, 60_000, "the session steps a minute at a time");
+    assert_eq!(first.stopped, engine::StopReason::BudgetSpent);
+
+    let mut guard = 0;
+    let half_time = loop {
+        let update = session.step();
+        if update.phase == engine::MatchPhase::HalfTime {
+            break update;
+        }
+        guard += 1;
+        assert!(guard < 60, "half time should arrive inside the first half");
+    };
+    assert_eq!(half_time.stopped, engine::StopReason::PhaseBoundary);
+}
+
+#[test]
 fn step_many_returns_requested_count() {
     let game = make_game_with_fixture();
     let mut session =

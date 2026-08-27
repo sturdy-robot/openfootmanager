@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { GameStateData } from "../../store/gameStore";
-import { MatchSnapshot, MatchEvent, MinuteResult, SimSpeed, SPEED_MS, FORMATIONS, isPersistableSpeed } from "./types";
+import { MatchSnapshot, MatchEvent, LiveUpdate, SimSpeed, SPEED_MS, FORMATIONS, isPersistableSpeed } from "./types";
 import { getEventDisplay, getPlayerName, makeTeamFallback, phaseLabel } from "./helpers";
 import { Badge, TeamLogo } from "../ui";
 import { useSettingsStore } from "../../store/settingsStore";
@@ -70,7 +70,7 @@ export default function MatchLive({
   // Step the match forward one minute
   const stepMatch = useCallback(async () => {
     try {
-      const results = await invoke<MinuteResult[]>("step_live_match", { minutes: 1 });
+      const results = await invoke<LiveUpdate[]>("step_live_match", { minutes: 1 });
       if (results.length > 0) {
         const lastResult = results[results.length - 1];
 
