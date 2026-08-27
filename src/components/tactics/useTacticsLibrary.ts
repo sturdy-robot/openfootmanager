@@ -116,7 +116,11 @@ export function useTacticsLibrary({
     return () => {
       cancelled = true;
     };
-  }, [customTacticsStorageKey, gameState]);
+    // Keyed on the career, not on the game-state object: that gets a new
+    // identity after any command that returns game state, and re-listing on
+    // every one of them can land on top of an in-flight save.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customTacticsStorageKey]);
 
   const matchedPreset = findTacticsPresetBySetup(formation, activePlayStyle);
   const anchoredPreset = presetAnchorId
@@ -257,6 +261,12 @@ export function useTacticsLibrary({
       const saved = await saveCustomTactic(toCustomTacticData(nextTactic));
       setCustomTactics(saved.map(toLibraryEntry));
     } catch {
+      // Take it back off the screen. Telling the manager nothing was saved
+      // while they are looking at the thing that was not saved is worse than
+      // either message on its own.
+      setCustomTactics((current) =>
+        current.filter((entry) => entry.id !== nextTactic.id),
+      );
       onAnnounce("tactics.customTacticSaveError");
     }
   }

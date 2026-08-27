@@ -94,30 +94,6 @@ export function loadCustomTactics(
  * a successful save — so swallowing the failure here would confirm something
  * that then vanishes on the next launch.
  */
-export function saveCustomTactics(
-  gameState: GameStateData,
-  customTactics: readonly TacticsLibraryEntry[],
-  storage: StorageLike | null = getDefaultStorage(),
-): boolean {
-  if (!storage) {
-    return false;
-  }
-
-  const persistedTactics = customTactics.filter(
-    (entry): entry is TacticsLibraryEntry => entry.type === "custom",
-  );
-
-  try {
-    storage.setItem(
-      buildCustomTacticsStorageKey(gameState),
-      JSON.stringify(persistedTactics),
-    );
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 /**
  * Set the browser's copy aside once it has been brought into the save.
  *

@@ -40,10 +40,6 @@ vi.mock("react-i18next", () => ({
                 return "Select player to take off first";
             }
 
-            if (key === "match.confirmSubstitution") {
-                return "Confirm substitution";
-            }
-
             return key;
         },
     }),

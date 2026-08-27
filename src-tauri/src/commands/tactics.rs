@@ -50,30 +50,11 @@ pub fn save_custom_tactic_internal(
             .find(|existing| existing.id == tactic.id)
         {
             Some(existing) => *existing = tactic,
-            None => game.custom_tactics.push(tactic),
+            // Newest first, matching the order the screen shows and the order
+            // it optimistically puts a new tactic in. Pushing meant a tactic
+            // appeared at the top and then jumped to the bottom.
+            None => game.custom_tactics.insert(0, tactic),
         }
-        Ok(())
-    })?;
-    Ok(game.custom_tactics)
-}
-
-/// Remove a tactic. Removing one that is not there is not an error — the
-/// library is already in the state the caller asked for.
-#[tauri::command]
-pub fn delete_custom_tactic(
-    state: State<'_, Arc<StateManager>>,
-    tactic_id: String,
-) -> Result<Vec<CustomTactic>, String> {
-    delete_custom_tactic_internal(&state, &tactic_id)
-}
-
-pub fn delete_custom_tactic_internal(
-    state: &StateManager,
-    tactic_id: &str,
-) -> Result<Vec<CustomTactic>, String> {
-    info!("[cmd] delete_custom_tactic: id={}", tactic_id);
-    let game = mutate_active_game(state, |game| {
-        game.custom_tactics.retain(|tactic| tactic.id != tactic_id);
         Ok(())
     })?;
     Ok(game.custom_tactics)

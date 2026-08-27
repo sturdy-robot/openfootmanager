@@ -265,6 +265,19 @@ describe("applying a step to the snapshot the client holds", () => {
 });
 
 describe("when the client and the engine disagree", () => {
+  it("takes an inlined snapshot even when it is behind, rather than refetching", () => {
+    // The response already carries the whole authoritative match. Asking for
+    // another copy of it would be a round trip to fetch what is in hand.
+    const inlined = snapshot({ revision: 11, current_minute: 30 });
+
+    const outcome = applyMatchStep(
+      snapshot({ revision: 7 }),
+      response({ base_revision: 10, revision: 11, snapshot: inlined }),
+    );
+
+    expect(outcome).toEqual({ kind: "applied", snapshot: inlined });
+  });
+
   it("asks for a resync rather than guessing", () => {
     const outcome = applyMatchStep(
       snapshot({ revision: 7 }),

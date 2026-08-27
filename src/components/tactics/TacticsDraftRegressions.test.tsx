@@ -11,7 +11,6 @@ import type { TeamTacticsDraft } from "../../store/types";
 import TacticsTab from "./TacticsTab";
 import {
   remainingDraftAfterApply,
-  saveCustomTactics,
 } from "./TacticsCustomTactics.helpers";
 import { TACTICS_PRESETS } from "./TacticsTab.helpers";
 import { makeGameState } from "./tacticsTestFixtures";
@@ -95,21 +94,6 @@ describe("reconciling a draft with an apply that was in flight", () => {
         SENT,
       ),
     ).toEqual({});
-  });
-});
-
-describe("custom tactic storage failures", () => {
-  it("reports a refused write instead of swallowing it", () => {
-    const rejectingStorage = {
-      getItem: () => null,
-      setItem: () => {
-        throw new Error("QuotaExceededError");
-      },
-    };
-
-    expect(
-      saveCustomTactics(makeGameState(), [], rejectingStorage),
-    ).toBe(false);
   });
 });
 

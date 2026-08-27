@@ -245,7 +245,6 @@ pub fn run() {
             set_player_role,
             list_custom_tactics,
             save_custom_tactic,
-            delete_custom_tactic,
             set_tactics_phase,
             assign_jersey_number,
             set_team_kit_pattern,

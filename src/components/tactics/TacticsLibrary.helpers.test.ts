@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import type { GameStateData } from "../../store/gameStore";
 import type { TacticsLibraryEntry } from "./TacticsCommandBar";
@@ -7,7 +7,6 @@ import {
   isTacticsCommandBarDirty,
   loadCustomTactics,
   resolveActiveTactic,
-  saveCustomTactics,
 } from "./TacticsCustomTactics.helpers";
 import {
   findTacticsPresetBySetup,
@@ -218,58 +217,16 @@ describe("custom tactic persistence scope", () => {
     ).toContain(":no-team");
   });
 
-  it("survives a remount-equivalent load using a new game-state object", () => {
-    const values = new Map<string, string>();
-    const storage = {
-      getItem: (key: string) => values.get(key) ?? null,
-      setItem: (key: string, value: string) => {
-        values.set(key, value);
-      },
-    };
-    const firstMountState = makeGameState();
-    const custom = makeTactic("custom:mine", "custom");
-
-    saveCustomTactics(firstMountState, [custom], storage);
-
-    const remountedState = makeGameState();
-    expect(remountedState).not.toBe(firstMountState);
-    expect(loadCustomTactics(remountedState, storage)).toEqual([custom]);
-  });
-
-  it("keeps scopes isolated across a second save and load", () => {
-    const values = new Map<string, string>();
-    const storage = {
-      getItem: (key: string) => values.get(key) ?? null,
-      setItem: (key: string, value: string) => {
-        values.set(key, value);
-      },
-    };
-    const first = makeTactic("custom:first", "custom");
-    const second = makeTactic("custom:second", "custom");
-    const firstScope = makeGameState({ managerId: "manager-1", teamId: "team-1" });
-    const secondScope = makeGameState({ managerId: "manager-2", teamId: "team-2" });
-
-    saveCustomTactics(firstScope, [first], storage);
-    saveCustomTactics(secondScope, [second], storage);
-
-    expect(loadCustomTactics(firstScope, storage)).toEqual([first]);
-    expect(loadCustomTactics(secondScope, storage)).toEqual([second]);
-  });
-
-  it("leaves previously persisted tactics unchanged when storage rejects a write", () => {
+  it("reads a library written by an earlier career under the same key", () => {
+    // The one-time import is the only reader left; it has to find what the
+    // browser wrote before the library moved into the save.
     const state = makeGameState();
-    const previous = makeTactic("custom:previous", "custom");
-    const next = makeTactic("custom:next", "custom");
-    const key = buildCustomTacticsStorageKey(state);
-    const values = new Map([[key, JSON.stringify([previous])]]);
+    const custom = makeTactic("custom:mine", "custom");
     const storage = {
-      getItem: (storageKey: string) => values.get(storageKey) ?? null,
-      setItem: vi.fn(() => {
-        throw new Error("quota exceeded");
-      }),
+      getItem: () => JSON.stringify([custom]),
+      setItem: () => {},
     };
 
-    expect(() => saveCustomTactics(state, [next], storage)).not.toThrow();
-    expect(loadCustomTactics(state, storage)).toEqual([previous]);
+    expect(loadCustomTactics(state, storage)).toEqual([custom]);
   });
 });

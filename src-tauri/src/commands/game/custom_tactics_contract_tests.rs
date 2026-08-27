@@ -1,6 +1,4 @@
-use crate::commands::{
-    delete_custom_tactic_internal, list_custom_tactics_internal, save_custom_tactic_internal,
-};
+use crate::commands::{list_custom_tactics_internal, save_custom_tactic_internal};
 use chrono::{TimeZone, Utc};
 use domain::manager::Manager;
 use ofm_core::clock::GameClock;
@@ -85,34 +83,6 @@ fn saving_an_existing_id_updates_in_place_without_duplicating_it() {
     assert_eq!(listed[0].formation, "3-4-3");
     assert_eq!(listed[0].play_style, "HighPress");
     assert_eq!(listed[0].source_preset_name, None);
-}
-
-#[test]
-fn deleting_a_custom_tactic_removes_only_that_id() {
-    let state = state_with_game();
-    save_custom_tactic_internal(&state, tactic("custom:one", "One", "4-4-2"))
-        .expect("save first tactic");
-    save_custom_tactic_internal(&state, tactic("custom:two", "Two", "4-3-3"))
-        .expect("save second tactic");
-
-    delete_custom_tactic_internal(&state, "custom:one").expect("delete existing tactic");
-
-    let listed = list_custom_tactics_internal(&state).expect("list after delete");
-    assert_eq!(listed.len(), 1);
-    assert_eq!(listed[0].id, "custom:two");
-}
-
-#[test]
-fn deleting_an_unknown_id_is_an_idempotent_no_op() {
-    let state = state_with_game();
-    save_custom_tactic_internal(&state, tactic("custom:one", "One", "4-4-2")).expect("save tactic");
-
-    delete_custom_tactic_internal(&state, "custom:missing")
-        .expect("deleting a tactic that is already absent should succeed");
-
-    let listed = list_custom_tactics_internal(&state).expect("list after no-op delete");
-    assert_eq!(listed.len(), 1);
-    assert_eq!(listed[0].id, "custom:one");
 }
 
 #[test]

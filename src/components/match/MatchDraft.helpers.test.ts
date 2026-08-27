@@ -237,7 +237,7 @@ describe("queueing at the substitution limit", () => {
       slotIndex: 6,
     });
 
-    expect(corrected.refusedRemaining).toBeUndefined();
+    expect(corrected.refusedAllowance).toBeUndefined();
     expect(corrected.draft.lineupChanges).toEqual([
       { incomingPlayerId: "sub2", outgoingPlayerId: "m2", slotIndex: 6 },
     ]);
@@ -257,7 +257,31 @@ describe("queueing at the substitution limit", () => {
       slotIndex: 9,
     });
 
-    expect(overflow.refusedRemaining).toBe(1);
+    expect(overflow.refusedAllowance).toBe(5);
     expect(overflow.draft.lineupChanges).toHaveLength(1);
+  });
+
+  it("reports the match allowance, not a count that reads as what is left", () => {
+    // Five queued against an allowance of five used to be refused with
+    // "5 remaining", because the number was the allowance and the sentence
+    // called it the remainder.
+    const current = snapshot({ home_subs_made: 0, max_subs: 5 });
+    let draft = EMPTY_MATCH_DRAFT;
+    for (const slotIndex of [1, 2, 3, 4, 5]) {
+      draft = queueLineupChange(draft, current, "Home", {
+        incomingPlayerId: "sub1",
+        outgoingPlayerId: `p${slotIndex}`,
+        slotIndex,
+      }).draft;
+    }
+
+    const overflow = queueLineupChange(draft, current, "Home", {
+      incomingPlayerId: "sub2",
+      outgoingPlayerId: "p6",
+      slotIndex: 6,
+    });
+
+    expect(overflow.refusedAllowance).toBe(5);
+    expect(overflow.draft.lineupChanges).toHaveLength(5);
   });
 });

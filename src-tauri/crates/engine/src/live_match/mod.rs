@@ -352,7 +352,18 @@ impl LiveMatchState {
 
     /// Apply a command (substitution, tactic change, set piece assignment).
     pub fn apply_command(&mut self, cmd: MatchCommand) -> Result<(), String> {
-        self.revision += 1;
+        let outcome = self.apply_command_inner(cmd);
+        // Only a command that did something moves the revision. Bumping first
+        // meant a refused swap left the client a revision behind a match that
+        // had not changed, and the next step came back as a desync — paying
+        // for a whole snapshot to recover from nothing at all.
+        if outcome.is_ok() {
+            self.revision += 1;
+        }
+        outcome
+    }
+
+    fn apply_command_inner(&mut self, cmd: MatchCommand) -> Result<(), String> {
         match cmd {
             MatchCommand::Substitute {
                 side,
@@ -399,11 +410,16 @@ impl LiveMatchState {
                 role,
             } => {
                 let team = self.team_mut(side);
-                if let Some(p) = team.players.iter_mut().find(|p| p.id == player_id)
-                    && is_role_valid_for_position(role, p.position)
-                {
-                    p.role = role;
+                let Some(player) = team.players.iter_mut().find(|p| p.id == player_id) else {
+                    return Err("be.error.liveMatch.playerNotOnBench".into());
+                };
+                // Said rather than swallowed. This arm returned Ok for a role
+                // it had refused to apply, so the screen that first called it
+                // reported a change that never happened.
+                if !is_role_valid_for_position(role, player.position) {
+                    return Err("be.error.roleNotValidForPosition".into());
                 }
+                player.role = role;
                 Ok(())
             }
         }

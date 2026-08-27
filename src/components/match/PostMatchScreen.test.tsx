@@ -517,7 +517,7 @@ describe("PostMatchScreen", function (): void {
     const tabNames = [
       "match.postMatchTeamTalk",
       "match.matchReport",
-      "match.playerRatings",
+      "match.performanceScoresTab",
       "match.tacticsTab",
     ];
 
@@ -548,7 +548,7 @@ describe("PostMatchScreen", function (): void {
     });
     const matchReportTab = screen.getByRole("tab", { name: "match.matchReport" });
     const performanceScoresTab = screen.getByRole("tab", {
-      name: "match.playerRatings",
+      name: "match.performanceScoresTab",
     });
     const tacticsTab = screen.getByRole("tab", { name: "match.tacticsTab" });
 
@@ -589,7 +589,7 @@ describe("PostMatchScreen", function (): void {
       screen.getAllByText("match.postMatchTeamTalk").length,
     ).toBeGreaterThan(0);
     expect(screen.getByText("match.matchReport")).toBeInTheDocument();
-    expect(screen.getByText("match.playerRatings")).toBeInTheDocument();
+    expect(screen.getByText("match.performanceScoresTab")).toBeInTheDocument();
   });
 
   it("switches to Match Report tab and shows scorers section", function (): void {

@@ -279,12 +279,12 @@ export function SubPanel({
       slotIndex,
     });
 
-    if (result.refusedRemaining !== undefined) {
+    if (result.refusedAllowance !== undefined) {
       // Said here rather than sent: the remaining count is known on this side,
       // so the manager finds out now instead of having a whole set refused.
       setQueueRefusal(
-        t("match.tooManyPendingSubstitutions", {
-          remaining: result.refusedRemaining,
+        t("match.substitutionQueueFull", {
+          allowance: result.refusedAllowance,
         }),
       );
       return;
@@ -297,14 +297,19 @@ export function SubPanel({
     // have just queued — and to take it back out if it does not hold up.
   }
 
+  // Whole sentences, not a label glued to a value with a colon. These are
+  // nested into "Remove {{change}}", and the locales that gave that key their
+  // own colon were rendering "Удалить: Формация: 4-3-3".
   const formationSummary = draft.formation
-    ? `${t("tactics.formation")}: ${draft.formation}`
+    ? t("match.pendingFormationChange", { formation: draft.formation })
     : null;
   const playStyleSummary = draft.playStyle
-    ? `${t("tactics.playStyle")}: ${t(
-        `common.playStyles.${draft.playStyle}`,
-        draft.playStyle,
-      )}`
+    ? t("match.pendingPlayStyleChange", {
+        playStyle: t(
+          `common.playStyles.${draft.playStyle}`,
+          draft.playStyle,
+        ),
+      })
     : null;
 
   const describeChange = (change: MatchLineupDraftChange): string =>

@@ -38,7 +38,9 @@ vi.mock("react-i18next", () => ({
         typeof options === "object" && options !== null
           ? (options as Record<string, unknown>)
           : {};
-      if (key === "match.manageTeam") return "Manage team";
+      if (key === "match.manageTeamWithSubs") {
+        return `Manage team ${String(values.used)}/${String(values.max)}`;
+      }
       if (key === "match.pendingChanges") return "Pending changes";
       if (key === "match.applyPendingChanges") return "Apply changes";
       if (key === "match.noPendingChanges") return "No pending changes";
@@ -51,8 +53,8 @@ vi.mock("react-i18next", () => ({
       if (key === "match.removePendingChange") {
         return `Remove ${String(values.change)}`;
       }
-      if (key === "match.tooManyPendingSubstitutions") {
-        return `Cannot queue another substitution: ${String(values.remaining)} remaining.`;
+      if (key === "match.substitutionQueueFull") {
+        return `No more substitutions can be queued. Your allowance for this match is ${String(values.allowance)}.`;
       }
       if (key === "tactics.playerRoleLabel") return "Role";
       if (key === "tactics.playerRoles.BoxToBox") return "Box-to-Box";
@@ -464,7 +466,9 @@ describe("atomic in-match management", () => {
     queueSubstitution(6, "bench-cm");
 
     expect(
-      screen.getByText("Cannot queue another substitution: 1 remaining."),
+      screen.getByText(
+        "No more substitutions can be queued. Your allowance for this match is 5.",
+      ),
     ).toBeInTheDocument();
     expect(pendingChanges()).toHaveTextContent(
       "Starter 5 off, Bench Left Back on",

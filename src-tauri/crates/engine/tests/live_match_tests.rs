@@ -2438,3 +2438,66 @@ fn a_finished_match_still_answers_with_its_final_revision() {
     assert_eq!(response.delta.phase, MatchPhase::Finished);
     assert_eq!(state.snapshot().revision, response.revision);
 }
+
+#[test]
+fn a_refused_command_leaves_the_revision_where_it_was() {
+    // Otherwise the client is a revision behind a match that did not change,
+    // and the next step comes back a desync — paying for a whole snapshot to
+    // recover from nothing at all.
+    let mut state = make_live_match(false);
+    state.step_minute(&mut seeded_rng(51));
+    let before = state.snapshot().revision;
+
+    let refused = state.apply_command(MatchCommand::Substitute {
+        side: Side::Home,
+        player_off_id: "nobody".into(),
+        player_on_id: "home_sub_fwd1".into(),
+    });
+
+    assert!(refused.is_err());
+    assert_eq!(state.snapshot().revision, before);
+}
+
+#[test]
+fn a_role_the_slot_cannot_take_is_refused_rather_than_ignored() {
+    // This arm returned Ok for a role it had just declined to apply, so the
+    // screen that first called it reported a change that never happened.
+    let mut state = make_live_match(false);
+    state.step_minute(&mut seeded_rng(52));
+    let keeper = state.snapshot().home_team.players[0].id.clone();
+
+    let refused = state.apply_command(MatchCommand::ChangePlayerRole {
+        side: Side::Home,
+        player_id: keeper.clone(),
+        role: PlayerRole::TargetMan,
+    });
+
+    assert_eq!(
+        refused.unwrap_err(),
+        "be.error.roleNotValidForPosition".to_string()
+    );
+    assert_eq!(
+        state.snapshot().home_team.players[0].role,
+        PlayerRole::Standard
+    );
+}
+
+#[test]
+fn a_role_the_slot_can_take_is_applied() {
+    let mut state = make_live_match(false);
+    state.step_minute(&mut seeded_rng(53));
+    let keeper = state.snapshot().home_team.players[0].id.clone();
+
+    state
+        .apply_command(MatchCommand::ChangePlayerRole {
+            side: Side::Home,
+            player_id: keeper,
+            role: PlayerRole::SweeperKeeper,
+        })
+        .expect("a keeper can sweep");
+
+    assert_eq!(
+        state.snapshot().home_team.players[0].role,
+        PlayerRole::SweeperKeeper
+    );
+}

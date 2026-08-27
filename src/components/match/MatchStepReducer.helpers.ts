@@ -38,15 +38,19 @@ export function applyMatchStep(
   if (response.revision <= current.revision) {
     return { kind: "ignored" };
   }
-  if (response.base_revision !== current.revision) {
-    return { kind: "desynced" };
-  }
 
   // A tick that brings a snapshot is one where something the delta cannot
   // describe has moved. It replaces the match whole, event log included — the
   // minutes must not also be appended, or their events appear twice.
+  //
+  // Checked before the desync, deliberately: a response carrying the whole
+  // authoritative match is the answer to being behind, so asking for another
+  // copy of it would be a round trip to fetch what is already in hand.
   if (response.snapshot) {
     return { kind: "applied", snapshot: response.snapshot };
+  }
+  if (response.base_revision !== current.revision) {
+    return { kind: "desynced" };
   }
 
   const conditionById = new Map(

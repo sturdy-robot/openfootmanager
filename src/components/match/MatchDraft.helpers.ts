@@ -73,7 +73,7 @@ export function queueLineupChange(
   snapshot: MatchSnapshot,
   side: Side,
   change: MatchLineupDraftChange,
-): { draft: MatchDraft; refusedRemaining?: number } {
+): { draft: MatchDraft; refusedAllowance?: number } {
   // One change per slot, and the newest wins: choosing a different replacement
   // for the same player is a correction, not a second substitution — so it is
   // decided before the budget is consulted. Asked the other way round, a
@@ -84,11 +84,10 @@ export function queueLineupChange(
   );
 
   if (!isCorrection && substitutionsRemaining(snapshot, side, draft) <= 0) {
-    const made =
-      side === "Home" ? snapshot.home_subs_made : snapshot.away_subs_made;
-    // The allowance itself, not what is left of it: the manager needs to know
-    // how many they had, having just been stopped from queueing one more.
-    return { draft, refusedRemaining: Math.max(0, snapshot.max_subs - made) };
+    // The allowance for the match, which is the only number that is true in
+    // every case here. Reporting what was "left" while the queue already held
+    // all of it read as "cannot queue another: 5 remaining".
+    return { draft, refusedAllowance: snapshot.max_subs };
   }
 
   const lineupChanges = [

@@ -290,7 +290,11 @@ export default function MatchLive({
         buildMatchTacticsChangeSet({
           draft: { ...EMPTY_MATCH_DRAFT, ...change },
           side: userSide,
-          snapshot,
+          // The newest match, not the one this render closed over. A change
+          // set replaces the side's whole tactical state, so building it from
+          // a snapshot a tick old would send a departed player's role — and
+          // the dugout bar is the one control usable while the clock runs.
+          snapshot: snapshotRef.current,
         }),
       );
       onSnapshotUpdate(snap);
@@ -333,7 +337,10 @@ export default function MatchLive({
                 type="button"
               >
                 <RefreshCw aria-hidden="true" className="h-4 w-4" />
-                {t("match.manageTeam")} {userSubsMade}/{snapshot.max_subs}
+                {t("match.manageTeamWithSubs", {
+                  max: snapshot.max_subs,
+                  used: userSubsMade,
+                })}
               </button>
               <Select
                 aria-label={t("match.formation")}

@@ -48,9 +48,3 @@ export function saveCustomTactic(
 ): Promise<CustomTacticData[]> {
   return invoke<CustomTacticData[]>("save_custom_tactic", { tactic });
 }
-
-export function deleteCustomTactic(
-  tacticId: string,
-): Promise<CustomTacticData[]> {
-  return invoke<CustomTacticData[]>("delete_custom_tactic", { tacticId });
-}

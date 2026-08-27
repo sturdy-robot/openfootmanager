@@ -78,10 +78,6 @@ vi.mock("../../services/tacticsService", async () => {
   >("../../services/tacticsService");
   return {
     ...actual,
-    deleteCustomTactic: vi.fn(async (id: string) => {
-      savedTactics = savedTactics.filter((tactic) => tactic.id !== id);
-      return savedTactics;
-    }),
     listCustomTactics: vi.fn(async () => savedTactics),
     saveCustomTactic: vi.fn(async (tactic: CustomTacticData) => {
       const index = savedTactics.findIndex((saved) => saved.id === tactic.id);
