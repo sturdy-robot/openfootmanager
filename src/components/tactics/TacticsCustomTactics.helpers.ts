@@ -17,6 +17,8 @@ import {
 const TACTICS_STORAGE_KEY_PREFIX = "ofm:tactics:custom";
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
+/** Only the one-time import needs to clear a key, so only it asks for that. */
+type ClearableStorage = StorageLike & Pick<Storage, "removeItem">;
 
 function getDefaultStorage(): StorageLike | null {
   if (typeof window === "undefined") {
@@ -113,6 +115,32 @@ export function saveCustomTactics(
     return true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Set the browser's copy aside once it has been brought into the save.
+ *
+ * Renamed rather than deleted. The save is the library's home now, but if
+ * anything goes wrong between the import and the next save being written, a
+ * career's tactics are still on disk under the old name — and the import,
+ * which looks for the live key, will not run a second time.
+ */
+export function retireLegacyCustomTactics(
+  gameState: GameStateData,
+  storage: ClearableStorage | null = getDefaultStorage() as ClearableStorage | null,
+): void {
+  if (!storage) return;
+
+  const key = buildCustomTacticsStorageKey(gameState);
+  try {
+    const stored = storage.getItem(key);
+    if (stored === null) return;
+    storage.setItem(`${key}:imported`, stored);
+    storage.removeItem(key);
+  } catch {
+    // Nothing to do: the library is already in the save, and the browser copy
+    // being left behind costs a manager nothing.
   }
 }
 

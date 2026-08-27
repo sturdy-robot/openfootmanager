@@ -723,6 +723,7 @@
     "resetToPreset": "Reset to preset",
     "revertChanges": "Revert",
     "customTacticUpdated": "Tactic updated.",
+    "customTacticSaveError": "The tactic could not be saved. Nothing has been changed.",
     "tacticName": "Tactic name",
     "identitySummary": "Identity summary",
     "synced": "Synced",

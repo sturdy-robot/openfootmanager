@@ -120,6 +120,26 @@ pub struct Game {
     /// Records which `.ofm` packages were used to build this save.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub package_lockfile: Vec<crate::generator::PackageLock>,
+    /// The manager's own tactics, kept for the career rather than the club.
+    ///
+    /// These used to live in the browser under a key that included the team
+    /// id, so a save carried to another machine arrived without them and a
+    /// mid-career move to another club silently emptied the library (#390).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub custom_tactics: Vec<CustomTactic>,
+}
+
+/// A tactic the manager saved, as the tactics screen holds it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CustomTactic {
+    pub id: String,
+    pub name: String,
+    #[serde(default)]
+    pub description: String,
+    pub formation: String,
+    pub play_style: String,
+    #[serde(default)]
+    pub source_preset_name: Option<String>,
 }
 
 impl Game {
@@ -158,6 +178,7 @@ impl Game {
             world_history: WorldHistoryArchive::default(),
             extra_translations: std::collections::HashMap::new(),
             package_lockfile: vec![],
+            custom_tactics: vec![],
         };
         game.promote_legacy_league();
         crate::football_identity::upgrade_game_football_identities(&mut game);

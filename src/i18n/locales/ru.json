@@ -787,6 +787,7 @@
     "resetToPreset": "Сбросить до пресета",
     "revertChanges": "Отменить",
     "customTacticUpdated": "Тактика обновлена.",
+    "customTacticSaveError": "Не удалось сохранить тактику. Ничего не изменилось.",
     "tacticName": "Название тактики",
     "identitySummary": "Сводка идентичности",
     "synced": "Синхронизировано",

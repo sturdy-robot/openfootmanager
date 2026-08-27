@@ -11,8 +11,14 @@ import {
   buildCustomTacticsStorageKey,
   getCustomTacticUpdateControls,
   loadCustomTactics,
-  saveCustomTactics,
+  retireLegacyCustomTactics,
 } from "./TacticsCustomTactics.helpers";
+import {
+  listCustomTactics,
+  saveCustomTactic,
+  toCustomTacticData,
+  toLibraryEntry,
+} from "../../services/tacticsService";
 import type { TacticsLibraryEntry } from "./TacticsCommandBar";
 
 interface UseTacticsLibraryArgs {
@@ -39,9 +45,7 @@ export function useTacticsLibrary({
   onStageTactic,
 }: UseTacticsLibraryArgs) {
   const { t } = useTranslation();
-  const [customTactics, setCustomTactics] = useState<TacticsLibraryEntry[]>(() =>
-    gameState ? loadCustomTactics(gameState) : [],
-  );
+  const [customTactics, setCustomTactics] = useState<TacticsLibraryEntry[]>([]);
   const [activeTacticId, setActiveTacticId] = useState<string | null>(
     initialPreset ? `preset:${initialPreset.id}` : null,
   );
@@ -63,25 +67,56 @@ export function useTacticsLibrary({
     ? buildCustomTacticsStorageKey(gameState)
     : null;
 
+  /*
+    The library lives in the save now. It used to live in the browser under a
+    key that included the team id, so it never travelled with the save and a
+    move to another club silently emptied it (#390).
+
+    A career that still has a browser library gets it brought across the first
+    time this screen opens: the save is empty, the browser is not, so the
+    entries are written and the old key is set aside rather than deleted — if
+    anything goes wrong between the import and the next save being written, the
+    data is still on disk.
+  */
   useEffect(() => {
     if (!gameState || !customTacticsStorageKey) return;
     hydratedCustomTacticsScopeRef.current = null;
-    setCustomTactics(loadCustomTactics(gameState));
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const saved = await listCustomTactics();
+        if (cancelled) return;
+
+        if (saved.length > 0) {
+          setCustomTactics(saved.map(toLibraryEntry));
+          return;
+        }
+
+        const legacy = loadCustomTactics(gameState);
+        if (legacy.length === 0) {
+          setCustomTactics([]);
+          return;
+        }
+
+        let imported = saved;
+        for (const entry of legacy) {
+          imported = await saveCustomTactic(toCustomTacticData(entry));
+        }
+        if (cancelled) return;
+        setCustomTactics(imported.map(toLibraryEntry));
+        retireLegacyCustomTactics(gameState);
+      } catch {
+        // A career with no active save, or a backend that refused. The screen
+        // shows an empty library rather than a stale browser one.
+        if (!cancelled) setCustomTactics([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [customTacticsStorageKey, gameState]);
-
-  useEffect(() => {
-    if (!gameState || !customTacticsStorageKey) return;
-    if (hydratedCustomTacticsScopeRef.current !== customTacticsStorageKey) {
-      hydratedCustomTacticsScopeRef.current = customTacticsStorageKey;
-      return;
-    }
-
-    if (!saveCustomTactics(gameState, customTactics)) {
-      // Storage refused the write, so nothing was really saved — drop the cue
-      // rather than confirm a change that will not survive a restart.
-      setSavedTacticId(null);
-    }
-  }, [customTactics, customTacticsStorageKey, gameState]);
 
   const matchedPreset = findTacticsPresetBySetup(formation, activePlayStyle);
   const anchoredPreset = presetAnchorId
@@ -206,63 +241,81 @@ export function useTacticsLibrary({
     }
   }
 
-  function handleCreateCustomTactic(): void {
-    const nextTactic = createCustomTacticEntry();
+  /**
+   * Add a tactic to the library and write it to the save.
+   *
+   * Creating and duplicating used to persist as a side effect of the library
+   * changing at all. They still persist, but they now say so — and a refusal
+   * is reported rather than leaving a tactic on screen that is not anywhere.
+   */
+  async function addToLibrary(nextTactic: TacticsLibraryEntry): Promise<void> {
     setCustomTactics((current) => [nextTactic, ...current]);
     setActiveTacticId(nextTactic.id);
     setDraftTacticName(nextTactic.name);
-  }
 
-  function handleDuplicateTactic(): void {
-    const nextTactic = createCustomTacticEntry({
-      description: activeTactic?.description,
-      formation,
-      name: t("tactics.copyOfTactic", {
-        name: draftTacticName.trim() || activeTactic?.name || t("tactics.customTactic"),
-      }),
-      playStyle: activePlayStyle,
-      sourcePresetName: activeTactic?.sourcePresetName ?? activeTactic?.name ?? null,
-    });
-
-    setCustomTactics((current) => [nextTactic, ...current]);
-    setActiveTacticId(nextTactic.id);
-    setDraftTacticName(nextTactic.name);
-  }
-
-  function handleSaveTactic(): void {
-    const nextName = draftTacticName.trim() || t("tactics.customTactic");
-
-    setSavedTacticId(activeTactic?.id ?? null);
-    onAnnounce("tactics.customTacticUpdated");
-
-    if (isActiveCustomTactic && activeTactic && customTactics.some((e) => e.id === activeTactic.id)) {
-      setCustomTactics((current) =>
-        current.map((entry) =>
-          entry.id === activeTactic.id
-            ? {
-                ...entry,
-                description: activeTactic.description,
-                formation,
-                name: nextName,
-                playStyle: activePlayStyle,
-              }
-            : entry,
-        ),
-      );
-      return;
+    try {
+      const saved = await saveCustomTactic(toCustomTacticData(nextTactic));
+      setCustomTactics(saved.map(toLibraryEntry));
+    } catch {
+      onAnnounce("tactics.customTacticSaveError");
     }
+  }
 
-    const nextTactic = createCustomTacticEntry({
-      description: activeTactic?.description,
-      formation,
-      name: nextName,
-      playStyle: activePlayStyle,
-      sourcePresetName: activeTactic?.name ?? null,
-    });
+  async function handleCreateCustomTactic(): Promise<void> {
+    await addToLibrary(createCustomTacticEntry());
+  }
 
-    setCustomTactics((current) => [nextTactic, ...current]);
-    setActiveTacticId(nextTactic.id);
-    setDraftTacticName(nextTactic.name);
+  async function handleDuplicateTactic(): Promise<void> {
+    await addToLibrary(
+      createCustomTacticEntry({
+        description: activeTactic?.description,
+        formation,
+        name: t("tactics.copyOfTactic", {
+          name: draftTacticName.trim() || activeTactic?.name || t("tactics.customTactic"),
+        }),
+        playStyle: activePlayStyle,
+        sourcePresetName: activeTactic?.sourcePresetName ?? activeTactic?.name ?? null,
+      }),
+    );
+  }
+
+  async function handleSaveTactic(): Promise<void> {
+    const nextName = draftTacticName.trim() || t("tactics.customTactic");
+    const isUpdate =
+      isActiveCustomTactic &&
+      activeTactic &&
+      customTactics.some((entry) => entry.id === activeTactic.id);
+
+    const nextTactic: TacticsLibraryEntry = isUpdate
+      ? {
+          ...activeTactic,
+          formation,
+          name: nextName,
+          playStyle: activePlayStyle,
+        }
+      : createCustomTacticEntry({
+          description: activeTactic?.description,
+          formation,
+          name: nextName,
+          playStyle: activePlayStyle,
+          sourcePresetName: activeTactic?.name ?? null,
+        });
+
+    try {
+      const saved = await saveCustomTactic(toCustomTacticData(nextTactic));
+      setCustomTactics(saved.map(toLibraryEntry));
+      setSavedTacticId(nextTactic.id);
+      onAnnounce("tactics.customTacticUpdated");
+      if (!isUpdate) {
+        setActiveTacticId(nextTactic.id);
+        setDraftTacticName(nextTactic.name);
+      }
+    } catch {
+      // Nothing was written, so nothing is confirmed. The old code told the
+      // manager it had saved before it knew, and swallowed the failure.
+      setSavedTacticId(null);
+      onAnnounce("tactics.customTacticSaveError");
+    }
   }
 
   const saveControls = getCustomTacticUpdateControls({

@@ -262,13 +262,13 @@ export default function TacticsTab({
             startingXiIds,
           });
         }}
-        onCreateNew={handleCreateCustomTactic}
-        onDuplicate={handleDuplicateTactic}
+        onCreateNew={() => void handleCreateCustomTactic()}
+        onDuplicate={() => void handleDuplicateTactic()}
         onFormationChange={stageFormation}
         onPlayStyleChange={stagePlayStyle}
         onReset={reset}
         onRevert={revert}
-        onSave={handleSaveTactic}
+        onSave={() => void handleSaveTactic()}
         saveDisabled={saveControls.disabled}
         onSelectTactic={(id) => {
           const nextTactic = tacticLibrary.find((entry) => entry.id === id);

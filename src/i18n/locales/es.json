@@ -787,6 +787,7 @@
     "resetToPreset": "Restablecer al preajuste",
     "revertChanges": "Descartar",
     "customTacticUpdated": "Táctica actualizada.",
+    "customTacticSaveError": "No se ha podido guardar la táctica. No se ha cambiado nada.",
     "tacticName": "Nombre de la táctica",
     "identitySummary": "Resumen de identidad",
     "synced": "Sincronizado",

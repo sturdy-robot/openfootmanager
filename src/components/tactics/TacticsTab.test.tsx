@@ -8,6 +8,7 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { GameStateData } from "../../store/gameStore";
 import TacticsTab from "./TacticsTab";
+import type { CustomTacticData } from "../../services/tacticsService";
 import {
   makeGameState,
   makePlayer,
@@ -65,6 +66,34 @@ vi.mock("../../services/squadService", () => ({
   setTeamMatchRoles: squadServiceMocks.setTeamMatchRoles,
 }));
 
+/*
+  The tactic library lives in the save now, so the tab reads and writes it
+  through the backend. This stands in for one career's worth of it.
+*/
+let savedTactics: CustomTacticData[] = [];
+
+vi.mock("../../services/tacticsService", async () => {
+  const actual = await vi.importActual<
+    typeof import("../../services/tacticsService")
+  >("../../services/tacticsService");
+  return {
+    ...actual,
+    deleteCustomTactic: vi.fn(async (id: string) => {
+      savedTactics = savedTactics.filter((tactic) => tactic.id !== id);
+      return savedTactics;
+    }),
+    listCustomTactics: vi.fn(async () => savedTactics),
+    saveCustomTactic: vi.fn(async (tactic: CustomTacticData) => {
+      const index = savedTactics.findIndex((saved) => saved.id === tactic.id);
+      savedTactics =
+        index >= 0
+          ? savedTactics.map((saved, at) => (at === index ? tactic : saved))
+          : [...savedTactics, tactic];
+      return savedTactics;
+    }),
+  };
+});
+
 const createDataTransfer = () => {
   const data = new Map<string, string>();
   return {
@@ -92,6 +121,7 @@ function pitchPlayer(playerId: string): HTMLElement {
 describe("TacticsTab", () => {
   beforeEach(() => {
     localStorage.clear();
+    savedTactics = [];
     const defaultGameState = makeGameState();
     const defaultRoster = defaultGameState.players.filter(
       (p) => p.team_id === "team1",
@@ -377,7 +407,7 @@ describe("TacticsTab", () => {
     expect(screen.getByRole("option", { name: /tactics.copyOfTactic/i })).toBeInTheDocument();
   });
 
-  it("persists custom tactics across remounts", () => {
+  it("keeps a custom tactic across remounts, because it is in the save", async () => {
     const gameState = makeGameState();
     const { unmount } = render(
       <TacticsTab
@@ -390,6 +420,9 @@ describe("TacticsTab", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "tactics.duplicateTactic" }),
     );
+    await waitFor(() => {
+      expect(savedTactics).toHaveLength(1);
+    });
 
     unmount();
 
@@ -402,29 +435,21 @@ describe("TacticsTab", () => {
     );
 
     fireEvent.click(
-      screen.getByRole("button", { name: "tactics.chooseTactic" }),
+      await screen.findByRole("button", { name: "tactics.chooseTactic" }),
     );
 
     expect(
-      screen.getByRole("option", { name: /tactics.copyOfTactic/i }),
+      await screen.findByRole("option", { name: /tactics.copyOfTactic/i }),
     ).toBeInTheDocument();
   });
 
-  it("does not leak custom tactics across manager or team storage scopes", () => {
-    const originalState = makeGameState();
-    const otherState = makeGameState();
-    otherState.clock.start_date = "2026-09-01";
-    otherState.manager.id = "mgr2";
-    otherState.manager.team_id = "team2";
-    otherState.teams = [makeTeam({ id: "team2", manager_id: "mgr2" })];
-    otherState.players = otherState.players.map((player) => ({
-      ...player,
-      team_id: "team2",
-    }));
-
+  it("keeps a manager's tactics when they move to another club", async () => {
+    // The old storage key included the team id, so a mid-career move silently
+    // emptied the library (#390). The library belongs to the career.
+    const beforeMove = makeGameState();
     const { unmount } = render(
       <TacticsTab
-        gameState={originalState}
+        gameState={beforeMove}
         onSelectPlayer={vi.fn()}
         onGameUpdate={vi.fn()}
       />,
@@ -433,43 +458,35 @@ describe("TacticsTab", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "tactics.duplicateTactic" }),
     );
-
+    await waitFor(() => {
+      expect(savedTactics).toHaveLength(1);
+    });
     unmount();
 
-    const secondRender = render(
-      <TacticsTab
-        gameState={otherState}
-        onSelectPlayer={vi.fn()}
-        onGameUpdate={vi.fn()}
-      />,
-    );
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "tactics.chooseTactic" }),
-    );
-
-    expect(
-      screen.queryByRole("option", { name: /tactics.copyOfTactic/i }),
-    ).not.toBeInTheDocument();
-
-    secondRender.unmount();
+    const afterMove = makeGameState();
+    afterMove.manager.team_id = "team2";
+    afterMove.teams = [makeTeam({ id: "team2", manager_id: afterMove.manager.id })];
+    afterMove.players = afterMove.players.map((player) => ({
+      ...player,
+      team_id: "team2",
+    }));
 
     render(
       <TacticsTab
-        gameState={originalState}
+        gameState={afterMove}
         onSelectPlayer={vi.fn()}
         onGameUpdate={vi.fn()}
       />,
     );
 
     fireEvent.click(
-      screen.getByRole("button", { name: "tactics.chooseTactic" }),
+      await screen.findByRole("button", { name: "tactics.chooseTactic" }),
     );
 
     expect(
-      screen.getByRole("option", { name: /tactics.copyOfTactic/i }),
+      await screen.findByRole("option", { name: /tactics.copyOfTactic/i }),
     ).toBeInTheDocument();
-  }, 15000);
+  });
 
   it("keeps a rejected draft staged so it can be applied again", async () => {
     const gameState = makeGameState();

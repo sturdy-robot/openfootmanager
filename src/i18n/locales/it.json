@@ -806,6 +806,7 @@
     "resetToPreset": "Ripristina il preset",
     "revertChanges": "Annulla",
     "customTacticUpdated": "Tattica aggiornata.",
+    "customTacticSaveError": "Non è stato possibile salvare la tattica. Non è cambiato nulla.",
     "tacticName": "Nome tattica",
     "identitySummary": "Riepilogo identità",
     "synced": "Sincronizzato",

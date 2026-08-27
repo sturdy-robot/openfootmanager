@@ -723,6 +723,7 @@
     "resetToPreset": "Kembalikan ke prasetel",
     "revertChanges": "Urungkan",
     "customTacticUpdated": "Taktik diperbarui.",
+    "customTacticSaveError": "Taktik tidak dapat disimpan. Tidak ada yang diubah.",
     "tacticName": "Nama taktik",
     "identitySummary": "Ringkasan identitas",
     "synced": "Tersinkron",

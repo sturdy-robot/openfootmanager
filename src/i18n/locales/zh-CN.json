@@ -787,6 +787,7 @@
     "resetToPreset": "重置为预设",
     "revertChanges": "撤销",
     "customTacticUpdated": "战术已更新。",
+    "customTacticSaveError": "战术保存失败，未做任何更改。",
     "tacticName": "战术名称",
     "identitySummary": "风格摘要",
     "synced": "已同步",

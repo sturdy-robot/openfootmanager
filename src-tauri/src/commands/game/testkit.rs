@@ -24,6 +24,9 @@ use ofm_core::{
 
 use super::start_date_for_year;
 
+#[path = "custom_tactics_contract_tests.rs"]
+mod custom_tactics_contract_tests;
+
 pub(super) fn manager_for(team_id: &str) -> Manager {
     let mut manager = Manager::new(
         "mgr".to_string(),

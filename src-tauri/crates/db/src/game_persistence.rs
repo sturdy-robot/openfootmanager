@@ -87,6 +87,8 @@ fn write_game_to_connection(
         .map_err(|_| game_persistence_write_error())?;
     let package_lockfile_json = serde_json::to_string(&game.package_lockfile)
         .map_err(|_| game_persistence_write_error())?;
+    let custom_tactics_json = serde_json::to_string(&game.custom_tactics)
+        .map_err(|_| game_persistence_write_error())?;
     let manager_id = if game.manager_id.is_empty() {
         game.manager.id.clone()
     } else {
@@ -131,6 +133,7 @@ fn write_game_to_connection(
                 .map_err(|_| game_persistence_write_error())?,
             extra_translations_json,
             package_lockfile_json,
+            custom_tactics_json,
         },
     )?;
 
@@ -340,6 +343,12 @@ impl GamePersistenceReader {
                 serde_json::from_str(&meta.package_lockfile_json)
                     .map_err(|_| "be.error.gamePersistence.loadFailed".to_string())?
             },
+            custom_tactics: if meta.custom_tactics_json.trim().is_empty() {
+                Vec::new()
+            } else {
+                serde_json::from_str(&meta.custom_tactics_json)
+                    .map_err(|_| "be.error.gamePersistence.loadFailed".to_string())?
+            },
         };
         for team in &mut game.teams {
             ofm_core::tactics::migrate_legacy_player_roles(team);
@@ -389,6 +398,7 @@ mod tests {
             active_competition_ids_json: "[]".to_string(),
             extra_translations_json: "{}".to_string(),
             package_lockfile_json: "[]".to_string(),
+            custom_tactics_json: "[]".to_string(),
         }
     }
 

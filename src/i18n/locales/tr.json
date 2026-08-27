@@ -723,6 +723,7 @@
     "resetToPreset": "Ön ayara sıfırla",
     "revertChanges": "Geri al",
     "customTacticUpdated": "Taktik güncellendi.",
+    "customTacticSaveError": "Taktik kaydedilemedi. Hiçbir şey değişmedi.",
     "tacticName": "Taktik adı",
     "identitySummary": "Kimlik özeti",
     "synced": "Senkronize",
