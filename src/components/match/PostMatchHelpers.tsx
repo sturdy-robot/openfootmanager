@@ -4,6 +4,7 @@ import { getPlayerName } from "./helpers";
 import { Badge } from "../ui";
 import { Circle, Star } from "lucide-react";
 import { translatePositionAbbreviation } from "../squad/SquadTab.helpers";
+import { buildPerformanceScores } from "./PostMatchHelpers.scores";
 
 // ---------------------------------------------------------------------------
 // QuickStat bar
@@ -99,7 +100,15 @@ export function renderScorers(
 // Player Ratings panel for one side
 // ---------------------------------------------------------------------------
 
-export function PlayerRatingsPanel({
+/**
+ * A side's players, scored on what the engine recorded.
+ *
+ * Deliberately not called a rating. The match engine produces no player rating
+ * on this branch, so every number here comes from a weight applied to match
+ * events — see `buildPerformanceScores`. Calling it a rating would present a
+ * heuristic as an engine reading, and the two are not the same thing.
+ */
+export function PerformanceScorePanel({
   snapshot,
   side,
   teamColor,
@@ -112,113 +121,90 @@ export function PlayerRatingsPanel({
 }) {
   const { t } = useTranslation();
   const team = side === "Home" ? snapshot.home_team : snapshot.away_team;
-  const ratings: Record<string, number> = {};
-  team.players.forEach((p) => {
-    ratings[p.id] = 6.0;
-  });
-  snapshot.events.forEach((evt) => {
-    if (evt.side !== side || !evt.player_id) return;
-    if (!ratings[evt.player_id] && ratings[evt.player_id] !== 0) return;
-    if (evt.event_type === "Goal" || evt.event_type === "PenaltyGoal")
-      ratings[evt.player_id] = (ratings[evt.player_id] || 6) + 1.2;
-    else if (
-      evt.event_type === "ShotSaved" ||
-      evt.event_type === "ShotOnTarget"
-    )
-      ratings[evt.player_id] = (ratings[evt.player_id] || 6) + 0.2;
-    else if (evt.event_type === "ShotOffTarget")
-      ratings[evt.player_id] = (ratings[evt.player_id] || 6) - 0.1;
-    else if (evt.event_type === "PassCompleted")
-      ratings[evt.player_id] = (ratings[evt.player_id] || 6) + 0.02;
-    else if (evt.event_type === "Tackle" || evt.event_type === "Interception")
-      ratings[evt.player_id] = (ratings[evt.player_id] || 6) + 0.15;
-    else if (evt.event_type === "Foul")
-      ratings[evt.player_id] = (ratings[evt.player_id] || 6) - 0.2;
-    else if (
-      evt.event_type === "YellowCard" ||
-      evt.event_type === "SecondYellow"
-    )
-      ratings[evt.player_id] = (ratings[evt.player_id] || 6) - 0.5;
-    else if (evt.event_type === "RedCard")
-      ratings[evt.player_id] = (ratings[evt.player_id] || 6) - 1.5;
-    if (
-      evt.secondary_player_id &&
-      ratings[evt.secondary_player_id] !== undefined
-    ) {
-      if (evt.event_type === "Goal" || evt.event_type === "PenaltyGoal")
-        ratings[evt.secondary_player_id] += 0.7;
-    }
-  });
-  const won =
-    (side === "Home" && snapshot.home_score > snapshot.away_score) ||
-    (side === "Away" && snapshot.away_score > snapshot.home_score);
-  if (won)
-    Object.keys(ratings).forEach((id) => {
-      ratings[id] += 0.5;
-    });
-  Object.keys(ratings).forEach((id) => {
-    ratings[id] = Math.max(1, Math.min(10, ratings[id]));
-  });
-  const sorted = team.players
-    .map((p) => ({ ...p, rating: Math.round(ratings[p.id] * 10) / 10 }))
-    .sort((a, b) => b.rating - a.rating);
-  const motm = sorted[0];
+  const nameById = new Map(team.players.map((player) => [player.id, player.name]));
+  const positionById = new Map(
+    team.players.map((player) => [player.id, player.position]),
+  );
+  const scores = buildPerformanceScores(snapshot, side);
+  const best = scores[0];
+  const explainerId = `performance-scores-${side.toLowerCase()}-explainer`;
 
   return (
     <div className="bg-white dark:bg-navy-800 rounded-xl border border-gray-200 dark:border-navy-700 shadow-sm p-4 transition-colors duration-300">
       <div className="flex items-center gap-2 mb-3">
         <Star className="w-4 h-4 text-accent-700 dark:text-accent-400" />
         <h3 className="text-xs font-heading font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
-          {t("match.ratings", { team: team.name })}
+          {t("match.performanceScores", { team: team.name })}
         </h3>
         <div
           className="w-2 h-2 rounded-full ml-auto"
           style={{ backgroundColor: teamColor }}
         />
       </div>
-      {motm && side === (userSide || "Home") && (
+      {/*
+        Said out loud rather than left to a tooltip. The number is built from
+        match events, and a manager reading it as an engine's verdict on how
+        someone played would be reading something that does not exist yet.
+      */}
+      <p
+        className="mb-3 text-[11px] text-gray-500 dark:text-gray-400"
+        id={explainerId}
+      >
+        {t("match.performanceScoreExplainer")}
+      </p>
+      {best && side === (userSide || "Home") && (
         <div className="flex items-center gap-3 mb-3 p-2 bg-accent-50 dark:bg-accent-500/10 rounded-lg border border-accent-200 dark:border-accent-500/20 transition-colors duration-300">
           <div className="w-8 h-8 rounded-lg bg-accent-100 dark:bg-accent-500/20 flex items-center justify-center transition-colors duration-300">
             <span className="text-sm font-heading font-bold text-accent-700 dark:text-accent-400">
-              {motm.rating.toFixed(1)}
+              {best.score.toFixed(1)}
             </span>
           </div>
           <div>
             <p className="text-xs font-heading font-bold text-accent-700 dark:text-accent-400 uppercase tracking-wider">
-              {t("match.motm")}
+              {t("match.topPerformer")}
             </p>
-            <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">{motm.name}</p>
+            <p className="text-sm text-gray-800 dark:text-gray-200 font-medium">
+              {nameById.get(best.playerId)}
+            </p>
           </div>
         </div>
       )}
-      <div className="flex flex-col gap-0.5 max-h-40 overflow-auto">
-        {sorted.map((p) => (
-          <div
-            key={p.id}
+      <ul
+        aria-describedby={explainerId}
+        className="flex flex-col gap-0.5 max-h-40 overflow-auto"
+      >
+        {scores.map((entry) => (
+          <li
+            key={entry.playerId}
             className="flex items-center gap-2 px-1 py-0.5 text-xs"
           >
             <span
               className={`font-heading font-bold tabular-nums w-8 ${
-                p.rating >= 8
+                entry.score >= 8
                   ? "text-accent-700 dark:text-accent-400"
-                  : p.rating >= 7
+                  : entry.score >= 7
                     ? "text-green-700 dark:text-green-400"
-                  : p.rating >= 6
+                  : entry.score >= 6
                       ? "text-gray-600 dark:text-gray-300"
-                  : p.rating >= 5
+                  : entry.score >= 5
                         ? "text-yellow-700 dark:text-yellow-400"
                         : "text-red-400"
               }`}
             >
-              {p.rating.toFixed(1)}
+              {entry.score.toFixed(1)}
             </span>
-            <span className="text-gray-600 dark:text-gray-400 truncate flex-1">{p.name}</span>
+            <span className="text-gray-600 dark:text-gray-400 truncate flex-1">
+              {nameById.get(entry.playerId)}
+            </span>
             <span className="text-gray-600 dark:text-gray-500 text-[10px] font-heading uppercase">
-              {translatePositionAbbreviation(t, p.position)}
+              {translatePositionAbbreviation(
+                t,
+                positionById.get(entry.playerId) ?? "",
+              )}
             </span>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }

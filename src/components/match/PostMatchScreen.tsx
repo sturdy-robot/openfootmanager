@@ -16,7 +16,7 @@ import { Badge, TeamLogo } from "../ui";
 import {
   QuickStat,
   renderScorers,
-  PlayerRatingsPanel,
+  PerformanceScorePanel,
 } from "./PostMatchHelpers";
 import { PossessionDonut } from "./PostMatchCharts";
 import {
@@ -691,7 +691,7 @@ export default function PostMatchScreen({
             className="grid grid-cols-2 gap-6"
           >
             {(["Home", "Away"] as const).map((side) => (
-              <PlayerRatingsPanel
+              <PerformanceScorePanel
                 key={side}
                 snapshot={snapshot}
                 side={side}
