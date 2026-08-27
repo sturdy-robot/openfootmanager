@@ -1989,6 +1989,7 @@
     "skip": "Pular",
     "pressConference": "Coletiva de Imprensa",
     "pressSubtitle": "Coletiva pós-jogo — {{team}}",
+    "pressQuestionProgress": "Pergunta {{current}} de {{total}}",
     "skipConference": "Pular Coletiva →",
     "submitting": "Enviando...",
     "leaveConference": "Encerrar Coletiva",

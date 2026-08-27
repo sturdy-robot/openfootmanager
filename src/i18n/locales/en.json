@@ -2080,6 +2080,7 @@
     "skip": "Skip",
     "pressConference": "Press Conference",
     "pressSubtitle": "Post-match press conference — {{team}}",
+    "pressQuestionProgress": "Question {{current}} of {{total}}",
     "skipConference": "Skip Conference →",
     "submitting": "Submitting...",
     "leaveConference": "Leave Conference",

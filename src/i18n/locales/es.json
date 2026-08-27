@@ -2046,6 +2046,7 @@
     "skip": "Omitir",
     "pressConference": "Rueda de Prensa",
     "pressSubtitle": "Rueda de prensa post-partido — {{team}}",
+    "pressQuestionProgress": "Pregunta {{current}} de {{total}}",
     "skipConference": "Omitir Rueda de Prensa →",
     "submitting": "Enviando...",
     "leaveConference": "Salir de la Rueda",

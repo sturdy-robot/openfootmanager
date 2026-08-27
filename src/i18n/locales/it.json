@@ -2065,6 +2065,7 @@
     "skip": "Salta",
     "pressConference": "Conferenza stampa",
     "pressSubtitle": "Conferenza stampa post-partita — {{team}}",
+    "pressQuestionProgress": "Domanda {{current}} di {{total}}",
     "skipConference": "Salta conferenza →",
     "submitting": "Invio in corso...",
     "leaveConference": "Lascia conferenza",

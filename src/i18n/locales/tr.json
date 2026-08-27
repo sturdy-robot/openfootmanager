@@ -2080,6 +2080,7 @@
     "skip": "Geç",
     "pressConference": "Basın Toplantısı",
     "pressSubtitle": "Maç sonu basın toplantısı — {{team}}",
+    "pressQuestionProgress": "{{total}} sorudan {{current}}. soru",
     "skipConference": "Toplantıyı Geç →",
     "submitting": "Gönderiliyor...",
     "leaveConference": "Toplantıdan Ayrıl",

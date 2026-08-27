@@ -363,36 +363,70 @@ export default function PressConference({
     userSide === "Home" ? snapshot.home_team.name : snapshot.away_team.name;
 
   return (
-    <MatchdayShell bodyMode="centered" identity={matchdayIdentity}>
-      {/* Header */}
-      <div className="bg-linear-to-r from-gray-200 via-white to-gray-200 dark:from-navy-800 dark:via-navy-900 dark:to-navy-800 border-b border-gray-200 dark:border-navy-700 px-4 py-6 transition-colors duration-300">
-        <div className="max-w-3xl mx-auto text-center relative">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gray-200 dark:bg-navy-700 rounded-full mb-3 transition-colors duration-300">
-            <Mic className="w-4 h-4 text-accent-400" />
-            <span className="font-heading font-bold text-xs uppercase tracking-widest text-gray-700 dark:text-gray-300">
+    <MatchdayShell
+      bodyMode="centered"
+      footer={
+        <footer className="border-t border-gray-200 bg-white px-6 py-3 transition-colors duration-300 motion-reduce:transition-none dark:border-navy-700 dark:bg-navy-800">
+          <div className="mx-auto flex max-w-page justify-end">
+            <button
+              className="font-heading text-xs uppercase tracking-wider text-gray-600 transition-colors hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 motion-reduce:transition-none dark:text-gray-500 dark:hover:text-gray-300 dark:focus-visible:ring-offset-navy-800"
+              onClick={onFinish}
+              type="button"
+            >
+              {t("match.skipConference")}
+            </button>
+          </div>
+        </footer>
+      }
+      header={
+        /*
+          The stage said its own name in a band at the top of the body, which
+          is what the shell's header is for — and every other matchday stage
+          now uses it.
+        */
+        <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-2">
+          <div className="inline-flex items-center gap-2 rounded-full bg-gray-200 px-4 py-1.5 transition-colors duration-300 motion-reduce:transition-none dark:bg-navy-700">
+            <Mic aria-hidden="true" className="h-4 w-4 text-accent-400" />
+            <span className="font-heading text-xs font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300">
               {t("match.pressConference")}
             </span>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {t("match.pressSubtitle", { team: userTeamName })}
           </p>
-          <div className="flex items-center justify-center gap-1 mt-3">
-            {questions.map((_, i) => (
-              <div
-                key={i}
-                className={`w-8 h-1 rounded-full transition-colors ${
-                  i < currentIdx
+          {/*
+            A row of coloured bars said nothing to anyone who could not see
+            them. It is a progress bar now, named for where the manager is,
+            and the segments are what it looks like rather than what it means.
+          */}
+          <div
+            aria-label={t("match.pressQuestionProgress", {
+              current: Math.min(currentIdx + 1, questions.length),
+              total: questions.length,
+            })}
+            aria-valuemax={questions.length}
+            aria-valuemin={1}
+            aria-valuenow={Math.min(currentIdx + 1, questions.length)}
+            className="ml-auto flex items-center gap-1"
+            role="progressbar"
+          >
+            {questions.map((question, index) => (
+              <span
+                className={`h-1 w-8 rounded-full transition-colors motion-reduce:transition-none ${
+                  index < currentIdx
                     ? "bg-primary-500"
-                    : i === currentIdx
+                    : index === currentIdx
                       ? "bg-primary-400"
                       : "bg-gray-300 dark:bg-navy-700"
                 }`}
+                key={question.id}
               />
             ))}
           </div>
         </div>
-      </div>
-
+      }
+      identity={matchdayIdentity}
+    >
       {/* Main content */}
       <div className="flex-1 flex items-center justify-center p-6">
         {currentQ && (
@@ -471,18 +505,6 @@ export default function PressConference({
           </div>
         )}
       </div>
-
-      {/* Skip button */}
-      <footer className="bg-white dark:bg-navy-800 border-t border-gray-200 dark:border-navy-700 px-6 py-3 transition-colors duration-300">
-        <div className="max-w-3xl mx-auto flex justify-end">
-          <button
-            onClick={onFinish}
-            className="text-xs font-heading uppercase tracking-wider text-gray-600 hover:text-gray-800 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
-          >
-            {t("match.skipConference")}
-          </button>
-        </div>
-      </footer>
     </MatchdayShell>
   );
 }

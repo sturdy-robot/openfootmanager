@@ -2046,6 +2046,7 @@
     "skip": "Überspringen",
     "pressConference": "Pressekonferenz",
     "pressSubtitle": "Pressekonferenz nach dem Spiel — {{team}}",
+    "pressQuestionProgress": "Frage {{current}} von {{total}}",
     "skipConference": "Konferenz überspringen →",
     "submitting": "Wird gesendet...",
     "leaveConference": "Konferenz verlassen",

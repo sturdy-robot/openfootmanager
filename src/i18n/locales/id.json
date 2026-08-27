@@ -2080,6 +2080,7 @@
     "skip": "Lewati",
     "pressConference": "Konferensi Pers",
     "pressSubtitle": "Konferensi pers pascapertandingan — {{team}}",
+    "pressQuestionProgress": "Pertanyaan {{current}} dari {{total}}",
     "skipConference": "Lewati Konferensi →",
     "submitting": "Mengirim...",
     "leaveConference": "Tinggalkan Konferensi",

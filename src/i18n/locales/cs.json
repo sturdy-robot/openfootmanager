@@ -2080,6 +2080,7 @@
     "skip": "Přeskočit",
     "pressConference": "Tisková konference",
     "pressSubtitle": "Pozápasová tisková konference — {{team}}",
+    "pressQuestionProgress": "Otázka {{current}} z {{total}}",
     "skipConference": "Přeskočit tiskovou konferenci →",
     "submitting": "Odesílání...",
     "leaveConference": "Opustit tiskovou konferenci",

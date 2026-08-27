@@ -2046,6 +2046,7 @@
     "skip": "跳过",
     "pressConference": "新闻发布会",
     "pressSubtitle": "赛后新闻发布会 —— {{team}}",
+    "pressQuestionProgress": "第 {{current}} 个问题，共 {{total}} 个",
     "skipConference": "跳过发布会 →",
     "submitting": "提交中……",
     "leaveConference": "离开发布会",
