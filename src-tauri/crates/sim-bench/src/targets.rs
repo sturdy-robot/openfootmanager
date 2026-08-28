@@ -17,10 +17,10 @@
 //! were: a metric that sits inside its band on one seed can sit well outside it
 //! on another with nothing wrong.
 //!
-//! Measured, so nobody has to rediscover it: at `-n 20000`, seed 20260802 passes
-//! all twenty-one bands, while seed 771 misses five — away clean sheets, home
-//! win %, goal kicks, free-kick goals and both-teams-scored — and missed them
-//! before the calibration was last touched, too.
+//! Measured, so nobody has to rediscover it: at `-n 20000`, seed 20260802 sits
+//! inside every band but one — home win %, which is listed in `KNOWN_FAILING` —
+//! while seed 771 misses five, and missed them before the calibration was last
+//! touched, too.
 //!
 //! Calibrate against **seed 20260802**, and raise `-n` rather than averaging
 //! seeds when a number looks marginal. Comparing a candidate change against the
@@ -90,6 +90,11 @@ pub enum Provenance {
         /// When the figure was read. Published aggregates are restated as
         /// seasons are added, so a number without a date cannot be checked
         /// against its source later.
+        ///
+        /// A band derived from a pinned revision records *that commit's* date,
+        /// not the day somebody ran the script: the commit is what the number
+        /// can be re-derived from, and a wall-clock date would stop the
+        /// artifact regenerating byte-for-byte.
         retrieved: &'static str,
     },
     /// Not a claim about football at all: an assertion about the simulation.
@@ -144,16 +149,22 @@ impl Target {
 
 /// The calibration table.
 ///
-/// Every band records where it came from. Today that record is uncomfortable:
-/// **twenty of the twenty-one are `Unsourced`** — numbers that were written
-/// down under a comment claiming they were top-flight European league averages,
-/// with nothing recorded to support it, and two of two spot-checks against
-/// published figures coming back wrong.
+/// Every band records where it came from, and **fifteen of the twenty-one still
+/// say `Unsourced`** — numbers written down under a comment claiming they were
+/// top-flight European league averages, with nothing recorded to support it,
+/// and two of two spot-checks against published figures coming back wrong.
 ///
 /// They are kept and reported, because they are a useful orientation and
 /// throwing them away would lose the only picture the bench has. They are not
 /// enforced, because an unsourced band is not a target: calibrating to satisfy
 /// one is how somebody's recollection becomes engine behaviour.
+///
+/// The five scoreline bands are the exception, and are not written here by
+/// hand: `scripts/calibrate-scorelines.mjs` derives them from 14,534 real
+/// matches and `derived_band_tests` holds this table to the result. Sourcing
+/// them found a third wrong number — home and away clean sheets had been given
+/// the *same* band, 22–35%, when real football splits them 27–36% and 18–25%.
+/// Home advantage is most of the difference, and the old table had it nowhere.
 ///
 /// Where the engine is outside an *enforced* band, that is recorded as debt in
 /// `KNOWN_FAILING` rather than by widening the band — a target that moves to
@@ -163,47 +174,72 @@ pub fn all() -> Vec<Target> {
         Target {
             label: "Goals/game",
             unit: Unit::PerGame,
-            low: 2.3,
-            high: 3.0,
+            low: 2.55,
+            high: 3.13,
             read: |s| s.gpg(),
             note: None,
-            provenance: Provenance::Unsourced,
+            provenance: Provenance::Measured {
+                source: "openfootball/football.json @ 4e4146c9 (CC0-1.0)",
+                competition: "Big-five European top flights",
+                season: "2014-15 to 2023-24, the 8 seasons all five ran complete outside the pandemic",
+                retrieved: "2026-08-26",
+            },
         },
         Target {
             label: "Clean sheets (home)",
             unit: Unit::Percent,
-            low: 22.0,
-            high: 35.0,
+            low: 27.0,
+            high: 36.0,
             read: |s| s.clean_sheet_home_pct(),
             note: None,
-            provenance: Provenance::Unsourced,
+            provenance: Provenance::Measured {
+                source: "openfootball/football.json @ 4e4146c9 (CC0-1.0)",
+                competition: "Big-five European top flights",
+                season: "2014-15 to 2023-24, the 8 seasons all five ran complete outside the pandemic",
+                retrieved: "2026-08-26",
+            },
         },
         Target {
             label: "Clean sheets (away)",
             unit: Unit::Percent,
-            low: 22.0,
-            high: 35.0,
+            low: 18.0,
+            high: 25.0,
             read: |s| s.clean_sheet_away_pct(),
             note: None,
-            provenance: Provenance::Unsourced,
+            provenance: Provenance::Measured {
+                source: "openfootball/football.json @ 4e4146c9 (CC0-1.0)",
+                competition: "Big-five European top flights",
+                season: "2014-15 to 2023-24, the 8 seasons all five ran complete outside the pandemic",
+                retrieved: "2026-08-26",
+            },
         },
         Target {
             label: "Both teams scored",
             unit: Unit::Percent,
-            low: 50.0,
-            high: 55.0,
+            low: 48.0,
+            high: 60.0,
             read: |s| s.btts_pct(),
             note: None,
-            provenance: Provenance::Unsourced,
+            provenance: Provenance::Measured {
+                source: "openfootball/football.json @ 4e4146c9 (CC0-1.0)",
+                competition: "Big-five European top flights",
+                season: "2014-15 to 2023-24, the 8 seasons all five ran complete outside the pandemic",
+                retrieved: "2026-08-26",
+            },
         },
         Target {
             label: "Home win %",
             unit: Unit::Percent,
-            low: 40.0,
-            high: 52.0,
+            low: 41.0,
+            high: 49.0,
             read: |s| s.home_win_pct(),
             note: Some("Between evenly matched sides; a stronger home side raises this."),
-            provenance: Provenance::Unsourced,
+            provenance: Provenance::Measured {
+                source: "openfootball/football.json @ 4e4146c9 (CC0-1.0)",
+                competition: "Big-five European top flights",
+                season: "2014-15 to 2023-24, the 8 seasons all five ran complete outside the pandemic",
+                retrieved: "2026-08-26",
+            },
         },
         Target {
             label: "Shots/game",
@@ -365,7 +401,7 @@ pub fn all() -> Vec<Target> {
 /// so a new target must come with a citation, and the number comes down as the
 /// existing ones are sourced. It cannot be raised to make a build pass without
 /// that being the whole of the diff.
-pub const UNSOURCED_BUDGET: usize = 20;
+pub const UNSOURCED_BUDGET: usize = 15;
 
 /// Bands the engine is known to miss today, with the reason.
 ///
@@ -375,9 +411,18 @@ pub const UNSOURCED_BUDGET: usize = 20;
 /// anything. Remove entries here as the engine is recalibrated — the run fails
 /// if a listed target starts passing, so this list cannot go stale.
 pub const KNOWN_FAILING: &[(&str, &str)] = &[
-    // Empty, and it should stay that way. Every band this engine is measured
-    // against is currently met. A metric that drifts out belongs here only with
-    // a reason and a plan, never to make the gate quiet.
+    (
+        "Home win %",
+        "40.8% at the reference seed, against a band whose floor is 41%. The \
+         engine's home advantage sits at the low end of real football: big-five \
+         seasons went as low as 38.9%, so this is inside the observed range but \
+         below the tenth percentile of it. A 0.2-point miss is a lean, not a \
+         broken model. `MatchConfig::home_advantage` is a single scalar read at \
+         one place, so it could be nudged today — which is exactly why it is \
+         listed instead: moving one constant to clear one gate is fitting the \
+         engine to the gate. It moves in the calibration pass, alongside \
+         everything it trades against.",
+    ),
 ];
 
 fn known_failure_reason(label: &str) -> Option<&'static str> {
@@ -635,5 +680,64 @@ mod provenance_tests {
             enforced > 0,
             "no band is enforceable, so the calibration gate cannot fail on anything"
         );
+    }
+}
+
+/// The scoreline bands are derived, not typed in. These hold the table to the
+/// artifact `scripts/calibrate-scorelines.mjs` produces, so the two cannot
+/// drift: regenerate the artifact and this test tells you the table is stale.
+#[cfg(test)]
+mod derived_band_tests {
+    use super::*;
+
+    const ARTIFACT: &str = include_str!("../data/big5-scorelines.json");
+
+    fn artifact() -> serde_json::Value {
+        serde_json::from_str(ARTIFACT).expect("the derived artifact is valid JSON")
+    }
+
+    #[test]
+    fn every_derived_band_matches_the_table() {
+        let artifact = artifact();
+        let commit = artifact["source"]["commit"].as_str().unwrap();
+        let commit_date = artifact["source"]["commit_date"].as_str().unwrap();
+        let targets = all();
+
+        let metrics = artifact["metrics"].as_array().unwrap();
+        assert!(!metrics.is_empty(), "the artifact carries no metrics");
+
+        for metric in metrics {
+            let label = metric["label"].as_str().unwrap();
+            let target = targets
+                .iter()
+                .find(|t| t.label == label)
+                .unwrap_or_else(|| panic!("the artifact derives {label:?}, which is not a target"));
+
+            let (low, high) = (metric["low"].as_f64().unwrap(), metric["high"].as_f64().unwrap());
+            assert_eq!(
+                (target.low, target.high),
+                (low, high),
+                "{label} is {}–{} in the table but {low}–{high} in the artifact; \
+                 the table was not updated after the last regeneration",
+                target.low,
+                target.high
+            );
+
+            let Provenance::Measured {
+                source, retrieved, ..
+            } = target.provenance
+            else {
+                panic!("{label} is derived from a real dataset, so it must be Measured");
+            };
+            assert!(
+                source.contains(&commit[..8]),
+                "{label} cites {source:?}, which does not name the pinned commit {commit}"
+            );
+            assert_eq!(
+                retrieved,
+                &commit_date[..10],
+                "{label} was retrieved at the pinned commit, so its date is the commit's"
+            );
+        }
     }
 }
