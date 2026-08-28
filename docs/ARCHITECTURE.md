@@ -197,8 +197,9 @@ All frontend↔backend communication goes through Tauri's `invoke()` mechanism. 
 | Command | Parameters | Returns | Description |
 |---------|-----------|---------|-------------|
 | `start_live_match` | fixture_index, mode, allows_extra_time | `MatchSnapshot` | Initialize a live match session |
-| `step_live_match` | minutes | `Vec<MinuteResult>` | Advance simulation by N minutes |
-| `apply_match_command` | command | `MatchSnapshot` | Send a tactical command |
+| `step_live_match` | minutes | `MatchStepResponse` | Advance simulation by N minutes, returning each minute plus what changed |
+| `apply_match_command` | command | `MatchSnapshot` | Send a single tactical command |
+| `apply_match_tactics` | changes | `MatchSnapshot` | Apply a whole set of in-match changes, or none of them |
 | `get_match_snapshot` | — | `MatchSnapshot` | Get current match state |
 | `finish_live_match` | — | `Game` | Apply results and clean up |
 
@@ -207,6 +208,9 @@ All frontend↔backend communication goes through Tauri's `invoke()` mechanism. 
 | Command | Parameters | Returns | Description |
 |---------|-----------|---------|-------------|
 | `set_formation` | formation | `Game` | Change team formation |
+| `apply_team_tactics` | draft | `Game` | Apply a whole tactical draft, or none of it |
+| `list_custom_tactics` | — | `Vec<CustomTactic>` | The manager's own tactics, kept in the save |
+| `save_custom_tactic` | tactic | `Vec<CustomTactic>` | Save a tactic, replacing one with the same id |
 | `set_play_style` | play_style | `Game` | Change play style |
 | `set_training` | focus, intensity | `Game` | Set training focus and intensity |
 | `set_training_schedule` | schedule | `Game` | Set weekly training schedule |
