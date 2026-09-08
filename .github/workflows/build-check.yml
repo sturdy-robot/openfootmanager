@@ -112,16 +112,23 @@ jobs:
       # The match engine's calibration gate. `ofm-sim-bench` exits non-zero when
       # an *enforceable* metric falls outside its band in `sim-bench/src/targets.rs`.
       #
-      # Read that qualifier. Fifteen of the twenty-one bands are still marked
-      # `Provenance::Unsourced` — nobody recorded where the numbers came from,
-      # and two that were spot-checked against published figures were wrong — so
-      # they are reported and never enforced. This step gates on the other six:
-      # the five scoreline bands, derived from real results by
-      # `scripts/calibrate-scorelines.mjs`, and one model invariant. That is
-      # still far short of the whole table. It gets its teeth back one band at a
-      # time, as each is sourced and moved to `Provenance::Measured`;
-      # `UNSOURCED_BUDGET` is the ratchet and a unit test fails if the count
-      # rises.
+      # Read that qualifier. This step gates on **one** band today, and the run
+      # is mostly a report.
+      #
+      # Fifteen of the twenty-one are `Provenance::Unsourced` — nobody recorded
+      # where the numbers came from, and two that were spot-checked against
+      # published figures were wrong — so they are reported and never enforced.
+      # Five more are `Measured`, derived from real results by
+      # `scripts/calibrate-scorelines.mjs`, and are still not enforced: they are
+      # percentiles across league-seasons, while the bench replays one fixture,
+      # so the comparison is between unlike units. `targets::NOT_COMPARABLE`
+      # holds them and says what would let them gate. That leaves one model
+      # invariant with teeth.
+      #
+      # The gate gets its teeth back from two directions: sourcing a band moves
+      # it off `Unsourced` (`UNSOURCED_BUDGET` is the ratchet, and a unit test
+      # fails if the count rises), and making the bench simulate league-shaped
+      # populations empties `NOT_COMPARABLE`.
       #
       # Bands the engine is known to miss are listed as `KNOWN_FAILING` with a
       # reason and do not fail the build — but a listed metric that starts
@@ -130,18 +137,12 @@ jobs:
       # Release build: the debug profile is `opt-level = 1` and a meaningful
       # sample would take minutes.
       #
-      # 20000 games, not 2000, and it must stay in step with the sample
-      # `targets.rs` tells you to calibrate against. At 2000 one standard error
-      # on a rate near 25% is ~1.0 points, and the enforced bands are now being
-      # missed and met by fractions of a point: at 2000 this seed reports away
-      # clean sheets at 25.6% (outside) and home win % at 41.4% (inside), while
-      # at 20000 it reports 24.5% (inside) and 40.8% (outside). Both flips are
-      # deterministic, and both fail the build — an unlisted miss one way, a
-      # `KNOWN_FAILING` entry that started passing the other. A gate that
-      # samples more coarsely than the margins it enforces cannot have a
-      # maintainable debt list. 20000 games is ~28s.
+      # 2000 games: enough for the one invariant this actually enforces. Do not
+      # raise it to settle a scoreline number — no sample size makes a one-
+      # fixture bench comparable to a league, and a bigger `-n` only buys a
+      # sharper estimate of the wrong quantity.
       - name: Match engine calibration
-        run: cargo run --manifest-path src-tauri/Cargo.toml -p sim-bench --release -- -n 20000 --seed 20260802
+        run: cargo run --manifest-path src-tauri/Cargo.toml -p sim-bench --release -- -n 2000 --seed 20260802
 
       # Clippy is a hard gate: any warning fails the build. Run the same command
       # locally before pushing (or use the /preflight skill).

@@ -392,6 +392,10 @@ fn main() {
     // is not, because that is the signal to remove it from the list.
     if targets::run_failed(&json_summary.targets) {
         for verdict in &json_summary.targets {
+            if verdict.not_comparable.is_some() {
+                // Reported in the table, never a reason the run failed.
+                continue;
+            }
             if verdict.unexpected_pass {
                 // Not a regression: this is what the engine rework is for.
                 // Several of these are expected to start passing together.

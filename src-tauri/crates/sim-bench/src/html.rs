@@ -778,6 +778,9 @@ fn targets_table(stats: &BenchStats, _xg: f64) -> String {
             format!(
                 r#"<span class="tag" title="This band has no recorded source, so it is reported and not enforced.">{inside} — unsourced</span>"#
             )
+        } else if let Some(reason) = verdict.not_comparable {
+            let inside = if verdict.passed { "inside" } else { "outside" };
+            format!(r#"<span class="tag" title="{reason}">{inside} — not comparable</span>"#)
         } else if verdict.passed && verdict.unexpected_pass {
             r#"<span class="tag tag-ok">✓ Fixed — untrack</span>"#.to_string()
         } else if verdict.passed {

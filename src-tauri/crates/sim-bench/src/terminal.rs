@@ -365,6 +365,10 @@ fn calibration(stats: &BenchStats) {
                 "!".dimmed()
             }
             .to_string()
+        } else if verdict.not_comparable.is_some() {
+            // The band is sourced, but the bench is not playing the population
+            // it describes. Neither a tick nor a cross would be honest.
+            "n/c".dimmed().to_string()
         } else if verdict.passed {
             "✓".green().bold().to_string()
         } else if verdict.known_failure.is_some() {
@@ -416,6 +420,9 @@ fn calibration(stats: &BenchStats) {
         }
         if let Some(reason) = verdict.known_failure {
             println!("  {} {}: {}", "known".yellow(), verdict.label, reason.dimmed());
+        }
+        if let Some(reason) = verdict.not_comparable {
+            println!("  {} {}: {}", "n/c".dimmed(), verdict.label, reason.dimmed());
         }
         if verdict.unexpected_pass {
             println!(

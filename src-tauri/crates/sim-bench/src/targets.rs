@@ -17,14 +17,21 @@
 //! were: a metric that sits inside its band on one seed can sit well outside it
 //! on another with nothing wrong.
 //!
-//! Measured, so nobody has to rediscover it: at `-n 20000`, seed 20260802 sits
-//! inside every band but one — home win %, which is listed in `KNOWN_FAILING` —
-//! while seed 771 misses five, and missed them before the calibration was last
-//! touched, too.
+//! Calibrate against **seed 20260802**. Comparing a candidate change against
+//! the baseline on a *different* seed measures the seed.
 //!
-//! Calibrate against **seed 20260802**, and raise `-n` rather than averaging
-//! seeds when a number looks marginal. Comparing a candidate change against the
-//! baseline on a *different* seed measures the seed.
+//! # The bench does not play a league
+//!
+//! `main.rs` builds one home side and one away side, then re-simulates that
+//! fixture `--games` times. The scoreline bands below are percentiles across
+//! real league-seasons. Those are different experimental units, and raising
+//! `--games` does not reconcile them — it estimates one accidental fixture more
+//! sharply while adding none of the team-strength spread a league has.
+//!
+//! So the five scoreline bands are listed in [`NOT_COMPARABLE`] and cannot fail
+//! a run. They are a measurement to steer by, not a gate to satisfy, and the
+//! way to promote them is to make the bench simulate the unit they were
+//! measured over — not to raise `--games` until the numbers settle.
 
 use serde::Serialize;
 
@@ -76,13 +83,15 @@ pub enum Provenance {
     /// Taken from a named source. Every field is required: a citation that
     /// cannot be followed back is not a citation.
     ///
-    /// Not constructed yet, and deliberately left that way rather than filled
-    /// in from memory. Inventing a plausible citation would be worse than the
-    /// unsourced numbers this type exists to expose — it would make them look
-    /// checked. The shape is enforced by
-    /// `provenance_tests::a_measured_band_can_be_followed_back_to_its_source`,
-    /// which is vacuous today and bites the moment somebody adds one.
-    #[allow(dead_code)]
+    /// The shape is enforced by
+    /// `provenance_tests::a_measured_band_can_be_followed_back_to_its_source`:
+    /// every field must be non-empty, because inventing a plausible citation
+    /// would be worse than the unsourced numbers this type exists to expose —
+    /// it would make them look checked.
+    ///
+    /// Measured is a claim about where the *band* came from, and nothing more.
+    /// It does not assert that the bench simulates the population the band was
+    /// measured over; [`NOT_COMPARABLE`] carries that, separately.
     Measured {
         source: &'static str,
         competition: &'static str,
@@ -159,12 +168,18 @@ impl Target {
 /// enforced, because an unsourced band is not a target: calibrating to satisfy
 /// one is how somebody's recollection becomes engine behaviour.
 ///
-/// The five scoreline bands are the exception, and are not written here by
-/// hand: `scripts/calibrate-scorelines.mjs` derives them from 14,534 real
-/// matches and `derived_band_tests` holds this table to the result. Sourcing
-/// them found a third wrong number — home and away clean sheets had been given
-/// the *same* band, 22–35%, when real football splits them 27–36% and 18–25%.
-/// Home advantage is most of the difference, and the old table had it nowhere.
+/// The five scoreline bands are the exception. `scripts/calibrate-scorelines.mjs`
+/// derives them from 14,534 real matches, and `derived_band_tests` checks this
+/// table against the artifact it writes — consistency, not correctness: the two
+/// can still be edited together, and the script is what makes them true.
+/// Sourcing them found a third wrong number — home and away clean sheets had
+/// been given the *same* band, 22–35%, when real football splits them 27–36%
+/// and 18–25%. Home advantage is most of the difference, and the old table had
+/// it nowhere.
+///
+/// They are `Measured` but not enforced: see [`NOT_COMPARABLE`]. Measured says
+/// the band can be followed back to a source; it does not say the bench plays
+/// the thing the band describes, and today it does not.
 ///
 /// Where the engine is outside an *enforced* band, that is recorded as debt in
 /// `KNOWN_FAILING` rather than by widening the band — a target that moves to
@@ -403,6 +418,77 @@ pub fn all() -> Vec<Target> {
 /// that being the whole of the diff.
 pub const UNSOURCED_BUDGET: usize = 15;
 
+/// Bands whose population `sim-bench` does not reproduce, and therefore cannot
+/// be enforced no matter how many games are run.
+///
+/// The scoreline bands are percentiles across real *league-seasons*: 306–380
+/// fixtures between 18–20 different clubs. `main.rs` builds one home side and
+/// one away side, then re-simulates that single fixture `--games` times. Both
+/// default to rating 70, but `build_team` samples attributes around that, so
+/// the two realised squads are not equal — and whichever drew better moves
+/// home win %, clean sheets and both-teams-scored directly.
+///
+/// That is a mismatch of experimental unit, not of precision. Raising
+/// `--games` estimates one accidental fixture more sharply; it never adds the
+/// team-strength spread a league has, and it never averages out the roster
+/// draw. So a miss here says nothing about the engine, and a pass says nothing
+/// either.
+///
+/// Entries leave this list when the bench simulates the unit the band was
+/// measured over — many team pairs with mirrored home and away legs at the
+/// least, whole synthetic league-seasons ideally. Until then the bands are
+/// reported, and the report is the point: they are a measurement to steer by,
+/// not a gate to satisfy.
+pub const NOT_COMPARABLE: &[(&str, &str)] = &[
+    (
+        "Goals/game",
+        "The band is a percentile across real league-seasons — 306–380 fixtures \
+         between 18–20 clubs. The bench builds one home side and one away side \
+         and replays that single fixture, so the comparison is between unlike \
+         units and no value of `--games` closes the gap. Reported, not enforced, \
+         until the bench simulates league-shaped populations.",
+    ),
+    (
+        "Clean sheets (home)",
+        "The band is a percentile across real league-seasons — 306–380 fixtures \
+         between 18–20 clubs. The bench builds one home side and one away side \
+         and replays that single fixture, so the comparison is between unlike \
+         units and no value of `--games` closes the gap. Reported, not enforced, \
+         until the bench simulates league-shaped populations.",
+    ),
+    (
+        "Clean sheets (away)",
+        "The band is a percentile across real league-seasons — 306–380 fixtures \
+         between 18–20 clubs. The bench builds one home side and one away side \
+         and replays that single fixture, so the comparison is between unlike \
+         units and no value of `--games` closes the gap. Reported, not enforced, \
+         until the bench simulates league-shaped populations.",
+    ),
+    (
+        "Both teams scored",
+        "The band is a percentile across real league-seasons — 306–380 fixtures \
+         between 18–20 clubs. The bench builds one home side and one away side \
+         and replays that single fixture, so the comparison is between unlike \
+         units and no value of `--games` closes the gap. Reported, not enforced, \
+         until the bench simulates league-shaped populations.",
+    ),
+    (
+        "Home win %",
+        "The band is a percentile across real league-seasons — 306–380 fixtures \
+         between 18–20 clubs. The bench builds one home side and one away side \
+         and replays that single fixture, so the comparison is between unlike \
+         units and no value of `--games` closes the gap. Reported, not enforced, \
+         until the bench simulates league-shaped populations.",
+    ),
+];
+
+fn not_comparable_reason(label: &str) -> Option<&'static str> {
+    NOT_COMPARABLE
+        .iter()
+        .find(|(name, _)| *name == label)
+        .map(|(_, reason)| *reason)
+}
+
 /// Bands the engine is known to miss today, with the reason.
 ///
 /// Listed rather than widened, so the gate can be enforced from the start
@@ -410,20 +496,7 @@ pub const UNSOURCED_BUDGET: usize = 15;
 /// gets ignored; a target quietly moved to match the engine stops meaning
 /// anything. Remove entries here as the engine is recalibrated — the run fails
 /// if a listed target starts passing, so this list cannot go stale.
-pub const KNOWN_FAILING: &[(&str, &str)] = &[
-    (
-        "Home win %",
-        "40.8% at the reference seed, against a band whose floor is 41%. The \
-         engine's home advantage sits at the low end of real football: big-five \
-         seasons went as low as 38.9%, so this is inside the observed range but \
-         below the tenth percentile of it. A 0.2-point miss is a lean, not a \
-         broken model. `MatchConfig::home_advantage` is a single scalar read at \
-         one place, so it could be nudged today — which is exactly why it is \
-         listed instead: moving one constant to clear one gate is fitting the \
-         engine to the gate. It moves in the calibration pass, alongside \
-         everything it trades against.",
-    ),
-];
+pub const KNOWN_FAILING: &[(&str, &str)] = &[];
 
 fn known_failure_reason(label: &str) -> Option<&'static str> {
     KNOWN_FAILING
@@ -450,6 +523,10 @@ pub struct TargetVerdict {
     /// Set when a metric listed as known debt has started passing, so the entry
     /// can be removed.
     pub unexpected_pass: bool,
+    /// Set when the bench does not simulate the population this band describes,
+    /// so neither a miss nor a pass means anything — see [`NOT_COMPARABLE`].
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub not_comparable: Option<&'static str>,
     /// Where the band came from, and therefore whether it can fail a run.
     pub provenance: Provenance,
 }
@@ -478,6 +555,7 @@ pub fn evaluate(stats: &BenchStats) -> Vec<TargetVerdict> {
                 note: target.note,
                 known_failure: known.filter(|_| !passed),
                 unexpected_pass: passed && known.is_some(),
+                not_comparable: not_comparable_reason(target.label),
                 provenance: target.provenance,
             }
         })
@@ -493,10 +571,17 @@ pub fn evaluate(stats: &BenchStats) -> Vec<TargetVerdict> {
 /// Known-failing metrics do not fail the run either, but a known-failing metric
 /// that starts *passing* does — that is the signal to delete its entry, and it
 /// keeps the debt list honest.
+///
+/// A band the bench cannot reproduce is skipped in both directions: see
+/// [`NOT_COMPARABLE`]. It is not debt, because debt is a claim that the engine
+/// is wrong, and the bench is not in a position to make that claim.
 pub fn run_failed(verdicts: &[TargetVerdict]) -> bool {
-    verdicts.iter().filter(|v| v.enforceable()).any(|verdict| {
-        (!verdict.passed && verdict.known_failure.is_none()) || verdict.unexpected_pass
-    })
+    verdicts
+        .iter()
+        .filter(|v| v.enforceable() && v.not_comparable.is_none())
+        .any(|verdict| {
+            (!verdict.passed && verdict.known_failure.is_none()) || verdict.unexpected_pass
+        })
 }
 
 #[cfg(test)]
@@ -545,6 +630,7 @@ mod tests {
             provenance: Provenance::ModelInvariant { why: "test" },
             known_failure: None,
             unexpected_pass: false,
+            not_comparable: None,
         };
         assert!(run_failed(std::slice::from_ref(&unknown)));
 
@@ -569,8 +655,81 @@ mod tests {
             provenance: Provenance::ModelInvariant { why: "test" },
             known_failure: None,
             unexpected_pass: true,
+            not_comparable: None,
         };
         assert!(run_failed(&[fixed]));
+    }
+
+    #[test]
+    fn a_band_the_bench_cannot_reproduce_never_fails_the_run() {
+        // Neither direction means anything: the bench is not playing the thing
+        // the band was measured over, so a miss is not evidence against the
+        // engine and a pass is not evidence for it.
+        let missed = TargetVerdict {
+            label: "Home win %",
+            unit: Unit::Percent,
+            value: 12.0,
+            low: 41.0,
+            high: 49.0,
+            passed: false,
+            note: None,
+            provenance: Provenance::ModelInvariant { why: "test" },
+            known_failure: None,
+            unexpected_pass: false,
+            not_comparable: Some("one fixture, not a league"),
+        };
+        assert!(!run_failed(std::slice::from_ref(&missed)));
+
+        let landed = TargetVerdict {
+            passed: true,
+            unexpected_pass: true,
+            ..missed
+        };
+        assert!(!run_failed(&[landed]));
+    }
+
+    #[test]
+    fn every_not_comparable_entry_names_a_real_target() {
+        let labels: Vec<&str> = all().iter().map(|target| target.label).collect();
+        for (label, _) in NOT_COMPARABLE {
+            assert!(
+                labels.contains(label),
+                "NOT_COMPARABLE names {label:?}, which is not in the target table"
+            );
+        }
+    }
+
+    #[test]
+    fn no_band_is_both_known_debt_and_incomparable() {
+        // They are different claims. Known debt says the engine is wrong and we
+        // have not fixed it; incomparable says the bench cannot tell. Listing a
+        // band as both asserts a finding the bench cannot support.
+        for (label, _) in KNOWN_FAILING {
+            assert!(
+                not_comparable_reason(label).is_none(),
+                "{label:?} is listed as known debt and as incomparable; the bench \
+                 cannot show it is failing if it cannot measure it at all"
+            );
+        }
+    }
+
+    #[test]
+    fn the_scoreline_bands_are_reported_but_not_enforced() {
+        // Pins the reason `NOT_COMPARABLE` exists. Delete these entries only in
+        // the change that makes `sim-bench` simulate league-shaped populations.
+        for label in [
+            "Goals/game",
+            "Clean sheets (home)",
+            "Clean sheets (away)",
+            "Both teams scored",
+            "Home win %",
+        ] {
+            assert!(
+                not_comparable_reason(label).is_some(),
+                "{label:?} is a percentile across real league-seasons, but the bench \
+                 replays a single fixture — it must not be able to fail a run"
+            );
+        }
     }
 }
 
@@ -632,6 +791,7 @@ mod provenance_tests {
             note: None,
             known_failure: None,
             unexpected_pass: false,
+            not_comparable: None,
             provenance,
         }
     }
@@ -704,7 +864,23 @@ mod derived_band_tests {
         let targets = all();
 
         let metrics = artifact["metrics"].as_array().unwrap();
-        assert!(!metrics.is_empty(), "the artifact carries no metrics");
+        // Named, not counted: a non-empty check would let four of the five be
+        // dropped from the artifact and the stale table entries survive.
+        let derived: Vec<&str> = metrics
+            .iter()
+            .map(|m| m["label"].as_str().unwrap())
+            .collect();
+        assert_eq!(
+            derived,
+            vec![
+                "Goals/game",
+                "Clean sheets (home)",
+                "Clean sheets (away)",
+                "Both teams scored",
+                "Home win %",
+            ],
+            "the artifact no longer derives the five scoreline bands"
+        );
 
         for metric in metrics {
             let label = metric["label"].as_str().unwrap();
