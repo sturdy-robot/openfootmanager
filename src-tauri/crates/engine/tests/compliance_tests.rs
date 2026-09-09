@@ -26,7 +26,7 @@ const SEED: u64 = 0xDEC0_DE01;
 /// verified that they had. Repinning a fingerprint here without bumping
 /// `ENGINE_VERSION` now leaves this constant disagreeing with the engine, and
 /// [`assert_golden`] fails on that before it ever looks at the fingerprint.
-const GOLDEN_VERSION: u32 = 19;
+const GOLDEN_VERSION: u32 = 20;
 
 /// Assert a pinned behaviour fingerprint, and that the version stamp still
 /// matches the one it was captured under.
@@ -366,7 +366,7 @@ fn golden_report_is_unchanged() {
     let actual = hasher.finish();
 
     // Pinned behaviour fingerprint, captured under GOLDEN_VERSION.
-    const GOLDEN: u64 = 0x802d_c51f_cab4_9937;
+    const GOLDEN: u64 = 0x7e25_a620_f12c_61a8;
 
     assert_golden(actual, GOLDEN, "engine");
 }
@@ -408,7 +408,7 @@ fn golden_report_is_unchanged_with_instructions() {
     let actual = hasher.finish();
 
     // Pinned behaviour fingerprint. See `golden_report_is_unchanged`.
-    const GOLDEN_WITH_INSTRUCTIONS: u64 = 0xa781_e513_eee2_8cfb;
+    const GOLDEN_WITH_INSTRUCTIONS: u64 = 0x2094_aaed_7d82_6157;
 
     assert_golden(actual, GOLDEN_WITH_INSTRUCTIONS, "instructed-team");
 }

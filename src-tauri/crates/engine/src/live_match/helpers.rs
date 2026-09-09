@@ -324,6 +324,20 @@ impl LiveMatchState {
         if !dismissals.is_empty() && dismissals.contains(&player.id) {
             return 0.0;
         }
+        // Only a goalkeeper keeps goal, and occupancy cannot say so: a centre
+        // back stands in his own box as much as the keeper does — `OwnBox` is
+        // 1.00 for both — while `Need::Keep` suitability is an attribute
+        // average that is never zero for an outfielder. Weighting alone
+        // therefore drew defenders to face shots, and their reflexes decided
+        // whether the ball went in.
+        //
+        // Eligibility rather than a heavier weight, so that a side whose keeper
+        // has been sent off still puts somebody in goal: every weight goes to
+        // zero and `pick_actor_excluding` falls back to `snap_player`, which
+        // prefers a goalkeeper and takes any eligible player when there is none.
+        if matches!(need, Need::Keep) && player.position != Position::Goalkeeper {
+            return 0.0;
+        }
         let cache = self.cache(side);
         let placement = cache.placement(index, band, need);
         if placement <= 0.0 {
@@ -712,5 +726,121 @@ mod commentary_detail_tests {
         // Specifically: home extends the lead, away equalises.
         assert_eq!(state.goal_context(Side::Home), GoalContext::Extends);
         assert_eq!(state.goal_context(Side::Away), GoalContext::Equaliser);
+    }
+}
+
+#[cfg(test)]
+mod keeper_selection_tests {
+    use super::*;
+    use crate::types::{MatchConfig, PlayStyle, PlayerRole, TacticsConfig};
+    use rand::SeedableRng;
+    use rand::rngs::StdRng;
+
+    fn player(id: &str, position: Position) -> PlayerData {
+        PlayerData {
+            id: id.to_string(),
+            name: id.to_string(),
+            position,
+            ovr: 70,
+            condition: 90,
+            fitness: 80,
+            pace: 70,
+            shooting: 70,
+            passing: 70,
+            tackling: 70,
+            strength: 70,
+            stamina: 70,
+            agility: 70,
+            dribbling: 70,
+            defending: 70,
+            positioning: 70,
+            vision: 70,
+            decisions: 70,
+            composure: 70,
+            aggression: 70,
+            teamwork: 70,
+            leadership: 70,
+            handling: 70,
+            reflexes: 70,
+            aerial: 70,
+            traits: vec![],
+            slot: None,
+            role: PlayerRole::Standard,
+        }
+    }
+
+    /// One keeper and ten outfielders, every attribute identical. If selection
+    /// were weighting by attributes alone, nothing would distinguish them.
+    fn eleven(prefix: &str) -> TeamData {
+        let mut players = vec![player(&format!("{prefix}_gk"), Position::Goalkeeper)];
+        for i in 0..10 {
+            players.push(player(&format!("{prefix}_o{i}"), Position::Defender));
+        }
+        TeamData {
+            id: prefix.to_string(),
+            name: prefix.to_string(),
+            formation: "4-4-2".to_string(),
+            play_style: PlayStyle::Balanced,
+            players,
+            tactics: TacticsConfig::default(),
+        }
+    }
+
+    fn state() -> LiveMatchState {
+        LiveMatchState::new(
+            eleven("home"),
+            eleven("away"),
+            MatchConfig::default(),
+            vec![],
+            vec![],
+            false,
+        )
+    }
+
+    /// Who faces a shot is decided by `pick_actor(.., Band::OwnBox, Need::Keep)`,
+    /// and nothing in that path asks whether the player is a goalkeeper.
+    /// `Slot::CenterBack` and `Slot::Goalkeeper` carry the *same* own-box
+    /// occupancy, and `Need::Keep` suitability is a plain attribute average
+    /// that is never zero for an outfielder — so centre-backs were being drawn
+    /// to keep goal, and their reflexes decided whether the shot went in.
+    ///
+    /// Nothing in the report would have shown it: `ShotSaved` is credited to
+    /// the shooter, and no per-player save is recorded anywhere.
+    #[test]
+    fn only_the_goalkeeper_keeps_goal() {
+        let state = state();
+        let mut rng = StdRng::seed_from_u64(20260908);
+
+        for _ in 0..500 {
+            let keeper = state.pick_actor(Side::Away, Band::OwnBox, Need::Keep, &mut rng);
+            assert_eq!(
+                keeper.id.as_ref(),
+                "away_gk",
+                "an outfielder was picked to face a shot"
+            );
+        }
+    }
+
+    /// The other half of the rule. A side whose keeper has been sent off and
+    /// who has used every substitution really does put an outfielder in goal,
+    /// so eligibility must fall back rather than leave nobody able to keep.
+    #[test]
+    fn an_outfielder_goes_in_goal_once_the_keeper_is_off() {
+        let mut state = state();
+        state.test_send_off("away_gk");
+        let mut rng = StdRng::seed_from_u64(20260908);
+
+        for _ in 0..50 {
+            let keeper = state.pick_actor(Side::Away, Band::OwnBox, Need::Keep, &mut rng);
+            assert_ne!(
+                keeper.id.as_ref(),
+                "away_gk",
+                "a sent-off keeper cannot face a shot"
+            );
+            assert!(
+                !keeper.id.is_empty(),
+                "somebody has to go in goal; got a placeholder"
+            );
+        }
     }
 }
