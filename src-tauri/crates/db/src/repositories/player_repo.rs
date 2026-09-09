@@ -555,6 +555,7 @@ mod tests {
             suggested_buy_option_fee: None,
             status: LoanOfferStatus::Accepted,
             date: "2026-08-01".to_string(),
+            closed_on: Some("2026-08-20".to_string()),
         });
         player.active_loan = Some(ActiveLoan {
             parent_team_id: "team-parent".to_string(),
@@ -579,6 +580,12 @@ mod tests {
         assert_eq!(stored.loan_offers.len(), 1);
         assert_eq!(stored.loan_offers[0].status, LoanOfferStatus::Accepted);
         assert_eq!(stored.loan_offers[0].buy_option_fee, Some(1_250_000));
+        // Offers ride in a JSON blob column, so a new field needs no migration — but only a
+        // round trip through SQLite proves it.
+        assert_eq!(
+            stored.loan_offers[0].closed_on.as_deref(),
+            Some("2026-08-20")
+        );
         assert_eq!(
             stored
                 .active_loan
