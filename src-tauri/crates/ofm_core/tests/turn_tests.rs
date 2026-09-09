@@ -777,6 +777,71 @@ fn simulate_other_matches_settles_knockout_draws_with_shootout() {
 }
 
 #[test]
+fn a_level_knockout_tie_keeps_the_shootout_the_engine_played() {
+    // The setup asks for extra time, so the engine plays the tie out and
+    // settles it from the spot itself: real takers, the keeper facing them,
+    // and the fixture's own seeded stream. The caller then saw a scoreline
+    // that was still level — shootout kicks are deliberately excluded from
+    // `home_goals`/`away_goals` — decided nobody had resolved it, and
+    // overwrote both totals with a shootout drawn from club strength alone.
+    //
+    // Two shootouts, two different answers, and the one that counted could not
+    // see who was taking the kicks. This asserts the stored score is the
+    // shootout that was actually played.
+    let mut saw_shootout = false;
+    for attempt in 0..200 {
+        let mut game = make_game_with_match();
+        let fixture_id = format!("cup-pens-{attempt}");
+        {
+            let league = game.league.as_mut().unwrap();
+            league.fixtures[0].id = fixture_id.clone();
+            league.fixtures[0].competition = FixtureCompetition::Cup;
+            league.knockout_rounds = vec![KnockoutRoundState {
+                id: "round-1".to_string(),
+                name: "Final".to_string(),
+                fixture_ids: vec![fixture_id],
+                bye_team_ids: Vec::new(),
+                completed: false,
+            }];
+        }
+        let today = game.clock.current_date.format("%Y-%m-%d").to_string();
+        turn::simulate_other_matches(&mut game, &today, None);
+
+        let result = game.league.as_ref().unwrap().fixtures[0]
+            .result
+            .as_ref()
+            .expect("fixture should have a result");
+        let (Some(home_pens), Some(away_pens)) = (result.home_penalties, result.away_penalties)
+        else {
+            continue;
+        };
+        let report = result
+            .report
+            .as_ref()
+            .expect("a simulated fixture carries its compact report");
+        let kicks = |side: &str| {
+            report
+                .events
+                .iter()
+                .filter(|e| e.event_type == "ShootoutGoal" && e.side == side)
+                .count() as u8
+        };
+
+        saw_shootout = true;
+        assert_eq!(
+            (home_pens, away_pens),
+            (kicks("Home"), kicks("Away")),
+            "the stored shootout score is not the one the kicks add up to"
+        );
+        break;
+    }
+    assert!(
+        saw_shootout,
+        "expected at least one shootout in 200 knockout sims"
+    );
+}
+
+#[test]
 fn a_level_knockout_tie_plays_extra_time_before_penalties() {
     // The batch path built its setup with `MatchSetup::league`, which does not
     // allow extra time, so an unwatched cup tie went from the ninetieth minute

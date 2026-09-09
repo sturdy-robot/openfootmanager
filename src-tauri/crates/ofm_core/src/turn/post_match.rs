@@ -39,6 +39,13 @@ fn compact_match_report(report: &engine::MatchReport) -> CompactMatchReport {
                     | engine::EventType::SecondYellow
                     | engine::EventType::Injury
                     | engine::EventType::Substitution
+                    // A cup tie settled on penalties is remembered by its
+                    // shootout or not at all: the kicks are excluded from
+                    // `home_goals`/`away_goals` on purpose, so without these
+                    // the save keeps a score of 1-1 and no account of how the
+                    // tie was actually won.
+                    | engine::EventType::ShootoutGoal
+                    | engine::EventType::ShootoutMiss
             )
         })
         .map(|event| CompactMatchEvent {

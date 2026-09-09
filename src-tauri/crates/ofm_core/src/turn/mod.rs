@@ -593,7 +593,20 @@ where
         .expect("this setup carries no engine config, so nothing can be declined");
     // A level knockout tie must produce a winner: resolve it with a simulated
     // shootout so the home side no longer advances by default on a draw.
-    if is_knockout && report.home_goals == report.away_goals {
+    //
+    // Only when the engine has not already done it. The setup above asks for
+    // extra time, so the built-in engine plays the tie out and settles it from
+    // the spot with the real takers against the real keeper, on this fixture's
+    // seeded stream. Shootout kicks are excluded from `home_goals`/`away_goals`
+    // by design, so a scoreline that is still level is not evidence that
+    // nobody has resolved the tie — and taking it as such threw the engine's
+    // shootout away and replaced it with one drawn from club strength alone,
+    // which cannot see who was on the pitch. `home_penalties` is the honest
+    // question: it is set only when kicks were actually taken.
+    //
+    // The fallback stays for the case it was written for: an engine that
+    // declines extra time or a shootout still has to produce a winner.
+    if is_knockout && report.home_goals == report.away_goals && report.home_penalties.is_none() {
         let home_strength = crate::catchup::club_strength(&game.players, &home_team_id);
         let away_strength = crate::catchup::club_strength(&game.players, &away_team_id);
         // Continues the fixture's seeded stream, so the shootout replays too.
