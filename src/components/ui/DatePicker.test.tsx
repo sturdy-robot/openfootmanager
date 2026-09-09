@@ -98,4 +98,43 @@ describe("DatePicker", () => {
 
     expect(screen.queryByRole("button", { name: "January" })).not.toBeInTheDocument();
   });
+
+  it("stays silent when it mounts with no date", () => {
+    // A pristine field starts with all three parts blank. Reporting that as a
+    // change would mark an untouched form dirty the moment it opens.
+    const onChange = vi.fn();
+
+    render(<DatePicker value="" onChange={onChange} />);
+
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("stays silent while only part of the date has been cleared", () => {
+    const onChange = vi.fn();
+    render(<DatePicker value="2024-03-07" onChange={onChange} />);
+    onChange.mockClear();
+
+    fireEvent.change(screen.getByPlaceholderText("DD"), { target: { value: "" } });
+
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("reports an empty date once every field has been cleared", async () => {
+    // Without this a date could be set but never removed, so an author who
+    // typed the wrong birthday was stuck with one.
+    const onChange = vi.fn();
+    render(<DatePicker value="2024-03-07" onChange={onChange} />);
+    onChange.mockClear();
+
+    fireEvent.change(screen.getByPlaceholderText("DD"), { target: { value: "" } });
+    fireEvent.change(screen.getByPlaceholderText("YYYY"), { target: { value: "" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "March" }));
+    // The mock echoes an untranslated key back, so this is the placeholder row.
+    fireEvent.click(screen.getByRole("button", { name: "date.month" }));
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenLastCalledWith("");
+    });
+  });
 });

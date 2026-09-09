@@ -104,6 +104,12 @@ export function DatePicker({ value, onChange, error }: DatePickerProps) {
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
+  // Whether there is currently a date here to remove. Clearing every part is
+  // only worth reporting as a change if something was set; a pristine field
+  // also has three blank parts, and telling the parent about that would mark
+  // an untouched form dirty the moment it opens.
+  const hasDateRef = useRef(parseDateValue(value) !== null);
+
   const [monthOpen, setMonthOpen] = useState(false);
   const monthRef = useRef<HTMLDivElement>(null);
 
@@ -111,10 +117,14 @@ export function DatePicker({ value, onChange, error }: DatePickerProps) {
   useEffect(() => {
     const nextValue = parseDateValue(value);
     if (nextValue) {
+      hasDateRef.current = true;
       setYear(nextValue.year);
       setMonth(nextValue.month);
       setDay(nextValue.day);
     } else {
+      // The parent already knows there is no date, so don't echo the clear
+      // back at it when this is what emptied the fields.
+      hasDateRef.current = false;
       setDay("");
       setMonth("");
       setYear("");
@@ -148,7 +158,14 @@ export function DatePicker({ value, onChange, error }: DatePickerProps) {
   // Update parent when any component changes, if valid
   useEffect(() => {
     if (day && month && year && year.length === 4) {
+      hasDateRef.current = true;
       onChangeRef.current(formatDateValue(day, month, year));
+      return;
+    }
+
+    if (!day && !month && !year && hasDateRef.current) {
+      hasDateRef.current = false;
+      onChangeRef.current("");
     }
   }, [day, month, year]);
 
@@ -214,6 +231,25 @@ export function DatePicker({ value, onChange, error }: DatePickerProps) {
         {monthOpen && (
           <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-white dark:bg-navy-700 rounded-lg shadow-xl border border-gray-200 dark:border-navy-600 overflow-hidden">
             <div className="max-h-48 overflow-y-auto">
+              {/*
+                Picking a month has to be undoable, otherwise a date can be
+                set but never removed — there is no other way back to a blank
+                month. Reuses the trigger's own placeholder as its label.
+              */}
+              <button
+                type="button"
+                onClick={() => {
+                  setMonth("");
+                  setMonthOpen(false);
+                }}
+                className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between transition-colors ${month === ""
+                    ? "bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400"
+                    : "text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-navy-600"
+                  }`}
+              >
+                <span>{t('date.month')}</span>
+                {month === "" && <Check className="w-4 h-4 text-primary-500" />}
+              </button>
               {months.map(m => (
                 <button
                   key={m.value}
