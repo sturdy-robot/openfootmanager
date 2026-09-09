@@ -40,4 +40,12 @@ describe("StaffForm", () => {
 
     expect(screen.getByText("worldEditor.staffRoleHelp")).toBeInTheDocument();
   });
+
+  it("captions the nationality picker once", () => {
+    // CountryCombobox renders its own caption, so the form's extra <label>
+    // printed "Nationality" twice above the same control.
+    renderForm();
+
+    expect(screen.getAllByText("worldEditor.staffNationality")).toHaveLength(1);
+  });
 });
