@@ -1,6 +1,6 @@
 use crate::event::{EventType, MatchEvent};
 use crate::rejection::CommandRejection;
-use crate::types::{Position, Side, Zone};
+use crate::types::{Position, Side, Slot, Zone};
 
 use super::{LiveMatchState, SubstitutionRecord};
 
@@ -187,6 +187,52 @@ impl LiveMatchState {
         }
     }
 
+    /// The deployed slots a shape asks for, ordered most defensive first so it
+    /// lines up with how `apply_formation` sorts the outfielders.
+    ///
+    /// Coarse `Position` cannot carry a formation: a wing-back and a centre
+    /// half are both `Defender`, and `placement` reads the slot and ignores the
+    /// position whenever one is set. So a formation change has to redeploy, or
+    /// it changes nothing the engine can see.
+    fn shape_slots(num_def: usize, num_mid: usize, num_fwd: usize) -> Vec<Slot> {
+        use Slot::*;
+
+        /// One line of the shape: the central berths first, then the two wide
+        /// ones when the line is big enough to have them. A back three is three
+        /// centre halves; a back four is two plus full backs.
+        fn line(n: usize, central: Slot, wide: [Slot; 2], wide_from: usize) -> Vec<Slot> {
+            let use_wide = n >= wide_from;
+            let centrals = if use_wide { n - 2 } else { n };
+            let mut out = vec![central; centrals];
+            if use_wide {
+                out.push(wide[0]);
+                out.push(wide[1]);
+            }
+            out
+        }
+
+        // Five at the back is wing backs; four is full backs; three is three
+        // centre halves.
+        let back_wide = if num_def >= 5 {
+            [RightWingBack, LeftWingBack]
+        } else {
+            [RightBack, LeftBack]
+        };
+
+        let mut slots = Vec::with_capacity(num_def + num_mid + num_fwd);
+        slots.extend(line(num_def, CenterBack, back_wide, 4));
+        slots.extend(line(
+            num_mid,
+            CentralMidfielder,
+            [RightMidfielder, LeftMidfielder],
+            4,
+        ));
+        // A front three is a striker and two wingers; one or two up top are
+        // strikers.
+        slots.extend(line(num_fwd, Striker, [RightWinger, LeftWinger], 3));
+        slots
+    }
+
     /// Apply a formation change: update the formation string and redistribute
     /// outfield player positions to match the new shape.
     pub(super) fn apply_formation(&mut self, side: Side, formation: &str) {
@@ -217,6 +263,7 @@ impl LiveMatchState {
         });
 
         // Assign positions: first num_def → Defender, next num_mid → Midfielder, rest → Forward
+        let shape = Self::shape_slots(num_def, num_mid, num_fwd);
         for (slot, &idx) in outfield_indices.iter().enumerate() {
             let new_pos = if slot < num_def {
                 Position::Defender
@@ -229,6 +276,11 @@ impl LiveMatchState {
                 continue;
             };
             team.players[idx].position = new_pos;
+            // And the deployed slot, which is the one `placement` actually
+            // reads. Rewriting `position` alone left every real squad — every
+            // player carries a slot once built from a save — occupying the
+            // shape it had just been moved out of.
+            team.players[idx].slot = shape.get(slot).copied();
         }
 
         // Everyone is still on the pitch and every index is still valid, but
@@ -249,7 +301,8 @@ mod tests {
     use crate::live_match::helpers::Need;
     use crate::sim::state::Band;
     use crate::types::{
-        MatchConfig, PlayStyle, PlayerData, PlayerRole, Position, Side, TacticsConfig, TeamData,
+        MatchConfig, PlayStyle, PlayerData, PlayerRole, Position, Side, Slot, TacticsConfig,
+        TeamData,
     };
 
     fn player(id: &str, position: Position, defending: u8) -> PlayerData {
@@ -317,6 +370,137 @@ mod tests {
             vec![],
             false,
         )
+    }
+
+    /// The same eleven, deployed — a 4-4-2 with every slot filled, which is
+    /// what a squad built from a save looks like.
+    fn slotted_state() -> LiveMatchState {
+        let deploy = |mut team: TeamData| {
+            const SHAPE: [Slot; 11] = [
+                Slot::Goalkeeper,
+                Slot::CenterBack,
+                Slot::CenterBack,
+                Slot::RightBack,
+                Slot::LeftBack,
+                Slot::DefensiveMidfielder,
+                Slot::CentralMidfielder,
+                Slot::RightMidfielder,
+                Slot::LeftMidfielder,
+                Slot::Striker,
+                Slot::Striker,
+            ];
+            for (player, slot) in team.players.iter_mut().zip(SHAPE) {
+                player.slot = Some(slot);
+            }
+            team
+        };
+        LiveMatchState::new(
+            deploy(eleven("home")),
+            deploy(eleven("away")),
+            MatchConfig::default(),
+            vec![],
+            vec![],
+            false,
+        )
+    }
+
+    #[test]
+    fn a_shape_deploys_the_line_it_names() {
+        use crate::live_match::LiveMatchState as S;
+        use Slot::*;
+        // A back three is three centre halves, not one with two full backs.
+        assert_eq!(S::shape_slots(3, 0, 0), vec![CenterBack; 3]);
+        assert_eq!(
+            S::shape_slots(4, 0, 0),
+            vec![CenterBack, CenterBack, RightBack, LeftBack]
+        );
+        // Five at the back is wing backs.
+        assert_eq!(
+            S::shape_slots(5, 0, 0),
+            vec![
+                CenterBack,
+                CenterBack,
+                CenterBack,
+                RightWingBack,
+                LeftWingBack
+            ]
+        );
+        // A midfield three is central; a four has wide men.
+        assert_eq!(S::shape_slots(0, 3, 0), vec![CentralMidfielder; 3]);
+        assert_eq!(
+            S::shape_slots(0, 4, 0),
+            vec![
+                CentralMidfielder,
+                CentralMidfielder,
+                RightMidfielder,
+                LeftMidfielder
+            ]
+        );
+        // A front three is a striker and two wingers.
+        assert_eq!(S::shape_slots(0, 0, 1), vec![Striker]);
+        assert_eq!(S::shape_slots(0, 0, 2), vec![Striker, Striker]);
+        assert_eq!(
+            S::shape_slots(0, 0, 3),
+            vec![Striker, RightWinger, LeftWinger]
+        );
+        // And a whole shape fills exactly ten outfield berths.
+        assert_eq!(S::shape_slots(4, 4, 2).len(), 10);
+        assert_eq!(S::shape_slots(3, 4, 3).len(), 10);
+    }
+
+    /// The same check, on players who carry a deployed slot — which every
+    /// player built from a real save does (`team_builder::to_engine_slot`).
+    ///
+    /// `placement` prefers the slot and ignores `position` whenever one is set,
+    /// and `apply_formation` only ever rewrote `position`. So on any real squad
+    /// a formation change moved nothing at all: the shape on the screen
+    /// changed, the engine kept picking players for the shape they had stopped
+    /// playing. The existing test above cannot see it, because its players have
+    /// no slot and therefore fall through to `position_occupancy`.
+    #[test]
+    fn changing_formation_moves_players_who_have_a_deployed_slot() {
+        let mut state = slotted_state();
+
+        let before: Vec<f64> = (0..11)
+            .map(|i| {
+                state
+                    .cache(Side::Home)
+                    .placement(i, Band::OppBox, Need::Shoot)
+            })
+            .collect();
+
+        state.apply_formation(Side::Home, "3-4-3");
+
+        let after: Vec<f64> = (0..11)
+            .map(|i| {
+                state
+                    .cache(Side::Home)
+                    .placement(i, Band::OppBox, Need::Shoot)
+            })
+            .collect();
+
+        assert_ne!(
+            before, after,
+            "4-4-2 to 3-4-3 left every deployed slot where it was, so the \
+             engine still picks for the old shape"
+        );
+
+        let slots: Vec<Option<Slot>> = state
+            .team_ref(Side::Home)
+            .players
+            .iter()
+            .map(|p| p.slot)
+            .collect();
+        assert_eq!(
+            slots[0],
+            Some(Slot::Goalkeeper),
+            "the keeper does not get redeployed by a formation change"
+        );
+        assert!(
+            slots[1..].iter().all(Option::is_some),
+            "an outfielder left without a slot falls back to coarse position \
+             occupancy and loses the shape the formation was changed to"
+        );
     }
 
     /// Changing formation rewrites players' positions in place. Nobody leaves
