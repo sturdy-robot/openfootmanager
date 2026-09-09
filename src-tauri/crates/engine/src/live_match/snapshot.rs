@@ -69,10 +69,23 @@ impl LiveMatchState {
     /// Bookings split by side. The engine tallies them in one map keyed by
     /// player id, because that is how a booking is looked up during play.
     fn yellows_by_side(&self) -> (HashMap<String, u8>, HashMap<String, u8>) {
+        // The bench counts, and a booked player who is substituted is *removed*
+        // from the eleven and pushed onto it. Asking only whether he is still
+        // on the pitch filed his card against the opposition the moment he came
+        // off, so the away card count went up when no away player had been
+        // booked at all.
+        //
+        // The home side is still the one tested: an id belonging to neither
+        // squad cannot be booked, and treating an unknown id as away keeps this
+        // total by construction.
+        let is_home = |pid: &String| {
+            self.home.players.iter().any(|p| p.id == *pid)
+                || self.home_bench.iter().any(|p| p.id == *pid)
+        };
         let mut home = HashMap::new();
         let mut away = HashMap::new();
         for (pid, count) in &self.yellows {
-            if self.home.players.iter().any(|p| p.id == *pid) {
+            if is_home(pid) {
                 home.insert(pid.clone(), *count);
             } else {
                 away.insert(pid.clone(), *count);
@@ -261,5 +274,100 @@ fn empty_team(name: &str) -> crate::types::TeamData {
         play_style: crate::types::PlayStyle::Balanced,
         tactics: crate::types::TacticsConfig::default(),
         players: Vec::new(),
+    }
+}
+
+#[cfg(test)]
+mod booking_side_tests {
+    use super::*;
+    use crate::types::{
+        MatchConfig, PlayStyle, PlayerData, PlayerRole, Position, Side, TacticsConfig, TeamData,
+    };
+
+    fn player(id: &str, position: Position) -> PlayerData {
+        PlayerData {
+            id: id.to_string(),
+            name: id.to_string(),
+            position,
+            ovr: 70,
+            condition: 90,
+            fitness: 80,
+            pace: 70,
+            shooting: 70,
+            passing: 70,
+            tackling: 70,
+            strength: 70,
+            stamina: 70,
+            agility: 70,
+            dribbling: 70,
+            defending: 70,
+            positioning: 70,
+            vision: 70,
+            decisions: 70,
+            composure: 70,
+            aggression: 70,
+            teamwork: 70,
+            leadership: 70,
+            handling: 70,
+            reflexes: 70,
+            aerial: 70,
+            traits: vec![],
+            slot: None,
+            role: PlayerRole::Standard,
+        }
+    }
+
+    fn eleven(prefix: &str) -> TeamData {
+        let mut players = vec![player(&format!("{prefix}_gk"), Position::Goalkeeper)];
+        for i in 0..10 {
+            players.push(player(&format!("{prefix}_o{i}"), Position::Midfielder));
+        }
+        TeamData {
+            id: prefix.to_string(),
+            name: prefix.to_string(),
+            formation: "4-4-2".to_string(),
+            play_style: PlayStyle::Balanced,
+            players,
+            tactics: TacticsConfig::default(),
+        }
+    }
+
+    /// Bookings are tallied in one map keyed by player id, and split by side by
+    /// asking whether the player is in the home eleven. A substitution *removes*
+    /// him from that eleven and pushes him to the bench, so from the moment a
+    /// booked player came off, his card was reported against the opposition —
+    /// the away card count went up when an away player had done nothing.
+    #[test]
+    fn a_booking_stays_with_the_side_that_earned_it_after_a_substitution() {
+        let mut state = LiveMatchState::new(
+            eleven("home"),
+            eleven("away"),
+            MatchConfig::default(),
+            vec![player("home_sub", Position::Midfielder)],
+            vec![player("away_sub", Position::Midfielder)],
+            false,
+        );
+
+        state.yellows.insert("home_o1".to_string(), 1);
+        let snap = state.squad();
+        assert!(
+            snap.home.yellows.contains_key("home_o1"),
+            "a booked home player is a home booking while he is on the pitch"
+        );
+
+        state
+            .do_substitution(Side::Home, "home_o1", "home_sub")
+            .expect("a first substitution with a player on the bench is legal");
+
+        let snap = state.squad();
+        assert!(
+            snap.home.yellows.contains_key("home_o1"),
+            "the booking followed him off the pitch and was filed against the \
+             other team"
+        );
+        assert!(
+            !snap.away.yellows.contains_key("home_o1"),
+            "a home player's card is never an away booking"
+        );
     }
 }
