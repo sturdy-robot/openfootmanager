@@ -321,6 +321,16 @@ pub struct LiveMatchState {
     allows_extra_time: bool,
 
     // Stoppage time (pre-computed when each half starts)
+    /// The first minute that will be played in the current half.
+    ///
+    /// A half used to kick off wherever the previous one ended but stop at an
+    /// absolute minute — the second half at `90 + stoppage`, extra time's first
+    /// period at `105 + stoppage` — so each half was shortened by exactly the
+    /// stoppage played in the half before it. Four added minutes at the end of
+    /// the first half gave a forty-one-minute second half; extra time could run
+    /// ten minutes instead of fifteen. Each half now ends a half's length after
+    /// its own kick-off.
+    half_started_at: u8,
     first_half_stoppage: u8,
     second_half_stoppage: u8,
     et_first_half_stoppage: u8,
@@ -392,6 +402,7 @@ impl LiveMatchState {
             home_set_pieces: SetPieceTakers::default(),
             away_set_pieces: SetPieceTakers::default(),
             allows_extra_time,
+            half_started_at: 1,
             first_half_stoppage: 0,
             second_half_stoppage: 0,
             et_first_half_stoppage: 0,

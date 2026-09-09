@@ -1012,10 +1012,11 @@ fn an_interval_resolves_no_football() {
     // The contract says zero is a legitimate answer and names an interval as
     // the case. The reference engine has to mean it.
     //
-    // Only bites when the first half runs to exactly 45: the second half opens
-    // at `max(current, 46)`, so with any stoppage the minute does not move and
-    // a resolved time read off the minute alone looks right by accident. So
-    // find the seed where it does move, which is the whole point.
+    // The second half now opens on the whistle that ended the first, so this
+    // transition never moves the running minute — a resolved time read off the
+    // minute alone would look right here by accident. The case where the minute
+    // *does* move without football being played is extra time, and
+    // `entering_extra_time_resolves_no_football_either` is the one that bites.
     let mut found = None;
     for seed in 0..80u64 {
         let (mut state, mut rng) = kicked_off(seed);
@@ -1037,8 +1038,9 @@ fn an_interval_resolves_no_football() {
     assert_eq!(second_half.phase, MatchPhase::SecondHalf);
     assert_eq!(
         state.minute(),
-        46,
-        "the running minute moved, which is exactly what makes this the hard case"
+        45,
+        "the second half kicks off on the half-time whistle; it does not consume \
+         a minute of football to do it"
     );
     assert_eq!(
         second_half.resolved_ms, 0,

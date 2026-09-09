@@ -28,7 +28,7 @@ pub mod view;
 ///
 /// Do **not** bump it for changes that cannot affect a simulated match, such as
 /// documentation, renames, or new APIs no simulation path calls.
-pub const ENGINE_VERSION: u32 = 22;
+pub const ENGINE_VERSION: u32 = 23;
 
 /// Offset that derives the dugout's random stream from the fixture seed.
 ///

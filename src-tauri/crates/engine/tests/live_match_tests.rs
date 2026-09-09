@@ -2128,3 +2128,71 @@ fn a_forward_touches_the_ball_outside_the_final_third() {
     }
     assert!(passes > 0, "forwards attempted no passes across 40 matches");
 }
+
+// ===========================================================================
+// Tests: how long a half actually lasts
+// ===========================================================================
+
+/// Minutes actually simulated in each phase, keyed by phase name.
+fn minutes_per_phase(results: &[MinuteResult]) -> HashMap<String, usize> {
+    let mut counts: HashMap<String, usize> = HashMap::new();
+    for r in results {
+        // Phases that are a break rather than football resolve no minute.
+        let name = format!("{:?}", r.phase);
+        if matches!(
+            name.as_str(),
+            "HalfTime" | "FullTime" | "ExtraTimeHalfTime" | "ExtraTimeEnd" | "Finished"
+        ) {
+            continue;
+        }
+        *counts.entry(name).or_default() += 1;
+    }
+    counts
+}
+
+/// Every half kicked off from wherever the last one ended, but stopped at an
+/// absolute minute — the second half at `90 + stoppage`, extra time's first
+/// half at `105 + stoppage`. So each half was shortened by exactly the
+/// stoppage time played in the half before it.
+///
+/// With four added minutes at the end of the first half, the second half ran
+/// forty-one minutes and the match finished after ninety-two. In extra time it
+/// was worse in proportion: a second half ending at 94 left the first period of
+/// extra time running from 95 to 105 — ten minutes of football where the laws
+/// of the game, and the scoreboard, say fifteen.
+#[test]
+fn every_half_runs_its_full_length_whatever_the_stoppage_before_it() {
+    for seed in 0..40 {
+        let mut state = make_live_match(true);
+        let mut rng = seeded_rng(seed);
+        let results = run_to_finish(&mut state, &mut rng);
+        let played = minutes_per_phase(&results);
+
+        let first = played.get("FirstHalf").copied().unwrap_or(0);
+        let second = played.get("SecondHalf").copied().unwrap_or(0);
+        assert!(
+            (45..=45 + 5).contains(&first),
+            "seed {seed}: the first half ran {first} minutes"
+        );
+        assert!(
+            (45..=45 + 5).contains(&second),
+            "seed {seed}: the second half ran {second} minutes, so the first \
+             half's stoppage was taken back out of it"
+        );
+
+        // Extra time only for the seeds that reached it.
+        if let Some(&et_first) = played.get("ExtraTimeFirstHalf") {
+            assert!(
+                (15..=15 + 2).contains(&et_first),
+                "seed {seed}: the first period of extra time ran {et_first} \
+                 minutes, not fifteen"
+            );
+            let et_second = played.get("ExtraTimeSecondHalf").copied().unwrap_or(0);
+            assert!(
+                (15..=15 + 2).contains(&et_second),
+                "seed {seed}: the second period of extra time ran {et_second} \
+                 minutes, not fifteen"
+            );
+        }
+    }
+}
