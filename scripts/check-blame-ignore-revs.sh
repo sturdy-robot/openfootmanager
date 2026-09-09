@@ -71,4 +71,8 @@ if [ "$status" -ne 0 ]; then
     exit 1
 fi
 
-echo "check-blame-ignore-revs: all $found ignored revisions resolve"
+if [ "$found" -eq 1 ]; then
+    echo "check-blame-ignore-revs: the one ignored revision resolves"
+else
+    echo "check-blame-ignore-revs: all $found ignored revisions resolve"
+fi
