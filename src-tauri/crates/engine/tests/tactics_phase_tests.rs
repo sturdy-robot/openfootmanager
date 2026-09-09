@@ -372,3 +372,114 @@ fn aggressive_pressing_tires_the_team_more_than_passive() {
         "aggressive pressing should leave the team more tired: aggressive {aggressive_cond} vs passive {passive_cond}"
     );
 }
+
+// ---------------------------------------------------------------------------
+// Play style
+// ---------------------------------------------------------------------------
+//
+// `play_style_modifier` carries an attacking and a defensive figure for every
+// style, but the only call in the simulation asked for `PlayStylePhase::Press`,
+// where all but `HighPress` return 1.0. Every one of those numbers was
+// unreachable, so Balanced, Attacking, Defensive, Possession and Counter were
+// the same tactic: a manager could switch between them and change nothing but
+// the label on the screen.
+//
+// These run the same band of seeds the dial tests use and assert the styles
+// separate. Against the unfixed engine the totals are not merely close, they
+// are identical.
+
+fn styled(id: &str, style: PlayStyle) -> TeamData {
+    TeamData {
+        play_style: style,
+        ..team(id, TacticsConfig::default())
+    }
+}
+
+/// Shots for both sides plus what the opposition actually scored. Goals
+/// conceded rather than shots conceded: a side told to sit in keeps the ball
+/// less, so the opposition takes *more* shots at it — that is football, not a
+/// defect. What defending better has to show up in is how many of them go in.
+#[derive(Default, Clone, Copy)]
+struct StyleTotals {
+    home_shots: usize,
+    away_shots: usize,
+    away_goals: usize,
+}
+
+fn play_styled(home: PlayStyle, seed: u64) -> StyleTotals {
+    let mut state = LiveMatchState::new(
+        styled("h", home),
+        styled("a", PlayStyle::Balanced),
+        MatchConfig::default(),
+        vec![],
+        vec![],
+        false,
+    );
+    let mut rng = StdRng::seed_from_u64(seed);
+    let mut t = StyleTotals::default();
+    loop {
+        let r = state.step_minute(&mut rng);
+        for e in &r.events {
+            if SHOTS.contains(&e.event_type) {
+                match e.side {
+                    Side::Home => t.home_shots += 1,
+                    Side::Away => t.away_shots += 1,
+                }
+            }
+            if e.side == Side::Away
+                && matches!(e.event_type, EventType::Goal | EventType::PenaltyGoal)
+            {
+                t.away_goals += 1;
+            }
+        }
+        if r.is_finished {
+            break;
+        }
+    }
+    t
+}
+
+fn style_band(home: PlayStyle, metric: impl Fn(&StyleTotals) -> usize) -> usize {
+    (0..SEEDS).map(|s| metric(&play_styled(home, s))).sum()
+}
+
+#[test]
+fn an_attacking_side_creates_more_than_a_defensive_one() {
+    let attacking = style_band(PlayStyle::Attacking, |t| t.home_shots);
+    let defensive = style_band(PlayStyle::Defensive, |t| t.home_shots);
+    assert!(
+        attacking > defensive,
+        "Attacking produced {attacking} shots and Defensive {defensive}; \
+         the two styles are not reaching the simulation"
+    );
+}
+
+#[test]
+fn a_defensive_side_concedes_fewer_goals_than_an_attacking_one() {
+    let against_attacking = style_band(PlayStyle::Attacking, |t| t.away_goals);
+    let against_defensive = style_band(PlayStyle::Defensive, |t| t.away_goals);
+    assert!(
+        against_defensive < against_attacking,
+        "the opposition scored {against_defensive} against Defensive and \
+         {against_attacking} against Attacking; committing forward is costing \
+         nothing at the back"
+    );
+}
+
+#[test]
+fn balanced_is_not_the_same_tactic_as_every_other_style() {
+    // The blunt version of the above, and the one that says what was actually
+    // wrong: four styles were indistinguishable from Balanced.
+    let balanced = style_band(PlayStyle::Balanced, |t| t.home_shots);
+    for style in [
+        PlayStyle::Attacking,
+        PlayStyle::Defensive,
+        PlayStyle::Counter,
+    ] {
+        assert_ne!(
+            style_band(style, |t| t.home_shots),
+            balanced,
+            "{style:?} produces exactly the balanced total, so it is not being applied"
+        );
+    }
+}

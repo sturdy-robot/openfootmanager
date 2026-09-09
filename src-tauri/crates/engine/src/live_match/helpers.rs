@@ -477,6 +477,23 @@ impl LiveMatchState {
     // Rating helpers
     // -----------------------------------------------------------------------
 
+    /// The team's play style, as a multiplier on this side's rating in this
+    /// phase of an action.
+    ///
+    /// `play_style_modifier` has carried an attacking and a defensive figure
+    /// for every style from the start, but the only call in the simulation
+    /// asked for `PlayStylePhase::Press`, where everything except `HighPress`
+    /// returns 1.0. So Balanced, Attacking, Defensive, Possession and Counter
+    /// were one tactic under five names, and switching between them changed
+    /// the label on the screen and nothing else.
+    ///
+    /// Applied beside `role_attribute_modifier`, which is the same idea one
+    /// level down: the role says what this player is asked to do, the style
+    /// says what the team is.
+    pub(super) fn team_style(&self, side: Side, phase: PlayStylePhase) -> f64 {
+        play_style_modifier(self.team_ref(side).play_style, phase, true)
+    }
+
     pub(super) fn effective_press(&self, pressing_side: Side) -> f64 {
         let team = self.team_ref(pressing_side);
         let base = team.position_attr_avg(Position::Midfielder, |p| {

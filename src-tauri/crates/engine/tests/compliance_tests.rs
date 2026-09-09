@@ -26,7 +26,7 @@ const SEED: u64 = 0xDEC0_DE01;
 /// verified that they had. Repinning a fingerprint here without bumping
 /// `ENGINE_VERSION` now leaves this constant disagreeing with the engine, and
 /// [`assert_golden`] fails on that before it ever looks at the fingerprint.
-const GOLDEN_VERSION: u32 = 20;
+const GOLDEN_VERSION: u32 = 21;
 
 /// Assert a pinned behaviour fingerprint, and that the version stamp still
 /// matches the one it was captured under.

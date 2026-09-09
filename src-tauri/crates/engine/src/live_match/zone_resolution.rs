@@ -424,13 +424,15 @@ impl LiveMatchState {
         let shoot_raw =
             (shooter.shooting as f64 + shooter.composure as f64 + shooter.decisions as f64) / 3.0;
         let shoot_rating = self.condition_adjusted_skill(&shooter, shoot_raw)
-            * trait_bonus(&shooter, TraitContext::Shooting);
+            * trait_bonus(&shooter, TraitContext::Shooting)
+            * self.team_style(att_side, PlayStylePhase::Attack);
         let gk_raw = (goalkeeper.handling as f64
             + goalkeeper.reflexes as f64
             + goalkeeper.positioning as f64)
             / 3.0;
         let gk_rating = self.condition_adjusted_skill(&goalkeeper, gk_raw)
-            * trait_bonus(&goalkeeper, TraitContext::Goalkeeping);
+            * trait_bonus(&goalkeeper, TraitContext::Goalkeeping)
+            * self.team_style(def_side, PlayStylePhase::Defense);
 
         // Chance quality scales the finisher's own accuracy rather than
         // replacing it, so a good striker is still a good striker from range —
@@ -735,10 +737,12 @@ impl LiveMatchState {
         let att_eff = self.condition_adjusted_skill(attacker, att_raw)
             * trait_bonus(attacker, TraitContext::Dribbling)
             * role_attribute_modifier(attacker.role, PlayStylePhase::Attack)
+            * self.team_style(att_side, PlayStylePhase::Attack)
             * crate::shared::home_mod(att_side, &self.config);
         let def_eff = self.condition_adjusted_skill(&defender, def_raw)
             * trait_bonus(&defender, TraitContext::Tackling)
             * role_attribute_modifier(defender.role, PlayStylePhase::Defense)
+            * self.team_style(def_side, PlayStylePhase::Defense)
             * crate::shared::home_mod(def_side, &self.config)
             * tactics_shape_modifier(&self.team_ref(def_side).tactics);
         let success = att_eff / (att_eff + def_eff);
