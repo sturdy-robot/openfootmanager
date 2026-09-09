@@ -8,8 +8,11 @@ import type { StaffDef } from "./types";
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     // Echo the key back so a test can name the string it expects without
-    // depending on the English wording, which translators may change.
-    t: (key: string, opts?: { defaultValue?: string }) => opts?.defaultValue ?? key,
+    // depending on the English wording, which translators may change. Both
+    // default forms i18next accepts are honoured, since the shared controls
+    // this form renders use the bare-string one.
+    t: (key: string, opts?: string | { defaultValue?: string }) =>
+      typeof opts === "string" ? opts : opts?.defaultValue ?? key,
     i18n: { language: "en" },
   }),
 }));
@@ -47,5 +50,14 @@ describe("StaffForm", () => {
     renderForm();
 
     expect(screen.getAllByText("worldEditor.staffNationality")).toHaveLength(1);
+  });
+
+  it("takes a date of birth through the same picker the player form uses", () => {
+    // Staff were the last field in the app on a native <input type="date">,
+    // which renders in the browser's locale, not the game's.
+    renderForm({ dateOfBirth: "1978-05-27" });
+
+    expect(screen.getByPlaceholderText("DD")).toHaveValue("27");
+    expect(screen.getByPlaceholderText("YYYY")).toHaveValue("1978");
   });
 });
