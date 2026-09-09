@@ -118,6 +118,37 @@ mod tests {
         );
     }
 
+    /// No tool translates its own errors.
+    ///
+    /// This is the rule the branch exists to establish, and the one the other two tests do not
+    /// hold: revert every call site and they both still pass, because `translate_error` itself is
+    /// unchanged. What went wrong was never the function — it was 57 call sites invoking it
+    /// before the wrapper did. So the check is on the layering: `tools_impl` returns keys, and
+    /// `err_result` in `tools.rs` is the only place one becomes a sentence.
+    #[test]
+    fn no_tool_renders_its_own_errors() {
+        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/src/mcp_server/tools_impl");
+        let mut offenders: Vec<String> = Vec::new();
+
+        for entry in std::fs::read_dir(dir).expect("tools_impl is readable") {
+            let path = entry.expect("readable entry").path();
+            if path.extension().and_then(|e| e.to_str()) != Some("rs") {
+                continue;
+            }
+            let source = std::fs::read_to_string(&path).expect("readable source");
+            if source.contains("translate_error") {
+                offenders.push(path.display().to_string());
+            }
+        }
+
+        assert!(
+            offenders.is_empty(),
+            "these tools translate before returning, so `err_result` re-wraps the sentence and \
+             the agent reads \"Error: \" on a key that is mapped fine:\n{}",
+            offenders.join("\n")
+        );
+    }
+
     /// Every `"be.error…"` string literal in a source file.
     fn keys_in(source: &str) -> Vec<String> {
         let mut found = Vec::new();
