@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { DatePicker } from "./DatePicker";
@@ -97,6 +98,41 @@ describe("DatePicker", () => {
     fireEvent.mouseDown(document.body);
 
     expect(screen.queryByRole("button", { name: "January" })).not.toBeInTheDocument();
+  });
+
+  it("stays silent when it mounts with a date already set", () => {
+    // The parts used to start blank while `value` already held a date, so the
+    // first commit looked exactly like a user clearing the field. Feeding the
+    // result back — which is what the editor forms do — then alternated
+    // between clearing and restoring the date forever.
+    const emitted: string[] = [];
+
+    function ControlledHost() {
+      const [value, setValue] = useState("1999-02-03");
+      return (
+        <DatePicker
+          value={value}
+          onChange={(v) => {
+            emitted.push(v);
+            setValue(v);
+          }}
+        />
+      );
+    }
+
+    render(<ControlledHost />);
+
+    expect(emitted).toEqual([]);
+  });
+
+  it("still reports a date that needed normalising", () => {
+    // The guard above must not swallow the picker's own corrections: an
+    // unpadded value differs from its normalised form and is still news.
+    const onChange = vi.fn();
+
+    render(<DatePicker value="1999-2-3" onChange={onChange} />);
+
+    expect(onChange).toHaveBeenCalledWith("1999-02-03");
   });
 
   it("stays silent when it mounts with no date", () => {

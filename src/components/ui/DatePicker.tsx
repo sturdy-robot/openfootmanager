@@ -100,10 +100,14 @@ function getSelectedMonthLabel(monthValue: string, months: MonthOption[], fallba
 export function DatePicker({ value, onChange, error, labelledBy }: DatePickerProps) {
   const { t, i18n } = useTranslation();
 
-  // Parse initial value or use current date components
-  const [day, setDay] = useState<string>("");
-  const [month, setMonth] = useState<string>("");
-  const [year, setYear] = useState<string>("");
+  // Seeded from `value` rather than blank. The effect below also syncs from
+  // `value`, but its result only lands on the *next* render — so starting
+  // blank meant the first commit had three empty parts while there was a date
+  // to show, which the notify effect reads as "the user cleared it".
+  const initialParts = parseDateValue(value);
+  const [day, setDay] = useState<string>(initialParts?.day ?? "");
+  const [month, setMonth] = useState<string>(initialParts?.month ?? "");
+  const [year, setYear] = useState<string>(initialParts?.year ?? "");
 
   // Keep a stable ref so the notify effect below doesn't need onChange
   // in its dependency array — avoids firing with stale day/month/year
@@ -111,11 +115,17 @@ export function DatePicker({ value, onChange, error, labelledBy }: DatePickerPro
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
+  // Read inside the notify effect without making it a dependency, so the
+  // effect can tell "the parts now say something new" from "the parts were
+  // just synced from the prop".
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
   // Whether there is currently a date here to remove. Clearing every part is
   // only worth reporting as a change if something was set; a pristine field
   // also has three blank parts, and telling the parent about that would mark
   // an untouched form dirty the moment it opens.
-  const hasDateRef = useRef(parseDateValue(value) !== null);
+  const hasDateRef = useRef(initialParts !== null);
 
   const [monthOpen, setMonthOpen] = useState(false);
   const monthRef = useRef<HTMLDivElement>(null);
@@ -166,7 +176,15 @@ export function DatePicker({ value, onChange, error, labelledBy }: DatePickerPro
   useEffect(() => {
     if (day && month && year && year.length === 4) {
       hasDateRef.current = true;
-      onChangeRef.current(formatDateValue(day, month, year));
+      const next = formatDateValue(day, month, year);
+      // Only when it actually says something new. Otherwise merely opening a
+      // record with a birthday reported a change, which marks the package
+      // dirty and triggers an autosave for a value nobody touched. An
+      // unpadded or two-digit incoming value still differs from its
+      // normalised form, so that correction is still reported.
+      if (next !== valueRef.current) {
+        onChangeRef.current(next);
+      }
       return;
     }
 
