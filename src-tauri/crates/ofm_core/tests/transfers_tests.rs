@@ -2957,6 +2957,66 @@ fn an_expired_loan_offer_records_the_date_it_closed() {
     );
 }
 
+/// Closing an offer must not move `date`. Expiry never did, but the manager-driven paths used to
+/// stamp `date = today` on the way out, which quietly destroyed the arrival date on exactly the
+/// offers whose history the UI wants to show ("received 27 Dec, talks cooled 10 Jan").
+#[test]
+fn rejecting_a_loan_offer_preserves_the_arrival_date() {
+    let mut player = make_user_player("player-reject-keeps-arrival");
+    player.loan_listed = true;
+    player
+        .loan_offers
+        .push(make_pending_incoming_loan_offer("loan-offer-1", 75, None));
+
+    let mut game = make_game_with_player(player, vec![], 5_000_000, 2_000_000);
+    game.clock.advance_days(6);
+    let rejected_on = game.clock.current_date.format("%Y-%m-%d").to_string();
+
+    respond_to_loan_offer(
+        &mut game,
+        "player-reject-keeps-arrival",
+        "loan-offer-1",
+        false,
+    )
+    .expect("rejecting an incoming loan offer should succeed");
+
+    let offer = &find_player(&game, "player-reject-keeps-arrival").loan_offers[0];
+    assert_eq!(offer.status, LoanOfferStatus::Rejected);
+    assert_eq!(offer.date, "2026-08-01", "arrival date must be preserved");
+    assert_eq!(offer.closed_on.as_deref(), Some(rejected_on.as_str()));
+}
+
+/// Same rule on the permanent side: a counter the club walks away from closes the offer without
+/// rewriting when it arrived.
+#[test]
+fn a_counter_that_ends_talks_preserves_the_transfer_offer_arrival_date() {
+    let mut player = make_user_player("player-counter-keeps-arrival");
+    player.transfer_listed = true;
+    player.market_value = 1_000_000;
+    player
+        .transfer_offers
+        .push(make_pending_incoming_offer("offer-1", 900_000));
+
+    let mut game = make_game_with_player(player, vec![], 5_000_000, 2_000_000);
+    game.teams[1].finance = 6_000_000;
+    game.teams[1].transfer_budget = 3_000_000;
+    game.clock.advance_days(4);
+
+    // Far above anything the buyer would entertain, so talks end rather than continue.
+    counter_offer(
+        &mut game,
+        "player-counter-keeps-arrival",
+        "offer-1",
+        900_000_000,
+    )
+    .expect("countering should return an outcome");
+
+    let offer = &find_player(&game, "player-counter-keeps-arrival").transfer_offers[0];
+    assert_eq!(offer.status, TransferOfferStatus::Rejected);
+    assert_eq!(offer.date, "2026-08-01", "arrival date must be preserved");
+    assert!(offer.closed_on.is_some(), "closure should be recorded");
+}
+
 /// Terminal offers are kept for a while so the UI can show recent history, then dropped —
 /// otherwise every rejected approach stays on the player for the life of the save.
 #[test]

@@ -2060,7 +2060,8 @@ pub fn respond_to_loan_offer(
             close_loan_offer(offer, LoanOfferStatus::Rejected, &today);
         }
         offer.start_date = start_date.clone();
-        offer.date = today.clone();
+        // `date` is when the offer arrived, not when it was answered — both branches here are
+        // terminal, so it stays put and `closed_on` carries the outcome date.
     }
 
     if accept {
@@ -2287,8 +2288,8 @@ pub fn counter_loan_offer(
         offer.suggested_wage_contribution_pct = None;
         offer.suggested_end_date = None;
         offer.suggested_buy_option_fee = None;
+        // Talks are over, so `date` keeps the arrival stamp and `closed_on` records the ending.
         close_loan_offer(offer, LoanOfferStatus::Rejected, &today);
-        offer.date = today;
     }
 
     Ok(loan_offer_outcome(
@@ -2399,7 +2400,8 @@ pub fn counter_offer(
             offer.negotiation_round = round;
             offer.registration_date = None;
         }
-        offer.date = date.clone();
+        // Both branches end the negotiation, so `date` keeps the arrival stamp. Only the
+        // counter-offer path below re-opens talks, and that one does bump it.
     }
 
     if accepted {
