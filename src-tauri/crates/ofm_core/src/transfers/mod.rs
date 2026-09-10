@@ -2595,15 +2595,15 @@ pub fn process_pending_transfer_registrations(game: &mut Game) {
                 .iter_mut()
                 .find(|offer| offer.id == offer_id)
         {
-            offer.status = if executed {
-                TransferOfferStatus::Accepted
-            } else {
-                TransferOfferStatus::Withdrawn
-            };
             if executed {
+                offer.status = TransferOfferStatus::Accepted;
                 offer.registration_date = Some(today.clone());
+                offer.suggested_counter_fee = None;
+            } else {
+                // The agreement lapsed months after it was struck, so retention has to run from
+                // the withdrawal rather than from an arrival date already outside the window.
+                close_transfer_offer(offer, TransferOfferStatus::Withdrawn, &today);
             }
-            offer.suggested_counter_fee = None;
         }
     }
 }
@@ -2702,13 +2702,12 @@ pub fn process_pending_loan_registrations(game: &mut Game) {
                 .iter_mut()
                 .find(|offer| offer.id == offer_id)
         {
-            offer.status = if executed {
-                LoanOfferStatus::Accepted
-            } else {
-                LoanOfferStatus::Withdrawn
-            };
             if executed {
+                offer.status = LoanOfferStatus::Accepted;
                 offer.start_date = today.clone();
+            } else {
+                // See the permanent path above: retention runs from the withdrawal.
+                close_loan_offer(offer, LoanOfferStatus::Withdrawn, &today);
             }
         }
     }

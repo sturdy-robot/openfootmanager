@@ -3017,6 +3017,65 @@ fn a_counter_that_ends_talks_preserves_the_transfer_offer_arrival_date() {
     assert!(offer.closed_on.is_some(), "closure should be recorded");
 }
 
+/// A deal agreed in a closed window registers months later, so by the time a failed registration
+/// withdraws the offer its arrival date is already older than the retention window. Without a
+/// closure stamp the prune falls back to arrival and drops the record on the spot, instead of
+/// keeping it the usual 120 days after it was withdrawn.
+#[test]
+fn a_failed_scheduled_registration_records_the_withdrawal_date() {
+    let mut player = make_user_player("player-failed-registration");
+    player
+        .transfer_offers
+        .push(make_pending_incoming_offer("offer-scheduled", 1_400_000));
+    player.transfer_offers[0].date = "2026-08-01".to_string();
+
+    let mut game = make_game_with_player(
+        player,
+        vec!["player-failed-registration".to_string()],
+        5_000_000,
+        2_000_000,
+    );
+    game.clock.current_date = Utc.with_ymd_and_hms(2026, 8, 1, 12, 0, 0).unwrap();
+    game.season_context.transfer_window.status = TransferWindowStatus::Closed;
+    game.season_context.transfer_window.opens_on = Some("2027-01-01".to_string());
+    game.teams[1].finance = 3_000_000;
+    game.teams[1].transfer_budget = 3_000_000;
+
+    respond_to_offer(
+        &mut game,
+        "player-failed-registration",
+        "offer-scheduled",
+        true,
+    )
+    .expect("accepting in a closed window should schedule registration");
+
+    // The buyer's finances collapse before the window opens, so registration cannot go through.
+    game.clock.current_date = Utc.with_ymd_and_hms(2027, 1, 1, 12, 0, 0).unwrap();
+    game.season_context.transfer_window.status = TransferWindowStatus::Open;
+    game.teams[1].finance = 0;
+    game.teams[1].transfer_budget = 0;
+    process_pending_transfer_registrations(&mut game);
+
+    let offer = &find_player(&game, "player-failed-registration").transfer_offers[0];
+    assert_eq!(offer.status, TransferOfferStatus::Withdrawn);
+    assert_eq!(
+        offer.closed_on.as_deref(),
+        Some("2027-01-01"),
+        "a failed registration should record when the offer was withdrawn"
+    );
+
+    // Retention runs from the withdrawal, not from an arrival five months earlier.
+    game.clock.current_date = Utc.with_ymd_and_hms(2027, 2, 1, 12, 0, 0).unwrap();
+    evaluate_transfer_market(&mut game);
+    assert_eq!(
+        find_player(&game, "player-failed-registration")
+            .transfer_offers
+            .len(),
+        1,
+        "the withdrawn offer should still be inside its retention window"
+    );
+}
+
 /// Terminal offers are kept for a while so the UI can show recent history, then dropped —
 /// otherwise every rejected approach stays on the player for the life of the save.
 #[test]
