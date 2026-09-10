@@ -113,13 +113,11 @@ export function DatePicker({ value, onChange, error, labelledBy }: DatePickerPro
   // in its dependency array — avoids firing with stale day/month/year
   // when the parent re-renders and passes a new inline function reference.
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
 
   // Read inside the notify effect without making it a dependency, so the
   // effect can tell "the parts now say something new" from "the parts were
   // just synced from the prop".
   const valueRef = useRef(value);
-  valueRef.current = value;
 
   // Whether there is currently a date here to remove. Clearing every part is
   // only worth reporting as a change if something was set; a pristine field
@@ -171,6 +169,20 @@ export function DatePicker({ value, onChange, error, labelledBy }: DatePickerPro
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [monthOpen]);
+
+  /*
+    Written on commit, not during render. React can start a render and throw it
+    away — this tree sits under a Suspense boundary in career creation — and a
+    ref written during a render that never commits would leave the effect below
+    comparing against a value the parent does not hold. That used to be
+    harmless, when the ref only carried a callback whose identity nobody read;
+    now it decides whether a change is reported at all. Declared above that
+    effect so it always runs first and sees this commit's props.
+  */
+  useEffect(() => {
+    onChangeRef.current = onChange;
+    valueRef.current = value;
+  });
 
   // Update parent when any component changes, if valid
   useEffect(() => {

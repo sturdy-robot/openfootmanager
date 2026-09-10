@@ -14,12 +14,17 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+// By accessible name rather than placeholder: the placeholder is "DD"/"YYYY"
+// decoration, and querying it would pass even if the spoken name were missing.
+const dayInput = () => screen.getByRole("textbox", { name: "date.dayLabel" });
+const yearInput = () => screen.getByRole("textbox", { name: "date.yearLabel" });
+
 describe("DatePicker", () => {
   it("renders the initial ISO date across the day, month, and year fields", () => {
     render(<DatePicker value="1999-02-03" onChange={vi.fn()} />);
 
-    expect(screen.getByPlaceholderText("DD")).toHaveValue("03");
-    expect(screen.getByPlaceholderText("YYYY")).toHaveValue("1999");
+    expect(dayInput()).toHaveValue("03");
+    expect(yearInput()).toHaveValue("1999");
     expect(screen.getByRole("button", { name: "February" })).toBeInTheDocument();
   });
 
@@ -27,13 +32,13 @@ describe("DatePicker", () => {
     const onChange = vi.fn();
     render(<DatePicker value="" onChange={onChange} />);
 
-    fireEvent.change(screen.getByPlaceholderText("DD"), { target: { value: "7" } });
-    fireEvent.blur(screen.getByPlaceholderText("DD"));
+    fireEvent.change(dayInput(), { target: { value: "7" } });
+    fireEvent.blur(dayInput());
 
     fireEvent.click(screen.getAllByRole("button")[0]);
     fireEvent.click(screen.getByRole("button", { name: "March" }));
 
-    fireEvent.change(screen.getByPlaceholderText("YYYY"), { target: { value: "2024" } });
+    fireEvent.change(yearInput(), { target: { value: "2024" } });
 
     await waitFor(() => {
       expect(onChange).toHaveBeenLastCalledWith("2024-03-07");
@@ -50,7 +55,7 @@ describe("DatePicker", () => {
     fireEvent.click(screen.getByRole("button", { name: "February" }));
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText("DD")).toHaveValue("29");
+      expect(dayInput()).toHaveValue("29");
       expect(onChange).toHaveBeenLastCalledWith("2024-02-29");
     });
   });
@@ -60,10 +65,10 @@ describe("DatePicker", () => {
     render(<DatePicker value="2024-02-29" onChange={onChange} />);
 
     onChange.mockClear();
-    fireEvent.change(screen.getByPlaceholderText("YYYY"), { target: { value: "2023" } });
+    fireEvent.change(yearInput(), { target: { value: "2023" } });
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText("DD")).toHaveValue("28");
+      expect(dayInput()).toHaveValue("28");
       expect(onChange).toHaveBeenLastCalledWith("2023-02-28");
     });
   });
@@ -75,17 +80,17 @@ describe("DatePicker", () => {
     const onChange = vi.fn();
     render(<DatePicker value="" onChange={onChange} />);
 
-    fireEvent.change(screen.getByPlaceholderText("DD"), { target: { value: "1" } });
-    fireEvent.blur(screen.getByPlaceholderText("DD"));
+    fireEvent.change(dayInput(), { target: { value: "1" } });
+    fireEvent.blur(dayInput());
 
     fireEvent.click(screen.getAllByRole("button")[0]);
     fireEvent.click(screen.getByRole("button", { name: "January" }));
 
-    const yearInput = screen.getByPlaceholderText("YYYY");
-    fireEvent.change(yearInput, { target: { value: "26" } });
-    fireEvent.blur(yearInput);
+    const year = yearInput();
+    fireEvent.change(year, { target: { value: "26" } });
+    fireEvent.blur(year);
 
-    expect(yearInput).toHaveValue("1926");
+    expect(year).toHaveValue("1926");
     expect(onChange).toHaveBeenLastCalledWith("1926-01-01");
   });
 
@@ -155,7 +160,7 @@ describe("DatePicker", () => {
     render(<DatePicker value="2024-03-07" onChange={onChange} />);
     onChange.mockClear();
 
-    fireEvent.change(screen.getByPlaceholderText("DD"), { target: { value: "" } });
+    fireEvent.change(dayInput(), { target: { value: "" } });
 
     expect(onChange).not.toHaveBeenCalled();
   });
@@ -167,8 +172,8 @@ describe("DatePicker", () => {
     render(<DatePicker value="2024-03-07" onChange={onChange} />);
     onChange.mockClear();
 
-    fireEvent.change(screen.getByPlaceholderText("DD"), { target: { value: "" } });
-    fireEvent.change(screen.getByPlaceholderText("YYYY"), { target: { value: "" } });
+    fireEvent.change(dayInput(), { target: { value: "" } });
+    fireEvent.change(yearInput(), { target: { value: "" } });
 
     fireEvent.click(screen.getByRole("button", { name: "March" }));
     // The mock echoes an untranslated key back, so this is the placeholder row.

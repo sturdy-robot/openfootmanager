@@ -57,8 +57,10 @@ describe("StaffForm", () => {
     // which renders in the browser's locale, not the game's.
     renderForm({ dateOfBirth: "1978-05-27" });
 
-    expect(screen.getByPlaceholderText("DD")).toHaveValue("27");
-    expect(screen.getByPlaceholderText("YYYY")).toHaveValue("1978");
+    // By accessible name, not placeholder: the placeholder is "DD"/"YYYY"
+    // decoration and would pass even with the spoken name missing.
+    expect(screen.getByRole("textbox", { name: "date.dayLabel" })).toHaveValue("27");
+    expect(screen.getByRole("textbox", { name: "date.yearLabel" })).toHaveValue("1978");
   });
 
   it("keeps the date of birth caption attached to the three controls under it", () => {
@@ -70,7 +72,7 @@ describe("StaffForm", () => {
 
     const field = screen.getByRole("group", { name: "worldEditor.staffDateOfBirth" });
 
-    expect(field).toContainElement(screen.getByPlaceholderText("DD"));
-    expect(field).toContainElement(screen.getByPlaceholderText("YYYY"));
+    expect(field).toContainElement(screen.getByRole("textbox", { name: "date.dayLabel" }));
+    expect(field).toContainElement(screen.getByRole("textbox", { name: "date.yearLabel" }));
   });
 });
