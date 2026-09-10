@@ -3728,6 +3728,10 @@
     "winRate": "Porcentaje de victorias"
   },
   "worldEditor": {
+    "filterByPosition": "Filtrar por posición",
+    "allPositions": "Todas las posiciones",
+    "positionFilterByGroup": "Por línea",
+    "positionFilterBySpecific": "Posición concreta",
     "showingEntries": "Mostrando {{shown}} de {{total}}",
     "title": "Editor de Mundos",
     "newPackage": "Nuevo Mundo",

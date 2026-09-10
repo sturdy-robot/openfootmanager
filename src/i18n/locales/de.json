@@ -3728,6 +3728,10 @@
     "winRate": "Siegquote"
   },
   "worldEditor": {
+    "filterByPosition": "Nach Position filtern",
+    "allPositions": "Alle Positionen",
+    "positionFilterByGroup": "Nach Mannschaftsteil",
+    "positionFilterBySpecific": "Genaue Position",
     "showingEntries": "Zeige {{shown}} von {{total}}",
     "title": "Welt-Editor",
     "newPackage": "Neue Welt",

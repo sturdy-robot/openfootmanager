@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { filterPlayerRows } from "./PlayersTab.helpers";
+import {
+  filterPlayerRows,
+  matchesPositionFilter,
+  positionFilterGroups,
+} from "./PlayersTab.helpers";
 import { emptyPlayer } from "./helpers";
 import type { PlayerDef, Position } from "./types";
 
@@ -87,5 +91,97 @@ describe("filterPlayerRows", () => {
     const players = [player({ id: "a", firstName: "Ana", lastName: "Reyes" })];
 
     expect(filterPlayerRows({ players, query: "reyes", teamNames: NO_TEAMS }).filtered).toHaveLength(1);
+  });
+});
+
+describe("matchesPositionFilter", () => {
+  it("lets everything through when no position is chosen", () => {
+    expect(matchesPositionFilter("Striker", "All")).toBe(true);
+    expect(matchesPositionFilter("Goalkeeper", "All")).toBe(true);
+  });
+
+  it("matches one exact position", () => {
+    expect(matchesPositionFilter("CenterBack", "CenterBack")).toBe(true);
+    expect(matchesPositionFilter("LeftBack", "CenterBack")).toBe(false);
+  });
+
+  it("matches every position in a group", () => {
+    expect(matchesPositionFilter("CenterBack", "group:Defender")).toBe(true);
+    expect(matchesPositionFilter("LeftWingBack", "group:Defender")).toBe(true);
+    expect(matchesPositionFilter("Striker", "group:Defender")).toBe(false);
+  });
+
+  it("keeps a group apart from the bare enum value of the same name", () => {
+    // Some packages set the broad "Defender" literally. Choosing that should
+    // find those players, not every defender in the game.
+    expect(matchesPositionFilter("Defender", "Defender")).toBe(true);
+    expect(matchesPositionFilter("CenterBack", "Defender")).toBe(false);
+    expect(matchesPositionFilter("Defender", "group:Defender")).toBe(true);
+  });
+});
+
+describe("positionFilterGroups", () => {
+  it("offers the four groups and all seventeen positions, each once", () => {
+    const groups = positionFilterGroups();
+    const values = groups.flatMap((group) => group.options.map((option) => option.value));
+
+    expect(groups).toHaveLength(2);
+    expect(values.filter((v) => v.startsWith("group:"))).toHaveLength(4);
+    expect(values).toHaveLength(21);
+    expect(new Set(values).size).toBe(21);
+  });
+});
+
+describe("filterPlayerRows with a position filter", () => {
+  const squad = [
+    player({ id: "gk", name: "Ana", position: "Goalkeeper" as Position }),
+    player({ id: "cb", name: "Bo", position: "CenterBack" as Position }),
+    player({ id: "lb", name: "Bo Reilly", position: "LeftBack" as Position }),
+    player({ id: "st", name: "Cyd", position: "Striker" as Position }),
+  ];
+
+  it("narrows to a group, keeping unfiltered indices", () => {
+    const { filtered } = filterPlayerRows({
+      players: squad,
+      positionFilter: "group:Defender",
+      query: "",
+      teamNames: NO_TEAMS,
+    });
+
+    expect(filtered.map(({ i }) => i)).toEqual([1, 2]);
+  });
+
+  it("narrows to one exact position", () => {
+    const { filtered } = filterPlayerRows({
+      players: squad,
+      positionFilter: "Goalkeeper",
+      query: "",
+      teamNames: NO_TEAMS,
+    });
+
+    expect(filtered.map(({ player: p }) => p.id)).toEqual(["gk"]);
+  });
+
+  it("applies the position and the search together", () => {
+    const { filtered } = filterPlayerRows({
+      players: squad,
+      positionFilter: "group:Defender",
+      query: "bo r",
+      teamNames: NO_TEAMS,
+    });
+
+    expect(filtered.map(({ player: p }) => p.id)).toEqual(["lb"]);
+  });
+
+  it("counts the scoped total before the position filter narrows it", () => {
+    const { scoped, filtered } = filterPlayerRows({
+      players: squad,
+      positionFilter: "Goalkeeper",
+      query: "",
+      teamNames: NO_TEAMS,
+    });
+
+    expect(scoped).toHaveLength(4);
+    expect(filtered).toHaveLength(1);
   });
 });

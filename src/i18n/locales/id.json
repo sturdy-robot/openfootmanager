@@ -3728,6 +3728,10 @@
     "winRate": "Persentase kemenangan"
   },
   "worldEditor": {
+    "filterByPosition": "Saring menurut posisi",
+    "allPositions": "Semua posisi",
+    "positionFilterByGroup": "Menurut lini",
+    "positionFilterBySpecific": "Posisi tertentu",
     "showingEntries": "Menampilkan {{shown}} dari {{total}}",
     "title": "Editor Dunia",
     "newPackage": "Dunia Baru",

@@ -179,3 +179,75 @@ describe("PlayersTab position column", () => {
     expect(screen.getAllByText(/common\.positions\.Striker/)).toHaveLength(2);
   });
 });
+
+describe("PlayersTab position filter", () => {
+  // Select is a portal-backed combobox, not a native <select>, so an option is
+  // reached by opening the list and clicking it.
+  function choosePosition(optionName: string) {
+    fireEvent.click(screen.getByRole("combobox", { name: "worldEditor.filterByPosition" }));
+    fireEvent.click(screen.getByRole("option", { name: optionName }));
+  }
+
+  const mixedSquad = () => [
+    { ...emptyPlayer(), id: "gk", name: "Ana", position: "Goalkeeper" as Position },
+    { ...emptyPlayer(), id: "cb", name: "Bo", position: "CenterBack" as Position },
+    { ...emptyPlayer(), id: "lb", name: "Cyd", position: "LeftBack" as Position },
+    { ...emptyPlayer(), id: "st", name: "Dee", position: "Striker" as Position },
+  ];
+
+  it("narrows the list to one exact position", () => {
+    // The reported use: how many goalkeepers does this package have?
+    renderTab({ players: mixedSquad() });
+
+    choosePosition("common.positions.Goalkeeper");
+
+    expect(editButtons()).toHaveLength(1);
+    expect(screen.getByText("common.nResults count=1")).toBeInTheDocument();
+  });
+
+  it("narrows the list to a whole group", () => {
+    renderTab({ players: mixedSquad() });
+
+    choosePosition("common.positionGroups.Defender");
+
+    expect(editButtons()).toHaveLength(2);
+  });
+
+  it("still addresses a filtered row by its index in the whole list", () => {
+    const { onEdit } = renderTab({ players: mixedSquad() });
+
+    choosePosition("common.positions.Striker");
+    fireEvent.click(editButtons()[0]);
+
+    expect(onEdit).toHaveBeenCalledWith(3);
+  });
+
+  it("applies the position and the search together", () => {
+    renderTab({ players: mixedSquad() });
+
+    choosePosition("common.positionGroups.Defender");
+    fireEvent.change(screen.getByRole("textbox", { name: "worldEditor.searchPlayers" }), {
+      target: { value: "cyd" },
+    });
+
+    expect(editButtons()).toHaveLength(1);
+  });
+
+  it("goes back to one page when the position changes", () => {
+    renderTab({ players: players(500, () => ({ position: "Striker" as Position })) });
+
+    fireEvent.click(screen.getByRole("button", { name: "common.loadMore" }));
+    choosePosition("common.positions.Striker");
+
+    expect(editButtons()).toHaveLength(50);
+  });
+
+  it("goes back to the whole list when the filter is cleared", () => {
+    renderTab({ players: mixedSquad() });
+
+    choosePosition("common.positions.Goalkeeper");
+    choosePosition("worldEditor.allPositions");
+
+    expect(editButtons()).toHaveLength(4);
+  });
+});

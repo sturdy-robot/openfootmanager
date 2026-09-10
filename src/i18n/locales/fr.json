@@ -3728,6 +3728,10 @@
     "winRate": "Taux de victoire"
   },
   "worldEditor": {
+    "filterByPosition": "Filtrer par poste",
+    "allPositions": "Tous les postes",
+    "positionFilterByGroup": "Par ligne",
+    "positionFilterBySpecific": "Poste précis",
     "showingEntries": "Affichage de {{shown}} sur {{total}}",
     "title": "Éditeur de Monde",
     "newPackage": "Nouveau Monde",

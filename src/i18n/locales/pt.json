@@ -3728,6 +3728,10 @@
     "winRate": "Taxa de vitórias"
   },
   "worldEditor": {
+    "filterByPosition": "Filtrar por posição",
+    "allPositions": "Todas as posições",
+    "positionFilterByGroup": "Por sector",
+    "positionFilterBySpecific": "Posição específica",
     "showingEntries": "A mostrar {{shown}} de {{total}}",
     "title": "Editor de Mundo",
     "newPackage": "Novo Mundo",

@@ -3728,6 +3728,10 @@
     "winRate": "Percentuale vittorie"
   },
   "worldEditor": {
+    "filterByPosition": "Filtra per ruolo",
+    "allPositions": "Tutti i ruoli",
+    "positionFilterByGroup": "Per reparto",
+    "positionFilterBySpecific": "Ruolo specifico",
     "showingEntries": "Mostrati {{shown}} di {{total}}",
     "title": "Editor Mondo",
     "newPackage": "Nuovo Mondo",

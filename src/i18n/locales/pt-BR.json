@@ -3728,6 +3728,10 @@
     "winRate": "Aproveitamento"
   },
   "worldEditor": {
+    "filterByPosition": "Filtrar por posição",
+    "allPositions": "Todas as posições",
+    "positionFilterByGroup": "Por setor",
+    "positionFilterBySpecific": "Posição específica",
     "showingEntries": "Mostrando {{shown}} de {{total}}",
     "title": "Editor de Mundo",
     "newPackage": "Novo Mundo",

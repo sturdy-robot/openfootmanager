@@ -1,4 +1,61 @@
-import type { PlayerDef } from "./types";
+import { CORE_POSITIONS, normalisePosition } from "../../squad/SquadTab.helpers";
+import { POSITIONS } from "./helpers";
+import type { PlayerDef, Position } from "./types";
+
+type CorePosition = (typeof CORE_POSITIONS)[number];
+
+/**
+ * What the position dropdown is set to: everything, one of the four broad
+ * groups, or one of the seventeen positions a player can actually be given.
+ *
+ * Groups carry a prefix because four of the seventeen positions are named
+ * after them. Choosing "Defenders" should find every full-back and centre
+ * half; choosing "Defender" should find only the players a package left on
+ * the broad value. Without the prefix those two are the same string.
+ */
+export type PositionFilter = "All" | `group:${CorePosition}` | Position;
+
+const GROUP_PREFIX = "group:";
+
+export function matchesPositionFilter(position: Position, filter: PositionFilter): boolean {
+  if (filter === "All") {
+    return true;
+  }
+  if (filter.startsWith(GROUP_PREFIX)) {
+    return normalisePosition(position) === filter.slice(GROUP_PREFIX.length);
+  }
+  return position === filter;
+}
+
+export interface PositionFilterOption {
+  value: PositionFilter;
+  labelKey: string;
+}
+
+export interface PositionFilterGroup {
+  labelKey: string;
+  options: PositionFilterOption[];
+}
+
+/** The dropdown's two sections: the broad groups, then every exact position. */
+export function positionFilterGroups(): PositionFilterGroup[] {
+  return [
+    {
+      labelKey: "worldEditor.positionFilterByGroup",
+      options: CORE_POSITIONS.map((core) => ({
+        value: `${GROUP_PREFIX}${core}` as PositionFilter,
+        labelKey: `common.positionGroups.${core}`,
+      })),
+    },
+    {
+      labelKey: "worldEditor.positionFilterBySpecific",
+      options: POSITIONS.map((position) => ({
+        value: position,
+        labelKey: `common.positions.${position}`,
+      })),
+    },
+  ];
+}
 
 /** A player paired with its index in the unfiltered array. */
 export interface IndexedPlayer {
@@ -10,6 +67,8 @@ export interface FilterPlayerRowsParams {
   players: PlayerDef[];
   /** Omit to include every player; set to scope to the youth or senior list. */
   youthOnly?: boolean;
+  /** Defaults to "All" so callers that have no dropdown can leave it out. */
+  positionFilter?: PositionFilter;
   query: string;
   teamNames: Map<string, string>;
 }
@@ -38,6 +97,7 @@ function displayName(player: PlayerDef): string {
 export function filterPlayerRows({
   players,
   youthOnly,
+  positionFilter = "All",
   query,
   teamNames,
 }: FilterPlayerRowsParams): FilteredPlayerRows {
@@ -50,12 +110,18 @@ export function filterPlayerRows({
     scoped.push({ player, i });
   }
 
+  // Position before the search box: one comparison rules a player out where
+  // the query needs six.
+  const byPosition = positionFilter === "All"
+    ? scoped
+    : scoped.filter(({ player }) => matchesPositionFilter(player.position, positionFilter));
+
   const q = query.trim().toLowerCase();
   if (!q) {
-    return { scoped, filtered: scoped };
+    return { scoped, filtered: byPosition };
   }
 
-  const filtered = scoped.filter(({ player }) => {
+  const filtered = byPosition.filter(({ player }) => {
     // Club matches on the name the row displays as well as the stored id —
     // searching for what is on screen finding nothing was its own small bug.
     const clubName = player.club ? teamNames.get(player.club) : undefined;

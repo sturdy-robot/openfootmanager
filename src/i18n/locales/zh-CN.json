@@ -3728,6 +3728,10 @@
     "winRate": "胜率"
   },
   "worldEditor": {
+    "filterByPosition": "按位置筛选",
+    "allPositions": "所有位置",
+    "positionFilterByGroup": "按位置类别",
+    "positionFilterBySpecific": "具体位置",
     "showingEntries": "显示 {{total}} 项中的 {{shown}} 项",
     "title": "世界编辑器",
     "newPackage": "新建世界",

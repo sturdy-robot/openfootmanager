@@ -3728,6 +3728,10 @@
     "winRate": "Win rate"
   },
   "worldEditor": {
+    "filterByPosition": "Filter by position",
+    "allPositions": "All positions",
+    "positionFilterByGroup": "By group",
+    "positionFilterBySpecific": "Specific position",
     "showingEntries": "Showing {{shown}} of {{total}}",
     "title": "World Editor",
     "newPackage": "New World",

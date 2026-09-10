@@ -3728,6 +3728,10 @@
     "winRate": "Процент побед"
   },
   "worldEditor": {
+    "filterByPosition": "Фильтр по позиции",
+    "allPositions": "Все позиции",
+    "positionFilterByGroup": "По линии",
+    "positionFilterBySpecific": "Точная позиция",
     "showingEntries": "Показано {{shown}} из {{total}}",
     "title": "Редактор мира",
     "newPackage": "Новый мир",
