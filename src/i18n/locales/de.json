@@ -3731,6 +3731,12 @@
     "winRate": "Siegquote"
   },
   "worldEditor": {
+    "positionGroupFilter": {
+      "Goalkeeper": "Alle Torhüter",
+      "Defender": "Alle Verteidiger",
+      "Midfielder": "Alle Mittelfeldspieler",
+      "Forward": "Alle Stürmer"
+    },
     "filterByPosition": "Nach Position filtern",
     "allPositions": "Alle Positionen",
     "positionFilterByGroup": "Nach Mannschaftsteil",

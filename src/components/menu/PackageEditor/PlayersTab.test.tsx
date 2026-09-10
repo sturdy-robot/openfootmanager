@@ -163,6 +163,17 @@ describe("PlayersTab", () => {
     expect(screen.getByText("common.nResults count=3")).toBeInTheDocument();
   });
 
+  it("keeps the load-more button in place once it has nothing left to reveal", () => {
+    // Removing it on the last press would unmount the focused control and
+    // drop focus to the top of the document, hundreds of rows above.
+    renderTab({ players: players(60) });
+
+    fireEvent.click(screen.getByRole("button", { name: "common.loadMore" }));
+
+    expect(editButtons()).toHaveLength(60);
+    expect(screen.getByRole("button", { name: "common.loadMore" })).toBeDisabled();
+  });
+
   it("keeps a duplicated row visible when it lands just past the page edge", () => {
     // handleDuplicate selects index + 1, so duplicating the last visible row
     // would otherwise open a form for a record the list cannot show.
@@ -208,7 +219,7 @@ describe("PlayersTab position filter", () => {
   it("narrows the list to a whole group", () => {
     renderTab({ players: mixedSquad() });
 
-    choosePosition("common.positionGroups.Defender");
+    choosePosition("worldEditor.positionGroupFilter.Defender");
 
     expect(editButtons()).toHaveLength(2);
   });
@@ -225,7 +236,7 @@ describe("PlayersTab position filter", () => {
   it("applies the position and the search together", () => {
     renderTab({ players: mixedSquad() });
 
-    choosePosition("common.positionGroups.Defender");
+    choosePosition("worldEditor.positionGroupFilter.Defender");
     fireEvent.change(screen.getByRole("textbox", { name: "worldEditor.searchPlayers" }), {
       target: { value: "cyd" },
     });

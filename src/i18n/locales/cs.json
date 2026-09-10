@@ -3731,6 +3731,12 @@
     "winRate": "Úspěšnost"
   },
   "worldEditor": {
+    "positionGroupFilter": {
+      "Goalkeeper": "Všichni brankáři",
+      "Defender": "Všichni obránci",
+      "Midfielder": "Všichni záložníci",
+      "Forward": "Všichni útočníci"
+    },
     "filterByPosition": "Filtrovat podle pozice",
     "allPositions": "Všechny pozice",
     "positionFilterByGroup": "Podle řady",

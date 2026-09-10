@@ -3731,6 +3731,12 @@
     "winRate": "Persentase kemenangan"
   },
   "worldEditor": {
+    "positionGroupFilter": {
+      "Goalkeeper": "Semua penjaga gawang",
+      "Defender": "Semua bek",
+      "Midfielder": "Semua gelandang",
+      "Forward": "Semua penyerang"
+    },
     "filterByPosition": "Saring menurut posisi",
     "allPositions": "Semua posisi",
     "positionFilterByGroup": "Menurut lini",

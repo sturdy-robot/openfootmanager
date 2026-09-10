@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Copy, Download, Edit2, Trash2, ArrowLeft, CheckCircle, Loader2, X } from "lucide-react";
+import { Button } from "../../ui/Button";
+import { ENTITY_LIST_PAGE_SIZE } from "./entityList.helpers";
 
 // ---------------------------------------------------------------------------
 // EntityListShell
@@ -71,38 +73,49 @@ interface EntityListFooterProps {
  */
 export function EntityListFooter({ shown, matches, hasRecords, onLoadMore }: EntityListFooterProps) {
   const { t } = useTranslation();
+  const countId = useId();
 
   if (!hasRecords) {
     return null;
   }
 
-  if (matches === 0) {
-    return (
-      <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">
-        {t("common.noResults")}
-      </p>
-    );
-  }
+  const everythingShown = shown >= matches;
 
-  if (shown >= matches) {
-    return (
-      <p className="text-[11px] text-gray-400 dark:text-gray-500 text-right pt-1">
-        {t("common.nResults", { count: matches })}
-      </p>
-    );
-  }
+  // Kept mounted, disabled, once the list has run out: revealing the last
+  // page from the keyboard would otherwise unmount the focused button and
+  // drop focus to the top of the document, hundreds of rows above.
+  const wasCapped = matches > ENTITY_LIST_PAGE_SIZE;
 
   return (
     <div className="flex flex-col gap-2 pt-1">
-      <button
-        type="button"
-        onClick={onLoadMore}
-        className="w-full py-2 rounded-lg border border-gray-200 dark:border-navy-600 bg-white dark:bg-navy-700 text-xs font-heading font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:border-primary-400 dark:hover:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 dark:focus:ring-offset-navy-800 transition-colors"
+      {wasCapped && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={onLoadMore}
+          disabled={everythingShown}
+          aria-describedby={countId}
+        >
+          {t("common.loadMore")}
+        </Button>
+      )}
+      {/*
+        One live region for all three messages, so revealing a page or
+        searching into nothing is announced rather than silently changing
+        the rows underneath.
+      */}
+      <p
+        id={countId}
+        role="status"
+        className={`text-xs text-gray-500 dark:text-gray-400 ${matches === 0 ? "text-center py-4" : "text-right"}`}
       >
-        {t("common.loadMore")}
-      </button>
-      <p className="text-[11px] text-gray-400 dark:text-gray-500 text-right">
-        {t("worldEditor.showingEntries", { shown, total: matches })}
+        {matches === 0
+          ? t("common.noResults")
+          : everythingShown
+            ? t("common.nResults", { count: matches })
+            : t("worldEditor.showingEntries", { shown, total: matches })}
       </p>
     </div>
   );

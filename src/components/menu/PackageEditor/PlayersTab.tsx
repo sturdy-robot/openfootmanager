@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import { GeneratedAvatar } from "../../ui/GeneratedAvatar";
@@ -60,6 +60,8 @@ interface PlayersTabProps {
 
 export function PlayersTab({ players, teams, onAdd, onEdit, onDelete, onDuplicate, onExportCsv, selectedIndex, onSelect, projectDir, youthOnly }: PlayersTabProps) {
   const { t } = useTranslation();
+  const positionFilterId = useId();
+  const positionFilterCaptionId = useId();
   const [query, setQuery] = useState("");
 
   const [positionFilter, setPositionFilter] = useState<PositionFilter>("All");
@@ -115,12 +117,25 @@ export function PlayersTab({ players, teams, onAdd, onEdit, onDelete, onDuplicat
               {onExportCsv && <ExportCsvButton onClick={onExportCsv} />}
             </div>
             {scoped.length > 0 && (
+              <>
+                {/*
+                  The list column has no room for a visible caption, but the
+                  control still needs a name it can be announced with.
+                */}
+                <span id={positionFilterCaptionId} className="sr-only">
+                  {t("worldEditor.filterByPosition")}
+                </span>
               <Select
                 selectSize="sm"
                 fullWidth
+                id={positionFilterId}
                 value={positionFilter}
                 onChange={(e) => handlePositionFilterChange(e.target.value)}
-                aria-label={t("worldEditor.filterByPosition")}
+                // Named after the caption *and* itself, the way CountryCombobox
+                // does it, so it reads "<field>, <current value>": a bare
+                // aria-label would replace the button's contents, which is
+                // where the chosen position is.
+                aria-labelledby={`${positionFilterCaptionId} ${positionFilterId}`}
               >
                 {/*
                   Flat children, never a fragment: Select reads its options out
@@ -137,6 +152,7 @@ export function PlayersTab({ players, teams, onAdd, onEdit, onDelete, onDuplicat
                   </optgroup>
                 ))}
               </Select>
+              </>
             )}
           </div>
         )

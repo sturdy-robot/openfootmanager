@@ -3731,6 +3731,12 @@
     "winRate": "Aproveitamento"
   },
   "worldEditor": {
+    "positionGroupFilter": {
+      "Goalkeeper": "Todos os goleiros",
+      "Defender": "Todos os zagueiros",
+      "Midfielder": "Todos os meias",
+      "Forward": "Todos os atacantes"
+    },
     "filterByPosition": "Filtrar por posição",
     "allPositions": "Todas as posições",
     "positionFilterByGroup": "Por setor",

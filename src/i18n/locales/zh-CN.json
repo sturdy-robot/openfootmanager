@@ -3731,6 +3731,12 @@
     "winRate": "胜率"
   },
   "worldEditor": {
+    "positionGroupFilter": {
+      "Goalkeeper": "所有门将",
+      "Defender": "所有后卫",
+      "Midfielder": "所有中场",
+      "Forward": "所有前锋"
+    },
     "filterByPosition": "按位置筛选",
     "allPositions": "所有位置",
     "positionFilterByGroup": "按位置类别",

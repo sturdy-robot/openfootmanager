@@ -3731,9 +3731,15 @@
     "winRate": "Galibiyet oranı"
   },
   "worldEditor": {
+    "positionGroupFilter": {
+      "Goalkeeper": "Tüm kaleciler",
+      "Defender": "Tüm defans oyuncuları",
+      "Midfielder": "Tüm orta saha oyuncuları",
+      "Forward": "Tüm forvetler"
+    },
     "filterByPosition": "Mevkiye göre filtrele",
-    "allPositions": "Tüm mevkiler",
-    "positionFilterByGroup": "Bölgeye göre",
+    "allPositions": "Tüm pozisyonlar",
+    "positionFilterByGroup": "Mevki grubuna göre",
     "positionFilterBySpecific": "Belirli mevki",
     "showingEntries": "{{total}} kayıttan {{shown}} tanesi gösteriliyor",
     "title": "Dünya Editörü",

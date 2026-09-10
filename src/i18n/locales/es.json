@@ -3731,6 +3731,12 @@
     "winRate": "Porcentaje de victorias"
   },
   "worldEditor": {
+    "positionGroupFilter": {
+      "Goalkeeper": "Todos los porteros",
+      "Defender": "Todos los defensas",
+      "Midfielder": "Todos los centrocampistas",
+      "Forward": "Todos los delanteros"
+    },
     "filterByPosition": "Filtrar por posición",
     "allPositions": "Todas las posiciones",
     "positionFilterByGroup": "Por línea",

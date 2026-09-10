@@ -3731,6 +3731,12 @@
     "winRate": "Win rate"
   },
   "worldEditor": {
+    "positionGroupFilter": {
+      "Goalkeeper": "All goalkeepers",
+      "Defender": "All defenders",
+      "Midfielder": "All midfielders",
+      "Forward": "All forwards"
+    },
     "filterByPosition": "Filter by position",
     "allPositions": "All positions",
     "positionFilterByGroup": "By group",

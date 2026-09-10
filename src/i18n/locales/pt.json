@@ -3731,9 +3731,15 @@
     "winRate": "Taxa de vitórias"
   },
   "worldEditor": {
+    "positionGroupFilter": {
+      "Goalkeeper": "Todos os guarda-redes",
+      "Defender": "Todos os defesas",
+      "Midfielder": "Todos os médios",
+      "Forward": "Todos os avançados"
+    },
     "filterByPosition": "Filtrar por posição",
     "allPositions": "Todas as posições",
-    "positionFilterByGroup": "Por sector",
+    "positionFilterByGroup": "Por setor",
     "positionFilterBySpecific": "Posição específica",
     "showingEntries": "A mostrar {{shown}} de {{total}}",
     "title": "Editor de Mundo",

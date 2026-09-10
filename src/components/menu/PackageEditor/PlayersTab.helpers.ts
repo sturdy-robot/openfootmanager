@@ -42,9 +42,13 @@ export function positionFilterGroups(): PositionFilterGroup[] {
   return [
     {
       labelKey: "worldEditor.positionFilterByGroup",
+      // Not `common.positionGroups.*`: in German, Chinese and Indonesian its
+      // plurals are byte-identical to four of the seventeen exact positions,
+      // so the same label would appear in both sections meaning two different
+      // things. These are worded "all <group>" instead.
       options: CORE_POSITIONS.map((core) => ({
         value: `${GROUP_PREFIX}${core}` as PositionFilter,
-        labelKey: `common.positionGroups.${core}`,
+        labelKey: `worldEditor.positionGroupFilter.${core}`,
       })),
     },
     {
