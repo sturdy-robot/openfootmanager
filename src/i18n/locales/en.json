@@ -470,6 +470,7 @@
     "goalDifference": "GD",
     "nPlayersFound": "{{count}} player(s) found",
     "nResults": "{{count}} result(s)",
+    "loadMore": "Load more",
     "showingFirst": "Showing first {{shown}} of {{total}} players. Refine your search to see more.",
     "noPlayersMatch": "No players match your filters.",
     "positions": {
@@ -3727,6 +3728,7 @@
     "winRate": "Win rate"
   },
   "worldEditor": {
+    "showingEntries": "Showing {{shown}} of {{total}}",
     "title": "World Editor",
     "newPackage": "New World",
     "openPackageFile": "Open .ofm File",

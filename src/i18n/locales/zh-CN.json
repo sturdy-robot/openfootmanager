@@ -466,6 +466,7 @@
     "goalDifference": "净胜球",
     "nPlayersFound": "找到{{count}}名球员",
     "nResults": "{{count}}条结果",
+    "loadMore": "加载更多",
     "showingFirst": "显示{{total}}名球员中的前{{shown}}名。请优化搜索条件以查看更多。",
     "noPlayersMatch": "没有符合筛选条件的球员。",
     "positions": {
@@ -3727,6 +3728,7 @@
     "winRate": "胜率"
   },
   "worldEditor": {
+    "showingEntries": "显示 {{total}} 项中的 {{shown}} 项",
     "title": "世界编辑器",
     "newPackage": "新建世界",
     "openPackageFile": "打开 .ofm 文件",

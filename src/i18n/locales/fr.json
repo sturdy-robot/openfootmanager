@@ -466,6 +466,7 @@
     "goalDifference": "DB",
     "nPlayersFound": "{{count}} joueur(s) trouvé(s)",
     "nResults": "{{count}} résultat(s)",
+    "loadMore": "Charger plus",
     "showingFirst": "Affichage des {{shown}} premiers sur {{total}} joueurs. Affinez votre recherche.",
     "noPlayersMatch": "Aucun joueur ne correspond à vos filtres.",
     "positions": {
@@ -3727,6 +3728,7 @@
     "winRate": "Taux de victoire"
   },
   "worldEditor": {
+    "showingEntries": "Affichage de {{shown}} sur {{total}}",
     "title": "Éditeur de Monde",
     "newPackage": "Nouveau Monde",
     "openPackageFile": "Ouvrir un fichier .ofm",

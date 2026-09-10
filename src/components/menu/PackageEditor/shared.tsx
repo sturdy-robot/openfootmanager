@@ -13,6 +13,8 @@ interface EntityListShellProps {
   isEmpty: boolean;
   children: React.ReactNode;
   searchSlot?: React.ReactNode;
+  /** Sits under the rows: the match count, and the button that reveals more. */
+  footerSlot?: React.ReactNode;
 }
 
 export function EntityListShell({
@@ -22,6 +24,7 @@ export function EntityListShell({
   isEmpty,
   children,
   searchSlot,
+  footerSlot,
 }: EntityListShellProps) {
   return (
     <div className="flex flex-col gap-2">
@@ -40,6 +43,67 @@ export function EntityListShell({
       )}
 
       <div className="flex flex-col gap-2">{children}</div>
+
+      {footerSlot}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// EntityListFooter
+// ---------------------------------------------------------------------------
+
+interface EntityListFooterProps {
+  /** Rows currently rendered. */
+  shown: number;
+  /** Rows the search and filters left, rendered or not. */
+  matches: number;
+  /** Whether this section holds any records at all. */
+  hasRecords: boolean;
+  onLoadMore: () => void;
+}
+
+/**
+ * The line under an entity list: how much of it you are looking at, and the
+ * button that shows more. Also the place a fruitless search is reported —
+ * without it the panel just went blank, since the shell's empty message only
+ * covers a section with no records in it at all.
+ */
+export function EntityListFooter({ shown, matches, hasRecords, onLoadMore }: EntityListFooterProps) {
+  const { t } = useTranslation();
+
+  if (!hasRecords) {
+    return null;
+  }
+
+  if (matches === 0) {
+    return (
+      <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">
+        {t("common.noResults")}
+      </p>
+    );
+  }
+
+  if (shown >= matches) {
+    return (
+      <p className="text-[11px] text-gray-400 dark:text-gray-500 text-right pt-1">
+        {t("common.nResults", { count: matches })}
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2 pt-1">
+      <button
+        type="button"
+        onClick={onLoadMore}
+        className="w-full py-2 rounded-lg border border-gray-200 dark:border-navy-600 bg-white dark:bg-navy-700 text-xs font-heading font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:border-primary-400 dark:hover:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2 dark:focus:ring-offset-navy-800 transition-colors"
+      >
+        {t("common.loadMore")}
+      </button>
+      <p className="text-[11px] text-gray-400 dark:text-gray-500 text-right">
+        {t("worldEditor.showingEntries", { shown, total: matches })}
+      </p>
     </div>
   );
 }

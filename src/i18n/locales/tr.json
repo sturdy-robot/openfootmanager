@@ -470,6 +470,7 @@
     "goalDifference": "AV",
     "nPlayersFound": "{{count}} oyuncu bulundu",
     "nResults": "{{count}} sonuç",
+    "loadMore": "Daha fazla yükle",
     "showingFirst": "{{total}} oyuncunun ilk {{shown}} tanesi gösteriliyor. Daha fazlasını görmek için aramanızı daraltın.",
     "noPlayersMatch": "Filtrelerinize uyan oyuncu yok.",
     "positions": {
@@ -3727,6 +3728,7 @@
     "winRate": "Galibiyet oranı"
   },
   "worldEditor": {
+    "showingEntries": "{{total}} kayıttan {{shown}} tanesi gösteriliyor",
     "title": "Dünya Editörü",
     "newPackage": "Yeni Dünya",
     "openPackageFile": ".ofm dosyası aç",

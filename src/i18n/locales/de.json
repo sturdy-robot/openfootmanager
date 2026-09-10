@@ -466,6 +466,7 @@
     "goalDifference": "TD",
     "nPlayersFound": "{{count}} Spieler gefunden",
     "nResults": "{{count}} Ergebnis(se)",
+    "loadMore": "Mehr laden",
     "showingFirst": "Zeige die ersten {{shown}} von {{total}} Spielern. Verfeinere deine Suche.",
     "noPlayersMatch": "Keine Spieler entsprechen deinen Filtern.",
     "positions": {
@@ -3727,6 +3728,7 @@
     "winRate": "Siegquote"
   },
   "worldEditor": {
+    "showingEntries": "Zeige {{shown}} von {{total}}",
     "title": "Welt-Editor",
     "newPackage": "Neue Welt",
     "openPackageFile": ".ofm-Datei öffnen",

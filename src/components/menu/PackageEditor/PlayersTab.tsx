@@ -4,8 +4,8 @@ import { Search } from "lucide-react";
 import { GeneratedAvatar } from "../../ui/GeneratedAvatar";
 import { useAssetDataUrl } from "../../../hooks/useAssetDataUrl";
 import { POSITION_COLOR, entityRowKey } from "./helpers";
-import { EntityListShell, EntityRow, ExportCsvButton } from "./shared";
-import { buildTeamNameMap } from "./entityList.helpers";
+import { EntityListFooter, EntityListShell, EntityRow, ExportCsvButton } from "./shared";
+import { ENTITY_LIST_PAGE_SIZE, buildTeamNameMap, capRows } from "./entityList.helpers";
 import { filterPlayerRows } from "./PlayersTab.helpers";
 import type { PlayerDef, Position, TeamDef } from "./types";
 
@@ -61,11 +61,26 @@ export function PlayersTab({ players, teams, onAdd, onEdit, onDelete, onDuplicat
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
 
+  const [visibleCount, setVisibleCount] = useState(ENTITY_LIST_PAGE_SIZE);
+
   const teamNames = useMemo(() => buildTeamNameMap(teams), [teams]);
   const { scoped, filtered } = useMemo(
     () => filterPlayerRows({ players, youthOnly, query, teamNames }),
     [players, youthOnly, query, teamNames],
   );
+  const { visible } = capRows(
+    filtered,
+    visibleCount,
+    ENTITY_LIST_PAGE_SIZE,
+    ({ i }) => i === selectedIndex,
+  );
+
+  // Reset here rather than in an effect: an effect would let the old, longer
+  // list render once before shrinking it, which is the cost being avoided.
+  function handleQueryChange(next: string) {
+    setQuery(next);
+    setVisibleCount(ENTITY_LIST_PAGE_SIZE);
+  }
 
   return (
     <EntityListShell
@@ -82,7 +97,7 @@ export function PlayersTab({ players, teams, onAdd, onEdit, onDelete, onDuplicat
                 <input
                   type="text"
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={(e) => handleQueryChange(e.target.value)}
                   aria-label={t("worldEditor.searchPlayers")}
                   placeholder={t("worldEditor.searchPlayers")}
                   className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-navy-600 bg-white dark:bg-navy-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-400 transition"
@@ -93,8 +108,16 @@ export function PlayersTab({ players, teams, onAdd, onEdit, onDelete, onDuplicat
           </div>
         )
       }
+      footerSlot={
+        <EntityListFooter
+          shown={visible.length}
+          matches={filtered.length}
+          hasRecords={scoped.length > 0}
+          onLoadMore={() => setVisibleCount((n) => n + ENTITY_LIST_PAGE_SIZE)}
+        />
+      }
     >
-      {filtered.map(({ player, i }) => (
+      {visible.map(({ player, i }) => (
         <EntityRow
           key={entityRowKey(player.id, i)}
           title={player.name || `${player.firstName} ${player.lastName}`.trim() || player.id}

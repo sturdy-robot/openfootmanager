@@ -470,6 +470,7 @@
     "goalDifference": "SG",
     "nPlayersFound": "{{count}} pemain ditemukan",
     "nResults": "{{count}} hasil",
+    "loadMore": "Muat lebih banyak",
     "showingFirst": "Menampilkan {{shown}} pemain pertama dari {{total}}. Sempurnakan pencarian untuk melihat lebih banyak.",
     "noPlayersMatch": "Tidak ada pemain yang cocok dengan filter.",
     "positions": {
@@ -3727,6 +3728,7 @@
     "winRate": "Persentase kemenangan"
   },
   "worldEditor": {
+    "showingEntries": "Menampilkan {{shown}} dari {{total}}",
     "title": "Editor Dunia",
     "newPackage": "Dunia Baru",
     "openPackageFile": "Buka Berkas .ofm",

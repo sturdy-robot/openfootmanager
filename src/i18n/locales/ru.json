@@ -466,6 +466,7 @@
     "goalDifference": "РМ",
     "nPlayersFound": "Найдено игроков: {{count}}",
     "nResults": "Найдено результатов: {{count}}",
+    "loadMore": "Загрузить ещё",
     "showingFirst": "Показаны первые {{shown}} из {{total}} игроков. Уточните поиск, чтобы увидеть больше.",
     "noPlayersMatch": "Игроки не найдены по вашим фильтрам.",
     "positions": {
@@ -3727,6 +3728,7 @@
     "winRate": "Процент побед"
   },
   "worldEditor": {
+    "showingEntries": "Показано {{shown}} из {{total}}",
     "title": "Редактор мира",
     "newPackage": "Новый мир",
     "openPackageFile": "Открыть файл .ofm",

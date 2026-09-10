@@ -470,6 +470,7 @@
     "goalDifference": "Rozdíl",
     "nPlayersFound": "Nalezení hráči: {{count}}",
     "nResults": "Počet výsledků: {{count}}",
+    "loadMore": "Načíst další",
     "showingFirst": "Zobrazeno prvních {{shown}} z {{total}} hráčů. Pro upřesnění upravte vyhledávání.",
     "noPlayersMatch": "Vašim filtrům neodpovídají žádní hráči.",
     "positions": {
@@ -3727,6 +3728,7 @@
     "winRate": "Úspěšnost"
   },
   "worldEditor": {
+    "showingEntries": "Zobrazeno {{shown}} z {{total}}",
     "title": "Editor světa",
     "newPackage": "Nový svět",
     "openPackageFile": "Otevřít soubor .ofm",
