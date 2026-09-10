@@ -769,6 +769,12 @@ fn accepted_closed_window_loan_is_registered_when_the_window_opens() {
         registered_player.loan_offers[0].status,
         LoanOfferStatus::Accepted
     );
+    // Registering runs through `execute_loan`, which withdraws every live loan offer on the
+    // player — including this one. The agreement must not be left wearing that closure stamp.
+    assert!(
+        registered_player.loan_offers[0].closed_on.is_none(),
+        "a registered agreement must not carry a closure date"
+    );
     let active_loan = registered_player.active_loan.as_ref().unwrap();
     assert_eq!(active_loan.start_date, "2027-01-01");
     assert_eq!(active_loan.end_date, "2027-06-30");
@@ -2903,31 +2909,113 @@ fn pending_incoming_offers_never_exceed_the_cap_over_a_full_window() {
 /// permanent bid to claim a second slot on the same player.
 #[test]
 fn a_club_holding_a_pending_loan_offer_does_not_also_open_a_transfer_bid() {
-    let mut game = make_loan_pileup_game("player-user-loan-crosstype", 12);
+    // The player has to be worth a permanent bid, or the club would never reach the shortlist
+    // and the test would pass without the rule it is supposed to be checking. He is no longer
+    // loan-listed, so the loan path cannot fire and mask the result by consuming the club's
+    // action for the day — the standing loan offer is a leftover from when he was listed.
+    let mut player = make_user_player("player-user-loan-crosstype");
+    player.loan_listed = false;
+    player.transfer_listed = true;
+    player.contract_end = Some("2026-09-01".to_string());
+    player.market_value = 1_200_000;
+    player
+        .loan_offers
+        .push(make_pending_incoming_loan_offer("existing-loan", 75, None));
 
-    for _ in 0..30 {
-        generate_incoming_transfer_offers(&mut game);
-        game.clock.advance_days(1);
-    }
+    let mut game = make_game_with_player(player, vec![], 5_000_000, 2_000_000);
+    game.teams[1].finance = 8_000_000;
+    game.teams[1].transfer_budget = 5_000_000;
+
+    // team-2 already holds the loan approach, so it must not open a second, permanent one.
+    let holder = game.teams[1].id.clone();
+    assert_eq!(
+        find_player(&game, "player-user-loan-crosstype").loan_offers[0].from_team_id,
+        holder
+    );
+
+    generate_incoming_transfer_offers(&mut game);
 
     let player = find_player(&game, "player-user-loan-crosstype");
-    let loan_clubs: Vec<&str> = player
-        .loan_offers
-        .iter()
-        .filter(|offer| offer.status == LoanOfferStatus::Pending)
-        .map(|offer| offer.from_team_id.as_str())
-        .collect();
+    assert!(
+        player
+            .transfer_offers
+            .iter()
+            .all(|offer| offer.from_team_id != holder),
+        "{holder} holds a pending loan offer and must not also open a transfer bid"
+    );
+}
 
-    for offer in &player.transfer_offers {
-        if offer.status != TransferOfferStatus::Pending {
-            continue;
-        }
-        assert!(
-            !loan_clubs.contains(&offer.from_team_id.as_str()),
-            "{} holds both a pending loan offer and a pending transfer bid",
-            offer.from_team_id
-        );
+/// Outgoing bids close through `upsert_transfer_offer` rather than the closing helper, so that
+/// path has to honour the same rule: an offer the selling club turns down keeps its arrival date
+/// and records when talks ended.
+#[test]
+fn a_rejected_outgoing_bid_records_its_closure_without_moving_the_arrival_date() {
+    let mut target = make_player("player-outgoing-reject");
+    target.team_id = Some("team-2".to_string());
+    target.market_value = 5_000_000;
+    target.transfer_listed = true;
+
+    let mut game = make_game_with_player(target, vec![], 50_000_000, 40_000_000);
+    game.clock.advance_days(9);
+    let bid_day = game.clock.current_date.format("%Y-%m-%d").to_string();
+
+    // Far below what the selling club would entertain, so the bid is turned down outright.
+    make_transfer_bid(&mut game, "player-outgoing-reject", 1)
+        .expect("a bid should return an outcome");
+
+    let offer = &find_player(&game, "player-outgoing-reject").transfer_offers[0];
+    assert_eq!(offer.status, TransferOfferStatus::Rejected);
+    assert_eq!(
+        offer.closed_on.as_deref(),
+        Some(bid_day.as_str()),
+        "a rejected outgoing bid should record when it closed"
+    );
+    assert_eq!(
+        offer.date, bid_day,
+        "an offer created already rejected arrived the same day it closed"
+    );
+}
+
+/// The other half of the same rule: the cap counts both deal types, so live loan talks consume
+/// the budget a permanent bid would otherwise use.
+#[test]
+fn pending_loan_offers_count_towards_the_same_cap_as_transfer_bids() {
+    let mut player = make_user_player("player-user-crosstype-cap");
+    player.loan_listed = true;
+    player.transfer_listed = true;
+    player.contract_end = Some("2026-09-01".to_string());
+    player.market_value = 1_200_000;
+    for index in 0..3 {
+        let mut offer =
+            make_pending_incoming_loan_offer(&format!("existing-loan-{index}"), 75, None);
+        offer.from_team_id = format!("team-holder-{index}");
+        player.loan_offers.push(offer);
     }
+
+    let mut game = make_game_with_player(player, vec![], 5_000_000, 2_000_000);
+    for index in 0..3 {
+        game.teams.push(make_ai_team(
+            &format!("team-holder-{index}"),
+            &format!("Holder {index}"),
+            10_000_000,
+            5_000_000,
+        ));
+    }
+    game.teams[1].finance = 8_000_000;
+    game.teams[1].transfer_budget = 5_000_000;
+
+    generate_incoming_transfer_offers(&mut game);
+
+    let player = find_player(&game, "player-user-crosstype-cap");
+    let pending = player
+        .transfer_offers
+        .iter()
+        .filter(|offer| offer.status == TransferOfferStatus::Pending)
+        .count();
+    assert_eq!(
+        pending, 0,
+        "three live loan approaches already fill the queue, so no transfer bid should arrive"
+    );
 }
 
 /// `date` is the arrival date and is rewritten whenever a club re-opens talks, so it cannot

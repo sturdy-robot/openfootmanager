@@ -804,12 +804,24 @@ fn upsert_transfer_offer(
     suggested_counter_fee: Option<u64>,
     registration_date: Option<String>,
 ) -> String {
+    // An outgoing bid can be rejected outright, so this helper has to honour the same rule as
+    // `close_transfer_offer`: a closing status keeps the arrival date and records the ending.
+    let closing = matches!(
+        status,
+        TransferOfferStatus::Rejected | TransferOfferStatus::Withdrawn
+    );
+
     if let Some(offer) = player.transfer_offers.iter_mut().find(|offer| {
         offer.from_team_id == from_team_id && offer.status == TransferOfferStatus::Pending
     }) {
         offer.fee = fee;
         offer.status = status;
-        offer.date = date.to_string();
+        if closing {
+            offer.closed_on = Some(date.to_string());
+        } else {
+            offer.date = date.to_string();
+            offer.closed_on = None;
+        }
         offer.last_manager_fee = last_manager_fee;
         offer.negotiation_round = negotiation_round;
         offer.suggested_counter_fee = suggested_counter_fee;
@@ -829,7 +841,7 @@ fn upsert_transfer_offer(
         status,
         date: date.to_string(),
         registration_date,
-        closed_on: None,
+        closed_on: closing.then(|| date.to_string()),
     });
     offer_id
 }
@@ -846,6 +858,13 @@ fn upsert_loan_offer(
     status: LoanOfferStatus,
     date: &str,
 ) -> String {
+    // As in `upsert_transfer_offer`: an outgoing loan approach can be turned down outright, and a
+    // closing status must keep the arrival date and record the ending.
+    let closing = matches!(
+        status,
+        LoanOfferStatus::Rejected | LoanOfferStatus::Withdrawn
+    );
+
     if let Some(offer) = player.loan_offers.iter_mut().find(|offer| {
         offer.from_team_id == from_team_id && offer.status == LoanOfferStatus::Pending
     }) {
@@ -862,7 +881,12 @@ fn upsert_loan_offer(
         offer.suggested_end_date = None;
         offer.suggested_buy_option_fee = None;
         offer.status = status;
-        offer.date = date.to_string();
+        if closing {
+            offer.closed_on = Some(date.to_string());
+        } else {
+            offer.date = date.to_string();
+            offer.closed_on = None;
+        }
         return offer.id.clone();
     }
 
@@ -884,7 +908,7 @@ fn upsert_loan_offer(
         suggested_buy_option_fee: None,
         status,
         date: date.to_string(),
-        closed_on: None,
+        closed_on: closing.then(|| date.to_string()),
     });
     offer_id
 }
@@ -1059,15 +1083,15 @@ pub fn evaluate_transfer_market(game: &mut Game) {
                 return false;
             }
             if target.is_user_owned {
-                if approach_clubs
-                    .get(&target.player_id)
-                    .is_none_or(|clubs| !club_may_approach(clubs, &buyer_id))
-                    || new_user_offers_today >= MAX_NEW_INCOMING_USER_OFFERS_PER_DAY
-                    || new_offers_per_player
-                        .get(&target.player_id)
-                        .copied()
-                        .unwrap_or(0)
-                        >= MAX_NEW_INCOMING_OFFERS_PER_USER_PLAYER_PER_DAY
+                let budget = IncomingOfferBudget {
+                    new_today: &new_offers_per_player,
+                    approach_clubs: &approach_clubs,
+                };
+                if !budget.accepts(
+                    &target.player_id,
+                    &buyer_id,
+                    MAX_NEW_INCOMING_OFFERS_PER_USER_PLAYER_PER_DAY,
+                ) || new_user_offers_today >= MAX_NEW_INCOMING_USER_OFFERS_PER_DAY
                 {
                     return false;
                 }
@@ -1210,9 +1234,6 @@ fn create_incoming_user_loan_offer_if_any(
         .players
         .iter()
         .filter(|player| player.team_id.as_deref() == Some(user_team_id))
-        // A player with an agreed move is off the market entirely; the permanent path already
-        // skips these when building its shortlist.
-        .filter(|player| !player_has_pending_registration(player))
         .filter(|player| {
             budget.accepts(
                 &player.id,
@@ -2204,7 +2225,8 @@ pub fn counter_loan_offer(
             } else {
                 LoanOfferStatus::PendingRegistration
             };
-            offer.date = today.clone();
+            // Agreeing terms does not change when the offer arrived, and `respond_to_loan_offer`
+            // already leaves `date` alone — accepting via a counter must match it.
         }
 
         if register_immediately {
@@ -2705,6 +2727,9 @@ pub fn process_pending_loan_registrations(game: &mut Game) {
             if executed {
                 offer.status = LoanOfferStatus::Accepted;
                 offer.start_date = today.clone();
+                // `execute_loan` withdraws every live loan offer on the player, including this
+                // one, so the agreement arrives here carrying a closure stamp it did not earn.
+                offer.closed_on = None;
             } else {
                 // See the permanent path above: retention runs from the withdrawal.
                 close_loan_offer(offer, LoanOfferStatus::Withdrawn, &today);
