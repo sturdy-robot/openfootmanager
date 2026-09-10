@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import { GeneratedAvatar } from "../../ui/GeneratedAvatar";
 import { useAssetDataUrl } from "../../../hooks/useAssetDataUrl";
 import { POSITION_COLOR, entityRowKey } from "./helpers";
 import { EntityListShell, EntityRow, ExportCsvButton } from "./shared";
+import { buildTeamNameMap } from "./entityList.helpers";
+import { filterPlayerRows } from "./PlayersTab.helpers";
 import type { PlayerDef, Position, TeamDef } from "./types";
 
 interface PlayerAvatarCellProps {
@@ -59,22 +61,11 @@ export function PlayersTab({ players, teams, onAdd, onEdit, onDelete, onDuplicat
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
 
-  const q = query.trim().toLowerCase();
-  const scoped = youthOnly !== undefined
-    ? players.map((player, i) => ({ player, i })).filter(({ player }) => !!(player.youth) === youthOnly)
-    : players.map((player, i) => ({ player, i }));
-  const filtered = q
-    ? scoped.filter(({ player }) => {
-        const name = (player.name || `${player.firstName} ${player.lastName}`).toLowerCase();
-        return (
-          name.includes(q) ||
-          player.id.toLowerCase().includes(q) ||
-          player.club.toLowerCase().includes(q) ||
-          player.position.toLowerCase().includes(q) ||
-          player.nationality.toLowerCase().includes(q)
-        );
-      })
-    : scoped;
+  const teamNames = useMemo(() => buildTeamNameMap(teams), [teams]);
+  const { scoped, filtered } = useMemo(
+    () => filterPlayerRows({ players, youthOnly, query, teamNames }),
+    [players, youthOnly, query, teamNames],
+  );
 
   return (
     <EntityListShell
@@ -109,7 +100,7 @@ export function PlayersTab({ players, teams, onAdd, onEdit, onDelete, onDuplicat
           title={player.name || `${player.firstName} ${player.lastName}`.trim() || player.id}
           subtitle={[
             t(`common.positions.${player.position}`),
-            player.club ? (teams?.find((tm) => tm.id === player.club)?.name ?? player.club) : null,
+            player.club ? (teamNames.get(player.club) ?? player.club) : null,
           ].filter(Boolean).join(" · ")}
           badge={
             <PlayerAvatarCell

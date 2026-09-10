@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import { GeneratedCrest } from "../../ui/GeneratedCrest";
@@ -45,15 +45,19 @@ export function TeamsTab({ teams, projectDir, onAdd, onEdit, onDelete, onDuplica
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
 
-  const q = query.trim().toLowerCase();
-  const filtered = q
-    ? teams.map((team, i) => ({ team, i })).filter(({ team }) =>
-        team.name.toLowerCase().includes(q) ||
-        team.city.toLowerCase().includes(q) ||
-        team.country.toLowerCase().includes(q) ||
-        team.id.toLowerCase().includes(q)
-      )
-    : teams.map((team, i) => ({ team, i }));
+  const rows = useMemo(() => teams.map((team, i) => ({ team, i })), [teams]);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) {
+      return rows;
+    }
+    return rows.filter(({ team }) =>
+      team.name.toLowerCase().includes(q) ||
+      team.city.toLowerCase().includes(q) ||
+      team.country.toLowerCase().includes(q) ||
+      team.id.toLowerCase().includes(q)
+    );
+  }, [rows, query]);
 
   return (
     <EntityListShell

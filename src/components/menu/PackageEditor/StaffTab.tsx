@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import { EntityListShell, EntityRow } from "./shared";
+import { buildTeamNameMap } from "./entityList.helpers";
 import type { StaffDef, TeamDef } from "./types";
 import { entityRowKey } from "./helpers";
 
@@ -34,19 +35,26 @@ export function StaffTab({ staff, teams, onAdd, onEdit, onDelete, onDuplicate, s
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
 
-  const q = query.trim().toLowerCase();
-  const filtered = q
-    ? staff.map((s, i) => ({ s, i })).filter(({ s }) => {
-        const name = `${s.firstName} ${s.lastName}`.toLowerCase();
-        return (
-          name.includes(q) ||
-          s.id.toLowerCase().includes(q) ||
-          s.role.toLowerCase().includes(q) ||
-          s.nationality.toLowerCase().includes(q) ||
-          s.club.toLowerCase().includes(q)
-        );
-      })
-    : staff.map((s, i) => ({ s, i }));
+  const teamNames = useMemo(() => buildTeamNameMap(teams), [teams]);
+  const rows = useMemo(() => staff.map((s, i) => ({ s, i })), [staff]);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) {
+      return rows;
+    }
+    return rows.filter(({ s }) => {
+      const name = `${s.firstName} ${s.lastName}`.toLowerCase();
+      const clubName = s.club ? teamNames.get(s.club) : undefined;
+      return (
+        name.includes(q) ||
+        s.id.toLowerCase().includes(q) ||
+        s.role.toLowerCase().includes(q) ||
+        s.nationality.toLowerCase().includes(q) ||
+        s.club.toLowerCase().includes(q) ||
+        (clubName !== undefined && clubName.toLowerCase().includes(q))
+      );
+    });
+  }, [rows, query, teamNames]);
 
   return (
     <EntityListShell
@@ -74,7 +82,7 @@ export function StaffTab({ staff, teams, onAdd, onEdit, onDelete, onDuplicate, s
         const name = `${s.firstName} ${s.lastName}`.trim() || s.id;
         const roleColor = ROLE_COLOR[s.role] ?? "bg-gray-500";
         const roleAbbr = ROLE_ABBR[s.role] ?? s.role.slice(0, 2).toUpperCase();
-        const clubName = s.club ? (teams?.find((t) => t.id === s.club)?.name ?? s.club) : null;
+        const clubName = s.club ? (teamNames.get(s.club) ?? s.club) : null;
         return (
           <EntityRow
             key={entityRowKey(s.id, i)}
