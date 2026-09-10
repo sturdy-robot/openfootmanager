@@ -131,7 +131,7 @@ describe("DatePicker", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "March" }));
     // The mock echoes an untranslated key back, so this is the placeholder row.
-    fireEvent.click(screen.getByRole("button", { name: "date.month" }));
+    fireEvent.click(screen.getByRole("button", { name: "date.noMonth" }));
 
     await waitFor(() => {
       expect(onChange).toHaveBeenLastCalledWith("");

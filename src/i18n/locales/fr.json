@@ -3600,6 +3600,9 @@
     }
   },
   "date": {
+    "dayLabel": "Jour",
+    "yearLabel": "Année",
+    "noMonth": "Aucun mois",
     "day": "JJ",
     "month": "Mois",
     "year": "AAAA"

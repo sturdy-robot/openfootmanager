@@ -60,4 +60,17 @@ describe("StaffForm", () => {
     expect(screen.getByPlaceholderText("DD")).toHaveValue("27");
     expect(screen.getByPlaceholderText("YYYY")).toHaveValue("1978");
   });
+
+  it("keeps the date of birth caption attached to the three controls under it", () => {
+    // The native input it replaced was named by its <label htmlFor>. Three
+    // controls cannot be, so the caption has to name the group instead —
+    // otherwise a screen reader announces a day, a month and a year that
+    // belong to nothing.
+    renderForm({ dateOfBirth: "1978-05-27" });
+
+    const field = screen.getByRole("group", { name: "worldEditor.staffDateOfBirth" });
+
+    expect(field).toContainElement(screen.getByPlaceholderText("DD"));
+    expect(field).toContainElement(screen.getByPlaceholderText("YYYY"));
+  });
 });

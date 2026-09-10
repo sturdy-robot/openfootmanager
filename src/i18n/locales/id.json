@@ -3600,6 +3600,9 @@
     }
   },
   "date": {
+    "dayLabel": "Tanggal",
+    "yearLabel": "Tahun",
+    "noMonth": "Tanpa bulan",
     "day": "DD",
     "month": "Bulan",
     "year": "YYYY"

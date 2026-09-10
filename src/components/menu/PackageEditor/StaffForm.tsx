@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LabeledInput, LabeledSelect, labelClass } from "./primitives";
 import { EntityFormShell } from "./shared";
@@ -31,6 +31,7 @@ export function StaffForm({
   updateField,
 }: StaffFormProps) {
   const { t } = useTranslation();
+  const dobLabelId = useId();
   const [useAttributes, setUseAttributes] = useState(editing.attributes !== null);
   const [idAutoMode, setIdAutoMode] = useState(editingIndex === null && !editing.id);
 
@@ -164,8 +165,9 @@ export function StaffForm({
 
       {/* Date of Birth */}
       <div className="flex flex-col gap-1">
-        <label className={labelClass}>{t("worldEditor.staffDateOfBirth")}</label>
+        <label id={dobLabelId} className={labelClass}>{t("worldEditor.staffDateOfBirth")}</label>
         <DatePicker
+          labelledBy={dobLabelId}
           value={editing.dateOfBirth ?? ""}
           onChange={(v) => updateField("dateOfBirth", v || null)}
         />

@@ -3600,6 +3600,9 @@
     }
   },
   "date": {
+    "dayLabel": "Gün",
+    "yearLabel": "Yıl",
+    "noMonth": "Ay yok",
     "day": "DD",
     "month": "Ay",
     "year": "YYYY"

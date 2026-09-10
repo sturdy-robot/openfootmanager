@@ -3600,6 +3600,9 @@
     }
   },
   "date": {
+    "dayLabel": "日",
+    "yearLabel": "年",
+    "noMonth": "不选月份",
     "day": "日",
     "month": "月",
     "year": "年"

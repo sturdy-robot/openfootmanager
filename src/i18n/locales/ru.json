@@ -3600,6 +3600,9 @@
     }
   },
   "date": {
+    "dayLabel": "День",
+    "yearLabel": "Год",
+    "noMonth": "Без месяца",
     "day": "ДД",
     "month": "Месяц",
     "year": "ГГГГ"

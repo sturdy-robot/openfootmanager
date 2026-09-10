@@ -6,6 +6,13 @@ interface DatePickerProps {
   value: string; // YYYY-MM-DD
   onChange: (date: string) => void;
   error?: boolean;
+  /**
+   * Id of the caption above this picker. Three controls stand in for one
+   * field here, so a caption cannot be bound to them with `htmlFor` the way
+   * it can to a single input — without this the caption is orphaned and a
+   * screen reader reads out a day, a month and a year belonging to nothing.
+   */
+  labelledBy?: string;
 }
 
 interface DateParts {
@@ -90,7 +97,7 @@ function getSelectedMonthLabel(monthValue: string, months: MonthOption[], fallba
   return months.find(m => m.value === monthValue || m.value === parseInt(monthValue).toString())?.label ?? fallback;
 }
 
-export function DatePicker({ value, onChange, error }: DatePickerProps) {
+export function DatePicker({ value, onChange, error, labelledBy }: DatePickerProps) {
   const { t, i18n } = useTranslation();
 
   // Parse initial value or use current date components
@@ -193,13 +200,18 @@ export function DatePicker({ value, onChange, error }: DatePickerProps) {
   const selectedMonthLabel = getSelectedMonthLabel(month, months, t('date.month'));
 
   return (
-    <div className="flex gap-2 w-full">
+    <div
+      className="flex gap-2 w-full"
+      role={labelledBy ? "group" : undefined}
+      aria-labelledby={labelledBy}
+    >
       {/* Day */}
       <div className="flex-1">
         <input
           type="text"
           inputMode="numeric"
           placeholder={t('date.day', 'DD')}
+          aria-label={t('date.dayLabel')}
           value={day}
           onChange={handleDayChange}
           onBlur={() => setDay(normaliseDayOnBlur(day))}
@@ -244,10 +256,10 @@ export function DatePicker({ value, onChange, error }: DatePickerProps) {
                 }}
                 className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between transition-colors ${month === ""
                     ? "bg-primary-50 dark:bg-primary-500/10 text-primary-600 dark:text-primary-400"
-                    : "text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-navy-600"
+                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-navy-600"
                   }`}
               >
-                <span>{t('date.month')}</span>
+                <span>{t('date.noMonth')}</span>
                 {month === "" && <Check className="w-4 h-4 text-primary-500" />}
               </button>
               {months.map(m => (
@@ -286,6 +298,7 @@ export function DatePicker({ value, onChange, error }: DatePickerProps) {
           type="text"
           inputMode="numeric"
           placeholder={t('date.year', 'YYYY')}
+          aria-label={t('date.yearLabel')}
           value={year}
           onChange={handleYearChange}
           onBlur={() => {

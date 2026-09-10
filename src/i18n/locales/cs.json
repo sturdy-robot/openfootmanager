@@ -3600,6 +3600,9 @@
     }
   },
   "date": {
+    "dayLabel": "Den",
+    "yearLabel": "Rok",
+    "noMonth": "Bez měsíce",
     "day": "DD",
     "month": "Měsíc",
     "year": "RRRR"
