@@ -6,6 +6,7 @@ import {
   positionFilterGroups,
 } from "./PlayersTab.helpers";
 import { emptyPlayer } from "./helpers";
+import en from "../../../i18n/locales/en.json";
 import type { PlayerDef, Position } from "./types";
 
 function player(overrides: Partial<PlayerDef> = {}): PlayerDef {
@@ -121,6 +122,26 @@ describe("matchesPositionFilter", () => {
 });
 
 describe("positionFilterGroups", () => {
+  it("names every option and section with a key that exists", () => {
+    // These keys are built by interpolation, so frontendKeyCoverage — which
+    // parses literal t("…") calls — cannot see them. Without this, deleting or
+    // renaming one ships a raw key string as a dropdown label in every locale
+    // with the whole suite green.
+    const groups = positionFilterGroups();
+    const keys = groups.flatMap((group) => [
+      group.labelKey,
+      ...group.options.map((option) => option.labelKey),
+    ]);
+
+    for (const key of keys) {
+      const value = key.split(".").reduce<unknown>(
+        (node, part) => (node as Record<string, unknown> | undefined)?.[part],
+        en as unknown,
+      );
+      expect(typeof value, `missing en.json key: ${key}`).toBe("string");
+    }
+  });
+
   it("offers the four groups and all seventeen positions, each once", () => {
     const groups = positionFilterGroups();
     const values = groups.flatMap((group) => group.options.map((option) => option.value));

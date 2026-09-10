@@ -5,6 +5,7 @@ import { GeneratedCrest } from "../../ui/GeneratedCrest";
 import { useAssetDataUrl } from "../../../hooks/useAssetDataUrl";
 import { EntityListFooter, EntityListShell, EntityRow, ExportCsvButton } from "./shared";
 import { ENTITY_LIST_PAGE_SIZE, capRows } from "./entityList.helpers";
+import { useKeepRevealed } from "./entityList.reveal";
 import type { TeamDef } from "./types";
 import { entityRowKey } from "./helpers";
 
@@ -67,6 +68,7 @@ export function TeamsTab({ teams, projectDir, onAdd, onEdit, onDelete, onDuplica
     ENTITY_LIST_PAGE_SIZE,
     ({ i }) => i === selectedIndex,
   );
+  useKeepRevealed(visible.length, visibleCount, setVisibleCount);
 
   // Reset here rather than in an effect: an effect would let the old, longer
   // list render once before shrinking it, which is the cost being avoided.

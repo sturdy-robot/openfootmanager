@@ -6,6 +6,7 @@ import { useAssetDataUrl } from "../../../hooks/useAssetDataUrl";
 import { POSITION_COLOR, entityRowKey } from "./helpers";
 import { EntityListFooter, EntityListShell, EntityRow, ExportCsvButton } from "./shared";
 import { ENTITY_LIST_PAGE_SIZE, buildTeamNameMap, capRows } from "./entityList.helpers";
+import { useKeepRevealed } from "./entityList.reveal";
 import { filterPlayerRows, positionFilterGroups, type PositionFilter } from "./PlayersTab.helpers";
 import { Select } from "../../ui/Select";
 import type { PlayerDef, Position, TeamDef } from "./types";
@@ -78,6 +79,7 @@ export function PlayersTab({ players, teams, onAdd, onEdit, onDelete, onDuplicat
     ENTITY_LIST_PAGE_SIZE,
     ({ i }) => i === selectedIndex,
   );
+  useKeepRevealed(visible.length, visibleCount, setVisibleCount);
 
   // Reset here rather than in an effect: an effect would let the old, longer
   // list render once before shrinking it, which is the cost being avoided.

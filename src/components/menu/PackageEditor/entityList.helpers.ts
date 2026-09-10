@@ -32,10 +32,17 @@ export function capRows<T>(
     return { visible: rows, hiddenCount: 0 };
   }
 
+  // Only the stretch window is worth searching. Scanning the whole list to
+  // find a selection that would be rejected anyway is the O(N)-per-render work
+  // the rest of this file exists to remove — and this runs on every keystroke,
+  // since the edit buffer shares a tree with the lists.
   let limit = visibleCount;
-  const selectedPos = rows.findIndex(isSelected);
-  if (selectedPos >= visibleCount && selectedPos < visibleCount + pageSize) {
-    limit = selectedPos + 1;
+  const end = Math.min(rows.length, visibleCount + pageSize);
+  for (let pos = visibleCount; pos < end; pos += 1) {
+    if (isSelected(rows[pos])) {
+      limit = pos + 1;
+      break;
+    }
   }
 
   return { visible: rows.slice(0, limit), hiddenCount: rows.length - limit };

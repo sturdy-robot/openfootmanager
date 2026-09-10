@@ -57,6 +57,25 @@ function editButtons() {
   return screen.queryAllByRole("button", { name: "worldEditor.editPlayer" });
 }
 
+/**
+ * Renders 500 players and hands back a way to move the selection, which is how
+ * duplicating the last visible row over and over looks from the tab's side.
+ */
+function renderTabForRerender() {
+  const list = players(500);
+  const props = {
+    players: list,
+    onAdd: () => {},
+    onEdit: vi.fn(),
+    onDelete: () => {},
+  };
+  const view = render(<PlayersTab {...props} selectedIndex={null} />);
+  return {
+    rerender: (selectedIndex: number) =>
+      view.rerender(<PlayersTab {...props} selectedIndex={selectedIndex} />),
+  };
+}
+
 describe("PlayersTab", () => {
   it("renders one page of rows rather than every player", () => {
     // A package with a full pyramid holds tens of thousands of players, and
@@ -184,6 +203,25 @@ describe("PlayersTab", () => {
     fireEvent.click(screen.getByRole("button", { name: "common.loadMore" }));
 
     expect(editButtons()).toHaveLength(60);
+  });
+
+  it("keeps rows revealed once a stretch has shown them", () => {
+    // The stretch is recomputed from visibleCount every render, so on its own
+    // it does not accumulate: walk the selection down one row at a time and it
+    // eventually reaches visibleCount + pageSize, the stretch is refused, and
+    // the list snaps back from 100 rows to 50 — hiding rows that were on
+    // screen, along with the copy the user just made.
+    const { rerender } = renderTabForRerender();
+
+    // Row 99 is inside the stretch window, so the list grows to 100 rows.
+    rerender(99);
+    expect(editButtons()).toHaveLength(100);
+
+    // Row 100 is one past that — inside the window only if the previous
+    // stretch stuck. Measured from the original 50 it is exactly one page
+    // away, which the bound rejects, and the list collapses.
+    rerender(100);
+    expect(editButtons()).toHaveLength(101);
   });
 
   it("keeps a duplicated row visible when it lands just past the page edge", () => {

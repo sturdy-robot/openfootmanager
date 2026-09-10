@@ -3733,7 +3733,7 @@
   "worldEditor": {
     "positionGroupFilter": {
       "Goalkeeper": "Todos os goleiros",
-      "Defender": "Todos os zagueiros",
+      "Defender": "Todos os defensores",
       "Midfielder": "Todos os meias",
       "Forward": "Todos os atacantes"
     },

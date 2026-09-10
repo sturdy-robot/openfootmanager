@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import { EntityListFooter, EntityListShell, EntityRow } from "./shared";
 import { ENTITY_LIST_PAGE_SIZE, buildTeamNameMap, capRows } from "./entityList.helpers";
+import { useKeepRevealed } from "./entityList.reveal";
 import type { StaffDef, TeamDef } from "./types";
 import { entityRowKey } from "./helpers";
 
@@ -63,6 +64,7 @@ export function StaffTab({ staff, teams, onAdd, onEdit, onDelete, onDuplicate, s
     ENTITY_LIST_PAGE_SIZE,
     ({ i }) => i === selectedIndex,
   );
+  useKeepRevealed(visible.length, visibleCount, setVisibleCount);
 
   // Reset here rather than in an effect: an effect would let the old, longer
   // list render once before shrinking it, which is the cost being avoided.

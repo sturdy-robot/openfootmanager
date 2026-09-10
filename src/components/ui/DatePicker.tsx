@@ -280,7 +280,7 @@ export function DatePicker({ value, onChange, error, labelledBy }: DatePickerPro
                   }`}
               >
                 <span>{t('date.noMonth')}</span>
-                {month === "" && <Check className="w-4 h-4 text-primary-500" />}
+                {month === "" && <Check className="w-4 h-4 text-primary-500 dark:text-primary-400" />}
               </button>
               {months.map(m => (
                 <button
@@ -304,7 +304,7 @@ export function DatePicker({ value, onChange, error, labelledBy }: DatePickerPro
                     }`}
                 >
                   <span>{m.label}</span>
-                  {(month === m.value || month === m.value.padStart(2, '0')) && <Check className="w-4 h-4 text-primary-500" />}
+                  {(month === m.value || month === m.value.padStart(2, '0')) && <Check className="w-4 h-4 text-primary-500 dark:text-primary-400" />}
                 </button>
               ))}
             </div>
