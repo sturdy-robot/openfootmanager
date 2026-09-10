@@ -177,9 +177,11 @@ export function DatePicker({ value, onChange, error, labelledBy }: DatePickerPro
     if (day && month && year && year.length === 4) {
       hasDateRef.current = true;
       const next = formatDateValue(day, month, year);
-      // Only when it actually says something new. Otherwise merely opening a
-      // record with a birthday reported a change, which marks the package
-      // dirty and triggers an autosave for a value nobody touched. An
+      // Only when it actually says something new. Seeding the parts above is
+      // what breaks the loop; this is what keeps it broken — the effect can
+      // now only ever report a value the parent does not already hold, so no
+      // arrangement of the two effects can start the cycle again. It also
+      // spares every form open a re-render for a value nobody touched. An
       // unpadded or two-digit incoming value still differs from its
       // normalised form, so that correction is still reported.
       if (next !== valueRef.current) {

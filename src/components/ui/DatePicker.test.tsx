@@ -114,7 +114,12 @@ describe("DatePicker", () => {
           value={value}
           onChange={(v) => {
             emitted.push(v);
-            setValue(v);
+            // Stop feeding back once it is clearly not settling. The cycle is
+            // synchronous inside `act()`, so an uncapped host would hang the
+            // worker rather than fail — and a test that hangs reports nothing.
+            if (emitted.length < 8) {
+              setValue(v);
+            }
           }}
         />
       );

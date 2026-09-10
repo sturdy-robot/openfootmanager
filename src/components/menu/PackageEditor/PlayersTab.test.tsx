@@ -171,7 +171,19 @@ describe("PlayersTab", () => {
     fireEvent.click(screen.getByRole("button", { name: "common.loadMore" }));
 
     expect(editButtons()).toHaveLength(60);
-    expect(screen.getByRole("button", { name: "common.loadMore" })).toBeDisabled();
+    // aria-disabled rather than disabled, so it keeps focus and its place in
+    // the tab order instead of handing focus back to the document.
+    expect(screen.getByRole("button", { name: "common.loadMore" }))
+      .toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("does nothing when the exhausted load-more button is pressed again", () => {
+    renderTab({ players: players(60) });
+
+    fireEvent.click(screen.getByRole("button", { name: "common.loadMore" }));
+    fireEvent.click(screen.getByRole("button", { name: "common.loadMore" }));
+
+    expect(editButtons()).toHaveLength(60);
   });
 
   it("keeps a duplicated row visible when it lands just past the page edge", () => {
@@ -194,6 +206,12 @@ describe("PlayersTab position column", () => {
 describe("PlayersTab position filter", () => {
   // Select is a portal-backed combobox, not a native <select>, so an option is
   // reached by opening the list and clicking it.
+  //
+  // The trigger is named `aria-labelledby="<caption> <self>"`, so a browser
+  // reads it as "Filter by position, All positions". jsdom's accessible-name
+  // computation drops the self-reference and returns the caption alone, which
+  // is why the exact-string query below works — if a library upgrade starts
+  // honouring it, this query needs a substring matcher, not a fix to the app.
   function choosePosition(optionName: string) {
     fireEvent.click(screen.getByRole("combobox", { name: "worldEditor.filterByPosition" }));
     fireEvent.click(screen.getByRole("option", { name: optionName }));

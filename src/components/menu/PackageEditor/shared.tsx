@@ -93,9 +93,13 @@ export function EntityListFooter({ shown, matches, hasRecords, onLoadMore }: Ent
           type="button"
           variant="outline"
           size="sm"
-          className="w-full"
-          onClick={onLoadMore}
-          disabled={everythingShown}
+          // `aria-disabled`, not `disabled`: a disabled element is not
+          // focusable, so disabling the button the user just pressed hands
+          // focus back to the document — the same problem as unmounting it.
+          // This keeps it in the tab order and announced as unavailable.
+          className={`w-full ${everythingShown ? "opacity-50 cursor-not-allowed" : ""}`}
+          onClick={everythingShown ? undefined : onLoadMore}
+          aria-disabled={everythingShown}
           aria-describedby={countId}
         >
           {t("common.loadMore")}
