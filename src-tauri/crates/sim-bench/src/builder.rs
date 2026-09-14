@@ -136,23 +136,31 @@ fn parse_formation(formation: &str) -> (u8, u8, u8, bool) {
 /// Without this the bench builds every squad with `slot: None`, so the deployed
 /// slot — the thing that makes a 4-3-3 play differently from a 3-5-2 beyond
 /// counting bodies — would never be exercised by a single benchmark.
+///
+/// `idx` is **one-based**, counting from the left of the line, because that is
+/// what `build_team` passes and what the player's id is built from. It was
+/// written against a zero-based index it never received, so `idx == 0` was
+/// never true: no squad the benchmark built had a left back, a left midfielder
+/// or a left winger, and a back four came out CB, CB, RB, CB. Every calibration
+/// number taken before this was measured on those squads.
 fn slot_for(position: Position, idx: u8, total: u8) -> Slot {
-    let wide_left = idx == 0;
-    let wide_right = total > 1 && idx == total - 1;
+    let wide_left = idx == 1;
+    let wide_right = total > 1 && idx == total;
     match position {
         Position::Goalkeeper => Slot::Goalkeeper,
-        // A back four is left-back, two centre-halves, right-back; a back
-        // three is all centre-halves.
+        // Five at the back is wing backs, four is full backs, three is three
+        // centre halves. The wing-back arm used to name the *left* berth twice.
+        Position::Defender if total >= 5 && wide_left => Slot::LeftWingBack,
+        Position::Defender if total >= 5 && wide_right => Slot::RightWingBack,
         Position::Defender if total >= 4 && wide_left => Slot::LeftBack,
         Position::Defender if total >= 4 && wide_right => Slot::RightBack,
-        Position::Defender if total == 5 && (idx == 1 || idx == 3) => Slot::LeftWingBack,
         Position::Defender => Slot::CenterBack,
-        // Five across the middle puts a man wide on each side; a flat three or
-        // four holds, runs and creates through the centre.
+        // Four or more across the middle puts a man wide on each side; a flat
+        // three holds, runs and creates through the centre.
         Position::Midfielder if total >= 4 && wide_left => Slot::LeftMidfielder,
         Position::Midfielder if total >= 4 && wide_right => Slot::RightMidfielder,
-        Position::Midfielder if idx == 0 => Slot::DefensiveMidfielder,
-        Position::Midfielder if total >= 3 && idx + 1 == total => Slot::AttackingMidfielder,
+        Position::Midfielder if idx == 1 => Slot::DefensiveMidfielder,
+        Position::Midfielder if total >= 3 && idx == total => Slot::AttackingMidfielder,
         Position::Midfielder => Slot::CentralMidfielder,
         // A front three is winger, striker, winger.
         Position::Forward if total >= 3 && wide_left => Slot::LeftWinger,
@@ -217,5 +225,87 @@ fn make_player(
         traits: vec![],
         slot: Some(slot_for(position, idx, total_in_position)),
         role,
+    }
+}
+
+#[cfg(test)]
+mod shape_tests {
+    use super::*;
+    use rand::rngs::StdRng;
+    use rand::SeedableRng;
+
+    fn slots(formation: &str) -> Vec<Slot> {
+        let mut rng = StdRng::seed_from_u64(1);
+        build_team("t", "T", 70, PlayStyle::Balanced, formation, &mut rng)
+            .players
+            .iter()
+            .filter_map(|p| p.slot)
+            .collect()
+    }
+
+    /// `make_player` is called with `i` from `1..=n`, and `slot_for` asks
+    /// whether `idx == 0` to find the left-sided berth. Nobody was ever index
+    /// zero, so no squad the benchmark built had a left back, a left midfielder
+    /// or a left winger, and the holding midfielder went missing too: a back
+    /// four came out CB, CB, RB, CB and a midfield four CM, CM, RM, CM.
+    ///
+    /// Every calibration number was measured on those squads, which is why this
+    /// is pinned by exact layout rather than by counting bodies.
+    #[test]
+    fn a_back_four_has_two_full_backs_one_on_each_side() {
+        let s = slots("4-4-2");
+        assert_eq!(
+            &s[1..5],
+            &[
+                Slot::LeftBack,
+                Slot::CenterBack,
+                Slot::CenterBack,
+                Slot::RightBack
+            ],
+            "defence was {:?}",
+            &s[1..5]
+        );
+    }
+
+    #[test]
+    fn a_midfield_four_is_flanked_on_both_sides() {
+        let s = slots("4-4-2");
+        assert_eq!(
+            &s[5..9],
+            &[
+                Slot::LeftMidfielder,
+                Slot::CentralMidfielder,
+                Slot::CentralMidfielder,
+                Slot::RightMidfielder
+            ],
+            "midfield was {:?}",
+            &s[5..9]
+        );
+    }
+
+    #[test]
+    fn a_front_three_is_two_wingers_and_a_striker() {
+        let s = slots("4-3-3");
+        assert_eq!(
+            &s[8..11],
+            &[Slot::LeftWinger, Slot::Striker, Slot::RightWinger],
+            "attack was {:?}",
+            &s[8..11]
+        );
+    }
+
+    #[test]
+    fn every_supported_shape_fills_eleven_distinct_berths() {
+        for formation in ["4-4-2", "4-3-3", "3-5-2", "5-3-2", "4-5-1", "3-4-3"] {
+            let s = slots(formation);
+            assert_eq!(s.len(), 11, "{formation} did not deploy eleven");
+            assert_eq!(s[0], Slot::Goalkeeper, "{formation} has no keeper");
+            // A back five is wing backs, never two on the same flank.
+            let left_wing_backs = s.iter().filter(|x| **x == Slot::LeftWingBack).count();
+            assert!(
+                left_wing_backs <= 1,
+                "{formation} deployed {left_wing_backs} left wing backs: {s:?}"
+            );
+        }
     }
 }
