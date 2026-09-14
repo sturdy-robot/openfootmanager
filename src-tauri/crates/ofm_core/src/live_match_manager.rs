@@ -1,5 +1,11 @@
 mod team_builder;
 pub use team_builder::auto_select_set_pieces;
+/// Convert a domain player into the engine's mirror type.
+///
+/// Re-exported for the match-engine benchmark, which needs to hand the engine
+/// real squads. Without it the benchmark would carry a fourth copy of this
+/// conversion; the tree already has three copies of "rating to attributes".
+pub use team_builder::to_engine_player;
 pub(crate) use team_builder::build_team_with_bench;
 
 use rand::SeedableRng;

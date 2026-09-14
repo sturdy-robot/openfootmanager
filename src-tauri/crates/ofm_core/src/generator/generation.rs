@@ -557,7 +557,7 @@ fn jitter(base: i32, spread: i32, lo: u8, hi: u8, rng: &mut impl Rng) -> u8 {
 /// position so a goalkeeper's keeping attributes and a defender's defending sit
 /// high. Used when a hand-authored player gives an `overall` rather than a full
 /// `attributes` block; the resulting position-weighted OVR lands near `overall`.
-pub(super) fn attributes_for_overall(
+pub fn attributes_for_overall(
     overall: u8,
     position: &Position,
     rng: &mut impl Rng,

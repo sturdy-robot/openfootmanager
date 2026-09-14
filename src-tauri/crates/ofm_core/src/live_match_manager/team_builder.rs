@@ -411,7 +411,7 @@ pub(crate) fn domain_to_engine_tactics(t: &domain::team::TacticsPhaseSettings) -
     }
 }
 
-fn to_engine_player(
+pub fn to_engine_player(
     p: &domain::player::Player,
     role: EnginePlayerRole,
     deployed: Option<&DomainPosition>,

@@ -7,6 +7,14 @@ mod generation;
 pub mod package;
 pub mod world_io;
 
+/// Build a player's attributes around a target rating, shaped by position.
+///
+/// Re-exported so the match-engine benchmark can build squads the way the game
+/// does instead of keeping its own divergent copy — it had one, with different
+/// offsets, a different spread and a hand-assigned `ovr`. `mod generation`
+/// stays private: this widens one function and nothing else.
+pub use generation::attributes_for_overall;
+
 pub use clubs::WorldGenConfig;
 pub use competition_def::*;
 pub use definitions::*;
