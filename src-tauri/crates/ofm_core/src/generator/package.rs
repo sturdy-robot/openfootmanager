@@ -2182,6 +2182,100 @@ mod tests {
         );
     }
 
+    /// Send a one-club package down the new-game path — load, build the world,
+    /// and round-trip it through the world JSON a save starts from — with the
+    /// club, a player and a staff member all of nationality `code`. `extra`
+    /// adds files (a declared country, say). `Err` says which step refused it,
+    /// or that a person came out with a different nationality.
+    fn start_a_game_with_nationality(code: &str, extra: &[(&str, &str)]) -> Result<(), String> {
+        let dir = temp_package();
+        write(
+            &dir,
+            "world.yaml",
+            "schema: world\nid: probe\nname: Probe\nversion: 1.0.0\nlicense: CC0-1.0\n",
+        );
+        write(
+            &dir,
+            "teams.yaml",
+            &format!(
+                "schema: team\nid: club\nname: Club FC\nshortName: CLU\ncity: Town\ncountry: {code}\ncolors:\n  primary: '#cc0000'\n  secondary: '#ffffff'\n"
+            ),
+        );
+        write(
+            &dir,
+            "players.yaml",
+            &format!(
+                "schema: player\nid: probe-player\nname: Probe Player\nclub: club\nnationality: {code}\nposition: CentralMidfielder\n"
+            ),
+        );
+        write(
+            &dir,
+            "staff.yaml",
+            &format!(
+                "schema: staff\nid: probe-staff\nfirstName: Probe\nlastName: Coach\nclub: club\nnationality: {code}\nrole: Coach\n"
+            ),
+        );
+        for (file, contents) in extra {
+            write(&dir, file, contents);
+        }
+
+        let (package, errors) = load_world_package(&dir);
+        std::fs::remove_dir_all(&dir).ok();
+        if !errors.is_empty() {
+            return Err(format!("load: {errors:?}"));
+        }
+        let world = crate::generator::build_world_from_package(&package, Some(2031), &embedded())
+            .map_err(|err| format!("build: {err}"))?;
+        let world = crate::generator::export_world_to_json(&world)
+            .and_then(|json| crate::generator::load_world_from_json(&json))
+            .map_err(|err| format!("reload: {err}"))?;
+
+        let player = world.players.iter().find(|p| p.id == "probe-player");
+        let staff = world.staff.iter().find(|s| s.id == "probe-staff");
+        match (
+            player.map(|p| p.nationality.as_str()),
+            staff.map(|s| s.nationality.as_str()),
+        ) {
+            (Some(p), Some(s)) if p == code && s == code => Ok(()),
+            other => Err(format!("nationality became {other:?}")),
+        }
+    }
+
+    /// Given, for each nation the editor offers (Armenia and Guinea-Bissau
+    ///       among them), a package whose club, player and staff member all
+    ///       belong to it,
+    /// When the package goes down the new-game path,
+    /// Then every step accepts it and the people keep their nationality.
+    #[test]
+    fn every_selectable_nationality_starts_a_game() {
+        let failures: Vec<String> = crate::nations::all_nations()
+            .filter_map(|nation| {
+                start_a_game_with_nationality(nation.code, &[])
+                    .err()
+                    .map(|err| format!("{}: {err}", nation.code))
+            })
+            .collect();
+        assert!(failures.is_empty(), "{failures:#?}");
+    }
+
+    /// Given a package that declares Antarctica, which no FIFA catalog lists, as a
+    ///       country of its own, and whose club, player and staff member belong to it,
+    /// When the package goes down the new-game path,
+    /// Then every step accepts it and the people keep their nationality.
+    #[test]
+    fn a_nationality_the_package_declares_itself_starts_a_game() {
+        assert!(
+            crate::nations::nation_by_code("AQ").is_none(),
+            "test premise: Antarctica is not a catalog nation"
+        );
+        let declared = (
+            "country.yaml",
+            "schema: country\nid: AQ\nname: Antarctica\nconfederation: oceania\n",
+        );
+
+        assert_eq!(start_a_game_with_nationality("AQ", &[declared]), Ok(()));
+    }
+
     /// Definition sources for tests: the shipped files, never a machine's own.
     fn embedded() -> crate::generator::DefinitionSources {
         crate::generator::DefinitionSources::embedded_only()
