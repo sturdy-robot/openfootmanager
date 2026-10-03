@@ -8,25 +8,6 @@ const WORLD_SERIALIZE_FAILED_ERROR: &str = "be.error.worldSerializeFailed";
 const RANDOM_WORLD_NAME_KEY: &str = "be.msg.world.randomName";
 const RANDOM_WORLD_DESCRIPTION_KEY: &str = "be.msg.world.randomDescription";
 
-/// The region a country belongs to.
-///
-/// This used to be a hand-maintained match over 21 codes that answered
-/// `"europe"` for everything else — and it sits on the *live* path, because
-/// `normalize_world` infers regions whenever a world declares none, which a
-/// procedurally generated world always does. While generation only ever
-/// produced clubs in the same handful of European-plus-BR/AR countries the
-/// match happened to list, the gap was invisible. Now that the nations a world
-/// contains are read from `data/default_nations.json`, the first person to add
-/// Japan or Nigeria would have had them filed under Europe.
-///
-/// `nations::region_for_code` already knows the correct region for all 211
-/// catalogued nations. Its own `"europe"` default is the right behaviour here:
-/// region inference has to answer *something*, and an uncatalogued code has no
-/// better answer available.
-fn infer_region_id(country_code: &str) -> &'static str {
-    crate::nations::region_for_code(country_code)
-}
-
 fn backend_text_with_param(key: &str, param_name: &str, param_value: usize) -> String {
     let param_value = param_value.to_string();
     let mut message = String::with_capacity(key.len() + param_name.len() + param_value.len() + 2);
@@ -38,6 +19,15 @@ fn backend_text_with_param(key: &str, param_name: &str, param_value: usize) -> S
     message
 }
 
+/// Group a world's clubs into regions, for a world that declares none — which a
+/// procedurally generated world always is, so this is the live path.
+///
+/// Regions come straight from `nations::region_for_code`, the catalog's answer
+/// for all 211 nations. This used to go through a hand-maintained match over 21
+/// codes that answered `"europe"` for everything else, so a Nigerian or
+/// Japanese club was filed under Europe (#602). The catalog's own `"europe"`
+/// default for an uncatalogued code is kept on purpose: inference has to answer
+/// *something*, and refusing to load a legacy world over one odd code is worse.
 fn infer_world_regions(teams: &[domain::team::Team]) -> Vec<WorldRegionDefinition> {
     use std::collections::BTreeMap;
 
@@ -48,7 +38,7 @@ fn infer_world_regions(teams: &[domain::team::Team]) -> Vec<WorldRegionDefinitio
         } else {
             team.country.clone()
         };
-        let region_id = infer_region_id(&country_code).to_string();
+        let region_id = crate::nations::region_for_code(&country_code).to_string();
         countries_by_region
             .entry(region_id)
             .or_default()
@@ -1151,5 +1141,47 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// Given a world with one club in each catalog nation (54 of them African)
+    ///       and no regions of its own, as every generated world starts,
+    /// When the world is assembled,
+    /// Then each nation is filed under its catalog region, and none falls
+    ///      through to Europe.
+    #[test]
+    fn a_world_without_regions_files_every_nation_under_its_catalog_region() {
+        let teams: Vec<domain::team::Team> = crate::nations::all_nations()
+            .map(|nation| {
+                domain::team::Team::new(
+                    format!("club-{}", nation.code),
+                    format!("{} FC", nation.name),
+                    nation.code.into(),
+                    nation.code.into(),
+                    "City".into(),
+                    "Ground".into(),
+                    1000,
+                )
+            })
+            .collect();
+
+        let world = world_data_from_parts((teams, Vec::new(), Vec::new()), None);
+
+        let misfiled: Vec<String> = crate::nations::all_nations()
+            .filter_map(|nation| {
+                let filed: Vec<&str> = world
+                    .regions
+                    .iter()
+                    .filter(|region| region.country_codes.iter().any(|code| code == nation.code))
+                    .map(|region| region.id.as_str())
+                    .collect();
+                (filed != [nation.region_id]).then(|| {
+                    format!(
+                        "{} expected {} got {filed:?}",
+                        nation.code, nation.region_id
+                    )
+                })
+            })
+            .collect();
+        assert!(misfiled.is_empty(), "{misfiled:#?}");
     }
 }
