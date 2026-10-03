@@ -519,10 +519,18 @@ fn parse_entity<T: serde::de::DeserializeOwned>(
     schema: &str,
     errors: &mut Vec<PackageError>,
 ) -> Option<T> {
-    match serde_yaml::from_value::<T>(value) {
+    match serde_path_to_error::deserialize::<_, T>(value) {
         Ok(parsed) => Some(parsed),
-        Err(_) => {
-            errors.push(PackageError::new(INVALID_ENTITY, file).with("schema", schema));
+        // serde's message is the only thing that names the field and the value
+        // that failed, so it travels as a param. It stays in serde's English: it
+        // quotes the author's own JSON keys and values, which no locale can
+        // translate, and the sentence around it is still a translation key.
+        Err(err) => {
+            errors.push(
+                PackageError::new(INVALID_ENTITY, file)
+                    .with("schema", schema)
+                    .with("detail", err.to_string()),
+            );
             None
         }
     }
@@ -2180,6 +2188,36 @@ mod tests {
                 .unwrap()
                 .contains("fallbackLeague")
         );
+    }
+
+    /// Given a package whose one player has a position no enum variant matches,
+    /// When the package is loaded,
+    /// Then the invalid-entity error says which field was wrong and what it held,
+    ///      instead of only naming the schema.
+    #[test]
+    fn a_malformed_entity_reports_the_field_and_value_that_failed() {
+        let dir = temp_package();
+        write(
+            &dir,
+            "players.yaml",
+            "schema: player\nid: p1\nfirstName: Ana\nlastName: Silva\nposition: Sweeper\n",
+        );
+
+        let (_, errors) = load_world_package_files(&dir);
+
+        let invalid = errors
+            .iter()
+            .find(|error| error.code == INVALID_ENTITY)
+            .unwrap_or_else(|| panic!("expected an invalid-entity error, got {errors:?}"));
+        let detail = invalid
+            .params
+            .iter()
+            .find(|(key, _)| key == "detail")
+            .map(|(_, value)| value.as_str())
+            .unwrap_or_else(|| panic!("no detail param on {invalid:?}"));
+        assert!(detail.contains("position"), "field missing: {detail}");
+        assert!(detail.contains("Sweeper"), "value missing: {detail}");
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     /// Definition sources for tests: the shipped files, never a machine's own.

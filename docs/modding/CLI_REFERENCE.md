@@ -210,7 +210,7 @@ ofm-cli info my-league.ofm
 | `readFailed` | File could not be opened or parsed | _(file path in output)_ |
 | `missingSchema` | File has no top-level `schema` field | _(file path)_ |
 | `unknownSchema` | `schema` value is not recognized | `schema` |
-| `invalidEntity` | Entity body is malformed or missing required fields | `schema` |
+| `invalidEntity` | Entity body is malformed or missing required fields | `schema`, `detail` (the field and value that failed, e.g. ``position: unknown variant `Sweeper` ``) |
 | `missingId` | Entity has an empty `id` field — `kind=world` means the package manifest itself | `kind` (entity type) |
 | `missingMetadata` | The package manifest leaves a required field blank: `name`, `version`, `license`, or an explicitly empty `packageType` (omitting `packageType` resolves to `"database"`) | `field` |
 | `invalidPackageId` | `id` is not a plain filename the installer can use: it starts with a dot, ends with a dot or space, contains `/`, `\`, `..`, a control character, or Windows-reserved punctuation (`<`, `>`, `:`, `"`, `\|`, `?`, `*`), is longer than 251 bytes, is a Windows device name (`CON`, `NUL`, `COM1`, `COM¹`…), or is `assets` | `id` |
