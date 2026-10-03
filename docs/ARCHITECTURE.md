@@ -228,6 +228,8 @@ All frontend↔backend communication goes through Tauri's `invoke()` mechanism. 
 | `report_upload_available` | — | `bool` | Whether this build has an `https` relay to send reports to (`OFM_BUG_REPORT_RELAY_URL`) |
 | `upload_report_bundle` | report_text, include_save, consent | `UploadReceipt` | With consent, build the bundle privately and send it to the relay ([contract](api/bug-reports.md)); records the code |
 | `list_submitted_reports` | — | `Vec<SubmittedReport>` | Reference codes from `reports.json`, newest first |
+| `crash_notice` | — | `Option<CrashNotice>` | When the last session crashed (time and version only), until the player answers the launch prompt |
+| `dismiss_crash_notice` | — | — | The launch crash prompt was answered; not offered again this launch |
 
 ---
 
