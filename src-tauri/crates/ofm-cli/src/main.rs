@@ -1027,6 +1027,54 @@ mod tests {
         );
     }
 
+    /// Given a package from `ofm-cli new` whose `names/names.json` an author filled
+    ///       with a BR pool,
+    /// When `ofm-cli add names --append-to names.json` appends the ENG starter pool,
+    /// Then the package loads both pools — the #471 reproduction, where only ENG survived.
+    #[test]
+    fn appending_a_names_pool_keeps_the_pools_already_in_the_file() {
+        let dir = scratch_dir("append-names");
+        assert_eq!(
+            cmd_new("demo", Some(&dir), "Author", "1.0.0", "database"),
+            0
+        );
+        let names_file = dir.join("names").join("names.json");
+        write_json(
+            &names_file,
+            &json!({
+                "schema": "names",
+                "version": 1,
+                "pools": { "BR": { "first_names": ["Joao"], "last_names": ["Silva"] } }
+            }),
+        )
+        .unwrap();
+
+        assert_eq!(
+            cmd_add(
+                &EntityKind::Names,
+                None,
+                Some(&dir),
+                Some("names.json"),
+                "json"
+            ),
+            0
+        );
+
+        let (package, errors) = load_world_package(&dir);
+        std::fs::remove_dir_all(&dir).ok();
+        assert!(errors.is_empty(), "{errors:?}");
+        let mut pools: Vec<&str> = package
+            .names
+            .as_ref()
+            .expect("the package declares names")
+            .pools
+            .keys()
+            .map(String::as_str)
+            .collect();
+        pools.sort_unstable();
+        assert_eq!(pools, ["BR", "ENG"]);
+    }
+
     /// The values `ofm-cli schema player` offers for `position`, read out of the
     /// annotated block's comment (which wraps over several lines).
     ///

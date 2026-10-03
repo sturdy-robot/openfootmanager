@@ -41,7 +41,7 @@ until you do the next:
 ## File Format Rules
 
 - Supported formats: `.json`, `.yaml`, `.yml`
-- A file can contain **one entity** (fields at the top level alongside `schema`) or **many entities** in an `items` array
+- A file can contain **one entity** (fields at the top level alongside `schema`), **many entities** in an `items` array, or both — a top-level entity next to `items` is loaded as well (this is what `ofm-cli add --append-to` leaves behind when it appends to a single-entity file)
 - JSON comments are not supported (use YAML for commented data)
 - The loader walks the package directory recursively — directory names do not matter
 - At most **one `world` entity** is allowed per package
@@ -676,5 +676,7 @@ Provides first and last name lists for random player name generation. Keyed by I
   }
 }
 ```
+
+A package may spread its pools over several `names` files. They are merged by country code, the same way stacked packages merge: a code declared twice keeps the declaration from the file that sorts last by path.
 
 The built-in name pools already cover common footballing countries. You only need to define name pools for countries your package introduces, or if you want to customize the names generated for existing countries.

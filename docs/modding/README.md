@@ -49,7 +49,7 @@ Your package can reference these ids directly without defining them. You only ne
 The loader walks your package directory recursively and classifies files by their `schema` field — **not by directory name or file name**. This means:
 
 - You can organize files however you like
-- A file can contain **one entity** (fields at the top level) or **many entities** in an `items` array
+- A file can contain **one entity** (fields at the top level), **many entities** in an `items` array, or both
 - JSON (`.json`) and YAML (`.yaml`, `.yml`) are both supported and can coexist in one package
 
 ```json

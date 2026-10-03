@@ -18,7 +18,7 @@ use domain::player::{PlayerAttributes, Position};
 use domain::staff::{CoachingSpecialization, StaffAttributes, StaffRole};
 
 use super::authored_player::authored_player_errors;
-use super::{CompetitionDefinition, NamePool, NamesDefinition, TeamDef};
+use super::{CompetitionDefinition, NamesDefinition, TeamDef};
 
 // ---------------------------------------------------------------------------
 // Authoring structs for the entity types a package can contain
@@ -574,7 +574,7 @@ fn classify_entity(
         }
         "names" => {
             if let Some(def) = parse_entity::<NamesDefinition>(value, file, schema, errors) {
-                package.names = Some(def);
+                absorb_names(&mut package.names, def);
             }
         }
         "world" => {
@@ -610,15 +610,45 @@ fn classify_file(
         return;
     };
 
-    // A file holds one entity (its fields at the top level) or a bulk `items`
-    // list of entities of the same schema.
-    let entities: Vec<Value> = match map.get("items") {
-        Some(Value::Sequence(items)) => items.clone(),
-        _ => vec![value.clone()],
+    // A file holds one entity (its fields at the top level), a bulk `items`
+    // list of entities of the same schema, or both. Both is what
+    // `ofm-cli add --append-to` leaves when it appends to a single-entity file,
+    // and reading only `items` then dropped the entity the file started with.
+    let Some(Value::Sequence(items)) = map.get("items") else {
+        classify_entity(&schema, value.clone(), file, package, errors);
+        return;
     };
-    for entity in entities {
-        classify_entity(&schema, entity, file, package, errors);
+    let declares_top_level_entity = map.keys().any(|key| {
+        key.as_str()
+            .is_none_or(|key| key != "schema" && key != "items")
+    });
+    if declares_top_level_entity {
+        let mut top_level = map.clone();
+        top_level.remove("items");
+        classify_entity(&schema, Value::Mapping(top_level), file, package, errors);
     }
+    for entity in items {
+        classify_entity(&schema, entity.clone(), file, package, errors);
+    }
+}
+
+/// Fold one `names` declaration into the pools gathered so far: pools union by
+/// country code with the later declaration winning a repeated code, the highest
+/// version stands, and the last non-empty description stands.
+///
+/// The one rule for both places pools meet — two files in one package, and two
+/// packages in a stack — so a package cannot mean one thing to the CLI and
+/// another once it is stacked.
+fn absorb_names(gathered: &mut Option<NamesDefinition>, incoming: NamesDefinition) {
+    let Some(gathered) = gathered else {
+        *gathered = Some(incoming);
+        return;
+    };
+    gathered.version = gathered.version.max(incoming.version);
+    if !incoming.description.is_empty() {
+        gathered.description = incoming.description;
+    }
+    gathered.pools.extend(incoming.pools);
 }
 
 /// Load a world package from a directory: walk it recursively, classify each
@@ -1591,14 +1621,6 @@ pub fn merge_world_packages(packages: Vec<WorldPackage>) -> (WorldPackage, Vec<P
         std::collections::HashSet::new();
     let mut merged_meta_base: Option<WorldMetaDef> = None;
     let mut merged_manifest_file = String::new();
-    // Name pools are unioned per-key across packages (like every other entity
-    // collection) rather than wholesale-replaced, so stacking packages that each
-    // supply distinct pools keeps them all.
-    let mut merged_pools: std::collections::HashMap<String, NamePool> =
-        std::collections::HashMap::new();
-    let mut names_version = 0u32;
-    let mut names_description = String::new();
-    let mut saw_names = false;
 
     for package in databases.into_iter().chain(patches) {
         if let Some(meta) = package.meta {
@@ -1683,17 +1705,11 @@ pub fn merge_world_packages(packages: Vec<WorldPackage>) -> (WorldPackage, Vec<P
         for (i, c) in package.competitions.into_iter().enumerate() {
             competitions.insert(c.id.clone(), (c, file_of("competition", i)));
         }
+        // Name pools are unioned per-key across packages (like every other
+        // entity collection) rather than wholesale-replaced, so stacking
+        // packages that each supply distinct pools keeps them all.
         if let Some(names) = package.names {
-            saw_names = true;
-            if names.version > names_version {
-                names_version = names.version;
-            }
-            if !names.description.is_empty() {
-                names_description = names.description;
-            }
-            for (key, pool) in names.pools {
-                merged_pools.insert(key, pool);
-            }
+            absorb_names(&mut merged.names, names);
         }
         for (locale, bundle) in package.extra_translations {
             merged.extra_translations.insert(locale, bundle);
@@ -1708,14 +1724,6 @@ pub fn merge_world_packages(packages: Vec<WorldPackage>) -> (WorldPackage, Vec<P
         }
         merged.meta = Some(meta);
         merged.manifest_file = merged_manifest_file;
-    }
-
-    if saw_names {
-        merged.names = Some(NamesDefinition {
-            version: names_version,
-            description: names_description,
-            pools: merged_pools,
-        });
     }
 
     let (confederations, confederations_files): (Vec<_>, Vec<_>) = confeds.into_values().unzip();
@@ -2180,6 +2188,107 @@ mod tests {
                 .unwrap()
                 .contains("fallbackLeague")
         );
+    }
+
+    /// The pool keys a loaded package ends up with, sorted.
+    fn pool_keys(package: &WorldPackage) -> Vec<String> {
+        let mut keys: Vec<String> = package
+            .names
+            .iter()
+            .flat_map(|names| names.pools.keys().cloned())
+            .collect();
+        keys.sort();
+        keys
+    }
+
+    /// Given one package with two `names` files, one declaring BR and the other AR,
+    /// When the package is loaded,
+    /// Then both pools are there, rather than the second file replacing the first.
+    #[test]
+    fn two_names_files_in_one_package_keep_both_pools() {
+        let dir = temp_package();
+        write(
+            &dir,
+            "names/brazil.yaml",
+            "schema: names\npools:\n  BR:\n    first_names: [Joao]\n    last_names: [Silva]\n",
+        );
+        write(
+            &dir,
+            "names/argentina.yaml",
+            "schema: names\npools:\n  AR:\n    first_names: [Diego]\n    last_names: [Gomez]\n",
+        );
+
+        let (package, errors) = load_world_package_files(&dir);
+
+        assert!(errors.is_empty(), "{errors:?}");
+        assert_eq!(pool_keys(&package), ["AR", "BR"]);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// Given two `names` files in one package that both declare an ENG pool,
+    /// When the package is loaded,
+    /// Then the file that sorts last wins that key, the rule stacked packages use.
+    #[test]
+    fn a_pool_declared_twice_in_one_package_takes_the_later_file() {
+        let dir = temp_package();
+        write(
+            &dir,
+            "names/a.yaml",
+            "schema: names\npools:\n  ENG:\n    first_names: [Early]\n    last_names: [Smith]\n",
+        );
+        write(
+            &dir,
+            "names/b.yaml",
+            "schema: names\npools:\n  ENG:\n    first_names: [Late]\n    last_names: [Smith]\n",
+        );
+
+        let (package, _) = load_world_package_files(&dir);
+
+        let pool = &package.names.as_ref().expect("names").pools["ENG"];
+        assert_eq!(pool.first_names, ["Late"]);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// Given a `names` file that declares BR at the top level and has an `items`
+    /// list holding an ENG pool (the shape `ofm-cli add names --append-to` leaves),
+    /// When the package is loaded,
+    /// Then both pools are there, rather than `items` hiding the top-level one.
+    #[test]
+    fn a_names_file_with_items_keeps_its_top_level_pools() {
+        let dir = temp_package();
+        write(
+            &dir,
+            "names/names.yaml",
+            "schema: names\npools:\n  BR:\n    first_names: [Joao]\n    last_names: [Silva]\n\
+             items:\n  - pools:\n      ENG:\n        first_names: [John]\n        last_names: [Smith]\n",
+        );
+
+        let (package, errors) = load_world_package_files(&dir);
+
+        assert!(errors.is_empty(), "{errors:?}");
+        assert_eq!(pool_keys(&package), ["BR", "ENG"]);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// Given a single-player file that later gained an `items` list with a second player,
+    /// When the package is loaded,
+    /// Then both players are loaded, rather than the top-level one vanishing.
+    #[test]
+    fn a_single_entity_file_with_appended_items_keeps_the_first_entity() {
+        let dir = temp_package();
+        write(
+            &dir,
+            "players/ana.yaml",
+            "schema: player\nid: ana\nfirstName: Ana\nlastName: Silva\n\
+             items:\n  - id: bea\n    firstName: Bea\n    lastName: Costa\n",
+        );
+
+        let (package, errors) = load_world_package_files(&dir);
+
+        assert!(errors.is_empty(), "{errors:?}");
+        let ids: Vec<&str> = package.players.iter().map(|p| p.id.as_str()).collect();
+        assert_eq!(ids, ["ana", "bea"]);
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     /// Definition sources for tests: the shipped files, never a machine's own.
