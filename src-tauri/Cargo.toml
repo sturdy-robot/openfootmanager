@@ -85,6 +85,11 @@ csv = "1"
 # will hand to someone else — so it uses the same writer.
 zip = { version = "2", features = ["deflate"] }
 tempfile = "3"
+# The bug-report upload (#569). Blocking, because the upload already runs on `spawn_blocking` beside
+# the bundle export, and an async client would mean a runtime this crate does not otherwise need
+# outside the `mcp` feature. `rustls` (ring + bundled webpki roots) rather than native TLS, so the
+# three platforms trust the same roots and no system OpenSSL is linked.
+ureq = { version = "3", default-features = false, features = ["rustls"] }
 
 # Dev builds (`tauri dev`) otherwise run the whole simulation unoptimized, which
 # is the dominant cause of the in-app sluggishness. Lightly optimizing our own
