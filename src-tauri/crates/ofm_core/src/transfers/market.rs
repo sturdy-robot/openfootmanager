@@ -198,16 +198,19 @@ pub fn evaluate_transfer_market(game: &mut Game) {
     // market each day; dormant clubs are handled by lighter periodic passes.
     // `None` means no scope is configured, so every club is a potential buyer.
     let active_team_ids = game.active_team_ids();
-    let buyer_ids: Vec<String> = game
+    // Each buyer with where it stands in `game.teams`, so the loop reads it without searching.
+    // The sweep moves players, never clubs, so the positions hold all day.
+    let buyers: Vec<(usize, String)> = game
         .teams
         .iter()
-        .filter(|team| Some(team.id.as_str()) != user_team_id.as_deref())
-        .filter(|team| {
+        .enumerate()
+        .filter(|(_, team)| Some(team.id.as_str()) != user_team_id.as_deref())
+        .filter(|(_, team)| {
             active_team_ids
                 .as_ref()
                 .is_none_or(|ids| ids.contains(&team.id))
         })
-        .map(|team| team.id.clone())
+        .map(|(position, team)| (position, team.id.clone()))
         .collect();
     let mut completed_ai_transfers = 0_usize;
     let mut moved_player_ids: HashSet<String> = HashSet::new();
@@ -288,10 +291,14 @@ pub fn evaluate_transfer_market(game: &mut Game) {
     // equally appealing targets, so selection is unchanged.
     shortlist.sort_by_key(|candidate| std::cmp::Reverse(candidate.score));
 
-    for buyer_id in buyer_ids {
-        let Some(buyer_team) = game.teams.iter().find(|team| team.id == buyer_id).cloned() else {
+    for (buyer_position, buyer_id) in buyers {
+        let Some(buyer_team) = game.teams.get(buyer_position).cloned() else {
             continue;
         };
+        debug_assert_eq!(
+            buyer_team.id, buyer_id,
+            "a club moved in the team list during the transfer sweep"
+        );
         let buyer_depths = position_depths.get(&buyer_id).copied().unwrap_or([0; 4]);
 
         let loan_offer_player_id = if let Some(user_team_id) = user_team_id.as_deref() {
