@@ -521,6 +521,9 @@ const FREE_AGENT_SHIFT: f64 = -3.0;
 /// standards would otherwise fatten exactly that tail.
 const YOUNG_SPREAD_KEPT: f64 = 0.88;
 const YOUNG_SHIFT_KEPT: f64 = 1.0;
+/// The fraction of a club's standard shift its academy's recruits take. The recruits are the
+/// age wonderkids come from, so the full shift would give the big clubs nearly all of them.
+const ACADEMY_SHIFT_KEPT: f64 = 0.5;
 
 /// The bell a player's ceiling is drawn from when it is not the single world-wide one.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -529,6 +532,11 @@ pub(super) struct Standard {
     shift: f64,
     /// The fraction of the rolled spread the bell keeps.
     spread_kept: f64,
+    /// Whether a player young enough to be a wonderkid is drawn from the narrower young bell
+    /// ([`YOUNG_SPREAD_KEPT`]). The opening squads and the free-agent pool are; an academy's
+    /// recruits are not, because every season's intake must keep the world's whole bell, or the
+    /// world would run short of stars a generation later.
+    damps_the_young: bool,
 }
 
 impl Standard {
@@ -536,6 +544,12 @@ impl Standard {
     fn within_club_spread() -> f64 {
         (1.0 - (BETWEEN_CLUB_SD / CEILING_SD).powi(2)).sqrt() * WITHIN_CLUB_TIGHTEN
     }
+}
+
+/// How far a club's reputation sits from the average club's, in reputation spreads, capped.
+fn reputation_score(reputation: u32) -> f64 {
+    ((f64::from(reputation) - REPUTATION_CENTRE) / REPUTATION_SD)
+        .clamp(-REPUTATION_Z_CAP, REPUTATION_Z_CAP)
 }
 
 /// How a generated player is rolled besides his slot: the age to fix, and the bell his ceiling is
@@ -559,13 +573,31 @@ impl PlayerRoll {
 
     /// A player of a club of `reputation`, at the slot's age.
     pub(super) fn for_club(reputation: u32) -> Self {
-        let z = ((f64::from(reputation) - REPUTATION_CENTRE) / REPUTATION_SD)
-            .clamp(-REPUTATION_Z_CAP, REPUTATION_Z_CAP);
         Self {
             age: None,
             standard: Some(Standard {
-                shift: CLUB_LIFT + BETWEEN_CLUB_SD * z,
+                shift: CLUB_LIFT + BETWEEN_CLUB_SD * reputation_score(reputation),
                 spread_kept: Standard::within_club_spread(),
+                damps_the_young: true,
+            }),
+        }
+    }
+
+    /// A youngster joining the academy of a club of `reputation`, of `age` (or the slot's age).
+    ///
+    /// He takes [`ACADEMY_SHIFT_KEPT`] of the club's standard shift and none of [`CLUB_LIFT`],
+    /// which pays for the opening free-agent pool and would inflate the world every season. His
+    /// spread gives back exactly the variance the shift takes, so across clubs of every standing
+    /// the intake keeps the world's bell, mean and tails alike: the best prospects gather at the
+    /// big clubs, but there are no more of them.
+    pub(super) fn for_academy(reputation: u32, age: Option<u32>) -> Self {
+        let shift_spread = ACADEMY_SHIFT_KEPT * BETWEEN_CLUB_SD;
+        Self {
+            age,
+            standard: Some(Standard {
+                shift: shift_spread * reputation_score(reputation),
+                spread_kept: (1.0 - (shift_spread / CEILING_SD).powi(2)).sqrt(),
+                damps_the_young: false,
             }),
         }
     }
@@ -577,6 +609,7 @@ impl PlayerRoll {
             standard: Some(Standard {
                 shift: FREE_AGENT_SHIFT,
                 spread_kept: Standard::within_club_spread(),
+                damps_the_young: true,
             }),
         }
     }
@@ -596,7 +629,7 @@ fn shaped_ceiling(rolled: f64, age: u32) -> u8 {
 
 /// [`shaped_ceiling`] on a [`Standard`]'s bell.
 fn standard_ceiling(rolled: f64, age: u32, standard: Standard) -> u8 {
-    if age <= WONDERKID_MAX_AGE {
+    if standard.damps_the_young && age <= WONDERKID_MAX_AGE {
         return ceiling_on_bell(
             rolled,
             age,

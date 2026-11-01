@@ -80,7 +80,7 @@ fn youth_recruit(
         slot_index,
         &nationality,
         current_year,
-        PlayerRoll::unscaled(age),
+        PlayerRoll::for_academy(team.reputation, age),
         &names_def,
         rng,
     );
@@ -91,4 +91,121 @@ fn youth_recruit(
     // a new game's squads and on load, so a signed prospect showed the generic group until a reload.
     crate::player_identity::upgrade_player_identity(&mut player, None);
     player
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::SeedableRng;
+
+    const RECRUITS: usize = 4_000;
+    const AGE: u32 = 16;
+    const YEAR: u32 = 2030;
+
+    fn club(reputation: u32) -> Team {
+        let mut team = Team::new(
+            format!("club{reputation}"),
+            format!("Club {reputation}"),
+            "CLB".to_string(),
+            "ENG".to_string(),
+            "London".to_string(),
+            "Ground".to_string(),
+            20_000,
+        );
+        team.reputation = reputation;
+        team
+    }
+
+    /// The ceilings of `RECRUITS` intake recruits of `team`, from a fixed seed.
+    fn academy_ceilings(team: &Team, seed: u64) -> Vec<f64> {
+        let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
+        (0..RECRUITS)
+            .map(|_| {
+                let recruit =
+                    generate_youth_intake_recruit(team, &Position::Midfielder, AGE, YEAR, &mut rng);
+                f64::from(recruit.potential)
+            })
+            .collect()
+    }
+
+    /// The same recruits rolled on the single world-wide bell, from the same seed: every
+    /// academy's draws before academies had a standard.
+    fn world_bell_ceilings(seed: u64) -> Vec<f64> {
+        let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
+        let names = default_names_definition();
+        let slot = youth_slots_for_target(Some(Position::Midfielder))[0];
+        (0..RECRUITS)
+            .map(|_| {
+                let recruit = generate_random_player_from_def(
+                    "club",
+                    slot,
+                    "ENG",
+                    YEAR,
+                    PlayerRoll::unscaled(Some(AGE)),
+                    &names,
+                    &mut rng,
+                );
+                f64::from(recruit.potential)
+            })
+            .collect()
+    }
+
+    fn mean(values: &[f64]) -> f64 {
+        values.iter().sum::<f64>() / values.len() as f64
+    }
+
+    fn share_at_or_above(values: &[f64], ceiling: f64) -> f64 {
+        values.iter().filter(|&&value| value >= ceiling).count() as f64 / values.len() as f64
+    }
+
+    /// Given a big club and a small one taking recruits from the same seeds
+    /// When each takes its intake
+    /// Then the big club's recruits have clearly higher ceilings: an academy draws on its club's
+    ///      standing
+    #[test]
+    fn a_big_clubs_academy_recruits_higher_ceilings_than_a_small_clubs() {
+        let big = mean(&academy_ceilings(&club(800), 1));
+        let small = mean(&academy_ceilings(&club(200), 1));
+
+        assert!(
+            big - small > 2.0,
+            "big club {big:.2} against small club {small:.2}"
+        );
+    }
+
+    /// Given a club of average reputation
+    /// When it takes its intake
+    /// Then its recruits' ceilings average the world-wide bell's: no lift is added, so the
+    ///      world's academies do not inflate its ratings season after season
+    #[test]
+    fn an_average_clubs_academy_recruits_on_the_world_bells_mean() {
+        let average = mean(&academy_ceilings(&club(500), 2));
+        let world = mean(&world_bell_ceilings(2));
+
+        assert!(
+            (average - world).abs() < 0.4,
+            "average club {average:.2} against the world bell {world:.2}"
+        );
+    }
+
+    /// Given clubs spread across the world's reputations
+    /// When they all take their intake
+    /// Then they produce S-tier ceilings at the world-wide bell's rate, give or take sampling: the
+    ///      best prospects gather at the big clubs, but there are neither more nor fewer of them
+    #[test]
+    fn the_worlds_academies_produce_s_tier_ceilings_at_the_world_bells_rate() {
+        let pooled: Vec<f64> = [275, 425, 500, 575, 725]
+            .into_iter()
+            .enumerate()
+            .flat_map(|(index, reputation)| academy_ceilings(&club(reputation), 10 + index as u64))
+            .collect();
+        let world: Vec<f64> = (10..15).flat_map(world_bell_ceilings).collect();
+
+        let academies = share_at_or_above(&pooled, 81.0);
+        let bell = share_at_or_above(&world, 81.0);
+        assert!(
+            academies <= bell * 1.2 && academies >= bell * 0.8,
+            "academies {academies:.4} against the world bell {bell:.4}"
+        );
+    }
 }
