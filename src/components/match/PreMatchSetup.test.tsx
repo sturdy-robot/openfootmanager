@@ -180,9 +180,18 @@ describe("PreMatchSetup pitch tokens, graded by the backend's familiarity", () =
     familiarityState.players.set(striker.id, striker);
     const state = gameState();
     state.players = [striker];
+    // Eleven starters fill a 4-4-2's slots one for one, so each token is graded for its slot (with
+    // fewer the pitch falls back to the coarse group comparison, which is not the familiarity's).
+    const eleven = [
+      homePlayers[0],
+      ...Array.from({ length: 10 }, (_, index) => enginePlayer({ id: `h-${index}` })),
+    ];
+    const full = snapshot() as unknown as MatchSnapshot;
     return render(
       <PreMatchSetup
-        snapshot={snapshot() as unknown as MatchSnapshot}
+        snapshot={
+          { ...full, home_team: { ...full.home_team, players: eleven } } as unknown as MatchSnapshot
+        }
         gameState={state as unknown as GameStateData}
         userSide="Home"
         onStart={vi.fn()}

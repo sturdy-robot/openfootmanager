@@ -629,7 +629,8 @@ describe("TacticsTab", () => {
     render(<TacticsTab gameState={state} onSelectPlayer={vi.fn()} onGameUpdate={vi.fn()} />);
 
     expect(screen.getAllByTestId(/^pitch-slot-/)).toHaveLength(11);
-    expect(screen.getByText("GK1")).toBeInTheDocument();
+    // On the pitch and in the starters list: not only among the bench, where an undrawn XI leaves him.
+    expect(screen.getAllByText("GK1")).toHaveLength(2);
     const dataTransfer = createDataTransfer();
     fireEvent.dragStart(screen.getByTestId("pitch-bench-player-d5"), { dataTransfer });
     fireEvent.drop(screen.getByTestId("pitch-slot-1"), { dataTransfer });
