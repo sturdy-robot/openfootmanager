@@ -616,6 +616,27 @@ describe("TacticsTab", () => {
     expect(screen.getByText("2 squad.outOfPosition")).toBeInTheDocument();
   });
 
+  /**
+   * Given get_squad has not answered, so no player carries a match-day verdict yet
+   * When Tactics is drawn from the raw game state
+   * Then the saved XI is still on the pitch, and dropping a bench player onto a slot saves nothing.
+   */
+  it("draws the saved XI before get_squad answers and saves nothing", async () => {
+    const state = makeGameState();
+    state.players = state.players.map((player) => ({ ...player, match_day_eligible: undefined }));
+    mockedInvoke.mockReturnValue(new Promise(() => {}));
+
+    render(<TacticsTab gameState={state} onSelectPlayer={vi.fn()} onGameUpdate={vi.fn()} />);
+
+    expect(screen.getAllByTestId(/^pitch-slot-/)).toHaveLength(11);
+    expect(screen.getByText("GK1")).toBeInTheDocument();
+    const dataTransfer = createDataTransfer();
+    fireEvent.dragStart(screen.getByTestId("pitch-bench-player-d5"), { dataTransfer });
+    fireEvent.drop(screen.getByTestId("pitch-slot-1"), { dataTransfer });
+    await act(async () => {});
+    expect(mockedInvoke).not.toHaveBeenCalledWith("set_starting_xi", expect.anything());
+  });
+
   it("sends the correct starting xi order when a pitch-view bench defender is dropped onto a defensive slot", async () => {
     render(
       <TacticsTab gameState={makeGameState()} onSelectPlayer={vi.fn()} onGameUpdate={vi.fn()} />,

@@ -9,9 +9,10 @@ import type { PositionTable } from "../../lib/positionTable";
 import { usePositionTable } from "../../hooks/usePositionGroups";
 import type { PlayerData, TeamMatchRolesData } from "../../store/gameStore";
 import ContextMenu from "../ContextMenu";
-import { Badge, Card, PitchToken, Select, usePitchTokenFocus } from "../ui";
+import { Badge, Card, PitchToken, Select, usePitchTokenFocus, type PitchFitTone } from "../ui";
 import {
   getSquadTacticalFit,
+  pitchFitToneOf,
   translatePositionAbbreviation,
   type DragState,
   type SquadSection,
@@ -55,8 +56,6 @@ interface TacticsPitchProps {
   selectedPlayerId: string | null;
 }
 
-type FitTone = "exact" | "adapted" | "out" | "empty";
-
 interface RoleMarker {
   key: keyof TeamMatchRolesData;
   shortLabel: string;
@@ -68,22 +67,12 @@ function getFitTone(
   slotPosition: string,
   positionTable: PositionTable,
   familiarity: FamiliarityTable,
-): FitTone {
+): PitchFitTone {
   if (!player) {
     return "empty";
   }
 
-  // No grade (not loaded, or not the club's) is no verdict: the token says nothing of fit.
-  switch (getSquadTacticalFit(player, slotPosition, positionTable, familiarity)) {
-    case "natural":
-      return "exact";
-    case "out":
-      return "out";
-    case "adapted":
-      return "adapted";
-    default:
-      return "empty";
-  }
+  return pitchFitToneOf(getSquadTacticalFit(player, slotPosition, positionTable, familiarity));
 }
 
 function getRoleMarkers(

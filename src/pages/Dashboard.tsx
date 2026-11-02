@@ -1,5 +1,9 @@
 import { useSquadFitness } from "../hooks/useSquadFitness";
-import { prefetchFamiliarity, useFamiliarityRevision } from "../hooks/useFamiliarity";
+import {
+  prefetchFamiliarity,
+  useFamiliarity,
+  useFamiliarityRevision,
+} from "../hooks/useFamiliarity";
 import { usePositionTable } from "../hooks/usePositionGroups";
 import { routeForActiveCareer } from "../services/careerService";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -117,6 +121,7 @@ export default function Dashboard({ initialTab = "Home" }: DashboardProps): JSX.
   const positionTable = usePositionTable();
   // Asked for at mount, next to the position table, so the squad and tactics screens find it there.
   const familiarityRevision = useFamiliarityRevision();
+  const familiarity = useFamiliarity();
   useEffect(() => prefetchFamiliarity(familiarityRevision), [familiarityRevision]);
   const { settings, loaded: settingsLoaded, loadSettings, updateSettings } = useSettingsStore();
   const latestGameStateRef = useRef<GameStateData | null>(null);
@@ -546,6 +551,7 @@ export default function Dashboard({ initialTab = "Home" }: DashboardProps): JSX.
     t,
     currentFinanceVerdict,
     squadFitness,
+    familiarity,
   );
   const hasProfileHistory = hasDashboardProfileHistory(profileNavigation);
   const activeTabLabel = TAB_TRANSLATION_KEYS[profileNavigation.activeTab]

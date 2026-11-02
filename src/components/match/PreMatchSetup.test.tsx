@@ -4,12 +4,27 @@ import { describe, expect, it, vi } from "vitest";
 
 import PreMatchSetup from "./PreMatchSetup";
 import { ratingTierClass } from "../../lib/ratingTier";
-import type { FixtureData, GameStateData, LeagueData } from "../../store/gameStore";
+import type { FixtureData, GameStateData, LeagueData, PlayerData } from "../../store/gameStore";
+import { createPlayer } from "../../test-utils/factories";
 import { useGameStore } from "../../store/gameStore";
 import type { MatchSnapshot } from "./types";
 
 // Mock the few external dependencies PreMatchSetup pulls in at render time so we
 // can exercise the real component tree (the opponent scout panel in particular).
+// The players the backend's familiarity grades, and whether it has arrived.
+const familiarityState = vi.hoisted(() => ({
+  arrived: true,
+  players: new Map<string, unknown>(),
+}));
+
+vi.mock("../../hooks/useFamiliarity", async () => {
+  const { cannedFamiliarityModule } = await import("../../test-utils/familiarity");
+  return cannedFamiliarityModule(
+    (playerId) => familiarityState.players.get(playerId) as PlayerData | undefined,
+    () => familiarityState.arrived,
+  );
+});
+
 vi.mock("../../hooks/usePositionGroups", async () => {
   const { cannedPositionsModule } = await import("../../test-utils/positionTable");
   return cannedPositionsModule();
@@ -152,6 +167,50 @@ function renderSetup(
     />,
   );
 }
+
+describe("PreMatchSetup pitch tokens, graded by the backend's familiarity", () => {
+  // A natural striker in the club's own store, listed in goal: out of position there, said by the
+  // backend (the stand-in), not worked out by the screen.
+  function renderWithStrikerInGoal() {
+    const striker = createPlayer({
+      id: "h-gk",
+      position: "Forward",
+      natural_position: "Striker",
+    });
+    familiarityState.players.set(striker.id, striker);
+    const state = gameState();
+    state.players = [striker];
+    return render(
+      <PreMatchSetup
+        snapshot={snapshot() as unknown as MatchSnapshot}
+        gameState={state as unknown as GameStateData}
+        userSide="Home"
+        onStart={vi.fn()}
+        onUpdateSnapshot={vi.fn()}
+      />,
+    );
+  }
+
+  /**
+   * Given a striker listed as the goalkeeper, with the familiarity arrived and not arrived
+   * When the pre-match pitch is drawn
+   * Then arrived, his token is ringed out of position; not arrived, no token is, since a missing
+   *      grade is not a verdict.
+   */
+  it("rings a token the backend calls out of position, and none before it has loaded", () => {
+    const { container, unmount } = renderWithStrikerInGoal();
+    expect(container.querySelectorAll(".ring-warning-solid")).toHaveLength(1);
+    unmount();
+
+    familiarityState.arrived = false;
+    try {
+      const { container: waiting } = renderWithStrikerInGoal();
+      expect(waiting.querySelectorAll(".ring-warning-solid")).toHaveLength(0);
+    } finally {
+      familiarityState.arrived = true;
+    }
+  });
+});
 
 describe("PreMatchSetup opponent scout panel", () => {
   /** Given a pre-match token, when its player name is hovered,

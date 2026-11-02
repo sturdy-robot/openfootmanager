@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useFamiliarity } from "../../hooks/useFamiliarity";
 import { usePositionTable } from "../../hooks/usePositionGroups";
 import { ChevronDown, Repeat, RotateCcw, TimerOff, Trash2, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -18,6 +19,7 @@ import {
   buildDemoteFromStartingXi,
   buildPromoteToStartingXi,
   buildStartingXIIds,
+  lineupReady,
 } from "../squad/SquadTab.helpers";
 import { canDelegateToYouthAcademy } from "../../lib/playerSquad";
 import { setPlayerSquadRole, setStartingXi } from "../../services/squadService";
@@ -69,6 +71,7 @@ export default function PlayerProfileActionsMenu({
 }: PlayerProfileActionsMenuProps) {
   const { t } = useTranslation();
   const positionTable = usePositionTable();
+  const familiarity = useFamiliarity();
   const menuRef = useRef<ContextMenuHandle>(null);
   const [mutationPending, setMutationPending] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -109,13 +112,16 @@ export default function PlayerProfileActionsMenu({
       managerTeam.starting_xi_ids ?? [],
       formation,
       positionTable,
+      familiarity,
     );
+    const canGradeLineup = lineupReady(positionTable, familiarity);
     const inXI = startingXiIds.includes(player.id);
     const playersById = new Map(available.map((candidate) => [candidate.id, candidate]));
 
     const persistStartingXi = (nextXiIds: string[] | null): void => {
-      // Nothing is saved from a lineup worked out before the position table has loaded.
-      if (!positionTable.loaded || !nextXiIds || nextXiIds.join(",") === startingXiIds.join(",")) {
+      // Nothing is saved from a lineup worked out before the position table and familiarity have
+      // loaded.
+      if (!canGradeLineup || !nextXiIds || nextXiIds.join(",") === startingXiIds.join(",")) {
         return;
       }
       void runMutation(() => setStartingXi(nextXiIds));
@@ -127,7 +133,7 @@ export default function PlayerProfileActionsMenu({
             label: t("squad.sendToBench"),
             icon: <RotateCcw className="w-4 h-4" />,
             disabled:
-              !positionTable.loaded ||
+              !canGradeLineup ||
               actionBusy ||
               available.filter((candidate) => !startingXiIds.includes(candidate.id)).length === 0,
             onClick: () =>
@@ -138,13 +144,14 @@ export default function PlayerProfileActionsMenu({
                   formation,
                   player.id,
                   positionTable,
+                  familiarity,
                 ),
               ),
           }
         : {
             label: t("squad.makeStarter"),
             icon: <Users className="w-4 h-4" />,
-            disabled: !positionTable.loaded || actionBusy || Boolean(player.injury),
+            disabled: !canGradeLineup || actionBusy || Boolean(player.injury),
             onClick: () =>
               persistStartingXi(
                 buildPromoteToStartingXi(
@@ -153,6 +160,7 @@ export default function PlayerProfileActionsMenu({
                   formation,
                   player.id,
                   positionTable,
+                  familiarity,
                 ),
               ),
           },

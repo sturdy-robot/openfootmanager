@@ -43,7 +43,7 @@ import {
   buildUpdatedMatchRolesForAssignment,
   resolveEffectiveMatchRoles,
 } from "./TacticsRoles.helpers";
-import { isMatchDayEligible } from "../../lib/playerSquad";
+import { isMatchDayEligible, isRuledOutOfMatchDay } from "../../lib/playerSquad";
 
 interface UseTacticsLineupArgs {
   gameState: GameStateData | null;
@@ -89,12 +89,16 @@ export function useTacticsLineup({ gameState, onGameUpdate }: UseTacticsLineupAr
   const savedStartingXiKey = (team?.starting_xi_ids || []).join(",");
   const playersById = useMemo(() => new Map(roster.map((player) => [player.id, player])), [roster]);
   const available = roster.filter(isMatchDayEligible);
+  // The saved XI is drawn from everyone the backend has not ruled out: before get_squad answers no
+  // player carries a verdict (so `available` is empty) and the XI would not be drawn at all. Only
+  // display reads this pool; a lineup action keeps the strict `available`.
+  const drawable = roster.filter((player) => !isRuledOutOfMatchDay(player));
   const pitchRows = useMemo(() => buildPitchRows(formation), [formation]);
 
   const startingXiIds = useMemo(
     () =>
       resolveStartingXiIds({
-        availablePlayers: available,
+        availablePlayers: drawable,
         formation,
         pendingStartingXiIds,
         positionTable,
@@ -103,7 +107,7 @@ export function useTacticsLineup({ gameState, onGameUpdate }: UseTacticsLineupAr
         savedStartingXiIds: team?.starting_xi_ids || [],
       }),
     [
-      available.map((player) => player.id).join(","),
+      drawable.map((player) => player.id).join(","),
       formation,
       (team?.starting_xi_ids || []).join(","),
       (pendingStartingXiIds || []).join(","),

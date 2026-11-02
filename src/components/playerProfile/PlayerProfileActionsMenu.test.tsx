@@ -9,6 +9,17 @@ import { toggleLoanList, toggleTransferList } from "../../services/transfersServ
 // Whether the backend's position table has arrived; a test says it has not.
 const positionTableState = vi.hoisted(() => ({ arrived: true }));
 
+// Whether the backend's familiarity has arrived; a test says it has not.
+const familiarityState = vi.hoisted(() => ({ arrived: true }));
+
+vi.mock("../../hooks/useFamiliarity", async () => {
+  const { cannedFamiliarityModule } = await import("../../test-utils/familiarity");
+  return cannedFamiliarityModule(
+    () => undefined,
+    () => familiarityState.arrived,
+  );
+});
+
 vi.mock("../../hooks/usePositionGroups", async () => {
   const { cannedPositionsModule } = await import("../../test-utils/positionTable");
   const { createPositionTable } = await import("../../lib/positionTable");
@@ -188,6 +199,36 @@ describe("PlayerProfileActionsMenu", () => {
     render(<PlayerProfileActionsMenu {...props} isManagerOwnedProfile />);
     openMenu();
     expect(screen.getByRole("menuitem", { name: "squad.makeStarter" })).toBeEnabled();
+  });
+
+  /**
+   * Given the position table has arrived but the backend's familiarity has not
+   * When a starter's and a bench player's menus are opened
+   * Then both lineup actions are disabled and nothing is saved.
+   */
+  it("disables the lineup actions until the familiarity has loaded", () => {
+    const starters = Array.from({ length: 11 }, (_, i) =>
+      buildPlayer({ id: `s${i}`, full_name: `Starter ${i}` }),
+    );
+    const bench = buildPlayer({ id: "bench", full_name: "Bench Player" });
+    const game = buildGameState([...starters, bench]);
+    (game.teams[0] as { starting_xi_ids: string[] }).starting_xi_ids = starters.map((p) => p.id);
+
+    familiarityState.arrived = false;
+    try {
+      const starter = render(
+        <PlayerProfileActionsMenu {...baseProps(starters[0], game)} isManagerOwnedProfile />,
+      );
+      openMenu();
+      expect(screen.getByRole("menuitem", { name: "squad.sendToBench" })).toBeDisabled();
+      starter.unmount();
+
+      render(<PlayerProfileActionsMenu {...baseProps(bench, game)} isManagerOwnedProfile />);
+      openMenu();
+      expect(screen.getByRole("menuitem", { name: "squad.makeStarter" })).toBeDisabled();
+    } finally {
+      familiarityState.arrived = true;
+    }
   });
 
   it("toggles the transfer list and propagates the updated game state", async () => {

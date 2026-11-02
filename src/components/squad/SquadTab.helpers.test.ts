@@ -21,6 +21,7 @@ import {
   buildStartingXIIds,
   getSquadTacticalFit,
   lineupReady,
+  pitchFitToneOf,
   getPitchSlotWidth,
   getPreferredPositions,
   isPlayerOutOfPosition,
@@ -897,6 +898,21 @@ describe("getDeployedPosition", () => {
       expect(lineupReady(cannedPositionTable(), pendingFamiliarityTable())).toBe(false);
       expect(lineupReady(cannedPositionTable(), saying("natural"))).toBe(true);
       expect(lineupReady(createPositionTable([]), saying("natural"))).toBe(false);
+    });
+  });
+
+  describe("the pitch token's tone for a grade", () => {
+    /**
+     * Given each grade, and no grade
+     * When the pitch token's tone is asked for
+     * Then a natural fit is exact, an adapted one adapted, an out-of-position one out, and no
+     *      grade is "empty": it says nothing of fit.
+     */
+    it("maps a grade to a tone, and no grade to none", () => {
+      expect(pitchFitToneOf("natural")).toBe("exact");
+      expect(pitchFitToneOf("adapted")).toBe("adapted");
+      expect(pitchFitToneOf("out")).toBe("out");
+      expect(pitchFitToneOf(null)).toBe("empty");
     });
   });
 });

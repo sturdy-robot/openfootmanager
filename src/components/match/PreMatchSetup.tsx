@@ -16,8 +16,8 @@ import { getSetPieceStats } from "./SetPieceSelector";
 import { FormationPitch } from "./FormationPitch";
 import { makeTeamFallback } from "./helpers";
 import {
-  isPlayerExactForSlot,
-  isPlayerOutOfPosition,
+  getSquadTacticalFit,
+  pitchFitToneOf,
   translatePositionAbbreviation,
 } from "../squad/SquadTab.helpers";
 import { PhaseBlueprintPanel } from "../tactics/PhaseBlueprintPanel";
@@ -27,6 +27,7 @@ import type { PlayerRole, TacticsPhaseSettings } from "../../store/types";
 import { PitchToken, Select, TeamLogo, ThemeToggle, type PitchFitTone } from "../ui";
 import { ChevronRight, Crown, Footprints, CornerDownRight, CircleDot, Wand2 } from "lucide-react";
 import { naturalPositionOf } from "../../lib/positions";
+import { useFamiliarity } from "../../hooks/useFamiliarity";
 import { usePositionTable } from "../../hooks/usePositionGroups";
 import { currentCareerToken, invokeForCareer } from "../../services/careerInvoke";
 
@@ -50,6 +51,7 @@ export default function PreMatchSetup({
   const tierOf = useRatingTiers();
   const { t } = useTranslation();
   const positionTable = usePositionTable();
+  const familiarity = useFamiliarity();
   const [selectedStarterId, setSelectedStarterId] = useState<string | null>(null);
   const [isAutoSelecting, setIsAutoSelecting] = useState(false);
   const [activeTab, setActiveTab] = useState<"team" | "opponent">("team");
@@ -133,11 +135,7 @@ export default function PreMatchSetup({
     const fit: PitchFitTone = !sp
       ? "exact"
       : slotPosition
-        ? isPlayerExactForSlot(sp, slotPosition)
-          ? "exact"
-          : isPlayerOutOfPosition(sp, slotPosition, positionTable)
-            ? "out"
-            : "adapted"
+        ? pitchFitToneOf(getSquadTacticalFit(sp, slotPosition, positionTable, familiarity))
         : // Until the table arrives every group is unknown and would read as out of position.
           !positionTable.loaded || positionTable.groupOf(naturalPositionOf(sp)) === player.position
           ? "exact"

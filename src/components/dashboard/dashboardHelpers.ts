@@ -6,6 +6,7 @@ import { competitionDisplayName } from "../../lib/competitionName";
 import { getAllFixturesAcrossCompetitions } from "../../lib/fixtures";
 import { getActiveCompetitions } from "../../lib/helpers";
 import type { TeamFinanceSnapshotData } from "../../services/financeService";
+import type { FamiliarityTable } from "../../hooks/useFamiliarity";
 import { buildStartingXIIds } from "../squad/SquadTab.helpers";
 import { isMessageVisible } from "../../utils/newsVisibility";
 
@@ -118,6 +119,7 @@ export function getDashboardAlerts(
   t: DashboardAlertTranslator,
   financeSnapshot?: DashboardFinanceVerdict | null,
   fitness?: SquadFitness | null,
+  familiarity?: FamiliarityTable,
 ): DashboardAlert[] {
   const alerts: DashboardAlert[] = [];
   const myTeam = gameState.teams.find((team) => team.id === gameState.manager.team_id);
@@ -134,7 +136,7 @@ export function getDashboardAlerts(
   }).length;
   const savedStartingXi = myTeam?.starting_xi_ids ?? [];
   const effectiveStartingXi = myTeam
-    ? buildStartingXIIds(roster, savedStartingXi, myTeam.formation, positionTable)
+    ? buildStartingXIIds(roster, savedStartingXi, myTeam.formation, positionTable, familiarity)
     : [];
   const xiPlayersOnRoster = effectiveStartingXi.filter((playerId) => {
     return roster.some((player) => player.id === playerId);

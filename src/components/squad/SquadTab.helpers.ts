@@ -1,5 +1,6 @@
 import { canonicalPosition, naturalPositionOf } from "../../lib/positions";
 import type { FamiliarityTable } from "../../hooks/useFamiliarity";
+import type { PitchFitTone } from "../ui";
 import type { PositionTable } from "../../lib/positionTable";
 
 import type { PlayerData } from "../../store/gameStore";
@@ -495,6 +496,23 @@ export function getSquadTacticalFit(
   }
 
   return "adapted";
+}
+
+/**
+ * The pitch token's fit tone for a grade: no grade (not loaded, not the club's) is "empty", which
+ * says nothing of fit, rather than a verdict.
+ */
+export function pitchFitToneOf(fit: SquadTacticalFit | null): PitchFitTone {
+  switch (fit) {
+    case "natural":
+      return "exact";
+    case "adapted":
+      return "adapted";
+    case "out":
+      return "out";
+    default:
+      return "empty";
+  }
 }
 
 export function getBestRoleForFormation(
