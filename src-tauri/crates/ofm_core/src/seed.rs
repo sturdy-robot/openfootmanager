@@ -93,6 +93,24 @@ pub(crate) fn standard_normal(rng: &mut impl Rng) -> f64 {
     (-2.0 * first.ln()).sqrt() * (std::f64::consts::TAU * second).cos()
 }
 
+/// The standard normal's cumulative distribution at `z`, for tests that hold a generated bell to a
+/// normal's shape (Abramowitz and Stegun 7.1.26, |error| < 1.5e-7).
+#[cfg(test)]
+pub(crate) fn normal_cdf(z: f64) -> f64 {
+    let x = z.abs() / std::f64::consts::SQRT_2;
+    let t = 1.0 / (1.0 + 0.327_591_1 * x);
+    let poly = t
+        * (0.254_829_592
+            + t * (-0.284_496_736
+                + t * (1.421_413_741 + t * (-1.453_152_027 + t * 1.061_405_429))));
+    let erf = 1.0 - poly * (-x * x).exp();
+    if z >= 0.0 {
+        0.5 * (1.0 + erf)
+    } else {
+        0.5 * (1.0 - erf)
+    }
+}
+
 /// [`Game::rng_for`] for a seed that is not (yet) on a game: a world being built into one.
 pub fn rng_for_seed(seed: u64, tag: &str, date: &str) -> ChaCha12Rng {
     let per_purpose = stable_hash(tag.as_bytes(), seed);
