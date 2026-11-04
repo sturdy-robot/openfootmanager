@@ -145,6 +145,7 @@ fn render_module(game: &Game) -> Result<String, String> {
         "FamiliarityProjection",
         &ofm_core::familiarity_projection::familiarity_projection(game)?,
     )?;
+    export_tactics(&mut module, game, &club)?;
     export(
         &mut module,
         "careerStage",
@@ -153,6 +154,44 @@ fn render_module(game: &Game) -> Result<String, String> {
     )?;
     export_world_lists(&mut module, game, &club)?;
     Ok(module)
+}
+
+/// The Tactics tab's two mount queries: whether the club's instructions differ from its style's
+/// blueprint (the comparison `get_tactics_blueprint_status` makes), and the takers the backend would
+/// use for the club's eleven, with the eleven they were picked for.
+fn export_tactics(module: &mut String, game: &Game, club: &str) -> Result<(), String> {
+    let team = game
+        .teams
+        .iter()
+        .find(|team| team.id == club)
+        .ok_or("the career's club is missing")?;
+    export(
+        module,
+        "tacticsBlueprintStatus",
+        "{ modified: boolean }",
+        &json!({
+            "modified": team.tactics_phase != ofm_core::ai_tactics::blueprint_for(&team.play_style)
+        }),
+    )?;
+    let (captain, penalty_taker, free_kick_taker, corner_taker) =
+        ofm_core::live_match_manager::auto_select_set_pieces(game, &team.starting_xi_ids);
+    export(
+        module,
+        "autoSetPiecesFor",
+        "string[]",
+        &team.starting_xi_ids,
+    )?;
+    export(
+        module,
+        "autoSetPieces",
+        "AutoSetPieces",
+        &json!({
+            "captain": captain,
+            "penalty_taker": penalty_taker,
+            "free_kick_taker": free_kick_taker,
+            "corner_taker": corner_taker,
+        }),
+    )
 }
 
 /// The world lists' answers: the Players page's first page, the Teams directory and the Staff page.
@@ -202,7 +241,7 @@ import type { BackendFinanceSnapshotResponseData } from \"../../services/finance
 import type { JobOpportunity } from \"../../services/jobService\";
 import type { PlayersPage, PlayersPageQuery } from \"../../services/playersService\";
 import type { PositionGroupEntry } from \"../../services/positionService\";
-import type { RatingTier, SquadFitness } from \"../../services/squadService\";
+import type { AutoSetPieces, RatingTier, SquadFitness } from \"../../services/squadService\";
 import type { StaffSlice } from \"../../services/staffService\";
 import type { TeamsDirectory } from \"../../services/teamsService\";
 import type { FamiliarityProjection } from \"../../store/generated/FamiliarityProjection\";

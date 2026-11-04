@@ -45,6 +45,8 @@ const PAGE_CONTENT: Record<HarnessPage, (view: ReturnType<typeof within>) => voi
     expect(view.getAllByRole("button", { name: /release staff member/i }).length).toBeGreaterThan(
       0,
     ),
+  // The formation picker: only the Tactics tab draws it.
+  tactics: (view) => expect(view.getByRole("combobox", { name: "Formation" })).toBeInTheDocument(),
 };
 
 afterEach(async () => {

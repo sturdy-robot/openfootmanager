@@ -4,6 +4,8 @@ import { PLAYERS_OPENING_QUERY } from "../../components/players/playersOpeningQu
 import { readStyleGuideOptions } from "../styleGuide/styleGuideOptions";
 import { fixtureHandlers } from "./fixtureAnswers";
 import {
+  autoSetPieces,
+  autoSetPiecesFor,
   familiarity,
   gameState,
   playersPage,
@@ -13,6 +15,7 @@ import {
   squad,
   squadFitness,
   staff,
+  tacticsBlueprintStatus,
   teamsDirectory,
 } from "./fixture.generated";
 import { UNANSWERED } from "./harnessIpc";
@@ -31,6 +34,23 @@ describe("fixture answers", () => {
     const cards = fixtureHandlers(readStyleGuideOptions("?view=cards"), "en");
     expect(cards.get_settings({})).toMatchObject({ settings: { list_view: "cards" } });
     expect(handlers.get_settings({})).toMatchObject({ settings: { list_view: "table" } });
+  });
+
+  /**
+   * Given the Tactics tab opening on the club's eleven
+   * When it asks for the blueprint status and the takers for that eleven, listed in another order
+   * Then the harness gives the backend's answers generated for that eleven; for any other set of
+   *      players it declines, so a changed eleven can't show the opening eleven's takers.
+   */
+  it("answers the Tactics tab's mount queries for the club's eleven only", () => {
+    expect(handlers.get_tactics_blueprint_status({})).toBe(tacticsBlueprintStatus);
+    expect(autoSetPiecesFor.length).toBeGreaterThan(0);
+    expect(handlers.auto_select_set_pieces({ playerIds: [...autoSetPiecesFor].reverse() })).toBe(
+      autoSetPieces,
+    );
+    expect(handlers.auto_select_set_pieces({ playerIds: autoSetPiecesFor.slice(1) })).toBe(
+      UNANSWERED,
+    );
   });
 
   /** Given the user's club, when its squad is asked for, then the fixture's squad comes back. */

@@ -26,7 +26,7 @@ const WINDOWS = [
 ];
 
 /** The harness's pages (HARNESS_PAGES in src/dev/pageHarness/harnessPage.ts; a test holds them equal). */
-const PAGES = ["home", "squad", "players", "teams", "managers", "staff"];
+const PAGES = ["home", "squad", "players", "teams", "managers", "staff", "tactics"];
 
 /**
  * The lists whose cards draw on the shared card shell, measured in their cards view too: a card that

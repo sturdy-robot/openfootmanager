@@ -14,6 +14,7 @@ export const HARNESS_PAGES = {
   teams: "Teams",
   managers: "Managers",
   staff: "Staff",
+  tactics: "Tactics",
 } as const;
 export type HarnessPage = keyof typeof HARNESS_PAGES;
 
