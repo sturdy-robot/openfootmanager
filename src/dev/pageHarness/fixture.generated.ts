@@ -9,7 +9,7 @@ import type { BackendFinanceSnapshotResponseData } from "../../services/financeS
 import type { JobOpportunity } from "../../services/jobService";
 import type { PlayersPage, PlayersPageQuery } from "../../services/playersService";
 import type { PositionGroupEntry } from "../../services/positionService";
-import type { RatingTier, SquadFitness } from "../../services/squadService";
+import type { AutoSetPieces, RatingTier, SquadFitness } from "../../services/squadService";
 import type { StaffSlice } from "../../services/staffService";
 import type { TeamsDirectory } from "../../services/teamsService";
 import type { FamiliarityProjection } from "../../store/generated/FamiliarityProjection";
@@ -1767,6 +1767,19 @@ export const familiarity = {
     {"by_position":{"AttackingMidfielder":"out_of_position","CenterBack":"out_of_position","CentralMidfielder":"out_of_position","Defender":"out_of_position","DefensiveMidfielder":"out_of_position","Forward":"out_of_position","Goalkeeper":"natural","LeftBack":"out_of_position","LeftMidfielder":"out_of_position","LeftWingBack":"out_of_position","LeftWinger":"out_of_position","Midfielder":"out_of_position","RightBack":"out_of_position","RightMidfielder":"out_of_position","RightWingBack":"out_of_position","RightWinger":"out_of_position","Striker":"out_of_position"},"player_id":"0973d24e-c56a-4436-a38d-8837298dfede"},
   ],
 } satisfies FamiliarityProjection;
+
+export const tacticsBlueprintStatus = {
+  "modified": true,
+} satisfies { modified: boolean };
+
+export const autoSetPiecesFor = [] satisfies string[];
+
+export const autoSetPieces = {
+  "captain": null,
+  "corner_taker": null,
+  "free_kick_taker": null,
+  "penalty_taker": null,
+} satisfies AutoSetPieces;
 
 export const careerStage = "employed" satisfies CareerStage;
 
