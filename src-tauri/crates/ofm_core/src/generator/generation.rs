@@ -529,7 +529,7 @@ const YOUNG_SPREAD_KEPT: f64 = 1.0;
 const YOUNG_SHIFT_KEPT: f64 = 1.0;
 /// The fraction of a club's standard shift its academy's recruits take. The recruits are the
 /// age wonderkids come from, so the full shift would give the big clubs nearly all of them.
-const ACADEMY_SHIFT_KEPT: f64 = 0.5;
+const ACADEMY_SHIFT_KEPT: f64 = 1.0;
 
 /// How club reputations are spread in the world being generated: the centre and spread that turn
 /// a club's reputation into a standard score. Computed from the world's own clubs, not fixed: a
