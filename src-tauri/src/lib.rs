@@ -252,6 +252,8 @@ pub fn run() {
             get_youth_prospect_opinions,
             get_position_ratings,
             get_familiarity,
+            get_manager_standing,
+            get_managers_page,
             get_squad,
             get_staff,
             get_active_save_id,
