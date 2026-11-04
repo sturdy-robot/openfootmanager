@@ -4116,6 +4116,51 @@ colors:
         assert_eq!(unknown, 3, "{errors:?}");
     }
 
+    /// Given a stack of one patch and no database, the patch naming a club no package defines
+    /// When the stack is merged, as a career start merges it
+    /// Then the unknown team is reported, so the career does not start: a merged stack is the world
+    ///      the career runs on, and with no database under the patch there is no later stack to
+    ///      leave the reference to
+    #[test]
+    fn a_patch_only_stack_naming_a_club_no_package_defines_is_reported() {
+        let patch = roster_patch("ghost-club");
+        let (patch_pkg, _) = load_world_package_files(&patch);
+
+        let (_, errors) = merge_world_packages(vec![patch_pkg]);
+        std::fs::remove_dir_all(&patch).ok();
+
+        let unknown = errors
+            .iter()
+            .filter(|e| e.code == UNKNOWN_TEAM)
+            .filter(|e| {
+                e.params
+                    .contains(&("team".to_string(), "ghost-club".to_string()))
+            })
+            .count();
+        assert_eq!(unknown, 3, "{errors:?}");
+    }
+
+    /// Given a stack of one patch and no database, the patch defining the club its player joins
+    /// When the stack is merged
+    /// Then nothing is reported: a patch-only world whose clubs resolve still starts, as before
+    #[test]
+    fn a_patch_only_stack_whose_clubs_resolve_merges_clean() {
+        let patch = roster_patch("own-club");
+        write(
+            &patch,
+            "teams/own.json",
+            r##"{ "schema": "team", "id": "own-club", "name": "Own Club", "city": "C",
+                "country": "ENG", "colors": { "primary": "#000000", "secondary": "#ffffff" } }"##,
+        );
+        let (patch_pkg, _) = load_world_package_files(&patch);
+
+        let (_, errors) = merge_world_packages(vec![patch_pkg]);
+        std::fs::remove_dir_all(&patch).ok();
+
+        let unknown: Vec<_> = errors.iter().filter(|e| e.code == UNKNOWN_TEAM).collect();
+        assert!(unknown.is_empty(), "{unknown:?}");
+    }
+
     /// Given a database package whose player, coach and a career entry name a club it does not
     ///      define
     /// When it is loaded and validated
