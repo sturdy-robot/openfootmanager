@@ -748,7 +748,6 @@ describe("TacticsTab", () => {
 
     render(<TacticsTab gameState={state} onSelectPlayer={vi.fn()} onGameUpdate={vi.fn()} />);
     await act(async () => {}); // the squad has answered
-    expect(screen.getByRole("status")).toHaveTextContent("common.lineupLoading");
 
     const dataTransfer = createDataTransfer();
     fireEvent.dragStart(screen.getByTestId("pitch-bench-player-d5"), { dataTransfer });
@@ -756,6 +755,7 @@ describe("TacticsTab", () => {
     await act(async () => {});
 
     expect(mockedInvoke).not.toHaveBeenCalledWith("set_starting_xi", expect.anything());
+    expect(screen.getByRole("status")).toHaveTextContent("common.lineupLoading");
   });
 
   it("sends the correct starting xi order when a pitch-view bench defender is dropped onto a defensive slot", async () => {
