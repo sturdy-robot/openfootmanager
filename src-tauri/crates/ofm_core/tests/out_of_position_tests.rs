@@ -565,3 +565,23 @@ fn a_change_of_shape_and_back_before_kick_off_restores_every_familiarity() {
     let after: Vec<[f64; 4]> = ids.iter().map(|id| familiarity_of(&session, id)).collect();
     assert_eq!(after, before);
 }
+
+/// Given alpha's natural 4-4-2 at kick-off,
+/// When an agent sends a shape the game cannot lay out ("4-5-1-x" plays 4, 5 and 1 in the engine
+/// while the slots are laid out as a 4-4-2),
+/// Then it is refused with the formation's translation key, and the shape and every familiarity
+/// are as they were.
+#[test]
+fn a_shape_the_game_cannot_lay_out_is_refused_and_changes_nothing() {
+    let mut session = at_kick_off(natural_side_with_a_left_back_who_can_play_midfield());
+    let before = familiarity_of(&session, "alpha_lm");
+
+    let refused = change_shape(&mut session, "4-5-1-x");
+
+    assert_eq!(
+        refused.err().as_deref(),
+        Some(ofm_core::custom_tactics::INVALID_FORMATION_ERROR)
+    );
+    assert_eq!(session.match_state.team(Side::Home).formation, "4-4-2");
+    assert_eq!(familiarity_of(&session, "alpha_lm"), before);
+}
