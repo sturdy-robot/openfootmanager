@@ -12,6 +12,8 @@ const OUT = process.env.OFM_PERF_BUILD_OUT ?? path.resolve("out", "mega.ofm");
 
 const xp = (t) => (t.includes('"') ? `'${t}'` : `"${t}"`);
 const buttonNamed = (n) => $(`//button[normalize-space(.)=${xp(n)}]`);
+// Sidebar entries and toolbar buttons carry a count or a suffix ("Players 17098", "Validate 3", "Build .ofm").
+const buttonStarting = (n) => $(`//button[starts-with(normalize-space(.), ${xp(n)})]`);
 async function clickWhenReady(el, timeout = 30_000) {
   await el.waitForClickable({ timeout });
   await el.click();
@@ -147,42 +149,55 @@ async function installHooks() {
       window.__ofmErrors.push("console.error: " + a.map(String).join(" ").slice(0, 300));
       ce(...a);
     };
-    const T = window.__TAURI_INTERNALS__;
-    const orig = T.invoke.bind(T);
-    T.invoke = (cmd, args, opts) => {
-      // The native save dialog cannot be driven: Build is given a path; every other command goes to the
-      // real backend through the real IPC.
-      if (cmd === "plugin:dialog|save") return Promise.resolve(out);
-      let bytes = 0;
-      if (/package|build_ofm/.test(cmd)) {
-        try {
-          bytes = JSON.stringify(args).length;
-        } catch {}
+    // Tauri's invoke on Windows is a fetch to the ipc custom protocol: record every such request here, with
+    // its size, when the response headers arrive and when the whole body has been read. The native save dialog
+    // cannot be driven: it is answered with a fixed path; every other command goes to the real backend.
+    const realFetch = window.fetch.bind(window);
+    window.fetch = (input, init) => {
+      const url = typeof input === "string" ? input : input.url;
+      if (!/ipc/.test(url)) return realFetch(input, init);
+      const cmd = decodeURIComponent(url.split("?")[0].split("/").pop());
+      if (cmd === "plugin:dialog|save") {
+        return Promise.resolve(
+          new Response(JSON.stringify(out), {
+            status: 200,
+            headers: { "Content-Type": "application/json", "Tauri-Response": "ok" },
+          }),
+        );
       }
+      const body = init && init.body;
+      const bytes = body ? (body.byteLength ?? body.length ?? 0) : 0;
       const t0 = performance.now();
       const started = { cmd, bytes, at: Math.round(t0) };
       window.__pending.push(started);
-      const p = orig(cmd, args, opts);
       const done = () => {
         const at = window.__pending.indexOf(started);
         if (at >= 0) window.__pending.splice(at, 1);
       };
-      p.then(
-        () => {
-          done();
-          window.__ipc.push({ cmd, ms: Math.round(performance.now() - t0), bytes });
+      return realFetch(input, init).then(
+        (res) => {
+          const headers_ms = Math.round(performance.now() - t0);
+          res
+            .clone()
+            .arrayBuffer()
+            .then(
+              (buf) => {
+                done();
+                window.__ipc.push({ cmd, bytes, response_bytes: buf.byteLength, headers_ms, ms: Math.round(performance.now() - t0), status: res.status });
+              },
+              (e) => {
+                done();
+                window.__ipc.push({ cmd, bytes, headers_ms, ms: Math.round(performance.now() - t0), error: "body: " + String(e).slice(0, 120) });
+              },
+            );
+          return res;
         },
         (e) => {
           done();
-          window.__ipc.push({
-            cmd,
-            ms: Math.round(performance.now() - t0),
-            bytes,
-            error: String(e).slice(0, 200),
-          });
+          window.__ipc.push({ cmd, bytes, ms: Math.round(performance.now() - t0), error: "fetch: " + String(e).slice(0, 120) });
+          throw e;
         },
       );
-      return p;
     };
   }, OUT);
 }
@@ -225,7 +240,7 @@ describe("a user's session in the World Editor on a very large package (Windows)
         $('//*[contains(normalize-space(.), "Synthetic Mega")]/ancestor-or-self::button[1]'),
         60_000,
       );
-      await buttonNamed("Players").waitForDisplayed({ timeout: 120_000 });
+      await buttonStarting("Players").waitForDisplayed({ timeout: 120_000 });
     });
   });
 
@@ -236,7 +251,7 @@ describe("a user's session in the World Editor on a very large package (Windows)
         ["Players", "Match Name"],
         ["Competitions", "Name"],
       ]) {
-        await clickWhenReady(buttonNamed(tab));
+        await clickWhenReady(buttonStarting(tab));
         await $("div.cursor-pointer.rounded-xl").waitForDisplayed({ timeout: 60_000 });
         await clickWhenReady((await rows())[0]);
         await $(`//label[normalize-space(.)="${field}"]`).waitForDisplayed({ timeout: 60_000 });
@@ -246,7 +261,7 @@ describe("a user's session in the World Editor on a very large package (Windows)
 
   it("3. edits 30 players one after another with auto-save on", async () => {
     await step("edit_30_players_autosave", async () => {
-      await clickWhenReady(buttonNamed("Players"));
+      await clickWhenReady(buttonStarting("Players"));
       for (let i = 0; i < 30; i++) {
         const before = await saveCount();
         await clickWhenReady((await rows())[i]);
@@ -265,7 +280,7 @@ describe("a user's session in the World Editor on a very large package (Windows)
 
   it("4. clicks Load more until the whole list is shown", async () => {
     await step("load_more_all", async () => {
-      await clickWhenReady(buttonNamed("Players"));
+      await clickWhenReady(buttonStarting("Players"));
       let clicks = 0;
       for (; clicks < 450; clicks++) {
         const more = $(
@@ -280,7 +295,7 @@ describe("a user's session in the World Editor on a very large package (Windows)
 
   it("5. validates, then builds", async () => {
     await step("validate", async () => {
-      await clickWhenReady(buttonNamed("Validate"));
+      await clickWhenReady(buttonStarting("Validate"));
       await browser.waitUntil(
         async () =>
           browser.execute(() =>
@@ -292,7 +307,7 @@ describe("a user's session in the World Editor on a very large package (Windows)
       );
     });
     await step("build", async () => {
-      await clickWhenReady(buttonNamed("Build"));
+      await clickWhenReady(buttonStarting("Build"));
       await browser.waitUntil(
         async () => browser.execute(() => (window.__ipc || []).some((c) => c.cmd === "build_ofm")),
         { timeout: 600_000 },
