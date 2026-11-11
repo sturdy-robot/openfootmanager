@@ -259,6 +259,70 @@ describe("a user's session in the World Editor on a very large package (Windows)
     });
   });
 
+  it("2b. screenshots a keyboard-focused Players row's subtitle, at the default and the largest UI scale", async () => {
+    await clickWhenReady(buttonStarting("Players"));
+    await $("div.cursor-pointer.rounded-xl").waitForDisplayed({ timeout: 60_000 });
+    const tag = path.basename(LOG, ".log");
+    // The row with the longest subtitle (position and club) among those on screen; focus its edit button,
+    // as Tab would, and bring it to the middle of the list.
+    const pick = await browser.execute(() => {
+      let best = null;
+      let bestLen = -1;
+      for (const row of document.querySelectorAll("div.cursor-pointer.rounded-xl")) {
+        const sub = row.querySelectorAll("p")[1];
+        const len = sub ? sub.textContent.length : -1;
+        if (len > bestLen) {
+          best = row;
+          bestLen = len;
+        }
+      }
+      if (!best) return null;
+      best.scrollIntoView({ block: "center" });
+      best.querySelector("button[title]").focus();
+      return { subtitle: best.querySelectorAll("p")[1].textContent, length: bestLen };
+    });
+    console.log("SHOT pick " + JSON.stringify(pick));
+    const facts = () =>
+      browser.execute(() => {
+        const row = document.activeElement.closest("div.cursor-pointer.rounded-xl");
+        const holder = row.querySelector("[data-full]");
+        const after = holder ? getComputedStyle(holder, "::after") : null;
+        const para = row.querySelectorAll("p")[1];
+        const r = row.getBoundingClientRect();
+        const wrapper = row.closest('[role="listitem"]');
+        return {
+          root_font_px: getComputedStyle(document.documentElement).fontSize,
+          row_height: Math.round(r.height),
+          row_overflows: row.scrollHeight > row.clientHeight,
+          subtitle_clipped: para ? para.scrollWidth > para.clientWidth : null,
+          panel_display: after ? after.display : "no data-full (old build)",
+          panel_content: after ? after.content : null,
+          panel_height: after ? after.height : null,
+          wrapper_height: wrapper ? Math.round(wrapper.getBoundingClientRect().height) : null,
+        };
+      });
+    const shoot = async (name) => {
+      await browser.pause(400);
+      const f = await facts();
+      console.log("SHOT " + name + " " + JSON.stringify(f));
+      appendFileSync(LOG, JSON.stringify({ step: "shot_" + name, ...f }) + "\n");
+      await browser.saveScreenshot(`shot-${tag}-${name}.png`);
+    };
+    await shoot("default");
+    await browser.execute(() => {
+      document.documentElement.style.fontSize = "20px"; // ui_scale "xlarge", the largest
+      document.activeElement.scrollIntoView({ block: "center" });
+    });
+    await shoot("xlarge");
+    await browser.execute(() => {
+      document.documentElement.style.fontSize = "14px"; // ui_scale "small", the smallest
+    });
+    await shoot("small");
+    await browser.execute(() => {
+      document.documentElement.style.fontSize = "16px";
+    });
+  });
+
   it("3. edits 30 players one after another with auto-save on", async () => {
     await step("edit_30_players_autosave", async () => {
       await clickWhenReady(buttonStarting("Players"));

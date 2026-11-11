@@ -147,4 +147,5 @@ jobs:
           name: win-real-app-${{ matrix.build }}
           path: |
             harness/win-e2e/*.log
+            harness/win-e2e/*.png
           if-no-files-found: warn
