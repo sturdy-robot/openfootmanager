@@ -1,0 +1,12 @@
+{
+  "name": "ofm-win-e2e",
+  "private": true,
+  "type": "module",
+  "description": "Scratch: drives the built app on Windows (WebView2) through tauri-driver and msedgedriver. Measurement only, never merged.",
+  "devDependencies": {
+    "@wdio/cli": "^9.0.0",
+    "@wdio/local-runner": "^9.0.0",
+    "@wdio/mocha-framework": "^9.0.0",
+    "@wdio/spec-reporter": "^9.0.0"
+  }
+}

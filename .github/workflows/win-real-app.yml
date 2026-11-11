@@ -1,0 +1,108 @@
+name: win-real-app
+
+# Scratch (fork only, never merged): the World Editor on a very large package, in the real app on Windows
+# (WebView2), driven by tauri-driver + msedgedriver. The runner is a throwaway VM. Two builds are compared:
+# before (develop 564e8c76) and after (current develop). The package is a synthetic replica; the real
+# package is never in this repository or on this runner.
+on:
+  push:
+    branches: [scratch/win-real-app]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: windows-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        build: [before, after]
+    steps:
+      - name: Checkout the harness (this branch)
+        uses: actions/checkout@v4
+        with:
+          path: harness
+
+      - name: Checkout the app (${{ matrix.build }})
+        uses: actions/checkout@v4
+        with:
+          ref: cloud-src/ofm-perf/real-app-${{ matrix.build }}
+          path: app
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Versions (Edge, WebView2 runtime)
+        shell: pwsh
+        run: |
+          node --version; python --version
+          Get-ItemProperty 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}' -ErrorAction SilentlyContinue | Select-Object pv
+          (Get-Item "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe").VersionInfo.ProductVersion
+          Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, TotalVisibleMemorySize
+          systeminfo | Select-String "Total Physical Memory"
+
+      - name: Build the app (debug, frontend embedded)
+        shell: pwsh
+        working-directory: app
+        run: |
+          $sw = [Diagnostics.Stopwatch]::StartNew()
+          npm ci
+          npm run tauri build -- --debug --no-bundle
+          Write-Host "BUILD seconds=$($sw.Elapsed.TotalSeconds)"
+          Get-Item src-tauri/target/debug/openfootmanager.exe | Select-Object FullName, Length
+
+      - name: tauri-driver and msedgedriver
+        shell: pwsh
+        working-directory: harness/win-e2e
+        run: |
+          cargo install tauri-driver --locked
+          cargo install --git https://github.com/chippers/msedgedriver-tool --locked
+          & "$HOME/.cargo/bin/msedgedriver-tool.exe"
+          Get-ChildItem msedgedriver.exe
+          .\msedgedriver.exe --version
+
+      - name: Install the suite
+        shell: pwsh
+        working-directory: harness/win-e2e
+        run: npm install
+
+      - name: The synthetic replica (581 clubs, 17,098 players, 45 competitions)
+        shell: pwsh
+        run: |
+          python harness/win-e2e/synth_mega.py "$env:RUNNER_TEMP\synth"
+          (Get-ChildItem "$env:RUNNER_TEMP\synth" -Recurse -File | Measure-Object Length -Sum).Sum
+
+      - name: Run the session twice
+        id: run
+        continue-on-error: true
+        shell: pwsh
+        working-directory: harness/win-e2e
+        run: |
+          $driver = (Resolve-Path .\msedgedriver.exe).Path
+          $app = (Resolve-Path ..\..\app\src-tauri\target\debug\openfootmanager.exe).Path
+          foreach ($n in 1, 2) {
+            $project = "$env:RUNNER_TEMP\synth-$n"
+            Copy-Item "$env:RUNNER_TEMP\synth" $project -Recurse
+            $env:OFM_APP = $app
+            $env:OFM_NATIVE_DRIVER = $driver
+            $env:OFM_PERF_PROJECT = $project
+            $env:OFM_PERF_LOG = "$PWD\steps-${{ matrix.build }}-$n.log"
+            $env:OFM_PERF_BUILD_OUT = "$env:RUNNER_TEMP\out-$n\mega.ofm"
+            Write-Host "=== RUN $n"
+            npx wdio run wdio.conf.mjs 2>&1 | Tee-Object -FilePath "wdio-${{ matrix.build }}-$n.log"
+            Get-Process openfootmanager, msedgewebview2, msedgedriver, tauri-driver -ErrorAction SilentlyContinue | Stop-Process -Force
+            Start-Sleep -Seconds 5
+          }
+
+      - name: Keep the logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: win-real-app-${{ matrix.build }}
+          path: |
+            harness/win-e2e/*.log
+          if-no-files-found: warn
