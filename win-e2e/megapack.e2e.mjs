@@ -203,6 +203,19 @@ async function installHooks() {
 }
 
 const rows = () => $$("div.cursor-pointer.rounded-xl");
+// The i-th row of the Players list: in a windowed list only the rows near the viewport exist, so scroll to it.
+async function rowAt(i) {
+  const sel = `[data-vindex="${i}"] div.cursor-pointer.rounded-xl`;
+  if (!(await $("[data-vindex]").isExisting())) return (await rows())[i];
+  for (let attempt = 0; attempt < 20 && !(await $(sel).isExisting()); attempt++) {
+    await browser.execute((n) => {
+      const sc = document.querySelector("[data-scroll-container]");
+      sc.scrollTop = n * 72;
+    }, i);
+    await browser.pause(150);
+  }
+  return $(sel);
+}
 const saveCount = () =>
   browser.execute(
     () => (window.__ipc || []).filter((c) => c.cmd.includes("save_package_project")).length,
@@ -302,7 +315,9 @@ describe("a user's session in the World Editor on a very large package (Windows)
         return {
           root_font_px: getComputedStyle(document.documentElement).fontSize,
           row_height: Math.round(r.height),
-          row_overflows: row.scrollHeight > row.clientHeight,
+          row_overflows: row.scrollHeight > row.clientHeight, // true when the focus panel hangs below the row
+          subtitle_gap_below_px: para ? Math.round((r.bottom - para.getBoundingClientRect().bottom) * 10) / 10 : null,
+          title_top_gap_px: Math.round((row.querySelectorAll("p")[0].getBoundingClientRect().top - r.top) * 10) / 10,
           subtitle_clipped: para ? para.scrollWidth > para.clientWidth : null,
           panel_display: after ? after.display : "no data-full (old build)",
           panel_content: after ? after.content : null,
@@ -337,7 +352,7 @@ describe("a user's session in the World Editor on a very large package (Windows)
       await clickWhenReady(buttonStarting("Players"));
       for (let i = 0; i < 30; i++) {
         const before = await saveCount();
-        await clickWhenReady((await rows())[i]);
+        await clickWhenReady(await rowAt(i));
         const field = $('//label[normalize-space(.)="Match Name"]/following::input[1]');
         await field.waitForDisplayed({ timeout: 60_000 });
         await field.click();
