@@ -269,27 +269,13 @@ describe("a user's session in the World Editor on a very large package (Windows)
         await field.waitForDisplayed({ timeout: 60_000 });
         await field.click();
         await browser.keys([" ", "x"]);
-        await browser.keys(["Tab"]); // commit: the field saves on blur
+        // The form commits on "Save Player"; with auto-save on, that is what writes the project.
+        await clickWhenReady(buttonNamed("Save Player"));
         await browser.waitUntil(async () => (await saveCount()) > before, {
           timeout: 120_000,
           timeoutMsg: `edit ${i}: no save completed`,
         });
       }
-    });
-  });
-
-  it("4. clicks Load more until the whole list is shown", async () => {
-    await step("load_more_all", async () => {
-      await clickWhenReady(buttonStarting("Players"));
-      let clicks = 0;
-      for (; clicks < 450; clicks++) {
-        const more = $(
-          '//button[contains(normalize-space(.), "Load more") or contains(normalize-space(.), "LOAD MORE")]',
-        );
-        if (!(await more.isExisting()) || !(await more.isDisplayed())) break;
-        await more.click();
-      }
-      console.log("LOADMORE clicks=" + clicks + " rows=" + (await rows()).length);
     });
   });
 
@@ -317,6 +303,38 @@ describe("a user's session in the World Editor on a very large package (Windows)
       } catch (e) {
         console.log("BUILD no output " + e);
       }
+    });
+  });
+  it("6. clicks Load more until the whole list is shown (checkpoints on the way)", async () => {
+    await clickWhenReady(buttonStarting("Players"));
+    let clicks = 0;
+    const checkpoints = new Set([10, 50, 100, 200]);
+    const mark = async (label) => {
+      const t0 = Date.now();
+      const r = await probe();
+      const page = await browser.execute(() => ({
+        rows: document.querySelectorAll("div.cursor-pointer.rounded-xl").length,
+        nodes: document.getElementsByTagName("*").length,
+        gap: Math.round(window.__gap || 0),
+        longs: (window.__long || []).length,
+        maxlong: Math.round(Math.max(0, ...(window.__long || []))),
+      }));
+      const m = memory();
+      const line = JSON.stringify({ step: "load_more_checkpoint", at: label, clicks, ...page, webview2_mb: Math.round(m.web / 1024), app_mb: Math.round(m.app / 1024), probe: r });
+      console.log("CHECKPOINT " + line);
+      appendFileSync(LOG, line + "\n");
+    };
+    await step("load_more_all", async () => {
+      for (; clicks < 450; clicks++) {
+        const more = $(
+          '//button[contains(normalize-space(.), "Load more") or contains(normalize-space(.), "LOAD MORE")]',
+        );
+        if (!(await more.isExisting()) || !(await more.isDisplayed())) break;
+        const t0 = Date.now();
+        await more.click();
+        if (checkpoints.has(clicks + 1)) await mark(`after ${clicks + 1} clicks (${Date.now() - t0} ms for the last)`);
+      }
+      await mark(`end (${clicks} clicks)`);
     });
   });
 });
