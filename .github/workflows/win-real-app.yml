@@ -31,7 +31,7 @@ jobs:
       - name: Checkout the app (${{ matrix.build }})
         uses: actions/checkout@v4
         with:
-          ref: ${{ matrix.build == 'before' && 'cloud-src/ofm-perf/real-app-a4c69c3' || 'cloud-src/ofm-perf/real-app-after' }}
+          ref: ${{ matrix.build == 'before' && 'cloud-src/ofm-perf/real-app-dev' || 'cloud-src/ofm-perf/real-app-vlist' }}
           path: app
 
       - uses: actions/setup-node@v4
@@ -67,7 +67,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: app/src-tauri/target/debug/openfootmanager.exe
-          key: exe-${{ matrix.build }}-${{ hashFiles('harness/.github/workflows/win-real-app.yml', 'harness/win-e2e/patch_trace.py') }}-v2
+          key: exe-${{ matrix.build }}-${{ hashFiles('harness/.github/workflows/win-real-app.yml', 'harness/win-e2e/patch_trace.py') }}-v3
 
       - name: Build the app (debug, frontend embedded)
         if: steps.exe.outputs.cache-hit != 'true'

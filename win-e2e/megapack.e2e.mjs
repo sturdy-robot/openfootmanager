@@ -325,6 +325,41 @@ describe("a user's session in the World Editor on a very large package (Windows)
       appendFileSync(LOG, line + "\n");
     };
     await step("load_more_all", async () => {
+      const probeButton = $(
+        '//button[contains(normalize-space(.), "Load more") or contains(normalize-space(.), "LOAD MORE")]',
+      );
+      if (!(await probeButton.isExisting())) {
+        // No Load more (a windowed list): show the whole list by scrolling through it, frame by frame.
+        const stats = await browser.executeAsync((done) => {
+          const scroller = document.querySelector("[data-scroll-container]");
+          if (!scroller) return done({ error: "no scroll container" });
+          let last = performance.now();
+          let worst = 0;
+          let frames = 0;
+          let maxNodes = 0;
+          const stepPx = 2400;
+          const tick = () => {
+            const now = performance.now();
+            worst = Math.max(worst, now - last);
+            last = now;
+            frames += 1;
+            maxNodes = Math.max(maxNodes, document.getElementsByTagName("*").length);
+            const before = scroller.scrollTop;
+            scroller.scrollTop = before + stepPx;
+            if (scroller.scrollTop === before) {
+              done({ frames, worst_frame_ms: Math.round(worst), max_nodes: maxNodes, height: scroller.scrollHeight });
+            } else {
+              requestAnimationFrame(tick);
+            }
+          };
+          requestAnimationFrame(tick);
+        });
+        console.log("SCROLLED " + JSON.stringify(stats));
+        appendFileSync(LOG, JSON.stringify({ step: "scrolled_through", ...stats }) + "\n");
+        clicks = 0;
+        await mark("end (scrolled through the whole list, no Load more)");
+        return;
+      }
       for (; clicks < 450; clicks++) {
         const more = $(
           '//button[contains(normalize-space(.), "Load more") or contains(normalize-space(.), "LOAD MORE")]',
