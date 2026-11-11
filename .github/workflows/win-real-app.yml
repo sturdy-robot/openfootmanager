@@ -2,8 +2,9 @@ name: win-real-app
 
 # Scratch (fork only, never merged): the World Editor on a very large package, in the real app on Windows
 # (WebView2), driven by tauri-driver + msedgedriver. The runner is a throwaway VM. Two builds are compared:
-# before (the PUBLISHED installer of nightly-20261102-a4c69c3, what the users ran) and after (current develop,
-# built here). The package is a synthetic replica; the real
+# before (nightly-20261102-a4c69c3, what the users ran, BUILT here: the published installer's WebView2 ignores
+# the debugging port variable, so it cannot be attached to) and after (current develop, built here). Both builds
+# get `additionalBrowserArgs: --remote-debugging-port=9222` in their window config and nothing else. The package is a synthetic replica; the real
 # package is never in this repository or on this runner.
 on:
   push:
@@ -27,11 +28,10 @@ jobs:
         with:
           path: harness
 
-      - name: Checkout the app (after only)
-        if: matrix.build == 'after'
+      - name: Checkout the app (${{ matrix.build }})
         uses: actions/checkout@v4
         with:
-          ref: cloud-src/ofm-perf/real-app-after
+          ref: ${{ matrix.build == 'before' && 'cloud-src/ofm-perf/real-app-a4c69c3' || 'cloud-src/ofm-perf/real-app-after' }}
           path: app
 
       - uses: actions/setup-node@v4
@@ -47,21 +47,18 @@ jobs:
           Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, TotalVisibleMemorySize
           systeminfo | Select-String "Total Physical Memory"
 
-      - name: Install the published release (before)
-        if: matrix.build == 'before'
+      - name: Open the window's WebView2 to the debugging port (the only change to the app)
         shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
+        working-directory: app
         run: |
-          gh release download nightly-20261102-a4c69c3 -R openfootmanager/openfootmanager -p "Openfoot.Manager_0.3.0_x64-setup.exe" -D "$env:RUNNER_TEMP"
-          Start-Process "$env:RUNNER_TEMP\Openfoot.Manager_0.3.0_x64-setup.exe" -ArgumentList "/S" -Wait
-          $exe = Get-ChildItem "$env:LOCALAPPDATA", "$env:ProgramFiles", "${env:ProgramFiles(x86)}" -Recurse -Filter "*.exe" -ErrorAction SilentlyContinue |
-            Where-Object { $_.Name -match "openfoot" -and $_.Name -notmatch "uninst" } | Select-Object -First 1
-          Write-Host "INSTALLED $($exe.FullName)"
-          "OFM_APP_EXE=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+          $path = "src-tauri/tauri.conf.json"
+          $conf = Get-Content $path -Raw | ConvertFrom-Json
+          $conf.app.windows[0] | Add-Member -NotePropertyName additionalBrowserArgs -NotePropertyValue "--remote-debugging-port=9222 --disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection" -Force
+          $conf | ConvertTo-Json -Depth 30 | Set-Content $path
+          git diff --stat
+          git rev-parse HEAD
 
-      - name: Build the app (debug, frontend embedded) (after)
-        if: matrix.build == 'after'
+      - name: Build the app (debug, frontend embedded)
         shell: pwsh
         working-directory: app
         run: |
@@ -76,7 +73,6 @@ jobs:
         shell: pwsh
         working-directory: harness/win-e2e
         run: |
-          cargo install tauri-driver --locked
           cargo install --git https://github.com/chippers/msedgedriver-tool --locked
           & "$HOME/.cargo/bin/msedgedriver-tool.exe"
           Get-ChildItem msedgedriver.exe
@@ -105,7 +101,7 @@ jobs:
             $project = "$env:RUNNER_TEMP\synth-$n"
             Copy-Item "$env:RUNNER_TEMP\synth" $project -Recurse
             $env:OFM_APP = $app
-            $env:OFM_NATIVE_DRIVER = $driver
+            $env:OFM_DRIVER = $driver
             $env:OFM_PERF_PROJECT = $project
             $env:OFM_PERF_LOG = "$PWD\steps-${{ matrix.build }}-$n.log"
             $env:OFM_PERF_BUILD_OUT = "$env:RUNNER_TEMP\out-$n\mega.ofm"
