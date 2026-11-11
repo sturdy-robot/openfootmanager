@@ -236,6 +236,12 @@ describe("a user's session in the World Editor on a very large package (Windows)
 
   it("1. opens the project", async () => {
     await step("open", async () => {
+      // The World Editor home lists the user's projects under its Projects tab (the default tab shows
+      // the bundled examples); the label is upper-cased by CSS, so compare case-insensitively.
+      const projectsTab = $(
+        '//button[translate(normalize-space(.), "abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKLMNOPQRSTUVWXYZ")="PROJECTS"]',
+      );
+      if (await projectsTab.isExisting()) await clickWhenReady(projectsTab, 30_000);
       await clickWhenReady(
         $('//*[contains(normalize-space(.), "Synthetic Mega")]/ancestor-or-self::button[1]'),
         60_000,
