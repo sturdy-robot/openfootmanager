@@ -58,7 +58,15 @@ jobs:
           git diff --stat
           git rev-parse HEAD
 
+      - name: Reuse the built app of this ref, if built before
+        id: exe
+        uses: actions/cache@v4
+        with:
+          path: app/src-tauri/target/debug/openfootmanager.exe
+          key: exe-${{ matrix.build }}-${{ hashFiles('harness/.github/workflows/win-real-app.yml') }}-v1
+
       - name: Build the app (debug, frontend embedded)
+        if: steps.exe.outputs.cache-hit != 'true'
         shell: pwsh
         working-directory: app
         run: |
@@ -67,6 +75,11 @@ jobs:
           npm run tauri build -- --debug --no-bundle
           Write-Host "BUILD seconds=$($sw.Elapsed.TotalSeconds)"
           Get-Item src-tauri/target/debug/openfootmanager.exe | Select-Object FullName, Length
+
+      - name: Where the app is
+        shell: pwsh
+        working-directory: app
+        run: |
           "OFM_APP_EXE=$((Resolve-Path src-tauri/target/debug/openfootmanager.exe).Path)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: tauri-driver and msedgedriver

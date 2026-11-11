@@ -97,6 +97,9 @@ async function step(name, fn) {
       max_long_task_ms: Math.round(Math.max(0, ...(window.__long || []))),
       errors: (window.__ofmErrors || []).slice(-5),
       ipc: (window.__ipc || []).slice(-60),
+      pending: (window.__pending || []).map((c) => ({ ...c, waiting_ms: Math.round(performance.now() - c.at) })),
+      text: (document.body.innerText || "").replace(/\s+/g, " ").slice(0, 400),
+      buttons: Array.from(document.querySelectorAll("button")).slice(0, 25).map((b) => (b.innerText || "").trim().slice(0, 24)),
     }));
   } catch (e) {
     page = { webdriverError: String(e).slice(0, 200) };
@@ -120,6 +123,7 @@ async function installHooks() {
   await browser.execute((out) => {
     window.__ofmErrors = [];
     window.__ipc = [];
+    window.__pending = [];
     window.__gap = 0;
     window.__long = [];
     // A heartbeat every 50 ms: a gap well above 50 ms is a stall of the page's main thread.
@@ -156,16 +160,27 @@ async function installHooks() {
         } catch {}
       }
       const t0 = performance.now();
+      const started = { cmd, bytes, at: Math.round(t0) };
+      window.__pending.push(started);
       const p = orig(cmd, args, opts);
+      const done = () => {
+        const at = window.__pending.indexOf(started);
+        if (at >= 0) window.__pending.splice(at, 1);
+      };
       p.then(
-        () => window.__ipc.push({ cmd, ms: Math.round(performance.now() - t0), bytes }),
-        (e) =>
+        () => {
+          done();
+          window.__ipc.push({ cmd, ms: Math.round(performance.now() - t0), bytes });
+        },
+        (e) => {
+          done();
           window.__ipc.push({
             cmd,
             ms: Math.round(performance.now() - t0),
             bytes,
             error: String(e).slice(0, 200),
-          }),
+          });
+        },
       );
       return p;
     };
@@ -210,7 +225,7 @@ describe("a user's session in the World Editor on a very large package (Windows)
         $('//*[contains(normalize-space(.), "Synthetic Mega")]/ancestor-or-self::button[1]'),
         60_000,
       );
-      await buttonNamed("Players").waitForDisplayed({ timeout: 300_000 });
+      await buttonNamed("Players").waitForDisplayed({ timeout: 120_000 });
     });
   });
 
