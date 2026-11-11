@@ -487,7 +487,8 @@ function normalizeReportCompetitionName(
   params?: Record<string, string>,
 ): Record<string, string> | undefined {
   if (
-    article.body_key !== "be.news.matchReport.reportCompetition.body" ||
+    (article.body_key !== "be.news.matchReport.reportCompetition.body" &&
+      article.body_key !== "be.news.seasonPreview.body") ||
     !params?.competitionKey
   ) {
     return params;
@@ -505,6 +506,23 @@ function normalizeReportCompetitionName(
       },
       (key, options) => i18n.t(key, options),
     ),
+  };
+}
+
+/**
+ * A season preview names its division. One from a save written before it carried one has no
+ * `competition`, and would show the placeholder: it says "The league" instead.
+ */
+function normalizeSeasonPreviewDivision(
+  article: NewsArticle,
+  params?: Record<string, string>,
+): Record<string, string> | undefined {
+  if (article.body_key !== "be.news.seasonPreview.body" || params?.competition) {
+    return params;
+  }
+  return {
+    ...params,
+    competition: resolve("be.news.seasonPreview.leagueFallback", "The league"),
   };
 }
 
@@ -750,6 +768,7 @@ const ARTICLE_PARAM_NORMALIZERS: ArticleParamNormalizer[] = [
   normalizeStandingsParams,
   normalizeMatchReportParams,
   normalizeReportCompetitionName,
+  normalizeSeasonPreviewDivision,
   normalizePressConferenceParams,
   normalizeTransferRoundupParams,
 ];
