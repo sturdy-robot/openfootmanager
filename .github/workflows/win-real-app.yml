@@ -31,7 +31,7 @@ jobs:
       - name: Checkout the app (${{ matrix.build }})
         uses: actions/checkout@v4
         with:
-          ref: ${{ matrix.build == 'before' && 'cloud-src/ofm-perf/real-app-dev' || 'cloud-src/ofm-perf/real-app-vlist' }}
+          ref: ${{ matrix.build == 'before' && 'cloud-src/ofm-perf/real-app-dev' || 'cloud-src/ofm-perf/real-app-vlist2' }}
           path: app
 
       - uses: actions/setup-node@v4
