@@ -21,7 +21,7 @@ function memory() {
   // Working set, in KB, of the app and (summed) of its WebView2 processes.
   try {
     const out = execSync(
-      'powershell -NoProfile -Command "Get-Process openfootmanager,msedgewebview2 -ErrorAction SilentlyContinue | ForEach-Object { $_.ProcessName + \',\' + $_.WorkingSet64 }"',
+      'powershell -NoProfile -Command "Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -like \'*openfoot*\' -or $_.ProcessName -eq \'msedgewebview2\' } | ForEach-Object { $_.ProcessName + \',\' + $_.WorkingSet64 }"',
       { stdio: "pipe" },
     ).toString();
     let app = 0;
@@ -30,7 +30,7 @@ function memory() {
       const [name, bytes] = line.trim().split(",");
       if (!name) continue;
       const kb = Number(bytes) / 1024;
-      if (name === "openfootmanager") app = Math.max(app, kb);
+      if (/openfoot/i.test(name)) app = Math.max(app, kb);
       else web += kb;
     }
     return { app, web };
@@ -40,9 +40,7 @@ function memory() {
 }
 function appAlive() {
   try {
-    return execSync('tasklist /FI "IMAGENAME eq openfootmanager.exe" /NH', { stdio: "pipe" })
-      .toString()
-      .includes("openfootmanager.exe");
+    return /openfoot/i.test(execSync("tasklist /NH", { stdio: "pipe" }).toString());
   } catch {
     return false;
   }

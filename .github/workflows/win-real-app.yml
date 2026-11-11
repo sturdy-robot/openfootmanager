@@ -2,7 +2,8 @@ name: win-real-app
 
 # Scratch (fork only, never merged): the World Editor on a very large package, in the real app on Windows
 # (WebView2), driven by tauri-driver + msedgedriver. The runner is a throwaway VM. Two builds are compared:
-# before (develop 564e8c76) and after (current develop). The package is a synthetic replica; the real
+# before (the PUBLISHED installer of nightly-20261102-a4c69c3, what the users ran) and after (current develop,
+# built here). The package is a synthetic replica; the real
 # package is never in this repository or on this runner.
 on:
   push:
@@ -26,10 +27,11 @@ jobs:
         with:
           path: harness
 
-      - name: Checkout the app (${{ matrix.build }})
+      - name: Checkout the app (after only)
+        if: matrix.build == 'after'
         uses: actions/checkout@v4
         with:
-          ref: cloud-src/ofm-perf/real-app-${{ matrix.build }}
+          ref: cloud-src/ofm-perf/real-app-after
           path: app
 
       - uses: actions/setup-node@v4
@@ -45,7 +47,21 @@ jobs:
           Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, TotalVisibleMemorySize
           systeminfo | Select-String "Total Physical Memory"
 
-      - name: Build the app (debug, frontend embedded)
+      - name: Install the published release (before)
+        if: matrix.build == 'before'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download nightly-20261102-a4c69c3 -R openfootmanager/openfootmanager -p "Openfoot.Manager_0.3.0_x64-setup.exe" -D "$env:RUNNER_TEMP"
+          Start-Process "$env:RUNNER_TEMP\Openfoot.Manager_0.3.0_x64-setup.exe" -ArgumentList "/S" -Wait
+          $exe = Get-ChildItem "$env:LOCALAPPDATA", "$env:ProgramFiles", "${env:ProgramFiles(x86)}" -Recurse -Filter "*.exe" -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -match "openfoot" -and $_.Name -notmatch "uninst" } | Select-Object -First 1
+          Write-Host "INSTALLED $($exe.FullName)"
+          "OFM_APP_EXE=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Build the app (debug, frontend embedded) (after)
+        if: matrix.build == 'after'
         shell: pwsh
         working-directory: app
         run: |
@@ -54,6 +70,7 @@ jobs:
           npm run tauri build -- --debug --no-bundle
           Write-Host "BUILD seconds=$($sw.Elapsed.TotalSeconds)"
           Get-Item src-tauri/target/debug/openfootmanager.exe | Select-Object FullName, Length
+          "OFM_APP_EXE=$((Resolve-Path src-tauri/target/debug/openfootmanager.exe).Path)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: tauri-driver and msedgedriver
         shell: pwsh
@@ -83,7 +100,7 @@ jobs:
         working-directory: harness/win-e2e
         run: |
           $driver = (Resolve-Path .\msedgedriver.exe).Path
-          $app = (Resolve-Path ..\..\app\src-tauri\target\debug\openfootmanager.exe).Path
+          $app = $env:OFM_APP_EXE
           foreach ($n in 1, 2) {
             $project = "$env:RUNNER_TEMP\synth-$n"
             Copy-Item "$env:RUNNER_TEMP\synth" $project -Recurse
@@ -94,7 +111,7 @@ jobs:
             $env:OFM_PERF_BUILD_OUT = "$env:RUNNER_TEMP\out-$n\mega.ofm"
             Write-Host "=== RUN $n"
             npx wdio run wdio.conf.mjs 2>&1 | Tee-Object -FilePath "wdio-${{ matrix.build }}-$n.log"
-            Get-Process openfootmanager, msedgewebview2, msedgedriver, tauri-driver -ErrorAction SilentlyContinue | Stop-Process -Force
+            Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -match 'openfoot|msedgewebview2|msedgedriver|tauri-driver' } | Stop-Process -Force
             Start-Sleep -Seconds 5
           }
 
