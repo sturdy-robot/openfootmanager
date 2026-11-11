@@ -21,8 +21,10 @@ PACKAGE_COUNTRIES = [
     ("GM", "africa"), ("GP", "central-america"), ("MF", "central-america"), ("YT", "africa"),
     ("GF", "central-america"), ("MQ", "central-america"), ("SX", "central-america"),
 ]
-PLAYERS = 17_098
-ASSETS = 608
+PLAYERS = int(os.environ.get("SYNTH_PLAYERS", 17_098))
+ASSETS = int(os.environ.get("SYNTH_ASSETS", 608))
+if os.environ.get("SYNTH_COUNTRIES"):
+    CLUBS_PER_COUNTRY = dict(list(CLUBS_PER_COUNTRY.items())[: int(os.environ["SYNTH_COUNTRIES"])])
 SPECIFIC = ["CenterBack", "RightBack", "LeftBack", "DefensiveMidfielder", "CentralMidfielder",
             "AttackingMidfielder", "RightWinger", "LeftWinger", "Striker"]
 ATTRIBUTES = ["pace", "stamina", "strength", "agility", "passing", "shooting", "tackling",

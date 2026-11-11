@@ -58,12 +58,16 @@ jobs:
           git diff --stat
           git rev-parse HEAD
 
+      - name: Trace read_package_project to a file (Rust side)
+        shell: pwsh
+        run: python harness/win-e2e/patch_trace.py app/src-tauri/src/commands/package_editor.rs
+
       - name: Reuse the built app of this ref, if built before
         id: exe
         uses: actions/cache@v4
         with:
           path: app/src-tauri/target/debug/openfootmanager.exe
-          key: exe-${{ matrix.build }}-${{ hashFiles('harness/.github/workflows/win-real-app.yml') }}-v1
+          key: exe-${{ matrix.build }}-${{ hashFiles('harness/.github/workflows/win-real-app.yml', 'harness/win-e2e/patch_trace.py') }}-v2
 
       - name: Build the app (debug, frontend embedded)
         if: steps.exe.outputs.cache-hit != 'true'
@@ -96,6 +100,16 @@ jobs:
         working-directory: harness/win-e2e
         run: npm install
 
+      - name: A small package (3 countries, 600 players, 20 crests), the same generator
+        shell: pwsh
+        env:
+          SYNTH_COUNTRIES: "3"
+          SYNTH_PLAYERS: "600"
+          SYNTH_ASSETS: "20"
+        run: |
+          python harness/win-e2e/synth_mega.py "$env:RUNNER_TEMP\synth-small"
+          (Get-ChildItem "$env:RUNNER_TEMP\synth-small" -Recurse -File | Measure-Object Length -Sum).Sum
+
       - name: The synthetic replica (581 clubs, 17,098 players, 45 competitions)
         shell: pwsh
         run: |
@@ -110,15 +124,17 @@ jobs:
         run: |
           $driver = (Resolve-Path .\msedgedriver.exe).Path
           $app = $env:OFM_APP_EXE
-          foreach ($n in 1, 2) {
-            $project = "$env:RUNNER_TEMP\synth-$n"
-            Copy-Item "$env:RUNNER_TEMP\synth" $project -Recurse
+          foreach ($run in @(@("1","synth"), @("2","synth"), @("small","synth-small"))) {
+            $n = $run[0]
+            $project = "$env:RUNNER_TEMP\proj-$n"
+            Copy-Item "$env:RUNNER_TEMP\$($run[1])" $project -Recurse
             $env:OFM_APP = $app
             $env:OFM_DRIVER = $driver
             $env:OFM_PERF_PROJECT = $project
             $env:OFM_PERF_LOG = "$PWD\steps-${{ matrix.build }}-$n.log"
+            $env:OFM_TRACE_FILE = "$PWD\rust-trace-${{ matrix.build }}-$n.log"
             $env:OFM_PERF_BUILD_OUT = "$env:RUNNER_TEMP\out-$n\mega.ofm"
-            Write-Host "=== RUN $n"
+            Write-Host "=== RUN $n ($($run[1]))"
             npx wdio run wdio.conf.mjs 2>&1 | Tee-Object -FilePath "wdio-${{ matrix.build }}-$n.log"
             Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -match 'openfoot|msedgewebview2|msedgedriver|tauri-driver' } | Stop-Process -Force
             Start-Sleep -Seconds 5
