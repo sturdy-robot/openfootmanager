@@ -300,19 +300,33 @@ describe("a user's session in the World Editor on a very large package (Windows)
       }
       if (!best) return null;
       best.scrollIntoView({ block: "center" });
-      best.querySelector("button[title]").focus();
+      best.setAttribute("data-shot-row", "1");
+      best.closest('[role="listitem"]')?.focus();
+      if (!best.closest('[role="listitem"]')) best.querySelector("button[title]").focus();
       return { subtitle: best.querySelectorAll("p")[1].textContent, length: bestLen };
     });
     console.log("SHOT pick " + JSON.stringify(pick));
+    if (await $('[role="listitem"]').isExisting()) {
+      await browser.keys(["ArrowDown"]);
+      await browser.pause(200);
+      await browser.keys(["ArrowUp"]);
+      await browser.pause(200);
+    }
     const facts = () =>
       browser.execute(() => {
-        const row = document.activeElement.closest("div.cursor-pointer.rounded-xl");
+        const focused = document.activeElement;
+        const focusOn = focused.getAttribute("role") === "listitem" ? "list item (arrow keys)" : focused.tagName;
+        const row =
+          focused.getAttribute("role") === "listitem"
+            ? focused.querySelector("div.cursor-pointer.rounded-xl")
+            : focused.closest("div.cursor-pointer.rounded-xl");
         const holder = row.querySelector("[data-full]");
         const after = holder ? getComputedStyle(holder, "::after") : null;
         const para = row.querySelectorAll("p")[1];
         const r = row.getBoundingClientRect();
         const wrapper = row.closest('[role="listitem"]');
         return {
+          focus_on: focusOn,
           root_font_px: getComputedStyle(document.documentElement).fontSize,
           row_height: Math.round(r.height),
           row_overflows: row.scrollHeight > row.clientHeight, // true when the focus panel hangs below the row
