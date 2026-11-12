@@ -41,7 +41,13 @@ fn main() -> Result<(), String> {
         .ok_or("usage: page_fixture <output .ts path>")?;
     let game = build_career()?;
     let module = render_module(&game)?;
-    std::fs::write(&out_path, &module).map_err(|error| format!("{out_path}: {error}"))?;
+    // Written beside the target and renamed into place, so an interrupted run never leaves a
+    // partial file: scripts/ensure-page-fixture.mjs only checks that the file exists. The name
+    // carries the process id because two npm hooks can generate at once (`npm run dev` and
+    // `npm test` in a fresh clone); with one shared name, the second rename finds nothing.
+    let partial = format!("{out_path}.{}.partial", std::process::id());
+    std::fs::write(&partial, &module).map_err(|error| format!("{partial}: {error}"))?;
+    std::fs::rename(&partial, &out_path).map_err(|error| format!("{out_path}: {error}"))?;
     println!("wrote {out_path} ({} KB)", module.len() / 1024);
     Ok(())
 }
@@ -148,6 +154,19 @@ fn render_module(game: &Game) -> Result<String, String> {
         "FamiliarityProjection",
         &ofm_core::familiarity_projection::familiarity_projection(game)?,
     )?;
+    export_tactics(&mut module, game, &club)?;
+    export(
+        &mut module,
+        "positionWeights",
+        "Record<string, AttributeWeight[]>",
+        &position_weights()?,
+    )?;
+    export(
+        &mut module,
+        "positionKeyAttributes",
+        "Record<string, AttributeKey[]>",
+        &position_key_attributes()?,
+    )?;
     export(
         &mut module,
         "careerStage",
@@ -156,6 +175,86 @@ fn render_module(game: &Game) -> Result<String, String> {
     )?;
     export_world_lists(&mut module, game, &club)?;
     Ok(module)
+}
+
+/// What the game weighs at every position, by the position's name: the table the profile's position
+/// ratings carry, so the harness's ratings hold the game's weights and no copy of them.
+fn position_weights() -> Result<
+    std::collections::BTreeMap<String, Vec<ofm_core::position_ratings::AttributeWeight>>,
+    String,
+> {
+    domain::player::Position::ALL
+        .iter()
+        .map(|position| {
+            let name = serde_json::to_value(position)
+                .map_err(|error| error.to_string())?
+                .as_str()
+                .map(str::to_string)
+                .ok_or_else(|| "a position serialises as a string".to_string())?;
+            Ok((name, ofm_core::position_ratings::weights_of(position)))
+        })
+        .collect()
+}
+
+/// The three attributes the game cannot do without at every position, by the position's name
+/// (`player_rating::key_attributes`): what the profile marks as key, so the harness's ratings name the
+/// game's three and not whichever of the fixture player's attributes are highest.
+fn position_key_attributes()
+-> Result<std::collections::BTreeMap<String, [domain::player::AttributeKey; 3]>, String> {
+    domain::player::Position::ALL
+        .iter()
+        .map(|position| {
+            let name = serde_json::to_value(position)
+                .map_err(|error| error.to_string())?
+                .as_str()
+                .map(str::to_string)
+                .ok_or_else(|| "a position serialises as a string".to_string())?;
+            Ok((name, ofm_core::player_rating::key_attributes(position)))
+        })
+        .collect()
+}
+
+/// The Tactics tab's mount queries: the side the club would field (`get_tactics_lineup`), whether the
+/// club's instructions differ from its style's blueprint (the comparison
+/// `get_tactics_blueprint_status` makes), and the takers the backend would use for the club's eleven,
+/// with the eleven they were picked for.
+fn export_tactics(module: &mut String, game: &Game, club: &str) -> Result<(), String> {
+    let team = game
+        .teams
+        .iter()
+        .find(|team| team.id == club)
+        .ok_or("the career's club is missing")?;
+    // The eleven is the side the match would field (the club's saved eleven may be empty): the
+    // Tactics tab asks for the takers of exactly those players.
+    let lineup = ofm_core::tactics_lineup::tactics_lineup(game)?;
+    let eleven: Vec<String> = lineup
+        .eleven
+        .iter()
+        .map(|slot| slot.player_id.clone())
+        .collect();
+    export(module, "tacticsLineup", "TacticsLineup", &lineup)?;
+    export(
+        module,
+        "tacticsBlueprintStatus",
+        "{ modified: boolean }",
+        &json!({
+            "modified": team.tactics_phase != ofm_core::ai_tactics::blueprint_for(&team.play_style)
+        }),
+    )?;
+    let (captain, penalty_taker, free_kick_taker, corner_taker) =
+        ofm_core::live_match_manager::auto_select_set_pieces(game, &eleven);
+    export(module, "autoSetPiecesFor", "string[]", &eleven)?;
+    export(
+        module,
+        "autoSetPieces",
+        "AutoSetPieces",
+        &json!({
+            "captain": captain,
+            "penalty_taker": penalty_taker,
+            "free_kick_taker": free_kick_taker,
+            "corner_taker": corner_taker,
+        }),
+    )
 }
 
 /// The world lists' answers: the Players page's first page, the Teams directory and the Staff page.
@@ -205,10 +304,13 @@ import type { BackendFinanceSnapshotResponseData } from \"../../services/finance
 import type { JobOpportunity } from \"../../services/jobService\";
 import type { PlayersPage, PlayersPageQuery } from \"../../services/playersService\";
 import type { PositionGroupEntry } from \"../../services/positionService\";
-import type { RatingTier, SquadFitness } from \"../../services/squadService\";
+import type { AutoSetPieces, RatingTier, SquadFitness } from \"../../services/squadService\";
 import type { StaffSlice } from \"../../services/staffService\";
 import type { TeamsDirectory } from \"../../services/teamsService\";
+import type { AttributeKey } from \"../../store/generated/AttributeKey\";
+import type { AttributeWeight } from \"../../store/generated/AttributeWeight\";
 import type { FamiliarityProjection } from \"../../store/generated/FamiliarityProjection\";
+import type { TacticsLineup } from \"../../store/generated/TacticsLineup\";
 import type { GameStateData, PlayerData } from \"../../store/types\";
 ";
 

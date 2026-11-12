@@ -103,6 +103,12 @@ impl PlayerRole {
         Self::CompleteForward,
     ];
 
+    /// Whether a player in `position`'s group may be given this role: the one rule, which the
+    /// live role command asks.
+    pub fn suits(self, position: Position) -> bool {
+        self == Self::Standard || self.position_groups().contains(&position)
+    }
+
     /// The position groups whose players may be given this role. The wide roles
     /// are open to wide midfielders and to wingers; `Standard` suits everyone
     /// and is left out.
@@ -166,6 +172,15 @@ pub struct PlayerData {
     /// sim lab) build synthetic players at 1.0.
     #[serde(default = "default_line_familiarity")]
     pub line_familiarity: [f64; 4],
+    /// The factor on this player's match rating for his mood: 1.0 is neutral, above 1.0 a player
+    /// who is playing well within himself, below it one who is not. The engine does not decide it:
+    /// the caller does (for a club match, ofm_core's morale table, a few percent either way), and
+    /// may change it mid-match (`LiveMatchState::set_morale_factor`), as at the half-time talk. It
+    /// rides with `line_familiarity` everywhere that is applied (`shared::rating_factor`), is
+    /// kept within `shared::MORALE_FACTOR_RANGE`, and the default is neutral, so a caller that
+    /// sets nothing, and a match saved before this field existed, play as they always did.
+    #[serde(default = "default_morale_factor")]
+    pub morale_factor: f64,
 
     // Physical
     pub pace: u8,
@@ -231,10 +246,20 @@ fn default_line_familiarity() -> [f64; 4] {
     [1.0; 4]
 }
 
+fn default_morale_factor() -> f64 {
+    1.0
+}
+
 impl PlayerData {
     /// The factor on this player's match rating for the line he is in now.
     pub fn familiarity_factor(&self) -> f64 {
         self.familiarity_in(self.position)
+    }
+
+    /// The factor on this player's match rating for everything the caller knows about him that
+    /// the engine cannot see: his familiarity with the line he is in now, and his mood.
+    fn rating_factor(&self) -> f64 {
+        crate::shared::rating_factor(self.familiarity_factor(), self.morale_factor)
     }
 
     /// The factor on this player's match rating were he to play in `line`.
@@ -416,6 +441,13 @@ impl TacticsConfig {
 }
 
 impl TacticalDial {
+    /// Whether this setting plays differently from the dial's others. Slow break speed plays as
+    /// Medium does. Every other setting changes the match, Long build-up and non-zonal marking
+    /// included, though today they only cost.
+    pub fn has_match_effect(self) -> bool {
+        !matches!(self, TacticalDial::BreakSpeed(BreakSpeed::Slow))
+    }
+
     /// Turn this one dial, leaving the other eight where they are.
     pub fn set_on(self, tactics: &mut TacticsConfig) {
         match self {
@@ -461,7 +493,7 @@ impl TeamData {
         }
         players
             .iter()
-            .map(|p| attr_fn(p) as f64 * p.familiarity_factor())
+            .map(|p| attr_fn(p) as f64 * p.rating_factor())
             .sum::<f64>()
             / players.len() as f64
     }
@@ -504,7 +536,7 @@ impl TeamData {
         }
         on_the_pitch
             .iter()
-            .map(|p| attr_fn(p) as f64 * p.familiarity_factor())
+            .map(|p| attr_fn(p) as f64 * p.rating_factor())
             .sum::<f64>()
             / places as f64
     }

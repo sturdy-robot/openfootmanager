@@ -49,12 +49,27 @@ fn parse_play_style(play_style: &str) -> domain::team::PlayStyle {
     }
 }
 
+/// A save that rewrote the team's roles also reaches the match waiting at kick-off. A hand-off the
+/// match cannot take is logged, not reported: the save is done, and an error here would roll the
+/// screen back to roles that are no longer the saved ones.
+pub(crate) fn follow_saved_roles_into_the_waiting_match(state: &StateManager, game: &Game) {
+    if let Err(error) =
+        crate::application::live_match::follow_saved_roles_before_kick_off(state, game)
+    {
+        log::warn!("[cmd] the waiting match did not take the saved roles: {error}");
+    }
+}
+
 pub fn set_formation_internal(
     state: &StateManager,
     career: Career,
     formation: &str,
 ) -> Result<Game, String> {
-    mutate_active_game_for(state, career, |game| apply_formation(game, formation))
+    // One step against a role save, a swap or a kick-off: the commit and the hand-off to the match.
+    let _operation = crate::application::live_session::operation();
+    let game = mutate_active_game_for(state, career, |game| apply_formation(game, formation))?;
+    follow_saved_roles_into_the_waiting_match(state, &game);
+    Ok(game)
 }
 
 /// Picks a tactic preset: its formation and play style, and the phase blueprint
@@ -63,22 +78,33 @@ pub fn set_formation_internal(
 /// Distinct from `set_play_style_internal` on purpose: tweaking the style alone
 /// must not wipe dials a manager tuned by hand, but choosing a whole preset is
 /// a request for that preset's setup (#365).
+///
+/// With `keep_instructions` (the manager answered "Keep mine", or nothing of theirs would be
+/// replaced) the formation and play style are written in the same one mutation and the manager's own
+/// team instructions are left as they are. Nothing is written if the formation is refused.
 pub fn apply_tactic_preset_internal(
     state: &StateManager,
     career: Career,
     formation: &str,
     play_style: &str,
+    keep_instructions: bool,
 ) -> Result<Game, String> {
-    mutate_active_game_for(state, career, |game| {
+    // One step against a role save, a swap or a kick-off: the commit and the hand-off to the match.
+    let _operation = crate::application::live_session::operation();
+    let game = mutate_active_game_for(state, career, |game| {
         apply_formation(game, formation)?;
 
         let style = parse_play_style(play_style);
         let team = user_team_mut(game)?;
-        team.tactics_phase = ofm_core::ai_tactics::blueprint_for(&style);
+        if !keep_instructions {
+            team.tactics_phase = ofm_core::ai_tactics::blueprint_for(&style);
+        }
         team.play_style = style;
 
         Ok(())
-    })
+    })?;
+    follow_saved_roles_into_the_waiting_match(state, &game);
+    Ok(game)
 }
 
 #[tauri::command]
@@ -86,17 +112,27 @@ pub fn apply_tactic_preset(
     state: State<'_, Arc<StateManager>>,
     formation: String,
     play_style: String,
+    keep_instructions: Option<bool>,
     career_token: u64,
 ) -> Result<Game, String> {
     info!("[cmd] apply_tactic_preset: {} / {}", formation, play_style);
-    apply_tactic_preset_internal(&state, Career::Token(career_token), &formation, &play_style)
+    apply_tactic_preset_internal(
+        &state,
+        Career::Token(career_token),
+        &formation,
+        &play_style,
+        keep_instructions.unwrap_or(false),
+    )
 }
 
-/// Whether the manager's phase dials differ from the blueprint their play style implies.
+/// Whether the manager's phase dials differ from a play style's blueprint: their own style's, or,
+/// asked about a style, the one a preset of that style would put in their place.
 ///
 /// The Tactics screen's unsaved-changes badge compares formation and style on its own; this is the
 /// part only the backend can answer, because `blueprint_for` is the rule that defines a style's
-/// dials and the frontend holds no copy of it.
+/// dials and the frontend holds no copy of it. The screen asks it about a preset's style before
+/// applying the preset: if the dials already equal that blueprint nothing of the manager's would be
+/// replaced and it applies without asking.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct TacticsBlueprintStatus {
     pub modified: bool,
@@ -104,7 +140,16 @@ pub struct TacticsBlueprintStatus {
 
 pub fn get_tactics_blueprint_status_internal(
     state: &StateManager,
+    play_style: Option<&str>,
 ) -> Result<TacticsBlueprintStatus, String> {
+    let asked_style = play_style
+        .map(|style| {
+            serde_json::from_value::<domain::team::PlayStyle>(serde_json::Value::String(
+                style.to_string(),
+            ))
+            .map_err(|_| ofm_core::custom_tactics::INVALID_PLAY_STYLE_ERROR.to_string())
+        })
+        .transpose()?;
     state
         .get_game(|game| {
             let team_id = user_team_id(game)?;
@@ -113,9 +158,9 @@ pub fn get_tactics_blueprint_status_internal(
                 .iter()
                 .find(|team| team.id == team_id)
                 .ok_or_else(|| "be.error.managedTeamNotFound".to_string())?;
+            let style = asked_style.as_ref().unwrap_or(&team.play_style);
             Ok(TacticsBlueprintStatus {
-                modified: team.tactics_phase
-                    != ofm_core::ai_tactics::blueprint_for(&team.play_style),
+                modified: team.tactics_phase != ofm_core::ai_tactics::blueprint_for(style),
             })
         })
         .ok_or_else(|| "be.error.noActiveGameSession".to_string())?
@@ -124,8 +169,9 @@ pub fn get_tactics_blueprint_status_internal(
 #[tauri::command]
 pub fn get_tactics_blueprint_status(
     state: State<'_, Arc<StateManager>>,
+    play_style: Option<String>,
 ) -> Result<TacticsBlueprintStatus, String> {
-    get_tactics_blueprint_status_internal(&state)
+    get_tactics_blueprint_status_internal(&state, play_style.as_deref())
 }
 
 pub fn set_starting_xi_internal(
@@ -133,7 +179,9 @@ pub fn set_starting_xi_internal(
     career: Career,
     player_ids: Vec<String>,
 ) -> Result<Game, String> {
-    mutate_active_game_for(state, career, |game| {
+    // One step against a role save, a swap or a kick-off: the commit and the hand-off to the match.
+    let _operation = crate::application::live_session::operation();
+    let game = mutate_active_game_for(state, career, |game| {
         let team_id = user_team_id(game)?;
         // Refused before anything is written: the screens and an MCP agent both save through here.
         validate_starting_xi(&game.players, &team_id, &player_ids)?;
@@ -144,7 +192,9 @@ pub fn set_starting_xi_internal(
         reconcile_player_roles(game, &team_id);
 
         Ok(())
-    })
+    })?;
+    follow_saved_roles_into_the_waiting_match(state, &game);
+    Ok(game)
 }
 
 #[tauri::command]
@@ -651,8 +701,18 @@ pub fn set_player_role_internal(
         "[cmd] set_player_role: player={} role={:?}",
         player_id, role
     );
-    mutate_active_game_for(state, career, |game| {
+    // One step against a swap or a kick-off: the read of his slot, the save and the hand-off to
+    // the match. The data locks are still taken one at a time, never nested.
+    let _operation = crate::application::live_session::operation();
+    // Where a pre-match swap has put him, read before the game lock (the two locks are never
+    // nested). A swap or a change of shape moves players in the waiting match alone, so the saved
+    // team's slots no longer describe it. If a swap lands between this read and the save, the
+    // saved role is judged by the old slot while the match is still handed the right one: the
+    // hand-off below filters it by the slot he now fills.
+    let waiting_slot = crate::application::live_match::user_slot_before_kick_off(state, &player_id);
+    let game = mutate_active_game_for(state, career, |game| {
         let team_id = user_team_id(game)?;
+        let game_career_token = game.career_token;
 
         // Validate the role against where the player is actually deployed (the
         // granular slot from formation + starting XI), falling back to their
@@ -666,8 +726,11 @@ pub fn set_player_role_internal(
             .map(|p| p.natural_position.clone())
             .ok_or_else(|| "be.error.playerNotOnTeam".to_string())?;
         let team = user_team_mut(game)?;
-        let validation_position = ofm_core::player_rating::deployed_position(team, &player_id)
-            .unwrap_or(natural_position);
+        let validation_position = match waiting_slot {
+            Some((career_token, slot)) if career_token == game_career_token => slot,
+            _ => ofm_core::player_rating::deployed_position(team, &player_id)
+                .unwrap_or(natural_position),
+        };
 
         match role {
             Some(r) => {
@@ -685,7 +748,17 @@ pub fn set_player_role_internal(
         }
 
         Ok(())
-    })
+    })?;
+    // The role is saved. A hand-off the waiting match cannot take is logged, not reported: an
+    // error here would roll the pre-match screen back to a role that is no longer the saved one.
+    if let Err(error) =
+        crate::application::live_match::follow_saved_role_before_kick_off(state, &game, &player_id)
+    {
+        log::warn!(
+            "[cmd] set_player_role: the waiting match did not take {player_id}'s role: {error}"
+        );
+    }
+    Ok(game)
 }
 
 /// One optional value per tactical dial, as the screen sends them; `None` leaves a dial alone.
@@ -815,7 +888,13 @@ pub(crate) fn set_tactics_phase_internal(
 
         Ok(())
     })?;
-    crate::application::live_match::follow_saved_dials_before_kick_off(state, &game)?;
+    // The dials are saved. A hand-off the waiting match cannot take is logged, not reported: an
+    // error here would roll the pre-match screen back to dials that are no longer the saved ones.
+    if let Err(error) =
+        crate::application::live_match::follow_saved_dials_before_kick_off(state, &game)
+    {
+        log::warn!("[cmd] set_tactics_phase: the waiting match did not take the dials: {error}");
+    }
     Ok(game)
 }
 
@@ -1111,7 +1190,7 @@ mod tests {
     fn apply_tactic_preset_resets_the_blueprint_to_the_presets_style() {
         let state = state_with_custom_dials();
 
-        apply_tactic_preset_internal(&state, Career::Active, "3-4-3", "Defensive")
+        apply_tactic_preset_internal(&state, Career::Active, "3-4-3", "Defensive", false)
             .expect("preset applies");
 
         let team = stored_team(&state);
@@ -1128,7 +1207,7 @@ mod tests {
         let state = state_with_custom_dials();
 
         assert_eq!(
-            get_tactics_blueprint_status_internal(&state),
+            get_tactics_blueprint_status_internal(&state, None),
             Ok(TacticsBlueprintStatus { modified: true })
         );
     }
@@ -1139,11 +1218,11 @@ mod tests {
     #[test]
     fn a_style_blueprint_left_alone_is_not_modified() {
         let state = state_with_custom_dials();
-        apply_tactic_preset_internal(&state, Career::Active, "4-4-2", "Defensive")
+        apply_tactic_preset_internal(&state, Career::Active, "4-4-2", "Defensive", false)
             .expect("preset applies");
 
         assert_eq!(
-            get_tactics_blueprint_status_internal(&state),
+            get_tactics_blueprint_status_internal(&state, None),
             Ok(TacticsBlueprintStatus { modified: false })
         );
     }
@@ -1154,13 +1233,81 @@ mod tests {
     #[test]
     fn changing_the_style_alone_leaves_the_old_blueprint_modified() {
         let state = state_with_custom_dials();
-        apply_tactic_preset_internal(&state, Career::Active, "4-4-2", "Balanced")
+        apply_tactic_preset_internal(&state, Career::Active, "4-4-2", "Balanced", false)
             .expect("preset applies");
         set_play_style_internal(&state, Career::Active, "Attacking").expect("style applies");
 
         assert_eq!(
-            get_tactics_blueprint_status_internal(&state),
+            get_tactics_blueprint_status_internal(&state, None),
             Ok(TacticsBlueprintStatus { modified: true })
+        );
+    }
+
+    /// Given a manager with hand-tuned dials
+    /// When they apply a preset keeping their instructions
+    /// Then the preset's formation and play style are set in one write and the tuned dials stay.
+    #[test]
+    fn a_preset_applied_keeping_instructions_takes_only_the_formation_and_style() {
+        let state = state_with_custom_dials();
+
+        apply_tactic_preset_internal(&state, Career::Active, "3-4-3", "Defensive", true)
+            .expect("preset applies");
+
+        let team = stored_team(&state);
+        assert_eq!(team.formation, "3-4-3");
+        assert_eq!(team.play_style, PlayStyle::Defensive);
+        assert_eq!(team.tactics_phase.width, PitchWidth::Wide);
+        assert_eq!(team.tactics_phase.tempo, Tempo::Patient);
+    }
+
+    /// Given a manager with hand-tuned dials
+    /// When a preset whose formation the game cannot lay out is applied keeping their instructions
+    /// Then it is refused and neither the formation nor the play style changed: it is one write.
+    #[test]
+    fn a_refused_preset_kept_instructions_changes_neither_formation_nor_style() {
+        let state = state_with_custom_dials();
+        let before = stored_team(&state);
+
+        assert_eq!(
+            apply_tactic_preset_internal(&state, Career::Active, "9-9-9", "Defensive", true).err(),
+            Some(ofm_core::custom_tactics::INVALID_FORMATION_ERROR.to_string())
+        );
+
+        let team = stored_team(&state);
+        assert_eq!(team.formation, before.formation);
+        assert_eq!(team.play_style, before.play_style);
+        assert_eq!(team.tactics_phase, before.tactics_phase);
+    }
+
+    /// Given dials that are exactly the Defensive blueprint
+    /// When the blueprint status is asked about the Defensive style, and about the Attacking one
+    /// Then Defensive reports nothing would be replaced, and Attacking that the dials would be.
+    #[test]
+    fn the_blueprint_status_can_be_asked_about_the_style_a_preset_would_apply() {
+        let state = state_with_custom_dials();
+        apply_tactic_preset_internal(&state, Career::Active, "4-4-2", "Defensive", false)
+            .expect("preset applies");
+
+        assert_eq!(
+            get_tactics_blueprint_status_internal(&state, Some("Defensive")),
+            Ok(TacticsBlueprintStatus { modified: false })
+        );
+        assert_eq!(
+            get_tactics_blueprint_status_internal(&state, Some("Attacking")),
+            Ok(TacticsBlueprintStatus { modified: true })
+        );
+    }
+
+    /// Given a style name the game does not have
+    /// When the blueprint status is asked about it
+    /// Then it is refused with the invalid-play-style key.
+    #[test]
+    fn the_blueprint_status_refuses_a_style_the_game_does_not_have() {
+        let state = state_with_custom_dials();
+
+        assert_eq!(
+            get_tactics_blueprint_status_internal(&state, Some("Sideways")),
+            Err(ofm_core::custom_tactics::INVALID_PLAY_STYLE_ERROR.to_string())
         );
     }
 
@@ -1170,7 +1317,7 @@ mod tests {
     #[test]
     fn the_blueprint_status_needs_a_session() {
         assert_eq!(
-            get_tactics_blueprint_status_internal(&StateManager::new()),
+            get_tactics_blueprint_status_internal(&StateManager::new(), None),
             Err("be.error.noActiveGameSession".to_string())
         );
     }
@@ -1197,7 +1344,7 @@ mod tests {
     fn re_picking_the_active_preset_restores_its_blueprint() {
         let state = state_with_custom_dials();
 
-        apply_tactic_preset_internal(&state, Career::Active, "4-4-2", "Balanced")
+        apply_tactic_preset_internal(&state, Career::Active, "4-4-2", "Balanced", false)
             .expect("preset applies");
 
         assert_eq!(
@@ -1214,7 +1361,8 @@ mod tests {
         let state = StateManager::new();
         state.set_game(make_game_with_dangling_team_id(make_player("1998-01-01")));
 
-        let result = apply_tactic_preset_internal(&state, Career::Active, "3-4-3", "Attacking");
+        let result =
+            apply_tactic_preset_internal(&state, Career::Active, "3-4-3", "Attacking", false);
 
         assert_eq!(result.err(), Some("be.error.teamNotFound".into()));
         let team = stored_team(&state);
@@ -1233,7 +1381,7 @@ mod tests {
         state.set_game(game);
 
         assert_eq!(
-            apply_tactic_preset_internal(&state, Career::Active, "3-4-3", "Attacking").err(),
+            apply_tactic_preset_internal(&state, Career::Active, "3-4-3", "Attacking", false).err(),
             Some("be.error.noTeamAssigned".into())
         );
     }

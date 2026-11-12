@@ -17,10 +17,11 @@ import { useTranslation } from "react-i18next";
 import type { DigestStopReason } from "../../hooks/useDigestAdvance";
 import type { AttentionEventKind, DigestEntry, RecapMatch } from "./advanceRecap";
 import { getCategoryIcon } from "../inbox/inboxHelpers";
+import { formatDateShort } from "../../lib/dateFormatting";
 import { formatVal } from "../../lib/valueFormatting";
 import { resolveBackendText } from "../../utils/backendI18n";
 import { getBlockerTabLabel } from "../../utils/blockerUtils";
-import { Dialog } from "../ui";
+import { Dialog, FormResultMark, formResultOf } from "../ui";
 
 interface DashboardSimulatingModalProps {
   // Digest-mode props (optional — omit for a plain single-advance spinner)
@@ -50,24 +51,9 @@ const EVENT_LABEL_KEYS: Record<AttentionEventKind, string> = {
 };
 
 function ResultBadge({ result }: { result: RecapMatch["userResult"] }): JSX.Element | null {
-  const { t } = useTranslation();
   if (!result) return null;
-  const styles = {
-    win: "bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300",
-    draw: "bg-gray-100 text-gray-600 dark:bg-navy-700 dark:text-gray-400",
-    loss: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
-  } as const;
-  const labels = {
-    win: t("common.won"),
-    draw: t("common.drawn"),
-    loss: t("common.lost"),
-  } as const;
   return (
-    <span
-      className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${styles[result]}`}
-    >
-      {labels[result]}
-    </span>
+    <FormResultMark result={formResultOf(result)} className="shrink-0 px-1.5 py-0.5 uppercase" />
   );
 }
 
@@ -185,7 +171,7 @@ function InboxCard({
 }
 
 function DigestDayRow({ entry }: { entry: DigestEntry }): JSX.Element {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { recap } = entry;
   const hasContent =
     recap.matches.length > 0 ||
@@ -193,10 +179,9 @@ function DigestDayRow({ entry }: { entry: DigestEntry }): JSX.Element {
     recap.news.length > 0 ||
     recap.inbox.length > 0;
 
-  const formattedDate = new Intl.DateTimeFormat(undefined, {
-    day: "numeric",
-    month: "short",
-  }).format(new Date(`${entry.date}T00:00:00Z`));
+  // The game's language, through the project's one date formatter: the host's own locale would
+  // write an English game's day month-first on a US machine.
+  const formattedDate = formatDateShort(entry.date, i18n.language);
 
   // Declarative stagger offsets per section to avoid mutable counter in render
   const matchOffset = 0;

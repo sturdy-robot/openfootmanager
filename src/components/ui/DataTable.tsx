@@ -30,6 +30,11 @@ export interface DataTableColumn<Row> {
    * the first column, which carries the row's accent: there it is ignored.
    */
   drawer?: boolean;
+  /**
+   * The cell's text wraps onto further lines and is never cut off or truncated (a club's name); the
+   * row then grows past the row height. Every other cell stays on one line.
+   */
+  wrap?: boolean;
 }
 
 interface DataTableProps<Row> {
@@ -52,6 +57,11 @@ interface DataTableProps<Row> {
    */
   primaryAside?: (row: Row) => ReactNode;
   rowAccent?: (row: Row) => RowAccent | null;
+  /**
+   * Whether the row is the one chosen, for a table that is a list to choose from: its open button
+   * then says so (`aria-pressed`), so a screen reader hears the choice and not only a colour.
+   */
+  rowPressed?: (row: Row) => boolean;
   /**
    * A right-click on the row, for its menu: the row and the pointer's place. The browser's own menu
    * stays shut. The keyboard reaches the same menu through `rowAction`.
@@ -91,6 +101,11 @@ const ACCENT: Record<RowAccent | "none", string> = {
   selected: "border-l-selected",
   danger: "border-l-danger-solid",
 };
+
+const cellClass = "h-row whitespace-nowrap border-b border-line px-2 align-middle first:pl-3.5";
+// A wrapping cell keeps the row height as its least, and breaks a long unbroken word rather than
+// push the table wider.
+const wrappingCellClass = `${cellClass.replace("whitespace-nowrap", "whitespace-normal")} py-1 [overflow-wrap:anywhere]`;
 
 /**
  * The button inside a sortable column header: reachable by Tab, pressed by Enter or Space, with
@@ -173,6 +188,7 @@ export function DataTable<Row>({
   onOpen,
   rowAction,
   rowAccent,
+  rowPressed,
   onRowContextMenu,
   primaryAside,
   loading = false,
@@ -197,6 +213,16 @@ export function DataTable<Row>({
     columns.find((column) => !column.drawer)
   )?.key;
   const span = columns.length + (rowAction ? 1 : 0);
+  // The rows in the order given, split where the group changes: each section is a `tbody` of its own
+  // (a row group a screen reader can announce), opened by a header row naming it. With no `groupOf`
+  // the rows are one section with no header.
+  const sections: { key: string; title?: string; rows: Row[] }[] = [];
+  for (const row of rows) {
+    const group = groupOf?.(row);
+    const last = sections[sections.length - 1];
+    if (last && last.key === (group?.key ?? "rows")) last.rows.push(row);
+    else sections.push({ key: group?.key ?? "rows", title: group?.title, rows: [row] });
+  }
 
   function toggleDetails(key: string) {
     setOpenDetails((current) => {
@@ -206,8 +232,6 @@ export function DataTable<Row>({
       return next;
     });
   }
-
-  const cellClass = "h-row whitespace-nowrap border-b border-line px-2 align-middle first:pl-3.5";
 
   return (
     <div
@@ -262,136 +286,194 @@ export function DataTable<Row>({
             ) : null}
           </tr>
         </thead>
-        <tbody>
-          {rows.length === 0 ? (
+        {rows.length === 0 ? (
+          <tbody>
             <tr>
               <td colSpan={span} className="px-3.5 py-6 text-center text-body text-fg-muted">
                 {loading ? t("common.loading") : (empty ?? t("common.noResults"))}
               </td>
             </tr>
-          ) : null}
-          {rows.map((row, rowIndex) => {
-            const key = rowKey(row);
-            const group = groupOf?.(row);
-            const startsGroup =
-              group !== undefined &&
-              (rowIndex === 0 || groupOf?.(rows[rowIndex - 1])?.key !== group.key);
-            const name = rowName(row);
-            const accent = rowAccent?.(row) ?? null;
-            const detailsId = `${idBase}-${key}-details`;
-            const detailsOpen = openDetails.has(key);
-            return (
-              <Fragment key={key}>
-                {startsGroup && group ? (
-                  <tr>
-                    <th
-                      colSpan={span}
-                      scope="colgroup"
-                      className="h-8 border-b border-line bg-sunken px-3.5 text-left font-heading text-caption font-bold uppercase tracking-label text-fg-muted"
-                    >
-                      {group.title}
-                    </th>
-                  </tr>
-                ) : null}
-                {/* A pointer convenience only: the keyboard opens the row from the name's button. */}
-                <tr
-                  data-testid={rowTestId?.(row)}
-                  data-accent={accent ?? undefined}
-                  onClick={
-                    onOpen
-                      ? (event) => {
-                          if (!isOnControl(event)) onOpen(row);
-                        }
-                      : undefined
-                  }
-                  onContextMenu={
-                    onRowContextMenu
-                      ? (event) => {
-                          event.preventDefault();
-                          onRowContextMenu(row, event);
-                        }
-                      : undefined
-                  }
-                  className={`hover:bg-hover ${onOpen ? "cursor-pointer" : ""}`}
+          </tbody>
+        ) : null}
+        {sections.map((section, index) => (
+          <tbody key={`${index}:${section.key}`}>
+            {section.title !== undefined ? (
+              <tr>
+                <th
+                  colSpan={span}
+                  scope="rowgroup"
+                  className="h-8 border-b border-line bg-sunken px-3.5 text-left font-heading text-caption font-bold uppercase tracking-label text-fg-muted"
                 >
-                  {columns.map((column, index) => (
-                    <td
-                      key={column.key}
-                      className={`${cellClass} ${column.numeric ? "text-right tabular-nums" : ""} ${
-                        column.drawer ? FOLDED : ""
-                      } ${index === 0 ? `${ACCENT_EDGE} ${ACCENT[accent ?? "none"]}` : ""}`}
-                    >
-                      {column.key === nameColumnKey ? (
-                        <span className="inline-flex min-w-0 items-center gap-1">
-                          {onOpen ? (
-                            <button
-                              type="button"
-                              aria-label={name}
-                              onClick={() => onOpen(row)}
-                              className={`min-w-0 text-left ${CONTROL_FOCUS}`}
-                            >
-                              {column.cell(row)}
-                            </button>
-                          ) : (
-                            column.cell(row)
-                          )}
-                          {primaryAside?.(row)}
-                          {folded.length > 0 ? (
-                            <button
-                              type="button"
-                              aria-expanded={detailsOpen}
-                              aria-controls={detailsId}
-                              aria-label={t("common.detailsFor", { name })}
-                              onClick={() => toggleDetails(key)}
-                              className={`${UNFOLDED_ONLY} grid h-7 w-7 shrink-0 place-items-center text-fg-muted hover:bg-sunken hover:text-fg ${CONTROL_FOCUS}`}
-                            >
-                              <ChevronDown
-                                aria-hidden="true"
-                                className={`h-4 w-4 transition-transform motion-reduce:transition-none ${
-                                  detailsOpen ? "rotate-180" : ""
-                                }`}
-                              />
-                            </button>
-                          ) : null}
-                        </span>
-                      ) : (
-                        column.cell(row)
-                      )}
-                    </td>
-                  ))}
-                  {rowAction ? (
-                    // The action cell is its control's, padding and all: whatever it renders (a
-                    // menu item, a portal), a click in it never opens the row.
-                    <td
-                      onClick={(event) => event.stopPropagation()}
-                      className={`${cellClass} w-0 text-right`}
-                    >
-                      {rowAction.cell(row)}
-                    </td>
-                  ) : null}
-                </tr>
-                {/* Rendered while closed too, hidden, so the toggle's aria-controls always resolves. */}
-                {folded.length > 0 ? (
-                  <tr id={detailsId} hidden={!detailsOpen} className={UNFOLDED_ONLY}>
-                    <td colSpan={span} className="border-b border-line bg-sunken px-3.5 py-2.5">
-                      <dl className="flex flex-wrap gap-x-7 gap-y-2 text-caption">
-                        {folded.map((column) => (
-                          <div key={column.key} className="flex flex-col gap-1">
-                            <dt className="text-fg-subtle">
-                              {column.headerLabel ?? column.header}
-                            </dt>
-                            <dd>{column.cell(row)}</dd>
-                          </div>
-                        ))}
-                      </dl>
-                    </td>
-                  </tr>
-                ) : null}
-              </Fragment>
-            );
-          })}
-        </tbody>
+                  {section.title}
+                </th>
+              </tr>
+            ) : null}
+            {section.rows.map((row) => {
+              const key = rowKey(row);
+              return (
+                <DataTableRow
+                  key={key}
+                  row={row}
+                  name={rowName(row)}
+                  accent={rowAccent?.(row) ?? null}
+                  columns={columns}
+                  folded={folded}
+                  nameColumnKey={nameColumnKey}
+                  span={span}
+                  detailsId={`${idBase}-${key}-details`}
+                  detailsOpen={openDetails.has(key)}
+                  onToggleDetails={() => toggleDetails(key)}
+                  onOpen={onOpen}
+                  rowPressed={rowPressed}
+                  onRowContextMenu={onRowContextMenu}
+                  primaryAside={primaryAside}
+                  rowAction={rowAction}
+                  rowTestId={rowTestId}
+                />
+              );
+            })}
+          </tbody>
+        ))}
       </table>
     </div>
+  );
+}
+
+interface DataTableRowProps<Row> {
+  row: Row;
+  name: string;
+  accent: RowAccent | null;
+  columns: readonly DataTableColumn<Row>[];
+  /** The columns that fold into the row's details in a narrow table. */
+  folded: readonly DataTableColumn<Row>[];
+  nameColumnKey: string | undefined;
+  span: number;
+  detailsId: string;
+  detailsOpen: boolean;
+  onToggleDetails: () => void;
+  onOpen: DataTableProps<Row>["onOpen"];
+  rowPressed: DataTableProps<Row>["rowPressed"];
+  onRowContextMenu: DataTableProps<Row>["onRowContextMenu"];
+  primaryAside: DataTableProps<Row>["primaryAside"];
+  rowAction: DataTableProps<Row>["rowAction"];
+  rowTestId: DataTableProps<Row>["rowTestId"];
+}
+
+/** One row of the table, and the details row under it that holds what folded away. */
+function DataTableRow<Row>({
+  row,
+  name,
+  accent,
+  columns,
+  folded,
+  nameColumnKey,
+  span,
+  detailsId,
+  detailsOpen,
+  onToggleDetails,
+  onOpen,
+  rowPressed,
+  onRowContextMenu,
+  primaryAside,
+  rowAction,
+  rowTestId,
+}: DataTableRowProps<Row>) {
+  const { t } = useTranslation();
+  return (
+    <Fragment>
+      {/* A pointer convenience only: the keyboard opens the row from the name's button. */}
+      <tr
+        data-testid={rowTestId?.(row)}
+        data-accent={accent ?? undefined}
+        onClick={
+          onOpen
+            ? (event) => {
+                if (!isOnControl(event)) onOpen(row);
+              }
+            : undefined
+        }
+        onContextMenu={
+          onRowContextMenu
+            ? (event) => {
+                event.preventDefault();
+                onRowContextMenu(row, event);
+              }
+            : undefined
+        }
+        className={`hover:bg-hover ${onOpen ? "cursor-pointer" : ""}`}
+      >
+        {columns.map((column, index) => (
+          <td
+            key={column.key}
+            className={`${column.wrap ? wrappingCellClass : cellClass} ${column.numeric ? "text-right tabular-nums" : ""} ${
+              column.drawer ? FOLDED : ""
+            } ${index === 0 ? `${ACCENT_EDGE} ${ACCENT[accent ?? "none"]}` : ""}`}
+          >
+            {column.key === nameColumnKey ? (
+              <span className="inline-flex min-w-0 items-center gap-1">
+                {onOpen ? (
+                  <button
+                    type="button"
+                    aria-label={name}
+                    aria-pressed={rowPressed ? rowPressed(row) : undefined}
+                    onClick={() => onOpen(row)}
+                    className={`min-w-0 text-left ${CONTROL_FOCUS}`}
+                  >
+                    {column.cell(row)}
+                  </button>
+                ) : (
+                  column.cell(row)
+                )}
+                {primaryAside?.(row)}
+                {folded.length > 0 ? (
+                  <button
+                    type="button"
+                    aria-expanded={detailsOpen}
+                    aria-controls={detailsId}
+                    aria-label={t("common.detailsFor", { name })}
+                    onClick={() => onToggleDetails()}
+                    className={`${UNFOLDED_ONLY} grid h-7 w-7 shrink-0 place-items-center text-fg-muted hover:bg-sunken hover:text-fg ${CONTROL_FOCUS}`}
+                  >
+                    <ChevronDown
+                      aria-hidden="true"
+                      className={`h-4 w-4 transition-transform motion-reduce:transition-none ${
+                        detailsOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                ) : null}
+              </span>
+            ) : (
+              column.cell(row)
+            )}
+          </td>
+        ))}
+        {rowAction ? (
+          // The action cell is its control's, padding and all: whatever it renders (a
+          // menu item, a portal), a click in it never opens the row.
+          <td
+            onClick={(event) => event.stopPropagation()}
+            className={`${cellClass} w-0 text-right`}
+          >
+            {rowAction.cell(row)}
+          </td>
+        ) : null}
+      </tr>
+      {/* Rendered while closed too, hidden, so the toggle's aria-controls always resolves. */}
+      {folded.length > 0 ? (
+        <tr id={detailsId} hidden={!detailsOpen} className={UNFOLDED_ONLY}>
+          <td colSpan={span} className="border-b border-line bg-sunken px-3.5 py-2.5">
+            <dl className="flex flex-wrap gap-x-7 gap-y-2 text-caption">
+              {folded.map((column) => (
+                <div key={column.key} className="flex flex-col gap-1">
+                  <dt className="text-fg-subtle">{column.headerLabel ?? column.header}</dt>
+                  <dd>{column.cell(row)}</dd>
+                </div>
+              ))}
+            </dl>
+          </td>
+        </tr>
+      ) : null}
+    </Fragment>
   );
 }

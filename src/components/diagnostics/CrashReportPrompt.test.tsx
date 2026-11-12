@@ -13,6 +13,7 @@ vi.mock("../../lib/logger", () => ({
   logError: (message: string) => logError(message),
 }));
 vi.mock("react-i18next", () => ({
+  initReactI18next: { type: "3rdParty", init: () => undefined },
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: "en" } }),
 }));
 
@@ -37,7 +38,7 @@ describe("CrashReportPrompt", () => {
 
     const dialog = await screen.findByRole("dialog", { name: "crashPrompt.title" });
     expect(dialog).toHaveTextContent("crashPrompt.body");
-    expect(dialog).toHaveTextContent("October 2, 2026");
+    expect(dialog).toHaveTextContent("2 October 2026");
     expect(dialog).toHaveTextContent("0.3.0");
   });
 

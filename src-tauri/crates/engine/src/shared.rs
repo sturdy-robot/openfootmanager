@@ -38,6 +38,8 @@ pub(crate) struct PlayerSnap {
     pub injury_risk: f64,
     /// The factor on this player's match rating for the line he was picked from.
     pub familiarity: f64,
+    /// The factor on this player's match rating for his mood (`PlayerData::morale_factor`).
+    pub morale_factor: f64,
 }
 
 impl PlayerSnap {
@@ -74,6 +76,7 @@ impl PlayerSnap {
             role: PlayerRole::Standard,
             injury_risk: 1.0,
             familiarity: 1.0,
+            morale_factor: 1.0,
         }
     }
 
@@ -103,6 +106,7 @@ impl PlayerSnap {
             role: p.role,
             injury_risk: p.injury_risk,
             familiarity: p.familiarity_factor(),
+            morale_factor: p.morale_factor,
         }
     }
 
@@ -182,6 +186,29 @@ pub(crate) fn snap_from_squad<R: Rng>(
 /// substitute by it.
 pub(crate) fn condition_factor(condition: f64) -> f64 {
     0.6 + 0.4 * (condition / 100.0)
+}
+
+/// The most a player's mood may move his match rating either way. The caller's table is a few
+/// percent (ofm_core's is 3%); this is the room the engine allows it, so a table that is wrong
+/// cannot make a side unbeatable or hopeless.
+pub(crate) const MORALE_FACTOR_RANGE: (f64, f64) = (0.9, 1.1);
+
+/// `morale_factor` as the engine will use it: within `MORALE_FACTOR_RANGE`, and neutral for a value
+/// that is not a number. The neutral 1.0 comes back as exactly 1.0.
+pub(crate) fn clamp_morale_factor(morale_factor: f64) -> f64 {
+    if morale_factor.is_finite() {
+        morale_factor.clamp(MORALE_FACTOR_RANGE.0, MORALE_FACTOR_RANGE.1)
+    } else {
+        1.0
+    }
+}
+
+/// The factor on a player's match rating for what the caller knows about him that the engine cannot
+/// see: his `familiarity` with the line he plays in and his mood (`morale_factor`). The one place
+/// both engines apply them: the line averages of the instant engine and the live engine's duels
+/// and line averages. With a neutral mood it is exactly `familiarity`.
+pub(crate) fn rating_factor(familiarity: f64, morale_factor: f64) -> f64 {
+    familiarity * clamp_morale_factor(morale_factor)
 }
 
 pub(crate) fn trait_bonus(snap: &PlayerSnap, context: TraitContext) -> f64 {
@@ -311,7 +338,7 @@ pub(crate) fn consulted_phases(position: Position) -> &'static [PlayStylePhase] 
         Position::Goalkeeper => &[],
         Position::Defender => &[PlayStylePhase::Defense],
         Position::Midfielder => &[PlayStylePhase::Midfield, PlayStylePhase::Defense],
-        Position::Forward => &[PlayStylePhase::Attack],
+        Position::Forward => &[PlayStylePhase::Attack, PlayStylePhase::Press],
     }
 }
 
@@ -325,6 +352,46 @@ pub(crate) fn role_modifier(position: Position, role: PlayerRole, phase: PlaySty
     } else {
         1.0
     }
+}
+
+/// The share of a forward's Press entry above Standard that reaches his side's press. The press
+/// is the midfield's work (`effective_press` reads its line), and the front line starts it, so a
+/// Pressing Forward (1.15) adds 3.75% and two add 7.5%.
+const FORWARD_PRESS_SHARE: f64 = 0.25;
+
+/// What a side's forwards add to its press, from their roles: 1.0 for a front line on Standard.
+pub(crate) fn forward_press_factor<'a>(forwards: impl Iterator<Item = &'a PlayerData>) -> f64 {
+    1.0 + forwards
+        .map(|forward| {
+            (role_modifier(Position::Forward, forward.role, PlayStylePhase::Press) - 1.0)
+                * FORWARD_PRESS_SHARE
+        })
+        .sum::<f64>()
+}
+
+/// What a role costs a player in condition each minute: a Pressing Forward runs more, at the
+/// aggressive press's rate (`tactics_pressing_fatigue`). The live engine's alone, which is the
+/// one that tracks each player's condition. Only while the line he plays admits the role
+/// (`PlayerRole::suits`, the rule the press reads the front line by): a striker moved into
+/// midfield by a change of shape no longer presses, so he no longer pays for it.
+pub(crate) fn role_fatigue(role: PlayerRole, position: Position) -> f64 {
+    match role {
+        PlayerRole::PressingForward if role.suits(position) => 1.08,
+        _ => 1.0,
+    }
+}
+
+/// Whether the engine plays `role` differently from Standard for a player in `position`'s line:
+/// some phase that line is consulted on has an entry for it, or the AI's substitutions prefer
+/// it. Read off the table the resolvers use and the preference the AI reads, so a role starts to
+/// count here the moment either reads it. `Standard` is the baseline the others are measured
+/// from, and counts as itself.
+pub fn role_has_match_effect(role: PlayerRole, position: Position) -> bool {
+    role == PlayerRole::Standard
+        || consulted_phases(position)
+            .iter()
+            .any(|phase| role_attribute_modifier(role, *phase) != 1.0)
+        || crate::ai::substitution_reads_role(role, position)
 }
 
 /// Returns a multiplier (0.88–1.20) applied to the player's effective skill
@@ -849,6 +916,7 @@ mod emergency_keeper_tests {
             // Natural in his own line; in goal, half the player he is (a factor no real cost
             // reaches, so only the goalkeeping entry can produce it).
             line_familiarity: [0.5, 1.0, 1.0, 1.0],
+            morale_factor: 1.0,
             pace: 70,
             stamina: 70,
             strength: 70,
@@ -904,5 +972,86 @@ mod emergency_keeper_tests {
             .expect("the teamsheet still names someone");
 
         assert_eq!(keeper.familiarity, 0.5);
+    }
+}
+
+#[cfg(test)]
+mod forward_press_factor_tests {
+    use super::forward_press_factor;
+    use crate::test_support::{player, same};
+    use crate::types::{PlayerData, PlayerRole, Position};
+
+    fn forward_as(role: PlayerRole) -> PlayerData {
+        let mut forward = player("fwd", Position::Forward);
+        forward.role = role;
+        forward
+    }
+
+    /// Given no forwards, or a front line on Standard,
+    /// When what they add to the press is read,
+    /// Then it adds nothing: 1.0.
+    #[test]
+    fn a_front_line_on_standard_adds_nothing_to_the_press() {
+        let standard = [
+            forward_as(PlayerRole::Standard),
+            forward_as(PlayerRole::Standard),
+        ];
+
+        assert_eq!(forward_press_factor(std::iter::empty()), 1.0);
+        assert_eq!(forward_press_factor(standard.iter()), 1.0);
+    }
+
+    /// Given one Pressing Forward (a Press entry of 1.15), and two,
+    /// When what they add to the press is read,
+    /// Then each adds a quarter of his entry above Standard: 3.75% for one, 7.5% for two.
+    #[test]
+    fn each_pressing_forward_adds_a_quarter_of_his_press_entry() {
+        let one = [
+            forward_as(PlayerRole::PressingForward),
+            forward_as(PlayerRole::Standard),
+        ];
+        let two = [
+            forward_as(PlayerRole::PressingForward),
+            forward_as(PlayerRole::PressingForward),
+        ];
+
+        assert!(same(forward_press_factor(one.iter()), 1.0375));
+        assert!(same(forward_press_factor(two.iter()), 1.075));
+    }
+}
+
+#[cfg(test)]
+mod rating_factor_tests {
+    use super::{MORALE_FACTOR_RANGE, rating_factor};
+
+    /// Given a neutral mood
+    /// When the rating factor is read
+    /// Then it is exactly the familiarity, bit for bit: a side that carries no morale plays as it
+    ///      always did
+    #[test]
+    fn a_neutral_mood_leaves_familiarity_exactly_as_it_was() {
+        for familiarity in [1.0, 0.9, 0.9666666666666667, 0.5] {
+            assert_eq!(rating_factor(familiarity, 1.0), familiarity);
+        }
+    }
+
+    /// Given a mood above or below neutral
+    /// When the rating factor is read
+    /// Then it is familiarity times mood: one factor for the two
+    #[test]
+    fn a_mood_multiplies_familiarity() {
+        assert!((rating_factor(0.9, 1.03) - 0.927).abs() < 1e-12);
+        assert!((rating_factor(1.0, 0.97) - 0.97).abs() < 1e-12);
+    }
+
+    /// Given a mood beyond what the engine allows, or one that is not a number
+    /// When the rating factor is read
+    /// Then the mood is held within the range, and a non-number counts as neutral
+    #[test]
+    fn a_mood_is_held_within_the_range_and_a_non_number_is_neutral() {
+        assert_eq!(rating_factor(1.0, 9.0), MORALE_FACTOR_RANGE.1);
+        assert_eq!(rating_factor(1.0, -1.0), MORALE_FACTOR_RANGE.0);
+        assert_eq!(rating_factor(1.0, f64::NAN), 1.0);
+        assert_eq!(rating_factor(1.0, f64::INFINITY), 1.0);
     }
 }

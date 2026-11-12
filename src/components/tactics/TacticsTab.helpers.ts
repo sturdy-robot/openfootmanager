@@ -3,6 +3,8 @@ import { isFirstTeamSquadPlayer } from "../../lib/playerSquad";
 import type { FamiliarityTable } from "../../hooks/useFamiliarity";
 import type { PositionTable } from "../../lib/positionTable";
 import type { PlayerData } from "../../store/gameStore";
+import type { TacticsLineup } from "../../store/generated/TacticsLineup";
+import type { PlayerRole } from "../../store/types";
 import { type PitchSlotRow, isPlayerOutOfPosition } from "../squad/SquadTab.helpers";
 export { FORMATIONS } from "../match/types";
 
@@ -152,4 +154,20 @@ export function findTacticsPresetBySetup(
       (preset) => preset.formation === formation && preset.playStyle === playStyle,
     ) ?? null
   );
+}
+
+/**
+ * The role each starter plays, as the match will play it: the backend's lineup names it slot by slot
+ * (the role he was given if his slot admits it, else the standard one), and it wins over the role
+ * stored on the player, which a move to another slot can leave stale (a striker's poacher moved to
+ * left-back). The table and the pitch both show this, so they cannot disagree.
+ */
+export function effectivePlayerRoles(
+  lineup: TacticsLineup | null,
+  playerRoles: Record<string, PlayerRole> | undefined,
+): Record<string, PlayerRole> | undefined {
+  if (!lineup) return playerRoles;
+  const roles: Record<string, PlayerRole> = { ...playerRoles };
+  for (const slot of lineup.eleven) roles[slot.player_id] = slot.role;
+  return roles;
 }

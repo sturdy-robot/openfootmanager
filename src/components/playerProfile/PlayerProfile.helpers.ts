@@ -1,7 +1,8 @@
+import { formatDate } from "../../lib/dateFormatting";
 import type { PlayerData, TeamData } from "../../store/gameStore";
 import type { TOptions } from "i18next";
 import { weeklyWageAmount } from "../../lib/finance";
-import { formatVal, formatWeeklyWage } from "../../lib/helpers";
+import { formatVal, formatWeeklyWage, getContractYearsRemaining } from "../../lib/helpers";
 import { getAttributeValueClassName } from "../../lib/playerAttributeDisplay";
 import { resolveInjuryName } from "../../lib/injury";
 
@@ -26,8 +27,28 @@ export interface PercentilePeerGroup {
   competitionName: string;
   competitionNameKey: string | null;
   countryId: string | null;
+  divisionTier?: number | null;
   /** A `Position` name such as `Striker`. */
   position: string;
+}
+
+/** One of a player's recent matches, latest first, as the backend returns it. */
+export interface PlayerRecentMatchEntry {
+  fixture_id: string;
+  date: string;
+  competition: string;
+  matchday: number;
+  opponent_team_id: string;
+  opponent_name: string;
+  team_goals: number;
+  opponent_goals: number;
+  minutes_played: number;
+  goals: number;
+  assists: number;
+  shots: number;
+  shots_on_target: number;
+  rating: number;
+  rated: boolean;
 }
 
 export interface PlayerAdvancedStatsSummary {
@@ -66,11 +87,6 @@ export function formatPlayerMarketValue(value: number): string {
 
 export function formatPlayerWage(weeklyWage: number): string {
   return formatWeeklyWage(weeklyWageAmount(weeklyWage));
-}
-
-/** The compact form for the profile's header tiles. */
-export function formatPlayerWageCompact(weeklyWage: number): string {
-  return formatWeeklyWage(weeklyWage, "compact");
 }
 
 export function getAttributeColorClass(value: number): string {
@@ -155,4 +171,41 @@ export function buildPlayerAdvancedStats(player: PlayerData): PlayerAdvancedStat
       },
     },
   };
+}
+
+/**
+ * A day from the ledger or a contract, written the way the player's language writes dates
+ * (`formatDate`, the project's one formatter): `Jun 30, 2033`. A value that is not a day (an
+ * unknown date, empty) is returned as it came, never as today.
+ */
+export function formatProfileDay(day: string, language: string): string {
+  return formatDate(day, language, { day: "numeric", month: "short", year: "numeric" });
+}
+
+type YearsLeftTranslate = (key: string, options?: Record<string, string | number>) => string;
+
+/**
+ * The years left on a contract as the sheet writes them: "1.3 years", one decimal, the number in
+ * the language's own decimal separator and the noun in the form that language gives a fraction.
+ *
+ * The form comes from CLDR through `Intl.PluralRules`, asked about the number as it is shown (one
+ * decimal), because that is what decides it: French and Brazilian Portuguese keep the singular for
+ * 1.3, Czech has its own form for a fraction, English and Russian use the plural. The repo has no
+ * i18next plural machinery yet (#467), so the three forms a language can need here are three
+ * plain keys; the number goes in as `years`, never `count`, so i18next does not go looking for
+ * `_one`/`_other` variants.
+ */
+export function formatYearsLeft(
+  contractEnd: string,
+  currentDate: string,
+  language: string,
+  t: YearsLeftTranslate,
+): string {
+  const years = Number(getContractYearsRemaining(contractEnd, currentDate));
+  const oneDecimal = { minimumFractionDigits: 1, maximumFractionDigits: 1 };
+  const category = new Intl.PluralRules(language, oneDecimal).select(years);
+  const form = category === "one" || category === "many" ? category : "other";
+  return t(`playerProfile.contractSheet.yearsLeft.${form}`, {
+    years: new Intl.NumberFormat(language, oneDecimal).format(years),
+  });
 }

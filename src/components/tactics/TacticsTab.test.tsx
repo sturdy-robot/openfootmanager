@@ -40,6 +40,8 @@ vi.mock("../../hooks/usePositionGroups", async () => {
 });
 
 vi.mock("react-i18next", () => ({
+  // The error banner pulls in utils/backendI18n -> i18n/index, which registers this plugin.
+  initReactI18next: { type: "3rdParty", init: () => undefined },
   useTranslation: () => ({
     t: (key: string, fallback?: string | Record<string, unknown>) => {
       if (key === "playerProfile.daysRemaining") {
@@ -365,7 +367,7 @@ describe("TacticsTab", () => {
       <TacticsTab gameState={makeGameState()} onSelectPlayer={vi.fn()} onGameUpdate={vi.fn()} />,
     );
 
-    expect(screen.getByText("tactics.presetTactics")).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "tactics.tacticBar" })).toBeInTheDocument();
     expect(screen.getByText("tactics.formation")).toBeInTheDocument();
     expect(screen.getByText("tactics.playStyle")).toBeInTheDocument();
     expect(screen.getAllByText(/preMatch\.substitutes/).length).toBeGreaterThan(0);
@@ -378,8 +380,7 @@ describe("TacticsTab", () => {
       <TacticsTab gameState={makeGameState()} onSelectPlayer={vi.fn()} onGameUpdate={vi.fn()} />,
     );
 
-    expect(screen.getByText("tactics.presetTactics")).toBeInTheDocument();
-    expect(screen.getByText("tactics.activePreset")).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "tactics.tacticBar" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "tactics.chooseTactic" })).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "tactics.formation" })).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "tactics.playStyle" })).toBeInTheDocument();
@@ -417,6 +418,7 @@ describe("TacticsTab", () => {
       expect(mockedInvoke).toHaveBeenCalledWith("apply_tactic_preset", {
         careerToken: 0,
         formation: "3-4-3",
+        keepInstructions: true,
         playStyle: "HighPress",
       });
     });
@@ -843,7 +845,8 @@ describe("TacticsTab", () => {
       <TacticsTab gameState={makeGameState()} onSelectPlayer={vi.fn()} onGameUpdate={vi.fn()} />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "tactics.duplicateTactic" }));
+    fireEvent.click(screen.getByRole("button", { name: "tactics.tacticActions" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "tactics.duplicateTactic" }));
 
     expect(screen.getByRole("button", { name: "tactics.updateTactic" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "tactics.chooseTactic" }));
@@ -880,7 +883,8 @@ describe("TacticsTab", () => {
       <TacticsTab gameState={gameState} onSelectPlayer={vi.fn()} onGameUpdate={vi.fn()} />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "tactics.duplicateTactic" }));
+    fireEvent.click(screen.getByRole("button", { name: "tactics.tacticActions" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "tactics.duplicateTactic" }));
     await waitFor(() =>
       expect(mockedInvoke).toHaveBeenCalledWith(
         "save_current_tactic",
@@ -913,7 +917,8 @@ describe("TacticsTab", () => {
     const { unmount } = render(
       <TacticsTab gameState={originalState} onSelectPlayer={vi.fn()} onGameUpdate={vi.fn()} />,
     );
-    fireEvent.click(screen.getByRole("button", { name: "tactics.duplicateTactic" }));
+    fireEvent.click(screen.getByRole("button", { name: "tactics.tacticActions" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "tactics.duplicateTactic" }));
     await waitFor(() =>
       expect(mockedInvoke).toHaveBeenCalledWith("save_current_tactic", expect.anything()),
     );
@@ -999,6 +1004,7 @@ describe("TacticsTab", () => {
       expect(mockedInvoke).toHaveBeenCalledWith("apply_tactic_preset", {
         careerToken: 0,
         formation: "3-4-3",
+        keepInstructions: true,
         playStyle: "HighPress",
       });
     });
@@ -1396,6 +1402,51 @@ describe("TacticsTab", () => {
     expect(
       screen.queryByRole("option", { name: "tactics.playerRoles.Poacher" }),
     ).not.toBeInTheDocument();
+  });
+
+  /**
+   * Given a striker standing at right-midfield whose stored role is Poacher, and a backend lineup
+   *       that says he plays Standard there (a poacher is a striker's role, which the slot does not
+   *       admit)
+   * When the Tactics screen shows him
+   * Then the table and the pitch both show Standard: the role the match will play, not the stale
+   *      stored one, so the two cannot disagree.
+   */
+  it("shows the same role for a starter in the table and on the pitch", async () => {
+    const gameState = makeOutOfPositionGameState();
+    gameState.teams = gameState.teams.map((team) => ({
+      ...team,
+      player_roles: { m4: "Poacher" },
+    }));
+    const roster = gameState.players.filter((p) => p.team_id === "team1");
+    const eleven = ["gk1", "d1", "d2", "d3", "d4", "m1", "m2", "m3", "m4", "f1", "f2"];
+    mockedInvoke.mockImplementation(async (command: string) => {
+      if (command === "get_squad") return roster;
+      if (command === "get_tactics_lineup") {
+        return {
+          formation: "4-4-2",
+          eleven: eleven.map((player_id) => ({
+            position: player_id === "m4" ? "RightMidfielder" : "CentralMidfielder",
+            player_id,
+            role: "Standard",
+            familiarity: player_id === "m4" ? "out_of_position" : "natural",
+          })),
+          substitutes: [],
+          reserves: [],
+        };
+      }
+      return gameState;
+    });
+
+    render(<TacticsTab gameState={gameState} onSelectPlayer={vi.fn()} onGameUpdate={vi.fn()} />);
+
+    const tableRole = await screen.findByRole("combobox", { name: /tactics.playerRoleLabel: M4/ });
+    const pitchRole = within(screen.getByTestId("pitch-player-m4")).getByRole("combobox");
+    // Each select is a button showing only its selected option's label (the options are drawn when it
+    // opens), so the whole text is the selected role: exactly Standard, once the lineup has loaded.
+    await waitFor(() => expect(tableRole).toHaveTextContent(/^tactics\.playerRoles\.Standard$/));
+    expect(pitchRole).toHaveTextContent(/^Standard$/);
+    expect(pitchRole).not.toHaveTextContent("Poacher");
   });
 
   it("does not promote an injured bench player into the starting XI", async () => {

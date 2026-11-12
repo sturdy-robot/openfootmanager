@@ -11,6 +11,7 @@ vi.mock("../../lib/logger", () => ({
   logError: (message: string) => logError(message),
 }));
 vi.mock("react-i18next", () => ({
+  initReactI18next: { type: "3rdParty", init: () => undefined },
   useTranslation: () => ({ t: (key: string) => key, i18n: { language: "en" } }),
 }));
 
@@ -52,7 +53,7 @@ describe("SubmittedReports", () => {
     const items = await screen.findAllByRole("listitem");
     expect(items).toHaveLength(2);
     expect(items[0]).toHaveTextContent("BBBBBBBB");
-    expect(items[0]).toHaveTextContent("October 2, 2026");
+    expect(items[0]).toHaveTextContent("2 October 2026");
     expect(items[1]).toHaveTextContent("AAAAAAAA");
   });
 

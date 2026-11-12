@@ -6,6 +6,7 @@ mod crash;
 mod main_window;
 mod platform;
 mod report;
+pub use commands::world_library::{WorldLibraryRow, WorldsLibrary};
 use commands::*;
 
 #[cfg(feature = "mcp")]
@@ -249,6 +250,7 @@ pub fn run() {
             get_player_knowledge,
             get_visible_wage,
             get_potential_opinion,
+            get_player_career,
             get_youth_prospect_opinions,
             get_position_ratings,
             get_familiarity,
@@ -278,6 +280,7 @@ pub fn run() {
             terminate_contract_now,
             set_formation,
             list_custom_tactics,
+            get_custom_tactic_differences,
             save_custom_tactic,
             save_current_tactic,
             apply_custom_tactic,
@@ -331,6 +334,7 @@ pub fn run() {
             check_season_complete,
             advance_to_next_season,
             get_season_awards,
+            get_followed_division,
             get_hall_of_fame_legends,
             get_hall_of_fame_champions,
             get_retired_player,
@@ -369,6 +373,8 @@ pub fn run() {
             create_package_project,
             create_world_project,
             read_package_project,
+            get_worlds_library,
+            validate_package_project,
             save_package_project,
             build_ofm,
             extract_ofm_for_editing,

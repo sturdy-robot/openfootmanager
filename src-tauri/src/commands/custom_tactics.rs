@@ -6,6 +6,7 @@ use std::sync::Arc;
 use tauri::State;
 
 use domain::custom_tactic::CustomTactic;
+use ofm_core::custom_tactics::TacticDifferences;
 use ofm_core::game::Game;
 use ofm_core::state::{Career, StateManager};
 
@@ -19,6 +20,17 @@ pub fn list_custom_tactics_internal(state: &StateManager) -> Result<Vec<CustomTa
     state
         .get_game(|game| game.custom_tactics.clone())
         .ok_or_else(|| NO_ACTIVE_GAME.to_string())
+}
+
+/// How the manager's tactic as it stands differs from the saved tactic `id`, part by part (the rule
+/// is `ofm_core::custom_tactics::tactic_differences`; the screen's unsaved badge reads it).
+pub fn get_custom_tactic_differences_internal(
+    state: &StateManager,
+    id: &str,
+) -> Result<TacticDifferences, String> {
+    state
+        .get_game(|game| ofm_core::custom_tactics::tactic_differences(game, id))
+        .ok_or_else(|| NO_ACTIVE_GAME.to_string())?
 }
 
 /// Validates and stores the tactic; returns the whole list, or the key of what is wrong.
@@ -64,13 +76,25 @@ pub fn apply_custom_tactic_internal(
     id: &str,
     career: Career,
 ) -> Result<Game, String> {
-    mutate_active_game_for(state, career, |game| {
-        ofm_core::custom_tactics::apply_custom_tactic(game, id)?;
+    // One step against a role save, a swap or a kick-off: the commit and the hand-off to the match.
+    let _operation = crate::application::live_session::operation();
+    let mut restored_roles = Vec::new();
+    let game = mutate_active_game_for(state, career, |game| {
+        restored_roles = ofm_core::custom_tactics::apply_custom_tactic(game, id)?;
         // Players the tactic benches may hold a role their natural position doesn't admit.
         let team_id = user_team_id(game)?;
         reconcile_player_roles(game, &team_id);
         Ok(())
-    })
+    })?;
+    crate::commands::squad::follow_saved_roles_into_the_waiting_match(state, &game);
+    for player_id in restored_roles {
+        if let Err(error) = crate::application::live_match::follow_saved_role_before_kick_off(
+            state, &game, &player_id,
+        ) {
+            log::warn!("[cmd] the waiting match did not take a tactic role: {error}");
+        }
+    }
+    Ok(game)
 }
 
 /// Renames the saved tactic, keeping all it holds; returns the whole list.
@@ -112,6 +136,15 @@ pub fn list_custom_tactics(
     state: State<'_, Arc<StateManager>>,
 ) -> Result<Vec<CustomTactic>, String> {
     list_custom_tactics_internal(&state)
+}
+
+/// How the manager's tactic differs from the saved tactic `id`, part by part.
+#[tauri::command]
+pub fn get_custom_tactic_differences(
+    state: State<'_, Arc<StateManager>>,
+    id: String,
+) -> Result<TacticDifferences, String> {
+    get_custom_tactic_differences_internal(&state, &id)
 }
 
 /// Adds the tactic, or replaces the one with the same id; returns the whole list.
@@ -477,5 +510,34 @@ mod tests {
         let team = &game.teams[0];
         assert_eq!(team.starting_xi_ids[2], "p2");
         assert_eq!(team.player_roles.get("q0"), None);
+    }
+
+    /// Given a tactic saved from the club, and then the bench striker "q0" taking the last slot
+    /// When the differences are read through the command's internal function
+    /// Then none before, and only the eleven after; and with no game open it is refused.
+    #[test]
+    fn the_differences_are_read_from_the_active_game() {
+        let state = state_with_a_club();
+        save_current_tactic_internal(&state, &tactic("home"), Career::Active).unwrap();
+        assert_eq!(
+            get_custom_tactic_differences_internal(&state, "home"),
+            Ok(TacticDifferences::default())
+        );
+
+        let mut moved = state.get_game(|game| game.clone()).unwrap();
+        moved.teams[0].starting_xi_ids[10] = "q0".into();
+        state.set_game(moved);
+
+        assert_eq!(
+            get_custom_tactic_differences_internal(&state, "home"),
+            Ok(TacticDifferences {
+                eleven: true,
+                ..TacticDifferences::default()
+            })
+        );
+        assert_eq!(
+            get_custom_tactic_differences_internal(&StateManager::new(), "home"),
+            Err(NO_ACTIVE_GAME.to_string())
+        );
     }
 }

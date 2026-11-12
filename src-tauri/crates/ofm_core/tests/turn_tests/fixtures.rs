@@ -352,6 +352,8 @@ pub(crate) fn report_with_scorer(
             yellow_cards: 0,
             red_cards: 0,
             rating: 7.5,
+            clean_sheet: false,
+            minutes_in_goal: None,
         },
     );
     let goals = (0..home_goals)
@@ -557,16 +559,39 @@ pub(crate) fn make_round_summary_game() -> Game {
     set_team_overall(&mut game, "team3", 74);
     set_team_overall(&mut game, "team4", 72);
 
+    // A division's scorers are counted from the division's own matches: its tally is the league's
+    // entry, which a cup run (t1_fwd0's three extra goals) is not part of.
+    let league_id = "league1";
     game.players
         .iter_mut()
         .for_each(|player| match player.id.as_str() {
-            "t1_fwd0" => player.stats.goals = 5,
-            "t2_fwd0" => player.stats.goals = 3,
-            "t3_fwd0" => player.stats.goals = 6,
+            "t1_fwd0" => set_goals(player, 8, Some((league_id, 5))),
+            "t2_fwd0" => set_goals(player, 3, Some((league_id, 3))),
+            "t3_fwd0" => set_goals(player, 6, Some((league_id, 6))),
             _ => {}
         });
 
+    // A scorer of another country's league, whose season is already under way: fourteen goals in
+    // all, none of them in this division.
+    let mut outsider = make_player("bra_fwd0", "Pereira", "bra-club", Position::Forward);
+    outsider.team_id = None;
+    set_goals(&mut outsider, 14, Some(("bra-1", 14)));
+    game.players.push(outsider);
+
     game
+}
+
+/// A player's season goals: `total` across every competitive match, and, when he has played in a
+/// division, that division's own tally (`league_stats_by_competition`).
+pub(crate) fn set_goals(player: &mut Player, total: u32, division: Option<(&str, u32)>) {
+    player.stats.goals = total;
+    if let Some((division_id, goals)) = division {
+        player
+            .league_stats_by_competition
+            .entry(division_id.to_string())
+            .or_default()
+            .goals = goals;
+    }
 }
 
 pub(crate) fn standing_entry(
@@ -607,6 +632,10 @@ pub(crate) fn set_player_overall(player: &mut Player, overall: u8) {
     player.attributes.positioning = overall;
     player.attributes.vision = overall;
     player.attributes.decisions = overall;
+    // The stored rating follows the attributes, by the game's own refresh: the club strength
+    // rule reads it for a club with no saved XI. The date is the round-summary game's.
+    let on = chrono::NaiveDate::from_ymd_opt(2025, 6, 15).expect("a calendar date");
+    ofm_core::player_rating::refresh_player_derived(player, on);
 }
 
 /// The round context of the summary game: every fixture of it is dated on the game's first day.

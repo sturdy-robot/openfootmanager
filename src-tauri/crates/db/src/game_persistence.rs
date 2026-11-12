@@ -82,6 +82,8 @@ fn write_game_to_connection(
     save_id: &str,
     save_name: &str,
 ) -> Result<(), String> {
+    crate::game_database::clear_weak_foot_backfill(conn)
+        .map_err(|_| game_persistence_write_error())?;
     let now = Utc::now().to_rfc3339();
     let vacant_team_days_json = serde_json::to_string(&game.vacant_team_days)
         .map_err(|_| game_persistence_write_error())?;
@@ -124,6 +126,7 @@ fn write_game_to_connection(
             legacy_tactics_imported: game.legacy_tactics_imported,
             gate_settled_from: game.gate_settled_from.clone(),
             last_season_rollover_on: game.last_season_rollover_on.clone(),
+            days_since_last_job_offer: game.days_since_last_job_offer,
             available_staff_market_last_activity_date: game
                 .available_staff_market_last_activity_date
                 .clone(),
@@ -392,6 +395,7 @@ impl GamePersistenceReader {
             gate_settled_from: meta.gate_settled_from.clone(),
             last_season_rollover_on: meta.last_season_rollover_on.clone(),
             career_token: 0,
+            revision: 0,
             clock,
             manager_id: meta.manager_id.clone(),
             managers,
@@ -419,7 +423,7 @@ impl GamePersistenceReader {
             scouted_players,
             board_objectives,
             season_context: domain::season::SeasonContext::default(),
-            days_since_last_job_offer: None,
+            days_since_last_job_offer: meta.days_since_last_job_offer,
             available_staff_market_last_activity_date: meta
                 .available_staff_market_last_activity_date,
             vacant_team_days: json_column::read(
@@ -589,6 +593,7 @@ mod tests {
             legacy_tactics_imported: false,
             gate_settled_from: None,
             last_season_rollover_on: None,
+            days_since_last_job_offer: None,
         }
     }
 

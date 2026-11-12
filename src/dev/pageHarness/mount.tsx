@@ -9,13 +9,13 @@ import { fixtureHandlers } from "./fixtureAnswers";
 import { gameState } from "./fixture.generated";
 import { createHarnessIpc } from "./harnessIpc";
 import { elementsPastEdge } from "./layoutProbe";
-import type { HarnessPage } from "./harnessPage";
+import type { HarnessPage, HarnessProfile } from "./harnessPage";
 import { PageHarness } from "./PageHarness";
 
 declare global {
   interface Window {
     /** What a screenshot or layout script reads once the page has settled. */
-    __pageHarness?: { unanswered: string[]; pastEdge: () => string[] };
+    __pageHarness?: { unanswered: string[]; calls: string[]; pastEdge: () => string[] };
   }
 }
 
@@ -28,19 +28,30 @@ export async function mountPageHarness(
   page: HarnessPage,
   options: StyleGuideOptions,
   language: SupportedLanguageCode,
+  profile: HarnessProfile = "own",
 ): Promise<ReactDOM.Root> {
   await changeAppLanguage(language);
-  const ipc = createHarnessIpc(fixtureHandlers(options, language));
+  const ipc = createHarnessIpc(
+    fixtureHandlers(options, language, page === "profile" ? profile : null),
+  );
   mockWindows("main");
   mockIPC(ipc.handle, { shouldMockEvents: true });
-  window.__pageHarness = { unanswered: ipc.unanswered, pastEdge: () => elementsPastEdge(root) };
+  window.__pageHarness = {
+    unanswered: ipc.unanswered,
+    calls: ipc.calls,
+    pastEdge: () => elementsPastEdge(root),
+  };
 
   const manager = gameState.manager;
   const reactRoot = ReactDOM.createRoot(root);
   reactRoot.render(
     <React.StrictMode>
       <ThemeProvider storageKey={STYLE_GUIDE_THEME_KEY}>
-        <PageHarness page={page} managerName={`${manager.first_name} ${manager.last_name}`} />
+        <PageHarness
+          page={page}
+          profile={profile}
+          managerName={`${manager.first_name} ${manager.last_name}`}
+        />
       </ThemeProvider>
     </React.StrictMode>,
   );
