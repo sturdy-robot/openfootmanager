@@ -1409,10 +1409,10 @@ describe("TacticsTab", () => {
    *       that says he plays Standard there (a poacher is a striker's role, which the slot does not
    *       admit)
    * When the Tactics screen shows him
-   * Then the table and the pitch both show Standard: the role the match will play, not the stale
-   *      stored one, so the two cannot disagree.
+   * Then the table shows Standard: the role the match will play, not the stale stored one (the
+   *      pitch no longer shows a role at all, so the table is the one place it can be read or changed).
    */
-  it("shows the same role for a starter in the table and on the pitch", async () => {
+  it("shows the role the match will play for a starter in the table, not the stale stored one", async () => {
     const gameState = makeOutOfPositionGameState();
     gameState.teams = gameState.teams.map((team) => ({
       ...team,
@@ -1441,12 +1441,12 @@ describe("TacticsTab", () => {
     render(<TacticsTab gameState={gameState} onSelectPlayer={vi.fn()} onGameUpdate={vi.fn()} />);
 
     const tableRole = await screen.findByRole("combobox", { name: /tactics.playerRoleLabel: M4/ });
-    const pitchRole = within(screen.getByTestId("pitch-player-m4")).getByRole("combobox");
-    // Each select is a button showing only its selected option's label (the options are drawn when it
+    // The select is a button showing only its selected option's label (the options are drawn when it
     // opens), so the whole text is the selected role: exactly Standard, once the lineup has loaded.
     await waitFor(() => expect(tableRole).toHaveTextContent(/^tactics\.playerRoles\.Standard$/));
-    expect(pitchRole).toHaveTextContent(/^Standard$/);
-    expect(pitchRole).not.toHaveTextContent("Poacher");
+    expect(tableRole).not.toHaveTextContent("Poacher");
+    // And the pitch's token carries no control to disagree with it.
+    expect(within(screen.getByTestId("pitch-player-m4")).queryByRole("combobox")).toBeNull();
   });
 
   it("does not promote an injured bench player into the starting XI", async () => {
