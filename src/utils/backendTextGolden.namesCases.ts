@@ -6,7 +6,8 @@ const NATIONALITIES: ReadonlyArray<readonly [what: string, value: string]> = [
   ["a football identity code", "ENG"],
   ["an alias in lower case", "england"],
   ["an alias in mixed case", "united Kingdom"],
-  ["an English country name", "Germany"],
+  ["an English country name that is not the official one", "Russia"],
+  ["an English country name in lower case", "germany"],
   ["a demonym written as the old saves wrote it", "Argentine"],
   ["a demonym in a case the screen does not read", "brazilian"],
   ["a value that is no country", "Atlantis"],
@@ -33,6 +34,17 @@ export const NAMES_CASES: GoldenCase[] = [
       },
     }),
   ),
+  {
+    // `country` is the other param the screen names (beside `nationality`); the only text that
+    // reads it is an error's, which a golden case can still use as the body of a message.
+    name: "a country param reads as the country's name, as a nationality param does",
+    kind: "message",
+    input: {
+      id: "country_param",
+      body_key: "be.error.competitionDef.unknownCountry",
+      i18n_params: { country: "BR" },
+    },
+  },
   {
     name: "a promotion names the division from its key, country and season",
     kind: "message",
