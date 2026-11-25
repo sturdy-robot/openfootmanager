@@ -1211,6 +1211,8 @@ mod tests {
             name_key: Some("tournaments.competitions.secondDivision"),
             country_id: Some("ENG"),
             season: 2027,
+            tier: None,
+            phase: None,
         };
 
         let article = season_preview_article(&generated, &clubs, "2025-08-01");

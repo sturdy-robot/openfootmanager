@@ -65,6 +65,8 @@ fn a_season_preview_names_the_same_contenders_each_time() {
         name_key: None,
         country_id: None,
         season: 2027,
+        tier: None,
+        phase: None,
     };
     assert_replays_but_varies("season preview", |date| {
         news::season_preview_article(&division, &clubs, date)
