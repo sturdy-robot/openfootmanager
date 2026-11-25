@@ -481,6 +481,36 @@ function normalizeStandingsParams(
 }
 
 /**
+ * The name of a generated division as every other screen names it, from the parts a notice or an
+ * article carries: its stored English template name, name key, country, edition, tier (a third tier
+ * or lower is named by it: "tierDivision" has nothing to say without one) and phase (a split season
+ * adds its Apertura / Clausura suffix). Without a key the stored name stands.
+ */
+function generatedDivisionName(parts: {
+  name: string | undefined;
+  key: string;
+  country: string | undefined;
+  season: string | undefined;
+  tier: string | undefined;
+  phase: string | undefined;
+}): string {
+  const season = Number(parts.season);
+  const tier = Number(parts.tier);
+  const phase = parseDivisionPhase(parts.phase);
+  return competitionDisplayName(
+    {
+      name: parts.name,
+      name_key: parts.key,
+      country_id: parts.country ?? null,
+      season: Number.isFinite(season) ? season : undefined,
+      division_tier: Number.isInteger(tier) && tier > 0 ? tier : undefined,
+      calendar: phase ? { season: { division: { phase } } } : undefined,
+    },
+    (key, options) => i18n.t(key, options),
+  );
+}
+
+/**
  * A generated competition is stored under an English template name ("Germany Cup"); its
  * report carries the name key, country and season so it reads as every other screen names it.
  */
@@ -496,18 +526,16 @@ function normalizeReportCompetitionName(
     return params;
   }
 
-  const season = Number(params.competitionSeason);
   return {
     ...params,
-    competition: competitionDisplayName(
-      {
-        name: params.competition,
-        name_key: params.competitionKey,
-        country_id: params.competitionCountry ?? null,
-        season: Number.isFinite(season) ? season : undefined,
-      },
-      (key, options) => i18n.t(key, options),
-    ),
+    competition: generatedDivisionName({
+      name: params.competition,
+      key: params.competitionKey,
+      country: params.competitionCountry,
+      season: params.competitionSeason,
+      tier: params.competitionTier,
+      phase: params.competitionPhase,
+    }),
   };
 }
 
@@ -665,23 +693,16 @@ function normalizeDivisionName(
     msg.subject_key === "be.msg.relegation.subject";
   if (!isDivisionChange || !params?.divisionKey) return params;
 
-  const season = Number(params.divisionSeason);
-  const divisionTier = Number(params.divisionTier);
-  const phase = parseDivisionPhase(params.divisionPhase);
   return {
     ...params,
-    division: competitionDisplayName(
-      {
-        name: params.division,
-        name_key: params.divisionKey,
-        country_id: params.divisionCountry ?? null,
-        season: Number.isFinite(season) ? season : undefined,
-        division_tier:
-          Number.isInteger(divisionTier) && divisionTier > 0 ? divisionTier : undefined,
-        calendar: phase ? { season: { division: { phase } } } : undefined,
-      },
-      (key, options) => i18n.t(key, options),
-    ),
+    division: generatedDivisionName({
+      name: params.division,
+      key: params.divisionKey,
+      country: params.divisionCountry,
+      season: params.divisionSeason,
+      tier: params.divisionTier,
+      phase: params.divisionPhase,
+    }),
   };
 }
 

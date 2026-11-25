@@ -1141,6 +1141,8 @@ mod info_news_tests {
                     name_key: None,
                     country_id: None,
                     season: 2026,
+                    tier: None,
+                    phase: None,
                 },
                 &[
                     ofm_core::news::PreviewClub {

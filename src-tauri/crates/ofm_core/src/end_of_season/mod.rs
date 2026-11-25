@@ -778,6 +778,31 @@ pub(crate) fn rollover_division(game: &Game) -> Option<&League> {
         .or(game.league.as_ref())
 }
 
+/// The tier of a generated division (1 is the top flight), or `None` for a hand-made one, which has
+/// no calendar identity: what lets the frontend name a third tier or lower in the player's language.
+fn division_tier(division: &domain::league::League) -> Option<u32> {
+    division
+        .calendar
+        .as_ref()
+        .and_then(|calendar| calendar.season.division.as_ref())
+        .map(|identity| identity.tier)
+        .filter(|tier| *tier > 0)
+}
+
+/// `"opening"` or `"closing"` for a division that plays a split season (Apertura / Clausura), `None`
+/// for an annual one.
+fn division_phase(division: &domain::league::League) -> Option<&'static str> {
+    division
+        .calendar
+        .as_ref()
+        .and_then(|calendar| calendar.season.division.as_ref())
+        .and_then(|identity| match identity.phase {
+            domain::competition_calendar::SeasonPhase::Annual => None,
+            domain::competition_calendar::SeasonPhase::Opening => Some("opening"),
+            domain::competition_calendar::SeasonPhase::Closing => Some("closing"),
+        })
+}
+
 /// Send a board message when the user's club starts the new season in a
 /// different division of its pyramid (promoted when the new division ranks
 /// higher, relegated when it ranks lower).
@@ -822,21 +847,8 @@ fn notify_user_division_change(
     // the frontend name it in the player's language (a hand-made division has no key).
     let division_key = new_division.name_key.clone();
     let division_country = new_division.country_id.clone();
-    let division_tier = new_division
-        .calendar
-        .as_ref()
-        .and_then(|calendar| calendar.season.division.as_ref())
-        .map(|division| division.tier)
-        .filter(|tier| *tier > 0);
-    let division_phase = new_division
-        .calendar
-        .as_ref()
-        .and_then(|calendar| calendar.season.division.as_ref())
-        .and_then(|division| match division.phase {
-            domain::competition_calendar::SeasonPhase::Annual => None,
-            domain::competition_calendar::SeasonPhase::Opening => Some("opening"),
-            domain::competition_calendar::SeasonPhase::Closing => Some("closing"),
-        });
+    let division_tier = division_tier(new_division);
+    let division_phase = division_phase(new_division);
     // The renewed edition's own label: a delayed edition renews to the calendar year, which is not
     // always last season plus one.
     let renewed_season = new_division.season;
@@ -1203,6 +1215,8 @@ pub fn process_end_of_season(game: &mut Game) -> EndOfSeasonSummary {
                 name_key: division.name_key.as_deref(),
                 country_id: division.country_id.as_deref(),
                 season: division.season,
+                tier: division_tier(division),
+                phase: division_phase(division),
             },
             &clubs,
             &preview_date,

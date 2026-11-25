@@ -286,6 +286,11 @@ pub struct PreviewDivision<'a> {
     pub name_key: Option<&'a str>,
     pub country_id: Option<&'a str>,
     pub season: u32,
+    /// The tier of a generated division (1 is the top flight): a third tier or lower is named by it.
+    pub tier: Option<u32>,
+    /// `"opening"` or `"closing"` for a split-season division (Apertura / Clausura); `None` for an
+    /// annual one.
+    pub phase: Option<&'a str>,
 }
 
 /// A club in the race a preview describes, with its strength under the game's one rule
@@ -350,6 +355,12 @@ pub fn season_preview_article(
     if let Some(name_key) = division.name_key {
         article_params.insert("competitionKey".to_string(), name_key.to_string());
         article_params.insert("competitionSeason".to_string(), division.season.to_string());
+        if let Some(tier) = division.tier {
+            article_params.insert("competitionTier".to_string(), tier.to_string());
+        }
+        if let Some(phase) = division.phase {
+            article_params.insert("competitionPhase".to_string(), phase.to_string());
+        }
     }
     if let Some(country_id) = division.country_id {
         article_params.insert("competitionCountry".to_string(), country_id.to_string());
@@ -1074,6 +1085,8 @@ mod tests {
             name_key: None,
             country_id: None,
             season: 2027,
+            tier: None,
+            phase: None,
         }
     }
 
