@@ -138,7 +138,11 @@ export function useTacticsLibrary({
     const { id } = activeTactic;
     const endPendingDelete = beginPendingDelete(activeTactic);
     setCustomTactics((current) => current.filter((entry) => entry.id !== id));
-    void changeSave(() => deleteCustomTactic(id.trim(), careerToken)).then(endPendingDelete);
+    // The save's own ownership of the delete (`{ id }`, #1444) is kept; what the screen adds is the
+    // end of the pending delete once the save has answered.
+    void changeSave(() => deleteCustomTactic(id.trim(), careerToken), undefined, { id }).then(
+      endPendingDelete,
+    );
   }
 
   // Renames the saved tactic `id` (the one the dialog was opened for, which may no longer be the
