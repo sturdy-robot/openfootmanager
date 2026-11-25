@@ -62,6 +62,7 @@ function mount(
   callbacks: {
     onGameUpdate?: (game: GameStateData) => void;
     onWriteError?: (error: unknown) => void;
+    onApplyPreset?: (formation: string, playStyle: string) => Promise<boolean>;
   } = {},
 ) {
   return renderHook(
@@ -71,7 +72,7 @@ function mount(
         formation: "4-4-2",
         activePlayStyle: "Balanced",
         initialPreset: null,
-        onApplyPreset: vi.fn(),
+        onApplyPreset: callbacks.onApplyPreset ?? vi.fn(),
         onKeepInstructions: vi.fn(),
         onGameUpdate: callbacks.onGameUpdate ?? vi.fn(),
         onWriteError: callbacks.onWriteError ?? vi.fn(),
@@ -264,5 +265,101 @@ describe("useTacticsLibrary delete and apply timing (#1438)", () => {
       "game after b",
     ]);
     expect(result.current.activeTactic.id).toBe("b");
+  });
+
+  /**
+   * Given a saved tactic A being applied (its answer held), a second saved tactic B asked meanwhile,
+   *       and then a preset C confirmed
+   * When A answers, and then B
+   * Then B is sent after A and the preset after B: the later choice is the one that stands, not B
+   *      overwriting C. One queue serves presets and saved tactics.
+   */
+  it("sends a preset chosen after a queued saved tactic after it, not before", async () => {
+    const replies: Array<ReturnType<typeof deferred<unknown>>> = [];
+    const order: string[] = [];
+    emptyLibrary((command, args) => {
+      if (command === "list_custom_tactics") return [wire("a", "Away"), wire("b", "Home")];
+      if (command === "apply_custom_tactic") {
+        order.push(`apply ${(args as { id: string }).id}`);
+        const reply = deferred<unknown>();
+        replies.push(reply);
+        return reply.promise;
+      }
+      return undefined;
+    });
+    const onApplyPreset = vi.fn(async () => {
+      order.push("preset");
+      return true;
+    });
+    const { result } = mount(career("mgr1"), { onApplyPreset });
+    await waitFor(() => expect([...customIds(result)].sort()).toEqual(["a", "b"]));
+    const entry = (id: string) => {
+      const found = result.current.tacticLibrary.find((e) => e.id === id);
+      if (!found) throw new Error(`${id} is in the library`);
+      return found;
+    };
+
+    const asked: Array<Promise<void>> = [];
+    act(() => {
+      asked.push(result.current.applyTacticSelection(entry("a")));
+      asked.push(result.current.applyTacticSelection(entry("b")));
+      asked.push(result.current.applyTacticSelection(entry("preset:wing-play")));
+    });
+    await waitFor(() => expect(order).toEqual(["apply a"]));
+    await act(async () => {});
+    expect(order).toEqual(["apply a"]);
+
+    await act(async () => replies[0].resolve({ marker: "after a" }));
+    await waitFor(() => expect(order).toEqual(["apply a", "apply b"]));
+    expect(onApplyPreset).not.toHaveBeenCalled();
+    await act(async () => replies[1].resolve({ marker: "after b" }));
+    await act(async () => {
+      await Promise.all(asked);
+    });
+
+    expect(order).toEqual(["apply a", "apply b", "preset"]);
+    expect(result.current.activeTactic.id).toBe("preset:wing-play");
+  });
+
+  /**
+   * Given a saved tactic A being applied (held) and a second one B queued behind it
+   * When the career changes and A answers
+   * Then B is never sent (it was asked in a career that is no longer the open one), and A's game
+   *      is not taken.
+   */
+  it("sends nothing for a queued request whose career has changed", async () => {
+    const replies: Array<ReturnType<typeof deferred<unknown>>> = [];
+    const onGameUpdate = vi.fn();
+    emptyLibrary((command) => {
+      if (command === "list_custom_tactics") return [wire("a", "Away"), wire("b", "Home")];
+      if (command === "apply_custom_tactic") {
+        const reply = deferred<unknown>();
+        replies.push(reply);
+        return reply.promise;
+      }
+      return undefined;
+    });
+    const { result } = mount(career("mgr1"), { onGameUpdate });
+    await waitFor(() => expect([...customIds(result)].sort()).toEqual(["a", "b"]));
+    const entry = (id: string) => {
+      const found = result.current.tacticLibrary.find((e) => e.id === id);
+      if (!found) throw new Error(`${id} is in the library`);
+      return found;
+    };
+    const asked: Array<Promise<void>> = [];
+    act(() => {
+      asked.push(result.current.applyTacticSelection(entry("a")));
+      asked.push(result.current.applyTacticSelection(entry("b")));
+    });
+    await waitFor(() => expect(callsTo("apply_custom_tactic")).toHaveLength(1));
+
+    act(() => useGameStore.getState().setGameActive(true));
+    await act(async () => replies[0].resolve({ marker: "after a" }));
+    await act(async () => {
+      await Promise.all(asked);
+    });
+
+    expect(callsTo("apply_custom_tactic")).toHaveLength(1);
+    expect(onGameUpdate).not.toHaveBeenCalled();
   });
 });
