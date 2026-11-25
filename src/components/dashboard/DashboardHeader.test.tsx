@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { MatchModeType } from "../../hooks/useAdvanceTime";
@@ -120,33 +120,87 @@ describe("DashboardHeader", () => {
                 isUnemployed={false}
                 isSaving={false}
                 matchMode="live"
-                matchedPlayers={[createPlayer()]}
-                matchedTeams={teams}
+                players={[createPlayer()]}
                 modeMeta={createModeMeta()}
                 onBack={vi.fn()}
                 onContinue={vi.fn()}
                 onSave={vi.fn()}
-                onSearchBlur={vi.fn()}
-                onSearchFocus={vi.fn()}
-                onSearchQueryChange={vi.fn()}
                 onSelectMatchMode={vi.fn()}
                 onSelectSearchPlayer={onSelectSearchPlayer}
                 onSelectSearchTeam={onSelectSearchTeam}
                 onSkipToMatchDay={vi.fn()}
                 onToggleContinueMenu={vi.fn()}
                 saveFlash={false}
-                searchOpen
-                searchQuery="jo"
                 seasonComplete={false}
                 showContinueMenu={false}
                 teams={teams}
             />,
         );
 
+        const field = screen.getByPlaceholderText("Search");
+        fireEvent.focus(field);
+        fireEvent.change(field, { target: { value: "jo" } });
         fireEvent.contextMenu(screen.getByTestId("dashboard-search-player-player-1"));
         fireEvent.click(screen.getByRole("button", { name: "View team" }));
 
         expect(onSelectSearchTeam).toHaveBeenCalledWith("team-1");
         expect(onSelectSearchPlayer).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Given results showing for a typed name
+     * When the field loses the focus
+     * Then the results stay for 200 ms, so a press that is already on its way still lands, and then
+     *      close; and picking a result clears the box.
+     */
+    it("closes the results 200 ms after the focus leaves, and empties the box on a pick", () => {
+        vi.useFakeTimers();
+        try {
+            const onSelectSearchPlayer = vi.fn();
+            const teams = [createTeam()];
+            render(
+                <DashboardHeader
+                    activeTabLabel="Dashboard"
+                    currentDate="2026-08-10"
+                    hasProfileHistory={false}
+                    hasMatchToday={false}
+                    isAdvancing={false}
+                    isUnemployed={false}
+                    isSaving={false}
+                    matchMode="live"
+                    players={[createPlayer()]}
+                    modeMeta={createModeMeta()}
+                    onBack={vi.fn()}
+                    onContinue={vi.fn()}
+                    onSave={vi.fn()}
+                    onSelectMatchMode={vi.fn()}
+                    onSelectSearchPlayer={onSelectSearchPlayer}
+                    onSelectSearchTeam={vi.fn()}
+                    onSkipToMatchDay={vi.fn()}
+                    onToggleContinueMenu={vi.fn()}
+                    saveFlash={false}
+                    seasonComplete={false}
+                    showContinueMenu={false}
+                    teams={teams}
+                />,
+            );
+            const field = screen.getByPlaceholderText("Search") as HTMLInputElement;
+            fireEvent.focus(field);
+            fireEvent.change(field, { target: { value: "jo" } });
+            expect(screen.getByTestId("dashboard-search-player-player-1")).toBeInTheDocument();
+
+            fireEvent.blur(field);
+            act(() => vi.advanceTimersByTime(199));
+            expect(screen.getByTestId("dashboard-search-player-player-1")).toBeInTheDocument();
+            act(() => vi.advanceTimersByTime(1));
+            expect(screen.queryByTestId("dashboard-search-player-player-1")).toBeNull();
+
+            fireEvent.focus(field);
+            fireEvent.mouseDown(screen.getByTestId("dashboard-search-player-player-1"));
+            expect(onSelectSearchPlayer).toHaveBeenCalledWith("player-1");
+            expect(field.value).toBe("");
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });
